@@ -247,11 +247,34 @@ namespace Cm.Sym
         {
             container = containerStack.Pop();
         }
-        public void BeginClassScope(Cm.Ast.ClassNode* classNode)
+        public void BeginClassScope(Cm.Ast.ClassNode* classNode, HashMap<string, ulong>* cidMap)
         {
             Cm.Ast.IdentifierNode* classId = classNode->Id();
-            ulong nextCid = ClassCounter.Instance()->GetCid();
-            ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, nextCid);
+            ulong cid = noCid;
+            if (cidMap != null)
+            {
+                string classTypeFullName = container->FullName();
+                if (!classTypeFullName.IsEmpty())
+                {
+                    classTypeFullName.Append('.');
+                }
+                classTypeFullName.Append(classId->Str());
+                HashMap<string, ulong>.ConstIterator i = cidMap->CFind(classTypeFullName);
+                if (i != cidMap->CEnd())
+                {
+                    cid = i->second;
+                }
+                else
+                {
+                    cid = ClassCounter.Instance()->GetCid();
+                    (*cidMap)[classTypeFullName] = cid;
+                }
+            }
+            if (cid == noCid)
+            {
+                cid = ClassCounter.Instance()->GetCid();
+            }            
+            ClassTypeSymbol* classSymbol = new ClassTypeSymbol(classId->GetSpan(), classId->Str(), true, cid);
             projectClasses.Insert(classSymbol);
             SetSidAndAddSymbol(classSymbol);
             classSymbol->SetCompileUnit(classNode->GetCompileUnit());

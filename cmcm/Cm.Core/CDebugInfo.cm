@@ -12,6 +12,40 @@ using System.Collections;
 
 namespace Cm.Core
 {
+    public class SourceSpan
+    {
+        public nothrow SourceSpan() : line(0), startCol(0), endCol(0)
+        {
+        }
+        public nothrow SourceSpan(int line_, int startCol_, int endCol_) : line(line_), startCol(startCol_), endCol(endCol_)
+        {
+        }
+        public nothrow inline int Line() const
+        {
+            return line;
+        }
+        public nothrow inline int StartCol() const
+        {
+            return startCol;
+        }
+        public nothrow inline int EndCol() const
+        {
+            return endCol;
+        }
+        public nothrow inline bool IsNull() const
+        {
+            return line == 0 && startCol == 0 && endCol == 0;
+        }
+        private int line;
+        private int startCol;
+        private int endCol;
+    }
+    
+    public class CFunctionDebugInfo
+    {
+        // todo
+    }
+    
     public enum CfgNodeKind : byte
     {
         regularNode, exitNode, throwNode, catchNode
@@ -19,8 +53,23 @@ namespace Cm.Core
     
     public class CfgNode : Ir.Intf.CDebugNode
     {
-        public nothrow CfgNode() : base(), kind(CfgNodeKind.regularNode)
+        public nothrow CfgNode() : base(), id(-1), sourceSpan(), cLine(-1), kind(CfgNodeKind.regularNode), function(null)
         {
+        }
+        public nothrow CfgNode(int id_, const SourceSpan& sourceSpan_) : base(), id(id_), sourceSpan(sourceSpan_), cLine(-1), kind(CfgNodeKind.regularNode), function(null)
+        {
+        }
+        public nothrow inline int Id() const
+        {
+            return id;
+        }
+        public nothrow inline const SourceSpan& GetSourceSpan() const
+        {
+            return sourceSpan;
+        }
+        public nothrow inline int CLine() const
+        {
+            return cLine;
         }
         public override nothrow void SetCLine(int cLine_)
         {
@@ -34,7 +83,19 @@ namespace Cm.Core
         {
             kind = kind_;
         }
+        public inline nothrow const HashSet<int>& Next() const
+        {
+            return next;
+        }
+        public inline void AddNext(int nextNodeId)
+        {
+            next.Insert(nextNodeId);
+        }
+        private int id;
+        private SourceSpan sourceSpan;
         private int cLine;
         private CfgNodeKind kind;
+        private HashSet<int> next;
+        private CFunctionDebugInfo* function;
     }
 }

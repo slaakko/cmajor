@@ -1,0 +1,75 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Core
+{
+    public class BaseDerivedPair
+    {
+        public nothrow BaseDerivedPair(Cm.Sym.TypeSymbol* baseClassDerivedType_, Cm.Sym.TypeSymbol* derivedClassDerivedType_) : 
+            baseClassDerivedType(baseClassDerivedType_), derivedClassDerivedType(derivedClassDerivedType_), hashCode(baseClassDerivedType->Id().GetHashCode() ^ derivedClassDerivedType->Id().GetHashCode())
+        {
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* BaseClassDerivedType() const
+        {
+            return baseClassDerivedType;
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* DerivedClassDerivedType() const
+        {
+            return derivedClassDerivedType;
+        }
+        public nothrow inline ulong GetHashCode() const
+        {
+            return hashCode;
+        }
+        private Cm.Sym.TypeSymbol* baseClassDerivedType;
+        private Cm.Sym.TypeSymbol* derivedClassDerivedType;
+        private ulong hashCode;
+    }
+    
+    public nothrow inline bool operator==(const BaseDerivedPair& left, const BaseDerivedPair& right)
+    {
+        return left.BaseClassDerivedType() == right.BaseClassDerivedType() && left.DerivedClassDerivedType() == right.DerivedClassDerivedType();
+    }
+    
+    public nothrow inline ulong GetHashCode(const BaseDerivedPair& x)
+    {
+        return x.GetHashCode();
+    }
+
+    public class ClassConversionTable
+    {
+        public nothrow ClassConversionTable(Cm.Sym.TypeRepository& typeRepository_) : typeRepository(typeRepository_), classConversionMap(), conversionFunctions()
+        {
+        }
+        public Cm.Sym.FunctionSymbol* MakeBaseClassDerivedClassConversion(Cm.Sym.TypeSymbol* baseClassDerivedType, Cm.Sym.TypeSymbol* derivedClassDerivedType, int distance, const Span& span)
+        {
+            if (derivedClassDerivedType is Cm.Sym.ClassTypeSymbol*)
+            {
+                derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+            }
+            BaseDerivedPair key(baseClassDerivedType, derivedClassDerivedType);
+            HashMap<BaseDerivedPair, Cm.Sym.FunctionSymbol*>.ConstIterator i = classConversionMap.CFind(key);
+            if (i != classConversionMap.CEnd())
+            {
+                return i->second;
+            }
+            Cm.Sym.FunctionSymbol* conversion = new ConvertingCtor(typeRepository, baseClassDerivedType, derivedClassDerivedType, Cm.Sym.ConversionType.implicit, ConversionInst.bitcast, 
+                Cm.Sym.ConversionRank.conversion, distance);
+            conversionFunctions.Add(UniquePtr<Cm.Sym.FunctionSymbol>(conversion));
+            return conversion;
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+        private HashMap<BaseDerivedPair, Cm.Sym.FunctionSymbol*> classConversionMap;
+        private List<UniquePtr<Cm.Sym.FunctionSymbol>> conversionFunctions;
+    }
+}

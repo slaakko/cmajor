@@ -212,7 +212,7 @@ namespace Cm.Build
             Cm.Sym.Module module(libraryFilePath);
             module.CheckFileVersion();
         }
-        BuildSymbolTable(symbolTable, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
+        BuildSymbolTable(symbolTable, rebuild, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
             classHierarchyTable);
         CreateDirectories(project->OutputBasePath());
         List<string> objectFilePaths;
@@ -384,8 +384,35 @@ namespace Cm.Build
         OutputFileStream nextCidFile(nextCidPath);
         nextCidFile << nextCid;
     }
-
-    public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
+    
+    public HashMap<string, ulong> ReadCidMap(const string& cidFilePath)
+    {
+        HashMap<string, ulong> cidMap;
+        if (FileExists(cidFilePath))
+        {
+            InputFileStream cidFile(cidFilePath);
+            string line = cidFile.ReadLine();
+            List<string> components = line.Split(':');
+            if (components.Count() >= 2)
+            {
+                string className = components[0];
+                ulong cid = ParseULong(components[1]);
+                cidMap[className] = cid;
+            }
+        }
+        return cidMap;
+    }
+    
+    public void WriteCidMap(const string& cidFilePath, const HashMap<string, ulong>& cidMap)
+    {
+        OutputFileStream cidFile(cidFilePath);
+        for (const Pair<string, ulong>& c : cidMap)
+        {
+            cidFile << c.first << ":" << c.second << endl();
+        }
+    }
+    
+    public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, bool rebuild, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
         const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths,
         List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
     {
@@ -395,8 +422,16 @@ namespace Cm.Build
         symbolTable.InitVirtualFunctionTables();
         for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
         {
+            HashMap<string, ulong> cidMap;
+            string cidFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(compileUnit->FilePath()), ".cid")));
+            if (!rebuild)
+            {
+                cidMap = ReadCidMap(cidFilePath);
+            }
             Cm.Sym.DeclarationVisitor declarationVisitor(symbolTable);
+            declarationVisitor.SetCidMap(&cidMap);
             compileUnit->Accept(declarationVisitor);
+            WriteCidMap(cidFilePath, cidMap);
         }
     }
     

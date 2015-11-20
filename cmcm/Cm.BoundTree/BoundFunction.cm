@@ -1,0 +1,218 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.BoundTree
+{
+    public class LandingPad
+    {
+        public nothrow LandingPad(int id_, int jumpToCatchId_) : id (id_), jumpToCatchId(jumpToCatchId_)
+        {
+        }
+        public nothrow inline int Id() const
+        {
+            return id;
+        }
+        public nothrow inline int JumpToCatchId() const
+        {
+            return jumpToCatchId;
+        }
+        public nothrow inline const List<UniquePtr<BoundDestructionStatement>>& DestructionStatements() const
+        {
+            return destructionStatements;
+        }
+        public void AddDestructionStatement(BoundDestructionStatement* destructionStatement)
+        {
+            destructionStatements.Add(UniquePtr<BoundDestructionStatement>(destructionStatement));
+        }
+        private int id;
+        private int jumpToCatchId;
+        private List<UniquePtr<BoundDestructionStatement>> destructionStatements;
+    }
+    
+    public class BoundFunction : BoundNode
+    {
+        public nothrow BoundFunction() : 
+            base(null), body(), functionSymbol(null), localVariables(), classObjectLayoutFunIndex(0), temporaries(), hasGotos(false), nextCatchId(0), syntaxNodes(), landingPads(), tryCompoundMap(), 
+            currentTry(null), tryNodeStack(), inHandler(false), inHandlerStack(), isRealMain(false)
+        {
+        }
+        public nothrow BoundFunction(Cm.Ast.Node* syntaxNode_, Cm.Sym.FunctionSymbol* functionSymbol_) : 
+            base(syntaxNode_), body(), functionSymbol(functionSymbol_), localVariables(), classObjectLayoutFunIndex(0), temporaries(), hasGotos(false), nextCatchId(0), syntaxNodes(), landingPads(), 
+            tryCompoundMap(), currentTry(null), tryNodeStack(), inHandler(false), inHandlerStack(), isRealMain(false)
+        {
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (visitor.VisitFunctionBody())
+            {
+                if (!body.IsNull())
+                {
+                    body->Accept(visitor);
+                }
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline BoundCompoundStatement* Body() const
+        {
+            return body.GetPtr();
+        }
+        public nothrow inline void SetBody(BoundCompoundStatement* body_)
+        {
+            body.Reset(body_);
+        }
+        public nothrow inline BoundCompoundStatement* ReleaseBody()
+        {
+            return body.Release();
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* FunctionSymbol() const
+        {
+            return functionSymbol;
+        }
+        public void AddLocalVariable(Cm.Sym.LocalVariableSymbol* localVariable)
+        {
+            localVariables.Add(localVariable);
+        }
+        public string GetNextTempVariableName()
+        {
+            string tempVarName = "__temp" + ToString(temporaries.Count());
+            temporaries.Add(UniquePtr<Cm.Sym.LocalVariableSymbol>());
+            return tempVarName;
+        }
+        public Cm.Sym.LocalVariableSymbol* CreateTempLocalVariable(Cm.Sym.TypeSymbol* type)
+        {
+            string tempVarName = "__temp" + ToString(temporaries.Count());
+            Cm.Sym.LocalVariableSymbol* tempVar = new Cm.Sym.LocalVariableSymbol(System.Text.Parsing.Span(), tempVarName);
+            tempVar->SetType(type);
+            temporaries.Add(UniquePtr<Cm.Sym.LocalVariableSymbol>(tempVar));
+            AddLocalVariable(tempVar);
+            return tempVar;
+        }
+        public nothrow inline const List<Cm.Sym.LocalVariableSymbol*>& LocalVariables() const
+        {
+            return localVariables;
+        }
+        public nothrow inline const List<UniquePtr<Cm.Sym.LocalVariableSymbol>>& Temporaries() const
+        {
+            return temporaries;
+        }
+        public nothrow inline int ClassObjectLayoutFunIndex() const
+        {
+            return classObjectLayoutFunIndex;
+        }
+        public nothrow inline void SetClassObjectLayoutFunIndex(int classObjectLayoutFunIndex_)
+        {
+            classObjectLayoutFunIndex = classObjectLayoutFunIndex_;
+        }
+        public nothrow inline bool HasGotos() const
+        {
+            return hasGotos;
+        }
+        public nothrow inline void SetHasGotos()
+        {
+            hasGotos = true;
+        }
+        public nothrow inline int GetNextCatchId()
+        {
+            return nextCatchId++;
+        }
+        public nothrow inline int GetNextLandingPadId() 
+        {
+            return landingPads.Count();
+        }
+        public void AddLandingPad(LandingPad* landingPad)
+        {
+            landingPads.Add(UniquePtr<LandingPad>(landingPad));
+        }
+        public nothrow inline const List<UniquePtr<LandingPad>>& LandingPads() const
+        {
+            return landingPads;
+        }
+        public void Own(Cm.Ast.Node* syntaxNode)
+        {
+            syntaxNodes.Add(UniquePtr<Cm.Ast.Node>(syntaxNode));
+        }
+        public void PushTryNode(Cm.Ast.TryStatementNode* tryNode)
+        {
+            tryNodeStack.Add(currentTry);
+            currentTry = tryNode;
+        }
+        public void PopTryNode()
+        {
+            currentTry = tryNodeStack.RemoveLast();
+        }
+        public nothrow inline Cm.Ast.TryStatementNode* GetCurrentTry() const
+        {
+            return currentTry;
+        }
+        public nothrow inline Cm.Ast.TryStatementNode* GetParentTry() const
+        {
+            if (!tryNodeStack.IsEmpty())
+            {
+                return tryNodeStack.Back();
+            }
+            return currentTry;
+        }
+        public nothrow inline bool InHandler() const
+        {
+            return inHandler;
+        }
+        public void PushHandler()
+        {
+            inHandlerStack.Push(inHandler);
+            inHandler = true;
+        }
+        public void PopHandler()
+        {
+            inHandler = inHandlerStack.Pop();
+        }
+        public void AddTryCompound(Cm.Ast.TryStatementNode* tryNode, BoundCompoundStatement* tryCompound)
+        {
+            tryCompoundMap[tryNode] = tryCompound;
+        }
+        public BoundCompoundStatement* GetTryCompound(Cm.Ast.TryStatementNode* tryNode) const
+        {
+            HashMap<Cm.Ast.TryStatementNode*, BoundCompoundStatement*>.ConstIterator i = tryCompoundMap.CFind(tryNode);
+            if (i != tryCompoundMap.CEnd())
+            {
+                return i->second;
+            }
+            else
+            {
+                throw Exception("try compound not found");
+            }
+        }
+        public nothrow inline bool IsRealMainFunction() const
+        {
+            return isRealMain;
+        }
+        public nothrow inline void SetRealMainFunction()
+        {
+            isRealMain = true;
+        }
+        private UniquePtr<BoundCompoundStatement> body;
+        private Cm.Sym.FunctionSymbol* functionSymbol;
+        private List<Cm.Sym.LocalVariableSymbol*> localVariables;
+        private int classObjectLayoutFunIndex;
+        private List<UniquePtr<Cm.Sym.LocalVariableSymbol>> temporaries;
+        private bool hasGotos;
+        private int nextCatchId;
+        private List<UniquePtr<Cm.Ast.Node>> syntaxNodes;
+        private List<UniquePtr<LandingPad>> landingPads;
+        private HashMap<Cm.Ast.TryStatementNode*, BoundCompoundStatement*> tryCompoundMap;
+        private Cm.Ast.TryStatementNode* currentTry;
+        private List<Cm.Ast.TryStatementNode*> tryNodeStack;
+        private bool inHandler;
+        private Stack<bool> inHandlerStack;
+        private bool isRealMain;
+    }
+}

@@ -8,13 +8,19 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 
 namespace Cm.Sym
 {
     public class DeclarationVisitor : Cm.Ast.Visitor
     {
-        public nothrow DeclarationVisitor(SymbolTable& symbolTable_) : base(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(null), markFunctionSymbolAsTemplateSpecialization(false)
+        public nothrow DeclarationVisitor(SymbolTable& symbolTable_) : 
+            base(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(null), markFunctionSymbolAsTemplateSpecialization(false), cidMap(null)
         {
+        }
+        public nothrow void SetCidMap(HashMap<string, ulong>* cidMap_)
+        {
+            cidMap = cidMap_;
         }
         public nothrow void SetTemplateType(Cm.Ast.ClassNode* templateClassNode_, TemplateTypeSymbol* templateType_) 
         {
@@ -41,7 +47,7 @@ namespace Cm.Sym
             }
             else
             {
-                symbolTable.BeginClassScope(&classNode);
+                symbolTable.BeginClassScope(&classNode, cidMap);
             }
         }
         public override void EndVisit(Cm.Ast.ClassNode& classNode)
@@ -266,5 +272,6 @@ namespace Cm.Sym
         private Cm.Ast.ClassNode* templateClassNode;
         private TemplateTypeSymbol* templateType;
         private bool markFunctionSymbolAsTemplateSpecialization;
+        private HashMap<string, ulong>* cidMap;
     }
 }

@@ -41,6 +41,234 @@ namespace Cm.BoundTree
         {
             return skipContent;
         }
+        public virtual void BeginVisit(BoundClass& boundClass)
+        {
+        }
+        public virtual void EndVisit(BoundClass& boundClass)
+        {
+        }
+        public virtual void Visit(BoundAtomicConstraint& boundAtomicConstraint)
+        {
+        }
+        public virtual void Visit(BoundDisjunctiveConstraint& boundDisjunctiveConstraint)
+        {
+        }
+        public virtual void Visit(BoundConjunctiveConstraint& boundConjunctiveConstraint)
+        {
+        }
+        public virtual void Visit(BoundTypeSatisfyConceptConstraint& boundTypeSatisfyConceptConstraint)
+        {
+        }
+        public virtual void Visit(BoundTypeIsTypeConstraint& boundTypeIsTypeConstraint)
+        {
+        }
+        public virtual void Visit(BoundMultiParamConstraint& boundMultiParamConstraint)
+        {
+        }
+        public virtual void Visit(BoundConcept& boundConcept)
+        {
+        }
+        public virtual void Visit(BoundStringLiteral& boundStringLiteral)
+        {
+        }
+        public virtual void Visit(BoundLiteral& boundLiteral)
+        {
+        }
+        public virtual void Visit(BoundConstant& boundConstant)
+        {
+        }
+        public virtual void Visit(BoundEnumConstant& boundEnumConstant)
+        {
+        }
+        public virtual void Visit(BoundLocalVariable& boundLocalVariable)
+        {
+        }
+        public virtual void Visit(BoundParameter& boundParameter)
+        {
+        }
+        public virtual void Visit(BoundReturnValue& boundReturnValue)
+        {
+        }
+        public virtual void Visit(BoundMemberVariable& boundMemberVariable)
+        {
+        }
+        public virtual void Visit(BoundFunctionId& boundFunctionId)
+        {
+        }
+        public virtual void Visit(BoundTypeExpression& boundTypeExpression)
+        {
+        }
+        public virtual void Visit(BoundNamespaceExpression& boundNamespaceExpression)
+        {
+        }
+        public virtual void Visit(BoundConversion& boundConversion)
+        {
+        }
+        public virtual void Visit(BoundCast& boundCast)
+        {
+        }
+        public virtual void Visit(BoundIsExpression& boundIsExpression)
+        {
+        }
+        public virtual void Visit(BoundAsExpression& boundAsExpression)
+        {
+        }
+        public virtual void Visit(BoundSizeOfExpression& boundSizeOfExpression)
+        {
+        }
+        public virtual void Visit(BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression)
+        {
+        }
+        public virtual void Visit(BoundUnaryOp& boundUnaryOp)
+        {
+        }
+        public virtual void Visit(BoundBinaryOp& boundBinaryOp)
+        {
+        }
+        public virtual void Visit(BoundPostfixIncDecExpr& boundPostfixIncDecExpr)
+        {
+        }
+        public virtual void Visit(BoundFunctionCall& boundFunctionCall)
+        {
+        }
+        public virtual void Visit(BoundDelegateCall& boundDelegateCall)
+        {
+        }
+        public virtual void Visit(BoundClassDelegateCall& boundClassDelegateCall)
+        {
+        }
+        public virtual void Visit(BoundDisjunction& boundDisjunction)
+        {
+        }
+        public virtual void Visit(BoundConjunction& boundConjunction)
+        {
+        }
+        public void VisitStatement(BoundStatement& statement)
+        {
+            BeginVisitStatement(statement);
+            statement.Accept(*this);
+            EndVisitStatement(statement);
+        }
+        public virtual void BeginVisitStatement(BoundStatement& statement)
+        {
+        }
+        public virtual void EndVisitStatement(BoundStatement& statement)
+        {
+        }
+        public virtual void BeginVisit(BoundCompoundStatement& boundCompoundStatement)
+        {
+        }
+        public virtual void EndVisit(BoundCompoundStatement& boundCompoundStatement)
+        {
+        }
+        public virtual void Visit(BoundReceiveStatement& boundReceiveStatement)
+        {
+        }
+        public virtual void Visit(BoundInitClassObjectStatement& boundInitClassObjectStatement)
+        {
+        }
+        public virtual void Visit(BoundInitVPtrStatement& boundInitVPtrStatement)
+        {
+        }
+        public virtual void Visit(BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
+        {
+        }
+        public virtual void Visit(BoundFunctionCallStatement& boundFunctionCallStatement)
+        {
+        }
+        public virtual void Visit(BoundReturnStatement& boundReturnStatement)
+        {
+        }
+        public virtual void Visit(BoundBeginTryStatement& boundBeginTryStatement)
+        {
+        }
+        public virtual void Visit(BoundEndTryStatement& boundEndTryStatement)
+        {
+        }
+        public virtual void Visit(BoundExitBlocksStatement& boundExitBlocksStatement)
+        {
+        }
+        public virtual void Visit(BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement)
+        {
+        }
+        public virtual void Visit(BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement)
+        {
+        }
+        public virtual void Visit(BoundBeginThrowStatement& boundBeginThrowStatement)
+        {
+        }
+        public virtual void Visit(BoundEndThrowStatement& boundEndThrowStatement)
+        {
+        }
+        public virtual void Visit(BoundBeginCatchStatement& boundBeginCatchStatement)
+        {
+        }
+        public virtual void Visit(BoundConstructionStatement& boundConstructionStatement)
+        {
+        }
+        public virtual void Visit(BoundDestructionStatement& boundDestructionStatement)
+        {
+        }
+        public virtual void Visit(BoundAssignmentStatement& boundAssignmentStatement)
+        {
+        }
+        public virtual void Visit(BoundSimpleStatement& boundSimpleStatement)
+        {
+        }
+        public virtual void Visit(BoundSwitchStatement& boundSwitchStatement)
+        {
+        }
+        public virtual void Visit(BoundCaseStatement& boundCaseStatement)
+        {
+        }
+        public virtual void Visit(BoundDefaultStatement& boundDefaultStatement)
+        {
+        }
+        public virtual void Visit(BoundBreakStatement& boundBreakStatement)
+        {
+        }
+        public virtual void Visit(BoundContinueStatement& boundContinueStatement)
+        {
+        }
+        public virtual void Visit(BoundGotoStatement& boundGotoStatement)
+        {
+        }
+        public virtual void Visit(BoundGotoCaseStatement& boundGotoCaseStatement)
+        {
+        }
+        public virtual void Visit(BoundGotoDefaultStatement& boundGotoDefaultStatement)
+        {
+        }
+        public virtual void BeginVisit(BoundConditionalStatement& boundConditionalStatement)
+        {
+        }
+        public virtual void EndVisit(BoundConditionalStatement& boundConditionalStatement)
+        {
+        }
+        public virtual void BeginVisit(BoundWhileStatement& boundWhileStatement)
+        {
+        }
+        public virtual void EndVisit(BoundWhileStatement& boundWhileStatement)
+        {
+        }
+        public virtual void BeginVisit(BoundDoStatement& boundDoStatement)
+        {
+        }
+        public virtual void EndVisit(BoundDoStatement& boundDoStatement)
+        {
+        }
+        public virtual void BeginVisit(BoundForStatement& boundForStatement)
+        {
+        }
+        public virtual void EndVisit(BoundForStatement& boundForStatement)
+        {
+        }
+        public virtual void BeginVisit(BoundFunction& boundFunction)
+        {
+        }
+        public virtual void EndVisit(BoundFunction& boundFunction)
+        {
+        }
         private bool visitFunctionBody;
         private bool skipContent;
         private Stack<bool> skipContentStack;
