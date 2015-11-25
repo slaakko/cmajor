@@ -12,6 +12,26 @@ using System.Collections;
 
 namespace Cm.Core
 {
+    public class ConceptRepository
+    {
+        public Cm.Sym.InstantiatedConceptSymbol* GetInstantiatedConcept(const Cm.Sym.TypeId& instantiatedConceptId) const
+        {
+            HashMap<Cm.Sym.TypeId, Cm.Sym.InstantiatedConceptSymbol*>.ConstIterator i = conceptMap.CFind(instantiatedConceptId);
+            if (i != conceptMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        public void AddInstantiatedConcept(const Cm.Sym.TypeId& instantiatedConceptId, Cm.Sym.InstantiatedConceptSymbol* instantiatedConcept)
+        {
+            conceptMap[instantiatedConceptId] = instantiatedConcept;
+            concepts.Add(UniquePtr<Cm.Sym.InstantiatedConceptSymbol>(instantiatedConcept));
+        }
+        private HashMap<Cm.Sym.TypeId, Cm.Sym.InstantiatedConceptSymbol*> conceptMap;
+        private List<UniquePtr<Cm.Sym.InstantiatedConceptSymbol>> concepts;
+    }
+    
     public class GlobalConceptData
     {
         public static void SetInstance(GlobalConceptData* instance_)

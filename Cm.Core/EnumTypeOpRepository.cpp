@@ -190,7 +190,7 @@ void EnumAssignmentOpGroup::CollectViableFunctions(int arity, const std::vector<
             else if (Cm::Sym::TypesEqual(typeRepository.MakeReferenceType(enumType, span), rightType)) // enum copy assignment
             {
                 EnumTypeOpCache& cache = enumTypeOpCacheMap[enumType];
-                viableFunctions.insert(cache.GetCopyCtor(typeRepository, enumType));
+                viableFunctions.insert(cache.GetCopyAssignment(typeRepository, enumType));
             }
             else
             {
@@ -210,9 +210,8 @@ void EnumAssignmentOpGroup::CollectViableFunctions(int arity, const std::vector<
         {
             Cm::Sym::TypeSymbol* enumType = rightType;
             EnumTypeOpCache& cache = enumTypeOpCacheMap[enumType];
-            viableFunctions.insert(cache.GetConversionFromUnderlyingType(typeRepository, enumType));
+            viableFunctions.insert(cache.GetConversionToUnderlyingType(typeRepository, enumType, conversionTable));
         }
-
     }
 }
 

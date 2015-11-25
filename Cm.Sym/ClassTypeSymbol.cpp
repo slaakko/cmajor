@@ -201,7 +201,6 @@ bool ClassTypeSymbol::HasBaseClass(ClassTypeSymbol* cls, int& distance) const
     ++distance;
     if (baseClass == cls) return true;
     return baseClass->HasBaseClass(cls, distance);
-
 }
 
 bool ClassTypeSymbol::DoGenerateDestructor()

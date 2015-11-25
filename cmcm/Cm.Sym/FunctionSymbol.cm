@@ -73,7 +73,7 @@ namespace Cm.Sym
     {
         public nothrow FunctionSymbol(const Span& span_, const string& name_) : 
             base(span_, name_), returnType(null), entrySymbol(null), returnValueSymbol(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), mutexId(-1), 
-            overriddenFunction(null), functionTemplate(null)
+            overriddenFunction(null), functionTemplate(null), classObjectResultIrParam(null)
         {
         }
         public nothrow override SymbolType GetSymbolType() const 
@@ -847,6 +847,22 @@ namespace Cm.Sym
         {
             flags = cast<FunctionSymbolFlags>(flags & ~flag);
         }
+        public nothrow inline bool ReturnsClassObjectByValue() const
+        {
+            return returnType != null && (returnType is ClassTypeSymbol*);
+        }
+        public nothrow inline Ir.Intf.Parameter* ClassObjectResultIrParam() const
+        {
+            return classObjectResultIrParam;
+        }
+        public nothrow inline void SetClassObjectResultIrParam(Ir.Intf.Parameter* classObjectResultIrParam_)
+        {
+            classObjectResultIrParam = classObjectResultIrParam_;
+        }
+        public nothrow inline const List<TypeSymbol*>& TypeArguments() const
+        {
+            return typeArguments;
+        }
         private FunctionSymbolFlags flags;
         private string groupName;
         private TypeSymbol* returnType;
@@ -861,6 +877,7 @@ namespace Cm.Sym
         private FunctionSymbol* overriddenFunction;
         private FunctionSymbol* functionTemplate;
         private HashSet<FunctionSymbol*> overrideSet;
+        private Ir.Intf.Parameter* classObjectResultIrParam;
         private UniquePtr<PersistentFunctionData> persistentFunctionData;
     }
 }

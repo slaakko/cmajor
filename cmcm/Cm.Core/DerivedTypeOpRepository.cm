@@ -1,0 +1,1394 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Core
+{
+    public class DerivedTypeOpRepository
+    {
+        public DerivedTypeOpRepository(Cm.Sym.TypeRepository& typeRepository_) : typeRepository(typeRepository_)
+        {
+            derivedTypeOpGroupMap["@constructor"] = &constructorOpGroup;
+            derivedTypeOpGroupMap["operator="] = &assignmentOpGroup;
+            derivedTypeOpGroupMap["operator=="] = &equalityOpGroup;
+            derivedTypeOpGroupMap["operator<"] = &lessOpGroup;
+            derivedTypeOpGroupMap["operator+"] = &additiveOpGroup;
+            derivedTypeOpGroupMap["operator-"] = &subtractiveOpGroup;
+            derivedTypeOpGroupMap["operator*"] = &derefOpGroup;
+            derivedTypeOpGroupMap["operator++"] = &incrementOpGroup;
+            derivedTypeOpGroupMap["operator--"] = &decrementOpGroup;
+            derivedTypeOpGroupMap["operator&"] = &addressOfGroup;
+            derivedTypeOpGroupMap["operator->"] = &arrowOpGroup;
+        }
+        public void CollectViableFunctions(const string& groupName, int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, 
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            #assert(arguments.Count() == arity);
+            if (arity < 1 || arity > 2) return;
+            HashMap<string, DerivedTypeOpGroup*>.ConstIterator i = derivedTypeOpGroupMap.CFind(groupName);
+            if (i != derivedTypeOpGroupMap.CEnd())
+            {
+                DerivedTypeOpGroup* group = i->second;
+                group->CollectViableFunctions(arity, arguments, conversionTable, span, typeRepository, derivedTypeOpCacheMap, caches, viableFunctions);
+            }
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+        private HashMap<string, DerivedTypeOpGroup*> derivedTypeOpGroupMap;
+        private HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*> derivedTypeOpCacheMap;
+        private List<UniquePtr<DerivedTypeOpCache>> caches;
+        private ConstructorOpGroup constructorOpGroup;
+        private AssignmentOpGroup assignmentOpGroup;
+        private EqualityOpGroup equalityOpGroup;
+        private LessOpGroup lessOpGroup;
+        private AdditiveOpGroup additiveOpGroup;
+        private SubtractiveOpGroup subtractiveOpGroup;
+        private DerefOpGroup derefOpGroup;
+        private IncrementOpGroup incrementOpGroup;
+        private DecrementOpGroup decrementOpGroup;
+        private AddressOfGroup addressOfGroup;
+        private ArrowOpGroup arrowOpGroup;
+    }
+    
+    public abstract class DerivedTypeOpGroup
+    {
+        public virtual ~DerivedTypeOpGroup()
+        {
+        }
+        public abstract void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions);
+    }
+    
+    public class DerivedTypeOpCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (defaultCtor.IsNull())
+            {
+                defaultCtor.Reset(new DefaultCtor(typeRepository, type));    
+            }
+            return defaultCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (copyCtor.IsNull())
+            {
+                copyCtor.Reset(new CopyCtor(typeRepository, type));
+            }
+            return copyCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (moveCtor.IsNull())
+            {
+                moveCtor.Reset(new MoveCtor(typeRepository, type));
+            }
+            return moveCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetPtrToVoidPtrConversion(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type, Cm.Sym.ConversionTable& conversionTable, const Span& span)
+        {
+            if (ptrToVoidPtrConversion.IsNull())
+            {
+                ptrToVoidPtrConversion.Reset(new ConvertingCtor(typeRepository, typeRepository.MakePointerType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), span), type, 
+                    Cm.Sym.ConversionType.implicit, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 100));
+                conversionTable.AddConversion(ptrToVoidPtrConversion.GetPtr());
+            }
+            return ptrToVoidPtrConversion.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetVoidPtrToPtrConversion(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type, const Span& span)
+        {
+            if (voidPtrToPtrConversion.IsNull())
+            {
+                voidPtrToPtrConversion.Reset(new ConvertingCtor(typeRepository, type, typeRepository.MakePointerType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), span), 
+                    Cm.Sym.ConversionType.explicit_, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 100));
+            }
+            return voidPtrToPtrConversion.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetNullPtrToPtrConversion(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type, Cm.Sym.ConversionTable& conversionTable)
+        {
+            if (nullPtrToPtrConversion.IsNull())
+            {
+                nullPtrToPtrConversion.Reset(new ConvertingCtor(typeRepository, type, typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.nullPtrId)), 
+                    Cm.Sym.ConversionType.implicit, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 1));
+                conversionTable.AddConversion(nullPtrToPtrConversion.GetPtr());
+            }
+            return nullPtrToPtrConversion.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetVoidPtrToUlongConversion(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type, Cm.Sym.ConversionTable& conversionTable, const Span& span)
+        {
+            if (voidPtrToULongConversion.IsNull())
+            {
+                Cm.Sym.TypeSymbol* ulongType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+                Cm.Sym.TypeSymbol* voidPtrType = typeRepository.MakePointerType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), span);
+                voidPtrToULongConversion.Reset(new ConvertingCtor(typeRepository, ulongType, voidPtrType, Cm.Sym.ConversionType.explicit_, ConversionInst.ptrtoint, Cm.Sym.ConversionRank.conversion, 100));
+                conversionTable.AddConversion(voidPtrToULongConversion.GetPtr());
+            }
+            return voidPtrToULongConversion.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetExplicitPointerConversion(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* targetType, Cm.Sym.TypeSymbol* sourceType, Cm.Sym.ConversionTable& conversionTable)
+        {
+            if (explicitPointerConversion.IsNull())
+            {
+                explicitPointerConversion.Reset(new ConvertingCtor(typeRepository, targetType, sourceType, Cm.Sym.ConversionType.explicit_, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 100));
+                conversionTable.AddConversion(explicitPointerConversion.GetPtr());
+            }
+            return explicitPointerConversion.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (copyAssignment.IsNull())
+            {
+                copyAssignment.Reset(new CopyAssignment(typeRepository, type));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (moveAssignment.IsNull())
+            {
+                moveAssignment.Reset(new MoveAssignment(typeRepository, type));
+            }
+            return moveAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opEqual.IsNull())
+            {
+                opEqual.Reset(new OpEqual(typeRepository, type));
+            }
+            return opEqual.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpLess(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opLess.IsNull())
+            {
+                opLess.Reset(new OpLess(typeRepository, type));
+            }
+            return opLess.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpAddPtrInt(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opAddPtrInt.IsNull())
+            {
+                opAddPtrInt.Reset(new OpAddPtrInt(typeRepository, type));
+            }
+            return opAddPtrInt.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpAddIntPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opAddIntPtr.IsNull())
+            {
+                opAddIntPtr.Reset(new OpAddIntPtr(typeRepository, type));
+            }
+            return opAddIntPtr.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpSubPtrInt(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opSubPtrInt.IsNull())
+            {
+                opSubPtrInt.Reset(new OpSubPtrInt(typeRepository, type));
+            }
+            return opSubPtrInt.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpSubPtrPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opSubPtrPtr.IsNull())
+            {
+                opSubPtrPtr.Reset(new OpSubPtrPtr(typeRepository, type));
+            }
+            return opSubPtrPtr.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpDeref(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opDeref.IsNull())
+            {
+                opDeref.Reset(new OpDeref(typeRepository, type));
+            }
+            return opDeref.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpIncPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opIncPtr.IsNull())
+            {
+                opIncPtr.Reset(new OpIncPtr(typeRepository, type));
+            }
+            return opIncPtr.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpDecPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opDecPtr.IsNull())
+            {
+                opDecPtr.Reset(new OpDecPtr(typeRepository, type));
+            }
+            return opDecPtr.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpAddrOf(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opAddrOf.IsNull())
+            {
+                opAddrOf.Reset(new OpAddrOf(typeRepository, type));
+            }
+            return opAddrOf.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpArrow(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type)
+        {
+            if (opArrow.IsNull())
+            {
+                opArrow.Reset(new OpArrow(typeRepository, type));
+            }
+            return opArrow.GetPtr();
+        }
+        private UniquePtr<Cm.Sym.FunctionSymbol> defaultCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> ptrToVoidPtrConversion;
+        private UniquePtr<Cm.Sym.FunctionSymbol> voidPtrToPtrConversion;
+        private UniquePtr<Cm.Sym.FunctionSymbol> nullPtrToPtrConversion;
+        private UniquePtr<Cm.Sym.FunctionSymbol> voidPtrToULongConversion;
+        private UniquePtr<Cm.Sym.FunctionSymbol> explicitPointerConversion;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opEqual;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opLess;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opAddPtrInt;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opAddIntPtr;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opSubPtrInt;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opSubPtrPtr;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opDeref;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opIncPtr;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opDecPtr;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opAddrOf;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opArrow;
+    }
+    
+    public class OpAddPtrInt : BasicTypeOp
+    {
+        public OpAddPtrInt(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator+");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(rightParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* ptrType = Type()->IrType();
+            Ir.Intf.Object* arg1 = result.Arg1();
+            if (!(arg1 is Ir.Intf.Constant*) && !(arg1 is Ir.Intf.RegVar*))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(ptrType);
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, arg1->GetType(), result.Arg1(), arg1);
+            }
+            Ir.Intf.Object* arg2 = result.Arg2();
+            if (!(arg2 is Ir.Intf.Constant*) && !(arg2 is Ir.Intf.RegVar*))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI32());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI32(), result.Arg2(), arg2);
+            }
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                emitter.Emit(Cm.IrIntf.GetElementPtr(ptrType, result.MainObject(), arg1, arg2));
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                emitter.Emit(Cm.IrIntf.Add(ptrType, result.MainObject(), arg1, arg2));
+            }
+        }
+    }
+    
+    public class OpAddIntPtr : BasicTypeOp
+    {
+        public OpAddIntPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator+");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(rightParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* ptrType = Type()->IrType();
+            Ir.Intf.Object* arg1 = result.Arg1();
+            if (!(arg1 is Ir.Intf.Constant*) && !(arg1 is Ir.Intf.RegVar*))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI32());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI32(), result.Arg1(), arg1);
+            }
+            Ir.Intf.Object* arg2 = result.Arg2();
+            if (!(arg2 is Ir.Intf.Constant*) && !(arg2 is Ir.Intf.RegVar*))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(ptrType);
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, arg2->GetType(), result.Arg2(), arg2);
+            }
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                emitter.Emit(Cm.IrIntf.GetElementPtr(ptrType, result.MainObject(), arg2, arg1));
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                emitter.Emit(Cm.IrIntf.Add(ptrType, result.MainObject(), arg1, arg2));
+            }
+        }
+    }
+    
+    public class OpSubPtrInt : BasicTypeOp
+    {
+        public OpSubPtrInt(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator-");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(rightParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* ptrType = Type()->IrType();
+            Ir.Intf.Object* arg1 = result.Arg1();
+            if (!(arg1 is Ir.Intf.Constant*) && !(arg1 is Ir.Intf.RegVar*))
+            {
+                arg1 = Cm.IrIntf.MakeTemporaryRegVar(ptrType);
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, arg1->GetType(), result.Arg1(), arg1);
+            }
+            Ir.Intf.Object* arg2 = result.Arg2();
+            if (!(arg2 is Ir.Intf.Constant*) && !(arg2 is Ir.Intf.RegVar*))
+            {
+                arg2 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI32());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI32(), result.Arg2(), arg2);
+            }
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                Ir.Intf.Object* minusArg2 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI32());
+                emitter.Own(minusArg2);
+                Ir.Intf.Object* zero = Ir.Intf.Factory.Instance()->GetI32()->CreateDefaultValue();
+                emitter.Own(zero);
+                emitter.Emit(Cm.IrIntf.Sub(Ir.Intf.Factory.Instance()->GetI32(), minusArg2, zero, arg2));
+                emitter.Emit(Cm.IrIntf.GetElementPtr(ptrType, result.MainObject(), arg1, minusArg2));
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                emitter.Emit(Cm.IrIntf.Sub(ptrType, result.MainObject(), arg1, arg2));
+            }
+        }
+    }
+    
+    public class OpSubPtrPtr : BasicTypeOp
+    {
+        public OpSubPtrPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator-");
+            SetReturnType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(rightParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                Cm.Sym.TypeSymbol* pointeeType = Type()->GetBaseType();
+                Ir.Intf.Type* irPointeeType = pointeeType->IrType();
+                Ir.Intf.RegVar* arg1I64 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+                emitter.Own(arg1I64);
+                Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(result.Arg1()->GetType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, arg1->GetType(), result.Arg1(), arg1);
+                emitter.Emit(Cm.IrIntf.Ptrtoint(Type()->IrType(), arg1I64, arg1, Ir.Intf.Factory.Instance()->GetI64()));
+                Ir.Intf.RegVar* arg2I64 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+                emitter.Own(arg2I64);
+                Ir.Intf.RegVar* arg2 = Cm.IrIntf.MakeTemporaryRegVar(result.Arg2()->GetType());
+                emitter.Own(arg2);
+                Cm.IrIntf.Assign(emitter, arg2->GetType(), result.Arg2(), arg2);
+                emitter.Emit(Cm.IrIntf.Ptrtoint(Type()->IrType(), arg2I64, arg2, Ir.Intf.Factory.Instance()->GetI64()));
+                Ir.Intf.Object* subResult = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+                emitter.Own(subResult);
+                emitter.Emit(Cm.IrIntf.Sub(Ir.Intf.Factory.Instance()->GetI64(), subResult, arg1I64, arg2I64));
+                Ir.Intf.Object* size = Cm.IrIntf.SizeOf(emitter, irPointeeType);
+                Ir.Intf.Object* resultI64 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+                emitter.Own(resultI64);
+                emitter.Emit(Cm.IrIntf.UDiv(Ir.Intf.Factory.Instance()->GetI64(), resultI64, subResult, size));
+                emitter.Emit(Cm.IrIntf.Trunc(Ir.Intf.Factory.Instance()->GetI64(), result.MainObject(), resultI64, Ir.Intf.Factory.Instance()->GetI64()));
+            }            
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                emitter.Emit(Cm.IrIntf.Sub(Type()->IrType(), result.MainObject(), result.Arg1(), result.Arg2()));
+            }
+        }
+    }
+    
+    public class OpDeref : BasicTypeOp
+    {
+        public OpDeref(Cm.Sym.TypeRepository& typeRepository_, Cm.Sym.TypeSymbol* type_) : base(type_), typeRepository(typeRepository_)
+        {
+            SetGroupName("operator*");
+            SetReturnType(typeRepository.MakePlainTypeWithOnePointerRemoved(Type()));
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(operandParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                if ((result.Flags() & GenFlags.lvalue) != GenFlags.none)
+                {
+                    result.MainObject()->SetType(Type()->IrType());
+                    Cm.IrIntf.Assign(emitter, Type()->IrType(), result.Arg1(), result.MainObject());
+                }
+                else
+                {
+                    Cm.Sym.TypeSymbol* pointeeType = typeRepository.MakePlainTypeWithOnePointerRemoved(Type());
+                    if (pointeeType is Cm.Sym.ClassTypeSymbol*)
+                    {
+                        Cm.IrIntf.Assign(emitter, Type()->IrType(), result.Arg1(), result.MainObject());
+                        result.MainObject()->SetType(Type()->IrType());
+                    }
+                    else
+                    {
+                        emitter.Emit(Cm.IrIntf.Load(Type()->IrType(), result.MainObject(), result.Arg1()));
+                    }
+                }
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                if ((result.Flags() & GenFlags.lvalue) != GenFlags.none)
+                {
+                    result.MainObject()->SetType(Type()->IrType());
+                    Cm.IrIntf.Assign(emitter, Type()->IrType(), result.Arg1(), result.MainObject());
+                }
+                else
+                {
+                    Cm.Sym.TypeSymbol* pointeeType = typeRepository.MakePlainTypeWithOnePointerRemoved(Type());
+                    if (pointeeType is Cm.Sym.ClassTypeSymbol*)
+                    {
+                        Cm.IrIntf.Assign(emitter, Type()->IrType(), result.Arg1(), result.MainObject());
+                        result.MainObject()->SetType(Type()->IrType());
+                    }
+                    else
+                    {
+                        emitter.Emit(Cm.IrIntf.Load(Type()->IrType(), result.MainObject(), result.Arg1(), Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
+                    }
+                }
+            }
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+    }
+    
+    public class OpIncPtr : BasicTypeOp
+    {
+        public OpIncPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator++");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(operandParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* ptrType = Type()->IrType();
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(result.Arg1()->GetType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, ptrType, result.Arg1(), arg1);
+                Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+                emitter.Own(one);
+                emitter.Emit(Cm.IrIntf.GetElementPtr(ptrType, result.MainObject(), arg1, one));
+                Cm.IrIntf.Assign(emitter, ptrType, result.MainObject(), result.Arg1());
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+                Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+                emitter.Own(one);
+                emitter.Emit(Cm.IrIntf.Add(IrType(), result.MainObject(), arg1, one));
+                Cm.IrIntf.Assign(emitter, IrType(), result.MainObject(), result.Arg1());
+            }
+        }
+    }
+    
+    public class OpDecPtr : BasicTypeOp
+    {
+        public OpDecPtr(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator--");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(operandParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* ptrType = Type()->IrType();
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(result.Arg1()->GetType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, ptrType, result.Arg1(), arg1);
+                Ir.Intf.Object* minusOne = Cm.IrIntf.MakeI32Constant(-1);
+                emitter.Own(minusOne);
+                emitter.Emit(Cm.IrIntf.GetElementPtr(ptrType, result.MainObject(), arg1, minusOne));
+                Cm.IrIntf.Assign(emitter, ptrType, result.MainObject(), result.Arg1());
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                Ir.Intf.RegVar* arg1 = Cm.IrIntf.MakeTemporaryRegVar(IrType());
+                emitter.Own(arg1);
+                Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), arg1);
+                Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+                emitter.Own(one);
+                emitter.Emit(Cm.IrIntf.Sub(IrType(), result.MainObject(), arg1, one));
+                Cm.IrIntf.Assign(emitter, IrType(), result.MainObject(), result.Arg1());
+            }
+        }
+    }
+    
+    public class OpAddrOf : BasicTypeOp
+    {
+        public OpAddrOf(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator&");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            Cm.Sym.TypeSymbol* operandType = typeRepository.MakePlainTypeWithOnePointerRemoved(Type());
+            operandParam->SetType(operandType);
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(operandParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                result.SetMainObject(result.Arg1()->CreateAddr(emitter, result.Arg1()->GetType()));
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                if (result.MainObject()->GetType()->Name() == result.Arg1()->GetType()->Name())
+                {
+                    result.SetMainObject(result.Arg1()->CreateAddr(emitter, result.Arg1()->GetType()));
+                }
+                else
+                {
+                    emitter.Emit(Cm.IrIntf.Load(result.MainObject()->GetType(), result.MainObject(), result.Arg1(), Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+                }
+            }        
+        }
+    }
+    
+    public class OpArrow : BasicTypeOp
+    {
+        public OpArrow(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator->");
+            SetReturnType(Type());
+            Cm.Sym.ParameterSymbol* operandParam = new Cm.Sym.ParameterSymbol(Span(), "operand");
+            operandParam->SetType(Type());
+            operandParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(operandParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            Cm.IrIntf.Assign(emitter, Type()->IrType(), result.Arg1(), result.MainObject());
+        }
+    }
+    
+    public class ConstructorOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            switch (arity)
+            {
+                case 1:
+                {
+                    Cm.Sym.TypeSymbol* type = arguments[0].Type();
+                    if (type->IsPointerType() && type->GetPointerCount() > 1) // pointer default constructor
+                    {
+                        Cm.Sym.TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(type);
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[pointerType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetDefaultCtor(typeRepository, pointerType));
+                    }
+                    break;
+                }
+                case 2:
+                {
+                    Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+                    if (leftType->IsReferenceType())
+                    {
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                        Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                        if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // reference type copy constructor
+                        {
+                            if (leftType->IsConstType())
+                            {
+                                Cm.Sym.TypeSymbol* constReferenceType = typeRepository.MakeConstReferenceType(leftPlainType, span);
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[constReferenceType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[constReferenceType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, constReferenceType));
+                            }
+                            else
+                            {
+                                Cm.Sym.TypeSymbol* referenceType = typeRepository.MakeReferenceType(leftPlainType, span);
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[referenceType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[referenceType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, referenceType));
+                            }
+                        }
+                        else if ((leftPlainType is Cm.Sym.ClassTypeSymbol*) && (rightPlainType is Cm.Sym.ClassTypeSymbol*)) // reference type copy constructor with class type params
+                        {
+                            Cm.Sym.ClassTypeSymbol* leftClass = cast<Cm.Sym.ClassTypeSymbol*>(leftPlainType);
+                            Cm.Sym.ClassTypeSymbol* rightClass = cast<Cm.Sym.ClassTypeSymbol*>(rightPlainType);
+                            if (leftClass->HasBaseClass(rightClass) || rightClass->HasBaseClass(leftClass))
+                            {
+                                Cm.Sym.TypeSymbol* referenceType = typeRepository.MakeReferenceType(leftPlainType, span);
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[referenceType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[referenceType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, referenceType));
+                            }
+                        }
+                    }
+                    else if (leftType->IsRvalueRefType())
+                    {
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                        Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                        if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // rvalue reference type copy constructor
+                        {
+                            Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(leftPlainType, span);
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rvalueRefType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[rvalueRefType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, rvalueRefType));
+                        }
+                    }
+                    else if (leftType->IsPointerType() && leftType->GetPointerCount() == 2 && (leftType->GetBaseType() is Cm.Sym.VoidTypeSymbol*)) // void*
+                    {
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                        if (rightPlainType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) // void* copy constructor
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightPlainType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[rightPlainType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, rightPlainType));
+                        }
+                        else if (rightType->IsPointerType()) // conversion from pointer type to void*
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[rightType] = cache;
+                            }
+                            Cm.Sym.FunctionSymbol* ptrToVoidPtrConversion = cache->GetPtrToVoidPtrConversion(typeRepository, rightType, conversionTable, span);
+                            viableFunctions.Insert(ptrToVoidPtrConversion);
+                        }
+                    }
+                    else if (leftType->IsPointerType() && leftType->GetPointerCount() > 1) // pointer constructor
+                    {
+                        Cm.Sym.TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                        if (rightPlainType->IsVoidPtrType()) // pointer type to void* conversion;
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[pointerType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetVoidPtrToPtrConversion(typeRepository, pointerType, span));
+                            return;
+                        }
+                        else if (rightPlainType->IsNullPtrType()) // nullptr type to pointer type conversion
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[pointerType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetNullPtrToPtrConversion(typeRepository, pointerType, conversionTable));
+                            return;
+                        }
+                        else if (rightPlainType->IsPointerType())
+                        {
+                            if (Cm.Sym.TypesEqual(pointerType, rightPlainType)) // pointer copy constructor
+                            {
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[pointerType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, pointerType));
+                                return;
+                            }
+                            else
+                            {
+                                Cm.Sym.TypeSymbol* leftBaseType = pointerType->GetBaseType();
+                                if (leftBaseType is Cm.Sym.ClassTypeSymbol*)
+                                {
+                                    Cm.Sym.TypeSymbol* rightBaseType = rightPlainType->GetBaseType();
+                                    if (rightBaseType is Cm.Sym.ClassTypeSymbol*)
+                                    {
+                                        Cm.Sym.ClassTypeSymbol* leftClassType = cast<Cm.Sym.ClassTypeSymbol*>(leftBaseType);
+                                        Cm.Sym.ClassTypeSymbol* rightClassType = cast<Cm.Sym.ClassTypeSymbol*>(rightBaseType);
+                                        if (leftClassType->HasBaseClass(rightClassType) || rightClassType->HasBaseClass(leftClassType))
+                                        {
+                                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                                            if (cache == null)
+                                            {
+                                                cache = new DerivedTypeOpCache();
+                                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                                derivedTypeOpCacheMap[pointerType] = cache;
+                                            }
+                                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, pointerType));
+                                            return;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(pointerType, span);
+                        if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // pointer copy constructor 
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[pointerType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, pointerType));
+                        }
+                        else
+                        {
+                            Cm.Sym.TypeSymbol* rvalueRefRightType = typeRepository.MakeRvalueRefType(pointerType, span);
+                            if (Cm.Sym.TypesEqual(rvalueRefRightType, rightType)) // pointer move constructor
+                            {
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[pointerType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetMoveCtor(typeRepository, pointerType));
+                            }
+                            else if (rightPlainType->IsPointerType())
+                            {
+                                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                                if (cache == null)
+                                {
+                                    cache = new DerivedTypeOpCache();
+                                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                    derivedTypeOpCacheMap[pointerType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetExplicitPointerConversion(typeRepository, pointerType, rightPlainType, conversionTable));
+                                return;
+                            }                        
+                        }
+                    }
+                    else if (leftType->IsPointerType() && leftType->GetPointerCount() == 1 && (leftType->GetBaseType() is Cm.Sym.ULongTypeSymbol*))
+                    {
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        if (rightType->IsVoidPtrType())
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[rightType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetVoidPtrToUlongConversion(typeRepository, rightType, conversionTable, span));
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    
+    public class AssignmentOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            if (leftType->IsReferenceType())
+            {
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // reference type copy assignment
+                {
+                    if (leftType->IsConstType())
+                    {
+                        Cm.Sym.TypeSymbol* constReferenceType = typeRepository.MakeConstReferenceType(leftPlainType, span);
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[constReferenceType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[constReferenceType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, constReferenceType));
+                    }
+                    else
+                    {
+                        Cm.Sym.TypeSymbol* referenceType = typeRepository.MakeReferenceType(leftPlainType, span);
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[referenceType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[referenceType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, referenceType));
+                    }
+                }
+                else if ((leftPlainType is Cm.Sym.ClassTypeSymbol*) && (rightPlainType is Cm.Sym.ClassTypeSymbol*)) // reference type copy assignment with class type params
+                {
+                    Cm.Sym.ClassTypeSymbol* leftClass = cast<Cm.Sym.ClassTypeSymbol*>(leftPlainType);
+                    Cm.Sym.ClassTypeSymbol* rightClass = cast<Cm.Sym.ClassTypeSymbol*>(rightPlainType);
+                    if (leftClass->HasBaseClass(rightClass) || rightClass->HasBaseClass(leftClass))
+                    {
+                        Cm.Sym.TypeSymbol* referenceType = typeRepository.MakeReferenceType(leftPlainType, span);
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[referenceType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[referenceType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, referenceType));
+                    }
+                }
+            }
+            else if (leftType->IsRvalueRefType())
+            {
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // rvalue reference type copy assignment
+                {
+                    Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(leftPlainType, span);
+                    DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rvalueRefType];
+                    if (cache == null)
+                    {
+                        cache = new DerivedTypeOpCache();
+                        caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                        derivedTypeOpCacheMap[rvalueRefType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, rvalueRefType));
+                }
+            }
+            else if (leftType->IsPointerType() && leftType->GetPointerCount() > 1) // pointer assignment
+            {
+                Cm.Sym.TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (rightPlainType->IsNullPtrType()) // pointer from nullptr type assignment
+                {
+                    DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                    if (cache == null)
+                    {
+                        cache = new DerivedTypeOpCache();
+                        caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                        derivedTypeOpCacheMap[pointerType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, pointerType));
+                    return;
+                }
+                else if (rightType->IsPointerType())
+                {
+                    if (Cm.Sym.TypesEqual(pointerType, rightPlainType)) // pointer copy assignment
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[pointerType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, pointerType));
+                        return;
+                    }
+                    else if ((pointerType->GetBaseType() is Cm.Sym.ClassTypeSymbol*) && (rightPlainType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        Cm.Sym.ClassTypeSymbol* leftClass = cast<Cm.Sym.ClassTypeSymbol*>(pointerType->GetBaseType());
+                        Cm.Sym.ClassTypeSymbol* rightClass = cast<Cm.Sym.ClassTypeSymbol*>(rightPlainType->GetBaseType());
+                        if (leftClass->HasBaseClass(rightClass) || rightClass->HasBaseClass(leftClass))
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[pointerType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, pointerType));
+                        }
+                    }
+                }
+                else
+                {
+                    Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(pointerType, span);
+                    if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // pointer copy assignment
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[pointerType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, pointerType));
+                    }
+                    else
+                    {
+                        Cm.Sym.TypeSymbol* rvalueRefRightType = typeRepository.MakeRvalueRefType(pointerType, span);
+                        if (Cm.Sym.TypesEqual(rvalueRefRightType, rightType)) // pointer move assignment
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[pointerType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetMoveAssignment(typeRepository, pointerType));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public class EqualityOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
+            if (leftType->IsPointerType() || leftType->IsNullPtrType())
+            {
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (rightType->IsPointerType() || rightType->IsNullPtrType())
+                {
+                    if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // operator==(ptr, ptr)
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftPlainType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[leftPlainType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftPlainType));
+                    }
+                    else if (leftType->IsNullPtrType()) // operator==(null, ptr)
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[rightType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpEqual(typeRepository, rightType));
+                    }
+                    else if (rightType->IsNullPtrType()) // operator==(ptr, null)
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[leftType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftType));
+                    }
+                    else if ((leftType->GetBaseType() is Cm.Sym.ClassTypeSymbol*) && (rightType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        Cm.Sym.ClassTypeSymbol* leftClass = cast<Cm.Sym.ClassTypeSymbol*>(leftType->GetBaseType());
+                        Cm.Sym.ClassTypeSymbol* rightClass = cast<Cm.Sym.ClassTypeSymbol*>(rightType->GetBaseType());
+                        if (leftClass->HasBaseClass(rightClass))
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightPlainType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[rightPlainType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetOpEqual(typeRepository, rightPlainType));
+                        }
+                        else if (rightClass->HasBaseClass(leftClass))
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftPlainType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[leftPlainType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftPlainType));
+                        }
+                    }
+                }
+            }
+        }    
+    }
+
+    public class LessOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            if (leftType->IsPointerType())
+            {
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                if (rightType->IsPointerType())
+                {
+                    Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
+                    Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                    if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // operator<(ptr, ptr)
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftPlainType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[leftPlainType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpLess(typeRepository, leftPlainType));
+                    }
+                    else if ((leftType->GetBaseType() is Cm.Sym.ClassTypeSymbol*) && (rightType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        Cm.Sym.ClassTypeSymbol* leftClass = cast<Cm.Sym.ClassTypeSymbol*>(leftType->GetBaseType());
+                        Cm.Sym.ClassTypeSymbol* rightClass = cast<Cm.Sym.ClassTypeSymbol*>(rightType->GetBaseType());
+                        if (leftClass->HasBaseClass(rightClass) || rightClass->HasBaseClass(leftClass))
+                        {
+                            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftPlainType];
+                            if (cache == null)
+                            {
+                                cache = new DerivedTypeOpCache();
+                                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                                derivedTypeOpCacheMap[leftPlainType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetOpLess(typeRepository, leftPlainType));
+                        }
+                    }
+                }
+            }
+        }        
+    }
+
+    public class AdditiveOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            if (leftType->IsPointerType())
+            {
+                if (leftType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (rightPlainType->IsIntegerTypeSymbol())
+                {
+                    DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftType];
+                    if (cache == null)
+                    {
+                        cache = new DerivedTypeOpCache();
+                        caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                        derivedTypeOpCacheMap[leftType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetOpAddPtrInt(typeRepository, leftType));
+                }
+            }
+            else
+            {
+                Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
+                if (leftPlainType->IsIntegerTypeSymbol())
+                {
+                    Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                    if (rightType->IsPointerType())
+                    {
+                        if (rightType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[rightType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpAddIntPtr(typeRepository, rightType));
+                    }
+                }
+            }
+        }
+    }    
+    
+    public class SubtractiveOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            if (leftType->IsPointerType())
+            {
+                if (leftType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
+                if (rightPlainType->IsIntegerTypeSymbol())
+                {
+                    DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftType];
+                    if (cache == null)
+                    {
+                        cache = new DerivedTypeOpCache();
+                        caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                        derivedTypeOpCacheMap[leftType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetOpSubPtrInt(typeRepository, leftType));
+                }
+                else if (rightType->IsPointerType())
+                {
+                    if (Cm.Sym.TypesEqual(leftType, rightType))
+                    {
+                        DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftType];
+                        if (cache == null)
+                        {
+                            cache = new DerivedTypeOpCache();
+                            caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                            derivedTypeOpCacheMap[leftType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetOpSubPtrPtr(typeRepository, leftType));
+                    }
+                }
+            }
+        }    
+    }   
+
+    public class DerefOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 1) return;
+            Cm.Sym.TypeSymbol* operandType = arguments[0].Type();
+            if (operandType->IsPointerType())
+            {
+                if (operandType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[operandType];
+                if (cache == null)
+                {
+                    cache = new DerivedTypeOpCache();
+                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                    derivedTypeOpCacheMap[operandType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpDeref(typeRepository, operandType));
+            }
+        }
+    }
+    
+    public class IncrementOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 1) return;
+            Cm.Sym.TypeSymbol* operandType = arguments[0].Type();
+            if (operandType->IsPointerType())
+            {
+                if (operandType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[operandType];
+                if (cache == null)
+                {
+                    cache = new DerivedTypeOpCache();
+                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                    derivedTypeOpCacheMap[operandType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpIncPtr(typeRepository, operandType));
+            }
+        }
+    }
+
+    public class DecrementOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 1) return;
+            Cm.Sym.TypeSymbol* operandType = arguments[0].Type();
+            if (operandType->IsPointerType())
+            {
+                if (operandType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[operandType];
+                if (cache == null)
+                {
+                    cache = new DerivedTypeOpCache();
+                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                    derivedTypeOpCacheMap[operandType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpDecPtr(typeRepository, operandType));
+            }
+        }
+    }
+    
+    public class AddressOfGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 1) return;
+            Cm.Sym.TypeSymbol* plainOperandType = typeRepository.MakePlainType(arguments[0].Type());
+            if (plainOperandType is Cm.Sym.VoidTypeSymbol*) return;
+            Cm.Sym.TypeSymbol* pointerType = typeRepository.MakePointerType(plainOperandType, span);
+            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+            if (cache == null)
+            {
+                cache = new DerivedTypeOpCache();
+                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                derivedTypeOpCacheMap[pointerType] = cache;
+            }
+            viableFunctions.Insert(cache->GetOpAddrOf(typeRepository, pointerType));
+        }
+    }
+
+    public class ArrowOpGroup : DerivedTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*>& derivedTypeOpCacheMap, List<UniquePtr<DerivedTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 1) return;
+            Cm.Sym.TypeSymbol* operandType = arguments[0].Type();
+            if (operandType->IsPointerType())
+            {
+                if (operandType->GetBaseType() is Cm.Sym.VoidTypeSymbol*) return;
+                DerivedTypeOpCache* cache = derivedTypeOpCacheMap[operandType];
+                if (cache == null)
+                {
+                    cache = new DerivedTypeOpCache();
+                    caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                    derivedTypeOpCacheMap[operandType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpArrow(typeRepository, operandType));
+            }
+        }
+    }
+}

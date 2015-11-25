@@ -1,0 +1,85 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Core
+{
+    public abstract class ExternalConstantRepository
+    {
+        public nothrow ExternalConstantRepository() : exceptionBaseIdTable(null), classHierarchyTable(null)
+        {
+        }
+        public virtual ~ExternalConstantRepository()
+        {
+        }
+        public Ir.Intf.Global* GetExceptionBaseIdTable() 
+        {
+            exceptionBaseIdTable = Cm.IrIntf.MakeGlobal(Cm.IrIntf.GetExceptionBaseIdTableName(), Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI32(), 2u));
+            exceptionBaseIdTable->SetOwned();
+            ownedObjects.Add(UniquePtr<Ir.Intf.Object>(exceptionBaseIdTable));
+            return exceptionBaseIdTable;
+        }
+        public Ir.Intf.Global* GetClassHierarchyTable()
+        {
+            classHierarchyTable = Cm.IrIntf.MakeGlobal(Cm.IrIntf.GetClassHierarchyTableName(), Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI64(), 2u));
+            classHierarchyTable->SetOwned();
+            ownedObjects.Add(UniquePtr<Ir.Intf.Object>(classHierarchyTable));
+            return classHierarchyTable;
+        }
+        public abstract void Write(CodeFormatter& codeFormatter);
+        protected Ir.Intf.Global* ExceptionBaseIdTable() const
+        {
+            return exceptionBaseIdTable;
+        }
+        protected Ir.Intf.Global* ClassHierarchyTable() const
+        {
+            return classHierarchyTable;
+        }
+        private Ir.Intf.Global* exceptionBaseIdTable;
+        private Ir.Intf.Global* classHierarchyTable;
+        private List<UniquePtr<Ir.Intf.Object>> ownedObjects;
+    }
+    
+    public class LlvmExternalConstantRepository : ExternalConstantRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter)
+        {
+            Ir.Intf.Global* exceptionBaseIdTable = ExceptionBaseIdTable();
+            if (exceptionBaseIdTable != null)
+            {
+                codeFormatter.WriteLine("@" + Cm.IrIntf.GetExceptionBaseIdTableName() + " = external constant i32*");
+            }
+            Ir.Intf.Global* classHierarchyTable = ClassHierarchyTable();
+            if (classHierarchyTable != null)
+            {
+                codeFormatter.WriteLine("@" + Cm.IrIntf.GetClassHierarchyTableName() + " = external constant i64*");
+            }
+        }
+    }
+
+    public class CExternalConstantRepository : ExternalConstantRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter)
+        {
+            Ir.Intf.Global* exceptionBaseIdTable = ExceptionBaseIdTable();
+            if (exceptionBaseIdTable != null)
+            {
+                codeFormatter.WriteLine("extern i32* " + Cm.IrIntf.GetExceptionBaseIdTableName() + ";");
+            }
+            Ir.Intf.Global* classHierarchyTable = ClassHierarchyTable();
+            if (classHierarchyTable != null)
+            {
+                codeFormatter.WriteLine("extern ui64* " + Cm.IrIntf.GetClassHierarchyTableName() + ";");
+            }
+        }
+    }
+}

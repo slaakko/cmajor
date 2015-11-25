@@ -1,0 +1,388 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Core
+{
+    public class EnumTypeOpRepository
+    {
+        public EnumTypeOpRepository(Cm.Sym.TypeRepository& typeRepository_) : typeRepository(typeRepository_)
+        {
+            enumTypeOpGroupMap["@constructor"] = &enumConstructorOpGroup;
+            enumTypeOpGroupMap["operator="] = &enumAssignmentOpGroup;
+            enumTypeOpGroupMap["operator=="] = &enumEqualOpGroup;
+            enumTypeOpGroupMap["operator<"] = &enumLessOpGroup;
+        }
+        public void CollectViableFunctions(const string& groupName, int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, 
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            #assert(arity == arguments.Count());
+            if (arity < 1 || arity > 2) return;
+            HashMap<string, EnumTypeOpGroup*>.ConstIterator i = enumTypeOpGroupMap.CFind(groupName);
+            if (i != enumTypeOpGroupMap.CEnd())
+            {
+                EnumTypeOpGroup* group = i->second;
+                group->CollectViableFunctions(arity, arguments, conversionTable, span, typeRepository, enumTypeOpCacheMap, caches, viableFunctions);
+            }
+        }
+        public void InsertEnumConversionsToConversionTable(Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeSymbol* enumType, const Span& span)
+        {
+            EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+            if (cache == null)
+            {
+                cache = new EnumTypeOpCache();
+                caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                enumTypeOpCacheMap[enumType] = cache;
+            }
+            Cm.Sym.FunctionSymbol* conversionToUnderlyingType = cache->GetConversionToUnderlyingType(typeRepository, enumType, conversionTable);
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+        private HashMap<string, EnumTypeOpGroup*> enumTypeOpGroupMap;
+        private HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*> enumTypeOpCacheMap;
+        private List<UniquePtr<EnumTypeOpCache>> caches;
+        private EnumConstructorOpGroup enumConstructorOpGroup;
+        private EnumAssignmentOpGroup enumAssignmentOpGroup;
+        private EnumEqualOpGroup enumEqualOpGroup;
+        private EnumLessOpGroup enumLessOpGroup;
+    }
+    
+    public class EnumTypeOpCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (defaultCtor.IsNull())
+            {
+                defaultCtor.Reset(new DefaultCtor(typeRepository, enumType));
+            }
+            return defaultCtor.GetPtr(); 
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (copyCtor.IsNull())
+            {
+                copyCtor.Reset(new CopyCtor(typeRepository, enumType));
+            }
+            return copyCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (moveCtor.IsNull())
+            {
+                moveCtor.Reset(new MoveCtor(typeRepository, enumType));
+            }
+            return copyCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (copyAssignment.IsNull())
+            {
+                copyAssignment.Reset(new CopyAssignment(typeRepository, enumType));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (moveAssignment.IsNull())
+            {
+                moveAssignment.Reset(new MoveAssignment(typeRepository, enumType));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (opEqual.IsNull())
+            {
+                opEqual.Reset(new OpEqual(typeRepository, enumType));
+            }
+            return opEqual.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpLess(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (opLess.IsNull())
+            {
+                opLess.Reset(new OpLess(typeRepository, enumType));
+            }
+            return opLess.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetConversionToUnderlyingType(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType, Cm.Sym.ConversionTable& conversionTable)
+        {
+            if (conversionToUnderlyingType.IsNull())
+            {
+                Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(enumType);
+                conversionToUnderlyingType.Reset(new ConvertingCtor(typeRepository, enumTypeSymbol->GetUnderlyingType(), enumType, Cm.Sym.ConversionType.implicit, ConversionInst.bitcast, 
+                    Cm.Sym.ConversionRank.conversion, 100));
+                conversionTable.AddConversion(conversionToUnderlyingType.GetPtr());
+            }
+            return conversionToUnderlyingType.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetConversionFromUnderlyingType(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
+        {
+            if (conversionFromUnderlyingType.IsNull())
+            {
+                Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(enumType);
+                conversionFromUnderlyingType.Reset(new ConvertingCtor(typeRepository, enumTypeSymbol, enumTypeSymbol->GetUnderlyingType(), Cm.Sym.ConversionType.explicit_, ConversionInst.bitcast, 
+                    Cm.Sym.ConversionRank.conversion, 100));
+            }
+            return conversionFromUnderlyingType.GetPtr();
+        }
+        private UniquePtr<Cm.Sym.FunctionSymbol> defaultCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opEqual;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opLess;
+        private UniquePtr<Cm.Sym.FunctionSymbol> conversionToUnderlyingType;
+        private UniquePtr<Cm.Sym.FunctionSymbol> conversionFromUnderlyingType;
+    }
+    
+    public abstract class EnumTypeOpGroup
+    {
+        public virtual ~EnumTypeOpGroup()
+        {
+        }
+        public abstract void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository,
+            HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*>& enumTypeOpCacheMap, List<UniquePtr<EnumTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions);
+    }
+    
+    public class EnumConstructorOpGroup : EnumTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository,
+            HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*>& enumTypeOpCacheMap, List<UniquePtr<EnumTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity < 1 || arity > 2) return;
+            switch (arity)
+            {
+                case 1:
+                {
+                    Cm.Sym.TypeSymbol* type = arguments[0].Type();
+                    if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.EnumTypeSymbol*)) // enum default constructor
+                    {
+                        Cm.Sym.TypeSymbol* enumType = type->GetBaseType();
+                        EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                        if (cache == null)
+                        {
+                            cache = new EnumTypeOpCache();
+                            caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                            enumTypeOpCacheMap[enumType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetDefaultCtor(typeRepository, enumType));
+                    }
+                    break;
+                }
+                case 2:
+                {
+                    Cm.Sym.TypeSymbol* type = arguments[0].Type();
+                    if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.EnumTypeSymbol*))
+                    {
+                        Cm.Sym.TypeSymbol* enumType = type->GetBaseType();
+                        Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                        if (Cm.Sym.TypesEqual(enumType, rightType)) // enum copy constructor
+                        {
+                            EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                            if (cache == null)
+                            {
+                                cache = new EnumTypeOpCache();
+                                caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                enumTypeOpCacheMap[enumType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, enumType));
+                        }
+                        else 
+                        {
+                            Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(enumType, span);
+                            if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // enum copy constructor
+                            {
+                                EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                                if (cache == null)
+                                {
+                                    cache = new EnumTypeOpCache();
+                                    caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                    enumTypeOpCacheMap[enumType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, enumType));
+                            }
+                            else if (Cm.Sym.TypesEqual(typeRepository.MakeReferenceType(enumType, span), rightType)) // enum copy constructor
+                            {
+                                EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                                if (cache == null)
+                                {
+                                    cache = new EnumTypeOpCache();
+                                    caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                    enumTypeOpCacheMap[enumType] = cache;
+                                }
+                                viableFunctions.Insert(cache->GetCopyCtor(typeRepository, enumType));
+                            }
+                            else
+                            {
+                                Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(enumType, span);
+                                if (Cm.Sym.TypesEqual(rvalueRefType, rightType)) // enum move constructor
+                                {
+                                    EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                                    if (cache == null)
+                                    {
+                                        cache = new EnumTypeOpCache();
+                                        caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                        enumTypeOpCacheMap[enumType] = cache;
+                                    }
+                                    viableFunctions.Insert(cache->GetMoveCtor(typeRepository, enumType));
+                                }
+                                else
+                                {
+                                    if (rightType->IsIntegerTypeSymbol()) // conversion from underlying type
+                                    {
+                                        EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                                        if (cache == null)
+                                        {
+                                            cache = new EnumTypeOpCache();
+                                            caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                            enumTypeOpCacheMap[enumType] = cache;
+                                        }
+                                        viableFunctions.Insert(cache->GetConversionFromUnderlyingType(typeRepository, enumType));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    public class EnumAssignmentOpGroup : EnumTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository,
+            HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*>& enumTypeOpCacheMap, List<UniquePtr<EnumTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* type = arguments[0].Type();
+            if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.EnumTypeSymbol*))
+            {
+                Cm.Sym.TypeSymbol* enumType = type->GetBaseType();
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                if (Cm.Sym.TypesEqual(enumType, rightType)) // enum copy assignment
+                {
+                    EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                    if (cache == null)
+                    {
+                        cache = new EnumTypeOpCache();
+                        caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                        enumTypeOpCacheMap[enumType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, enumType));
+                }
+                else
+                {
+                    Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(enumType, span);
+                    if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // enum copy assignment
+                    {
+                        EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                        if (cache == null)
+                        {
+                            cache = new EnumTypeOpCache();
+                            caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                            enumTypeOpCacheMap[enumType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, enumType));
+                    }
+                    else if (Cm.Sym.TypesEqual(typeRepository.MakeReferenceType(enumType, span), rightType)) // enum copy assignment
+                    {
+                        EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                        if (cache == null)
+                        {
+                            cache = new EnumTypeOpCache();
+                            caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                            enumTypeOpCacheMap[enumType] = cache;
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, enumType));
+                    }
+                    else
+                    {
+                        Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(enumType, span);
+                        if (Cm.Sym.TypesEqual(rvalueRefType, rightType)) // enum move assignment
+                        {
+                            EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                            if (cache == null)
+                            {
+                                cache = new EnumTypeOpCache();
+                                caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                                enumTypeOpCacheMap[enumType] = cache;
+                            }
+                            viableFunctions.Insert(cache->GetMoveAssignment(typeRepository, enumType));
+                        }
+                    }
+                }
+            }
+            else if (type->IsPointerType() && type->GetPointerCount() == 1 && type->GetBaseType()->IsIntegerTypeSymbol())
+            {
+                Cm.Sym.TypeSymbol* rightType = typeRepository.MakePlainType(arguments[1].Type());
+                if (rightType is Cm.Sym.EnumTypeSymbol*)
+                {
+                    Cm.Sym.TypeSymbol* enumType = rightType;
+                    EnumTypeOpCache* cache = enumTypeOpCacheMap[enumType];
+                    if (cache == null)
+                    {
+                        cache = new EnumTypeOpCache();
+                        caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                        enumTypeOpCacheMap[enumType] = cache;
+                    }
+                    viableFunctions.Insert(cache->GetConversionToUnderlyingType(typeRepository, enumType, conversionTable));
+                }
+            }
+        }
+    }    
+
+    public class EnumEqualOpGroup : EnumTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository,
+            HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*>& enumTypeOpCacheMap, List<UniquePtr<EnumTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+            if ((leftType is Cm.Sym.EnumTypeSymbol*) && Cm.Sym.TypesEqual(leftType, rightType))
+            {
+                EnumTypeOpCache* cache = enumTypeOpCacheMap[leftType];
+                if (cache == null)
+                {
+                    cache = new EnumTypeOpCache();
+                    caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                    enumTypeOpCacheMap[leftType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftType));
+            }
+        }
+    }
+
+    public class EnumLessOpGroup : EnumTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, const Span& span, Cm.Sym.TypeRepository& typeRepository,
+            HashMap<Cm.Sym.TypeSymbol*, EnumTypeOpCache*>& enumTypeOpCacheMap, List<UniquePtr<EnumTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+            if ((leftType is Cm.Sym.EnumTypeSymbol*) && Cm.Sym.TypesEqual(leftType, rightType))
+            {
+                EnumTypeOpCache* cache = enumTypeOpCacheMap[leftType];
+                if (cache == null)
+                {
+                    cache = new EnumTypeOpCache();
+                    caches.Add(UniquePtr<EnumTypeOpCache>(cache));
+                    enumTypeOpCacheMap[leftType] = cache;
+                }
+                viableFunctions.Insert(cache->GetOpLess(typeRepository, leftType));
+            }
+        }
+    }
+}
