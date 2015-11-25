@@ -427,6 +427,17 @@ namespace Cm.Sym
                 GetContainerScope()->SetBase(baseClass->GetContainerScope());
             }            
         }
+        public nothrow bool HasBaseClass(ClassTypeSymbol* cls) const
+        {
+            return baseClass == cls || baseClass != null && baseClass->HasBaseClass(cls);
+        }
+        public nothrow bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const
+        {
+            if (baseClass == null) return false;
+            distance = distance + 1;
+            if (baseClass == cls) return true;
+            return baseClass->HasBaseClass(cls, distance);
+        }
         public nothrow inline short VPtrIndex() const
         {
             return vptrIndex;
@@ -609,7 +620,19 @@ namespace Cm.Sym
         {
             base->InitVirtualFunctionTables();
             InitVtbl();
-        }  
+        }
+        public nothrow inline const List<MemberVariableSymbol*>& MemberVariables() const
+        {
+            return memberVariables;
+        }
+        public nothrow inline const List<FunctionSymbol*>& Vtbl() const
+        {
+            return vtbl;
+        }
+        public nothrow inline FunctionSymbol* Destructor() const
+        {
+            return destructor;
+        }
         private ulong cid;
         private ulong key;
         private int level;

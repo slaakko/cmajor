@@ -1,0 +1,203 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Core
+{
+    public abstract class StaticMemberVariableRepository
+    {
+        public nothrow StaticMemberVariableRepository() : classTypeMap(null)
+        {
+        }
+        public virtual ~StaticMemberVariableRepository()
+        {
+        }
+        public void SetClassTypeMap(HashMap<string, Cm.Sym.ClassTypeSymbol*>* classTypeMap_)
+        {
+            classTypeMap = classTypeMap_;
+        }
+        public void Add(Cm.Sym.MemberVariableSymbol* staticMemberVariable)
+        {
+            string assemblyName = Cm.IrIntf.MakeAssemblyName(staticMemberVariable->Class()->FullName() + "." + staticMemberVariable->Name());
+            Ir.Intf.Object* irObject = Cm.IrIntf.MakeGlobal(assemblyName, Cm.IrIntf.Pointer(staticMemberVariable->GetType()->IrType(), 1u));
+            irObject->SetOwned();
+            HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>.ConstIterator i = staticMemberVariableMap.CFind(staticMemberVariable);
+            if (i != staticMemberVariableMap.CEnd())
+            {
+                throw Error("static member variable '" + staticMemberVariable->FullName() + "' already added to repository", staticMemberVariable->GetSpan());
+            }
+            nameMap[staticMemberVariable->FullName()] = staticMemberVariable;
+            staticMemberVariableMap[staticMemberVariable] = irObject;
+            ownedIrObjects.Add(UniquePtr<Ir.Intf.Object>(irObject));
+            if (staticMemberVariable->GetType() is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* classTypeSymbol = null;
+                if (classTypeMap != null)
+                {
+                    HashMap<string, Cm.Sym.ClassTypeSymbol*>.ConstIterator i = classTypeMap->CFind(staticMemberVariable->GetType()->FullName());
+                    if (i != classTypeMap->CEnd())
+                    {
+                        classTypeSymbol = i->second;
+                    }
+                }
+                if (classTypeSymbol == null)
+                {
+                    classTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(staticMemberVariable->GetType());
+                }
+                if (classTypeSymbol->Destructor() != null)
+                {
+                    Ir.Intf.Object* destructionNode = Cm.IrIntf.MakeGlobal(Cm.IrIntf.MakeDestructionNodeName(assemblyName), 
+                        Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType(Cm.IrIntf.GetDestructionNodeTypeName(), false), 1u));
+                    destructionNode->SetOwned();
+                    ownedIrObjects.Add(UniquePtr<Ir.Intf.Object>(destructionNode));
+                    destructionNodeMap[staticMemberVariable] = destructionNode;
+                }
+            }
+        }
+        public Ir.Intf.Object* GetStaticMemberVariableIrObject(Cm.Sym.MemberVariableSymbol* staticMemberVariable) const
+        {
+            HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>.ConstIterator i = staticMemberVariableMap.CFind(staticMemberVariable);
+            if (i != staticMemberVariableMap.CEnd())
+            {
+                return i->second;
+            }
+            HashMap<string, Cm.Sym.MemberVariableSymbol*>.ConstIterator j = nameMap.CFind(staticMemberVariable->FullName());
+            if (j !=  nameMap.CEnd())
+            {
+                i = staticMemberVariableMap.CFind(j->second);
+            }
+            if (i != staticMemberVariableMap.CEnd())
+            {
+                return i->second;
+            }
+            throw Error("static member variable '" + staticMemberVariable->FullName() + "' not found in the repository", staticMemberVariable->GetSpan());
+        }
+        public Ir.Intf.Object* GetDestructionNode(Cm.Sym.MemberVariableSymbol* staticMemberVariable) const
+        {
+            HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>.ConstIterator i = destructionNodeMap.CFind(staticMemberVariable);
+            if (i != destructionNodeMap.CEnd())
+            {
+                return i->second;
+            }
+            HashMap<string, Cm.Sym.MemberVariableSymbol*>.ConstIterator j = nameMap.CFind(staticMemberVariable->FullName());
+            if (j !=  nameMap.CEnd())
+            {
+                i = destructionNodeMap.CFind(j->second);
+            }
+            if (i != destructionNodeMap.CEnd())
+            {
+                return i->second;
+            }
+            throw Error("destruction node for '" + staticMemberVariable->FullName() + "' not found in the repository", staticMemberVariable->GetSpan());
+        }
+        public abstract void Write(CodeFormatter& codeFormatter);
+        protected nothrow inline const HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& GetStaticMemberVariableMap() const
+        {
+            return staticMemberVariableMap;
+        }
+        protected nothrow inline const HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& GetDestructionNodeMap() const
+        {
+            return destructionNodeMap;
+        }
+        protected void Own(Ir.Intf.Type* type)
+        {
+            if (!type->Owned())
+            {
+                type->SetOwned();
+                ownedIrTypes.Add(UniquePtr<Ir.Intf.Type>(type));
+            }
+        }
+        private HashMap<string, Cm.Sym.MemberVariableSymbol*> nameMap;
+        private HashMap<string, Cm.Sym.ClassTypeSymbol*>* classTypeMap;
+        private HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*> staticMemberVariableMap;
+        private HashMap<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*> destructionNodeMap;
+        private List<UniquePtr<Ir.Intf.Object>> ownedIrObjects;
+        private List<UniquePtr<Ir.Intf.Type>> ownedIrTypes;
+    }
+    
+    public class LlvmStaticMemberVariableRepository : StaticMemberVariableRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter)
+        {
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetStaticMemberVariableMap())
+            {
+                Cm.Sym.MemberVariableSymbol* staticMemberVariable = p.first;
+                Ir.Intf.Object* irObject = p.second;
+                string declaration = irObject->Name();
+                Cm.Sym.TypeSymbol* staticMemberVarType = staticMemberVariable->GetType();
+                if (staticMemberVarType->IsArrayType())
+                {
+                    Ir.Intf.Type* staticMemberVarIrArrayType = Cm.IrIntf.Array(staticMemberVarType->GetBaseType()->IrType(), staticMemberVarType->GetLastArrayDimension());
+                    Own(staticMemberVarIrArrayType);
+                    declaration.Append(" = global ").Append(staticMemberVarIrArrayType->Name());
+                }
+                else
+                {
+                    declaration.Append(" = global ").Append(staticMemberVarType->IrType()->Name());
+                }
+                Ir.Intf.Object* defaultValue = staticMemberVarType->DefaultIrValue();
+                if (defaultValue != null && !staticMemberVarType->IsArrayType())
+                {
+                    declaration.Append(' ').Append(defaultValue->Name());
+                }
+                else
+                {
+                    declaration.Append(" zeroinitializer");
+                }
+                codeFormatter.WriteLine(declaration);
+            }
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetDestructionNodeMap())
+            {
+                Ir.Intf.Object* destructionNode = p.second;
+                string destructionNodeDeclaration = destructionNode->Name();
+                destructionNodeDeclaration.Append(" = global %" + Cm.IrIntf.GetDestructionNodeTypeName() + " zeroinitializer");
+                codeFormatter.WriteLine(destructionNodeDeclaration);
+            }
+        }
+    }
+
+    public class CStaticMemberVariableRepository : StaticMemberVariableRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter)
+        {
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetStaticMemberVariableMap())
+            {
+                Cm.Sym.MemberVariableSymbol* staticMemberVariable = p.first;
+                Ir.Intf.Object* irObject = p.second;
+                string declaration = irObject->Name();
+                Cm.Sym.TypeSymbol* staticMemberVarType = staticMemberVariable->GetType();
+                if (staticMemberVarType->IsArrayType())
+                {
+                    declaration.Append(staticMemberVarType->GetBaseType()->IrType()->Name());
+                }
+                else
+                {
+                    declaration.Append(staticMemberVarType->IrType()->Name());
+                }
+                declaration.Append(" ").Append(irObject->Name());
+                if (staticMemberVarType->IsArrayType())
+                {
+                    declaration.Append("[").Append(ToString(staticMemberVarType->GetLastArrayDimension())).Append("]");
+                }
+                declaration.Append(";");
+                codeFormatter.WriteLine(declaration);
+            }
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetDestructionNodeMap())
+            {
+                Ir.Intf.Object* destructionNode = p.second;
+                string destructionNodeDeclaration = Cm.IrIntf.GetDestructionNodeTypeName();
+                destructionNodeDeclaration.Append(" ").Append(destructionNode->Name()).Append(";");
+                codeFormatter.WriteLine(destructionNodeDeclaration);
+            }
+        }
+    }
+}

@@ -299,7 +299,7 @@ void Visit(std::vector<std::string>& classOrder, const std::string& classTypeNam
     }
 }
 
-std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
+std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classMap, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
 {
     std::vector<std::string> classNameOrder;
     std::unordered_set<std::string> visited;

@@ -1,0 +1,480 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Core
+{
+    public abstract class IrClassTypeRepository
+    {
+        public virtual ~IrClassTypeRepository()
+        {
+        }
+        public nothrow bool Added(Cm.Sym.ClassTypeSymbol* classType) const
+        {
+            return classTypeMap.CFind(classType->FullName()) != classTypeMap.CEnd();
+        }
+        public void AddClassType(Cm.Sym.ClassTypeSymbol* classTypeSymbol)
+        {
+            classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
+        }
+        public abstract void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
+        public abstract void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter);
+        public abstract void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
+        public abstract void WriteDestructionNodeDef(CodeFormatter& codeFormatter);
+        public nothrow inline const HashMap<string, Cm.Sym.ClassTypeSymbol*>& ClassTypeMap() const
+        {
+            return classTypeMap;
+        }
+        public void SetLayoutIndeces()
+        {
+            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : classTypeMap)
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                int index = 0;
+                if (classType->BaseClass() != null)
+                {
+                    ++index;
+                }
+                if (!classType->MemberVariables().IsEmpty())
+                {
+                    for (Cm.Sym.MemberVariableSymbol* memberVariable : classType->MemberVariables())
+                    {
+                        if (index == classType->VPtrIndex())
+                        {
+                            ++index;
+                        }
+                        memberVariable->SetLayoutIndex(index);
+                        ++index;
+                    }
+                }
+            }
+        }
+        private HashMap<string, Cm.Sym.ClassTypeSymbol*> classTypeMap;
+    }
+    
+    public class LlvmIrClassTypeRepository : IrClassTypeRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        {
+            WriteDestructionNodeDef(codeFormatter);
+            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                if (!classType->IrTypeMade())
+                {
+                    classType->MakeIrType();
+                }
+                WriteIrLayout(classType, codeFormatter);
+                if (classType->IsVirtual())
+                {
+                    WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+                }
+            }
+        }
+        public override void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter)
+        {
+            List<Ir.Intf.Type*> memberTypes;
+            List<string> memberNames;
+            string tagName = classType->GetMangleId() + "_";
+            int index = 0;
+            if (classType->BaseClass() != null)
+            {
+                if (!classType->BaseClass()->IrTypeMade())
+                {
+                    classType->BaseClass()->MakeIrType();
+                }
+                memberTypes.Add(classType->BaseClass()->IrType()->Clone());
+                memberNames.Add("__base");
+                ++index;
+            }
+            if (classType->MemberVariables().IsEmpty())
+            {
+                if (classType->VPtrIndex() != -1)
+                {
+                    memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                    memberNames.Add("__vptr");
+                }
+                else if (classType->BaseClass() == null)
+                {
+                    memberTypes.Add(Cm.IrIntf.I8());
+                    memberNames.Add("__dummy");
+                }
+            }
+            else
+            {
+                for (Cm.Sym.MemberVariableSymbol* memberVariable : classType->MemberVariables())
+                {
+                    if (index == classType->VPtrIndex())
+                    {
+                        memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                        memberNames.Add("__vptr");
+                        ++index;
+                    }
+                    Cm.Sym.TypeSymbol* memberVarType = memberVariable->GetType();
+                    if (!memberVarType->IrTypeMade())
+                    {
+                        memberVarType->MakeIrType();
+                    }
+                    if (!memberVarType->GetBaseType()->IrTypeMade())
+                    {
+                        memberVarType->GetBaseType()->MakeIrType();
+                    }
+                    if (memberVarType->IsPureArrayType())
+                    {
+                        Ir.Intf.Type* memberVarArrayType = Cm.IrIntf.Array(memberVarType->GetBaseType()->IrType(), memberVarType->GetLastArrayDimension());
+                        memberTypes.Add(memberVarArrayType);
+                    }
+                    else
+                    {
+                        memberTypes.Add(memberVarType->IrType()->Clone());
+                    }
+                    memberNames.Add(memberVariable->Name());
+                    memberVariable->SetLayoutIndex(index);
+                    ++index;
+                }
+            }
+            UniquePtr<Ir.Intf.Type> irTypeDeclaration(Cm.IrIntf.Structure(tagName, memberTypes, memberNames));
+            string typeDeclaration = classType->IrType()->Name() + " = type " + irTypeDeclaration->Name();
+            codeFormatter.WriteLine(typeDeclaration);
+        }
+        public override void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        {
+            if (!classType->IsVirtual()) return;
+            UniquePtr<Ir.Intf.Type> i8PtrType(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u));
+            i8PtrType->SetOwned();
+            UniquePtr<Ir.Intf.Type> vtblIrType(Cm.IrIntf.Array(i8PtrType->Clone(), classType->Vtbl().Count()));
+            vtblIrType->SetOwned();
+            string vtblName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "vtbl");
+            UniquePtr<Ir.Intf.Object> vtblIrObject(Cm.IrIntf.MakeGlobal(vtblName, vtblIrType.GetPtr()));
+            vtblIrObject->SetOwned();
+            UniquePtr<Ir.Intf.Object> classNameIrValue(Cm.IrIntf.MakeStringConstant(classType->FullName()));
+            classNameIrValue->SetOwned();
+            UniquePtr<Ir.Intf.Object> classNameIrObject(Cm.IrIntf.MakeGlobal(Cm.IrIntf.MakeClassNameAssemblyName(classType->FullName()), Cm.IrIntf.Pointer(classNameIrValue->GetType(), 1u)));
+            classNameIrObject->SetOwned();
+            codeFormatter.WriteLine(classNameIrObject->Name() + " = linkonce_odr unnamed_addr constant " + classNameIrValue->GetType()->Name() + " " + classNameIrValue->Name());
+            string classRttiName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "rtti");
+            List<Ir.Intf.Type*> rttiElementTypes;
+            rttiElementTypes.Add(i8PtrType->Clone());
+            rttiElementTypes.Add(Cm.IrIntf.I64());
+            List<string> rttiElementNames;
+            rttiElementNames.Add("class_name");
+            rttiElementNames.Add("class_id");
+            UniquePtr<Ir.Intf.Type> rttiIrType(Cm.IrIntf.Structure("rtti_", rttiElementTypes, rttiElementNames));
+            rttiIrType->SetOwned();
+            UniquePtr<Ir.Intf.Object> rttiIrObject(Cm.IrIntf.MakeGlobal(classRttiName, rttiIrType.GetPtr()));
+            rttiIrObject->SetOwned();
+            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + 
+                ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+            string vtblHeader;
+            vtblHeader.Append(vtblIrObject->Name()).Append(" = linkonce_odr unnamed_addr constant ").Append(vtblIrType->Name());
+            codeFormatter.WriteLine(vtblHeader);
+            codeFormatter.WriteLine("[");
+            codeFormatter.IncIndent();
+            bool first = true;
+            for (Cm.Sym.FunctionSymbol* virtualFunction : classType->Vtbl())
+            {
+                string line;
+                line.Append(i8PtrType->Name()).Append(" ");
+                if (first)
+                {
+                    line.Append("bitcast (%rtti* " + rttiIrObject->Name() + " to i8*)");
+                    first = false;
+                }
+                else
+                {
+                    codeFormatter.WriteLine(",");
+                    if (virtualFunction == null)
+                    {
+                        throw Exception("virtual function not set");
+                    }
+                    if (virtualFunction->IsAbstract())
+                    {
+                        line.Append("null");
+                    }
+                    else
+                    {
+                        Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(virtualFunction);
+                        externalFunctions.Insert(irFun);
+                        Ir.Intf.Type* irFunPtrType = irFunctionRepository.GetFunPtrIrType(virtualFunction);
+                        line.Append("bitcast (").Append(irFunPtrType->Name()).Append(" @").Append(irFun->Name()).Append(" to ").Append(i8PtrType->Name()).Append(")");
+                    }
+                }
+                codeFormatter.WriteLine(line);
+            }
+            codeFormatter.WriteLine();
+            codeFormatter.DecIndent();
+            codeFormatter.WriteLine("]");
+        }
+        public override void WriteDestructionNodeDef(CodeFormatter& codeFormatter)
+        {
+            codeFormatter.WriteLine("%destruction$node = type { %destruction$node*, i8*, void (i8*)* }");
+            codeFormatter.WriteLine("declare void @register$destructor(%destruction$node*)");
+        }
+    }
+    
+    public void Visit(List<string>& classOrder, const string& classTypeName, HashSet<string>& visited, HashSet<string>& tempVisit, HashMap<string, List<string>>& dependencyMap)
+    {
+        if (tempVisit.CFind(classTypeName) == tempVisit.CEnd())
+        {
+            if (visited.CFind(classTypeName) == visited.CEnd())
+            {
+                tempVisit.Insert(classTypeName);
+                HashMap<string, List<string>>.ConstIterator i = dependencyMap.CFind(classTypeName);
+                if (i != dependencyMap.CEnd())
+                {
+                    const List<string>& dependents = i->second;
+                    for (const string& dependent : dependents)
+                    {
+                        Visit(classOrder, dependent, visited, tempVisit, dependencyMap);
+                    }
+                    tempVisit.Remove(classTypeName);
+                    visited.Insert(classTypeName);
+                    classOrder.Add(classTypeName);
+                }
+                else
+                {
+                    throw Error("class type '" + classTypeName + "' not found in dependencies");
+                }
+            }
+        }
+        else
+        {
+            throw Error("circular class dependency for class '" + classTypeName + "' detected");
+        }
+    }
+    
+    public List<Cm.Sym.ClassTypeSymbol*> CreateClassOrder(const HashMap<string, Cm.Sym.ClassTypeSymbol*>& classMap, HashMap<string, List<string>>& dependencyMap)
+    {
+        List<string> classNameOrder;
+        HashSet<string> visited;
+        HashSet<string> tempVisit;
+        for (const Pair<string, List<string>>& p : dependencyMap)
+        {
+            string classTypeName = p.first;
+            if (visited.CFind(classTypeName) == visited.CEnd())
+            {
+                Visit(classNameOrder, classTypeName, visited, tempVisit, dependencyMap);
+            }
+        }
+        List<Cm.Sym.ClassTypeSymbol*> classOrder;
+        for (const string& className : classNameOrder)
+        {
+            HashMap<string, Cm.Sym.ClassTypeSymbol*>.ConstIterator i = classMap.CFind(className);
+            if (i != classMap.CEnd())
+            {
+                classOrder.Add(i->second);
+            }
+            else
+            {
+                throw Error("class name '" + className + "' not found in the class map");
+            }
+        }
+        return classOrder;
+    }
+    
+    public class CIrClassTypeRepository : IrClassTypeRepository
+    {
+        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        {
+            WriteDestructionNodeDef(codeFormatter);
+            HashMap<string, Cm.Sym.ClassTypeSymbol*> classMap;
+            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                if (!classType->IrTypeMade())
+                {
+                    classType->MakeIrType();
+                }
+                classMap[classType->FullName()] = classType;
+            }
+            HashMap<string, List<string>> dependencyMap;
+            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                HashSet<string> added;
+                List<string>& dependencies = dependencyMap[classType->FullName()];
+                if (classType->BaseClass() != null)
+                {
+                    dependencies.Add(classType->BaseClass()->FullName());
+                    added.Insert(classType->BaseClass()->FullName());
+                }
+                for (Cm.Sym.MemberVariableSymbol* memberVariable : classType->MemberVariables())
+                {
+                    if (memberVariable->GetType() is Cm.Sym.ClassTypeSymbol*)
+                    {
+                        Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariable->GetType());
+                        if (added.CFind(memberVarClassType->FullName()) == added.CEnd())
+                        {
+                            added.Insert(memberVarClassType->FullName());
+                            dependencies.Add(memberVarClassType->FullName());
+                        }
+                    }
+                }
+            }
+            List<Cm.Sym.ClassTypeSymbol*> classOrder = CreateClassOrder(classMap, dependencyMap);
+            for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
+            {
+                UniquePtr<Ir.Intf.Type> typeName(Cm.IrIntf.CreateClassTypeName(classType->FullName()));
+                codeFormatter.WriteLine("typedef struct " + classType->GetMangleId() + "_ " + typeName->Name() + ";");
+            }
+            for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
+            {
+                WriteIrLayout(classType, codeFormatter);
+            }
+            for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
+            {
+                WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+            }
+        }
+        public override void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter)
+        {
+            List<Ir.Intf.Type*> memberTypes;
+            List<string> memberNames;
+            string tagName = classType->GetMangleId() + "_";
+            int index = 0;
+            if (classType->BaseClass() != null)
+            {
+                if (!classType->BaseClass()->IrTypeMade())
+                {
+                    classType->BaseClass()->MakeIrType();
+                }
+                memberTypes.Add(classType->BaseClass()->IrType()->Clone());
+                memberNames.Add("__base");
+                ++index;
+            }
+            if (classType->MemberVariables().IsEmpty())
+            {
+                if (classType->VPtrIndex() != -1)
+                {
+                    memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                    memberNames.Add("__vptr");
+                }
+                else if (classType->BaseClass() == null)
+                {
+                    memberTypes.Add(Cm.IrIntf.I8());
+                    memberNames.Add("__dummy");
+                }
+            }
+            else
+            {
+                for (Cm.Sym.MemberVariableSymbol* memberVariable : classType->MemberVariables())
+                {
+                    if (index == classType->VPtrIndex())
+                    {
+                        memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                        memberNames.Add("__vptr");
+                        ++index;
+                    }
+                    Cm.Sym.TypeSymbol* memberVarType = memberVariable->GetType();
+                    if (!memberVarType->IrTypeMade())
+                    {
+                        memberVarType->MakeIrType();
+                    }
+                    if (!memberVarType->GetBaseType()->IrTypeMade())
+                    {
+                        memberVarType->GetBaseType()->MakeIrType();
+                    }
+                    if (memberVarType->IsPureArrayType())
+                    {
+                        Ir.Intf.Type* memberVarArrayType = Cm.IrIntf.Array(memberVarType->GetBaseType()->IrType(), memberVarType->GetLastArrayDimension());
+                        memberTypes.Add(memberVarArrayType);
+                    }
+                    else
+                    {
+                        memberTypes.Add(memberVarType->IrType()->Clone());
+                    }
+                    memberNames.Add(memberVariable->Name());
+                    memberVariable->SetLayoutIndex(index);
+                    ++index;
+                }
+            }
+            UniquePtr<Ir.Intf.Type> irTypeDeclaration(Cm.IrIntf.Structure(tagName, memberTypes, memberNames));
+            UniquePtr<Ir.Intf.Type> typeName(Cm.IrIntf.CreateClassTypeName(classType->FullName()));
+            codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " " + typeName->Name() + ";");
+        }
+        public override void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        {
+            if (!classType->IsVirtual()) return;
+            for (Cm.Sym.FunctionSymbol* virtualFunction : classType->Vtbl())
+            {
+                if (virtualFunction != null)
+                {
+                    Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(virtualFunction);
+                    irFun->WriteDeclaration(codeFormatter, virtualFunction->IsReplicated(), false);
+                }
+            }
+            UniquePtr<Ir.Intf.Type> voidPtrType(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u));
+            voidPtrType->SetOwned();
+            UniquePtr<Ir.Intf.Type> vtblIrType(Cm.IrIntf.Array(voidPtrType->Clone(), classType->Vtbl().Count()));
+            vtblIrType->SetOwned();
+            string vtblName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "vtbl");
+            UniquePtr<Ir.Intf.Object> vtblIrObject(Cm.IrIntf.MakeGlobal(vtblName, vtblIrType.GetPtr()));
+            vtblIrObject->SetOwned();
+            
+            string classRttiName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "rtti");
+            List<Ir.Intf.Type*> rttiElementTypes;
+            rttiElementTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.Char(), 1u));
+            rttiElementTypes.Add(Cm.IrIntf.UI64());
+            List<string> rttiElementNames;
+            rttiElementNames.Add("class_name");
+            rttiElementNames.Add("class_id");
+            UniquePtr<Ir.Intf.Type> rttiIrType(Cm.IrIntf.Structure("rtti_", rttiElementTypes, rttiElementNames));
+            rttiIrType->SetOwned();
+            UniquePtr<Ir.Intf.Object> rttiIrObject(Cm.IrIntf.MakeGlobal(classRttiName, rttiIrType.GetPtr()));
+            rttiIrObject->SetOwned();
+            codeFormatter.WriteLine("rtti " + classRttiName + " = {" + System.Text.MakeStringLiteral(classType->FullName()) + ", " + ToString(classType->Cid()) + "};");
+            
+            string vtblHeader = "static void* ";
+            vtblHeader.Append(vtblIrObject->Name()).Append("[").Append(ToString(classType->Vtbl().Count())).Append("] = ");
+            codeFormatter.WriteLine(vtblHeader);
+            codeFormatter.WriteLine("{");
+            codeFormatter.IncIndent();
+            bool first = true;
+            for (Cm.Sym.FunctionSymbol* virtualFunction : classType->Vtbl())
+            {
+                string line;
+                if (first)
+                {
+                    line.Append("&").Append(rttiIrObject->Name());
+                    first = false;
+                }
+                else
+                {
+                    codeFormatter.WriteLine(",");
+                    if (virtualFunction == null)
+                    {
+                        throw Exception("virtual function not set");
+                    }
+                    if (virtualFunction->IsAbstract())
+                    {
+                        line.Append("(void*)0");
+                    }
+                    else
+                    {
+                        Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(virtualFunction);
+                        externalFunctions.Insert(irFun);
+                        line.Append("&").Append(irFun->Name());
+                    }
+                }
+                codeFormatter.Write(line);
+            }
+            codeFormatter.WriteLine();
+            codeFormatter.DecIndent();
+            codeFormatter.WriteLine("};");
+        }
+        public override void WriteDestructionNodeDef(CodeFormatter& codeFormatter)
+        {
+            codeFormatter.WriteLine("typedef struct destruction_X_node_ { struct destruction_X_node_* next; void* cls; void (*destructor)(void*); } destruction_X_node;");
+            codeFormatter.WriteLine("void register_X_destructor(destruction_X_node* node);");
+        }
+    }
+}

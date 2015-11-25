@@ -734,7 +734,7 @@ void ConstructorOpGroup::CollectViableFunctions(int arity, const std::vector<Cm:
                     }
                 }
                 Cm::Sym::TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(pointerType, span);
-                if (Cm::Sym::TypesEqual(alternateRightType, rightPlainType)) // pointer copy constructor
+                if (Cm::Sym::TypesEqual(alternateRightType, rightType)) // pointer copy constructor
                 {
                     DerivedTypeOpCache& cache = derivedTypeOpCacheMap[pointerType];
                     viableFunctions.insert(cache.GetCopyCtor(typeRepository, pointerType));
@@ -938,7 +938,7 @@ void LessOpGroup::CollectViableFunctions(int arity, const std::vector<Cm::Core::
                 if (leftClass->HasBaseClass(rightClass) || rightClass->HasBaseClass(leftClass))
                 {
                     DerivedTypeOpCache& cache = derivedTypeOpCacheMap[leftPlainType];
-                    viableFunctions.insert(cache.GetOpEqual(typeRepository, leftPlainType));
+                    viableFunctions.insert(cache.GetOpLess(typeRepository, leftPlainType));
                 }
             }
         }

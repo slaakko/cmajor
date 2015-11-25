@@ -1,0 +1,267 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Core
+{
+    public class IrFunctionRepository
+    {
+        public nothrow IrFunctionRepository() : exceptionCodeParam(null)
+        {
+        }
+        public Ir.Intf.Function* GetDoNothingFunction()
+        {
+            if (doNothingFunction.IsNull())
+            {
+                doNothingFunction.Reset(Cm.IrIntf.CreateDoNothingFunction());
+            }
+            return doNothingFunction.GetPtr();
+        }
+        public Ir.Intf.Function* GetMemSetFunction()
+        {
+            if (memSetFunction.IsNull())
+            {
+                Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
+                Own(i8Ptr);
+                memSetFunction.Reset(Cm.IrIntf.CreateMemSetFunction(i8Ptr));
+            }
+            return memSetFunction.GetPtr();
+        }
+        public Ir.Intf.Function* GetMemCopyFunction()
+        {
+            if (memCopyFunction.IsNull())
+            {
+                Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
+                Own(i8Ptr);
+                memCopyFunction.Reset(Cm.IrIntf.CreateMemCopyFunction(i8Ptr));
+            }
+            return memCopyFunction.GetPtr();
+        }
+        public Ir.Intf.Function* CreateIrFunction(Cm.Sym.FunctionSymbol* function)
+        {
+            HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Function*>.ConstIterator i = irFunctionMap.CFind(function);
+            if (i != irFunctionMap.CEnd())
+            {
+                return i->second;
+            }
+            string functionName;
+            string functionGroupName;
+            Ir.Intf.Type* irReturnType = null;
+            List<Ir.Intf.Parameter*> irParameters;
+            List<Ir.Intf.Type*> irParameterTypes;
+            if (function->IsStaticConstructor())
+            {
+                functionName = "__sc_" + function->Class()->GetMangleId();
+                irReturnType = Cm.IrIntf.Void();
+                Own(irReturnType);
+                if (function->CanThrow())
+                {
+                    Ir.Intf.Type* exceptionCodeParamType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI32(), 1u);
+                    Own(exceptionCodeParamType);
+                    exceptionCodeParam = Cm.IrIntf.MakeParameter(Cm.IrIntf.GetExceptionCodeParamName(), exceptionCodeParamType);
+                    Own(exceptionCodeParam);
+                    irParameters.Add(exceptionCodeParam);
+                    irParameterTypes.Add(exceptionCodeParamType->Clone());
+                }
+            }
+            else
+            {
+                bool returnsClassObjectByValue = function->ReturnsClassObjectByValue();
+                if (!returnsClassObjectByValue)
+                {
+                    Cm.Sym.TypeSymbol* returnType = function->GetReturnType();
+                    if (returnType != null)
+                    {
+                        irReturnType = returnType->IrType();
+                    }
+                }
+                if (irReturnType == null)
+                {
+                    irReturnType = Cm.IrIntf.Void();
+                    Own(irReturnType);
+                }
+                for (Cm.Sym.ParameterSymbol* parameter : function->Parameters())
+                {
+                    Ir.Intf.Parameter* irParameter = CreateIrParameter(parameter);
+                    Own(irParameter);
+                    irParameters.Add(irParameter);
+                    irParameterTypes.Add(irParameter->GetType()->Clone());
+                }
+                if (returnsClassObjectByValue)
+                {
+                    if (!function->GetReturnType()->IrTypeMade())
+                    {
+                        function->GetReturnType()->MakeIrType();
+                    }
+                    Ir.Intf.Type* classObjectResultParamType = Cm.IrIntf.Pointer(function->GetReturnType()->IrType(), 1u);
+                    Own(classObjectResultParamType);
+                    Ir.Intf.Parameter* irClassObjectParameter = Cm.IrIntf.MakeParameter(Cm.IrIntf.GetClassObjectResultParamName(), classObjectResultParamType);
+                    Own(irClassObjectParameter);
+                    irParameters.Add(irClassObjectParameter);
+                    irParameterTypes.Add(classObjectResultParamType->Clone());
+                    function->SetClassObjectResultIrParam(irClassObjectParameter);
+                }
+                if (function->CanThrow())
+                {
+                    Ir.Intf.Type* exceptionCodeParamType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI32(), 1u);
+                    Own(exceptionCodeParamType);
+                    exceptionCodeParam = Cm.IrIntf.MakeParameter(Cm.IrIntf.GetExceptionCodeParamName(), exceptionCodeParamType);
+                    Own(exceptionCodeParam);
+                    irParameters.Add(exceptionCodeParam);
+                    irParameterTypes.Add(exceptionCodeParamType->Clone());
+                }
+                functionGroupName = function->GroupName();
+                if (!Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.unit_test))
+                {
+                    if (functionGroupName.IsEmpty())
+                    {
+                        functionGroupName = "main";
+                    }
+                    else if (functionGroupName == "main")
+                    {
+                        functionGroupName = "user" + Cm.IrIntf.GetPrivateSeparator() + "main";
+                    }
+                }
+                functionName = functionGroupName;
+            }
+            if (!function->IsCDecl() && !function->IsStaticConstructor())
+            {
+                if (function->IsConversionFunction())
+                {
+                    functionName = Cm.Sym.MangleName(function->Ns()->FullName(), "cv_" + Cm.IrIntf.MakeAssemblyName(function->GetReturnType()->FullName()), function->TypeArguments(), function->Parameters());
+                }
+                else if (function->IsStatic())
+                {
+                    functionName = Cm.Sym.MangleName(function->Class()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
+                }
+                else
+                {
+                    functionName = Cm.Sym.MangleName(function->Ns()->FullName(), functionGroupName, function->TypeArguments(), function->Parameters());
+                }
+            }
+            Ir.Intf.Function* irFunction = Cm.IrIntf.CreateFunction(functionName, irReturnType, irParameters);
+            ownedIrFunctions.Add(UniquePtr<Ir.Intf.Function>(irFunction));
+            Ir.Intf.Type* irFunPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeFunctionType(irReturnType->Clone(), irParameterTypes), 1u);
+            irFunPtrType->SetOwned();
+            ownedIrTypes.Add(UniquePtr<Ir.Intf.Type>(irFunPtrType));
+            irFunPtrMap[function] = irFunPtrType;
+            irFunctionMap[function] = irFunction;
+            return irFunction;
+        }
+        public Ir.Intf.Object* GetFunctionId(Cm.Sym.FunctionSymbol* function, Cm.Sym.TypeSymbol* functionPtrPtrType)
+        {
+            HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Object*>.ConstIterator i = functionIdMap.CFind(function);
+            if (i != functionIdMap.CEnd())
+            {
+                return i->second;
+            }
+            string functionIdName = Cm.Sym.MangleName(function->Ns()->FullName(), function->GroupName(), function->TypeArguments(), function->Parameters());
+            Ir.Intf.Object* functionId = Cm.IrIntf.MakeGlobal(functionIdName, functionPtrPtrType->IrType());
+            Own(functionId);
+            functionIdMap[function] = functionId;
+            return functionId;
+        }
+        public Ir.Intf.Type* CreateIrPointerToDelegateType(Cm.Sym.DelegateTypeSymbol* delegateType)
+        {
+            Cm.Sym.TypeSymbol* returnType = delegateType->GetReturnType();
+            Ir.Intf.Type* irReturnType = returnType->IrType()->Clone();
+            List<Ir.Intf.Type*> irParameterTypes;
+            for (Cm.Sym.ParameterSymbol* parameter : delegateType->Parameters())
+            {
+                Cm.Sym.TypeSymbol* parameterType = parameter->GetType();
+                Ir.Intf.Type* irParameterType = parameterType->IrType()->Clone();
+                irParameterTypes.Add(irParameterType);
+            }
+            if (!delegateType->IsNothrow())
+            {
+                Ir.Intf.Type* exceptionCodeParamType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI32(), 1u);
+                irParameterTypes.Add(exceptionCodeParamType);
+            }
+            Ir.Intf.Type* irFunctionType = Cm.IrIntf.MakeFunctionType(irReturnType, irParameterTypes);
+            Own(irFunctionType);
+            Ir.Intf.Type* delegatePointerType = Cm.IrIntf.Pointer(irFunctionType, 2u);
+            Own(delegatePointerType);
+            return delegatePointerType;
+        }
+        public Ir.Intf.Type* GetFunPtrIrType(Cm.Sym.FunctionSymbol* fun)
+        {
+            CreateIrFunction(fun);
+            HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Type*>.ConstIterator i = irFunPtrMap.CFind(fun);
+            if (i != irFunPtrMap.CEnd())
+            {
+                return i->second;
+            }
+            throw Exception("IR function pointer type not created");
+        }
+        public nothrow inline Ir.Intf.Parameter* GetExceptionCodeParam() const
+        {
+            return exceptionCodeParam;
+        }
+        public Ir.Intf.Parameter* CreateIrParameter(Cm.Sym.ParameterSymbol* parameter)
+        {
+            Ir.Intf.Type* irParameterType = null;
+            if (parameter->GetType() is Cm.Sym.ClassTypeSymbol*)
+            {
+                if (!parameter->GetType()->IrTypeMade())
+                {
+                    parameter->GetType()->MakeIrType();
+                }
+                irParameterType = Cm.IrIntf.Pointer(parameter->GetType()->IrType(), 1u);
+            }
+            else
+            {
+                irParameterType = parameter->GetType()->IrType();
+            }
+            string parameterName = parameter->Name();
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                parameterName.Append(Cm.IrIntf.GetPrivateSeparator()).Append("p");
+            }
+            Ir.Intf.Parameter* irParameter = Cm.IrIntf.MakeParameter(parameterName, irParameterType);
+            return irParameter;
+        }
+        private HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Function*> irFunctionMap;
+        private HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Type*> irFunPtrMap;
+        private HashMap<Cm.Sym.FunctionSymbol*, Ir.Intf.Object*> functionIdMap;
+        private UniquePtr<Ir.Intf.Function> doNothingFunction;
+        private UniquePtr<Ir.Intf.Function> memSetFunction;
+        private UniquePtr<Ir.Intf.Function> memCopyFunction;
+        private List<UniquePtr<Ir.Intf.Function>> ownedIrFunctions;
+        private List<UniquePtr<Ir.Intf.Type>> ownedIrTypes;
+        private List<UniquePtr<Ir.Intf.Object>> ownedIrObjects;
+        private List<UniquePtr<Ir.Intf.Parameter>> ownedIrParameters;
+        private Ir.Intf.Parameter* exceptionCodeParam;
+        private void Own(Ir.Intf.Type* type)
+        {
+            if (!type->Owned())
+            {
+                type->SetOwned();
+                ownedIrTypes.Add(UniquePtr<Ir.Intf.Type>(type));
+            }
+        }
+        private void Own(Ir.Intf.Object* object)
+        {
+            if (!object->Owned())
+            {
+                object->SetOwned();
+                ownedIrObjects.Add(UniquePtr<Ir.Intf.Object>(object));
+            }
+        }
+        private void Own(Ir.Intf.Parameter* parameter)
+        {
+            if (!parameter->Owned())
+            {
+                parameter->SetOwned();
+                ownedIrParameters.Add(UniquePtr<Ir.Intf.Parameter>(parameter));
+            }
+        }
+    }
+}

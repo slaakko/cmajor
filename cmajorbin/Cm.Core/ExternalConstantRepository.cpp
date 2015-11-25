@@ -23,6 +23,7 @@ ExternalConstantRepository::~ExternalConstantRepository()
 Ir::Intf::Global* ExternalConstantRepository::GetExceptionBaseIdTable()
 {
     exceptionBaseIdTable = Cm::IrIntf::CreateGlobal(Cm::IrIntf::GetExceptionBaseIdTableName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI32(), 2));
+    exceptionBaseIdTable->SetOwned();
     ownedObjects.push_back(std::unique_ptr<Ir::Intf::Object>(exceptionBaseIdTable));
     return exceptionBaseIdTable;
 }
@@ -30,6 +31,7 @@ Ir::Intf::Global* ExternalConstantRepository::GetExceptionBaseIdTable()
 Ir::Intf::Global* ExternalConstantRepository::GetClassHierarchyTable()
 {
     classHierarchyTable = Cm::IrIntf::CreateGlobal(Cm::IrIntf::GetClassHierarchyTableName(), Cm::IrIntf::Pointer(Ir::Intf::GetFactory()->GetI64(), 2));
+    classHierarchyTable->SetOwned();
     ownedObjects.push_back(std::unique_ptr<Ir::Intf::Object>(classHierarchyTable));
     return classHierarchyTable;
 }
