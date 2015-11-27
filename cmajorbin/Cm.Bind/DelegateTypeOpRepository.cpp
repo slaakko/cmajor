@@ -74,8 +74,8 @@ void DelegateFromFunAssignment::Generate(Cm::Core::Emitter& emitter, Cm::Core::G
     Cm::IrIntf::Assign(emitter, GetIrType(), result.Arg1(), result.MainObject());
 }
 
-Cm::Sym::FunctionSymbol* ResolveDelegateOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::DelegateTypeSymbol* delegateType, 
-    const std::string& groupName, const Cm::Parsing::Span& span)
+Cm::Sym::FunctionSymbol* ResolveDelegateOverload(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::DelegateTypeSymbol* delegateType,
+    const std::string& groupName, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, const Cm::Parsing::Span& span)
 {
     std::vector<Cm::Core::Argument> resolutionArguments;
     for (Cm::Sym::ParameterSymbol* parameter : delegateType->Parameters())
@@ -92,7 +92,8 @@ Cm::Sym::FunctionSymbol* ResolveDelegateOverload(Cm::Sym::ContainerScope* contai
     resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
     resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
-    Cm::Sym::FunctionSymbol* overload = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, resolutionLookups, span, conversions);
+    Cm::Sym::FunctionSymbol* overload = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, resolutionLookups, span, conversions, Cm::Sym::ConversionType::implicit, boundTemplateArguments,
+        Cm::Bind::OverloadResolutionFlags::none);
     if (delegateType->IsNothrow() && overload->CanThrow())
     {
         throw Cm::Core::Exception("conflicting nothrow specification of delegate and function types", span, overload->GetSpan());
@@ -239,7 +240,7 @@ void DelegateConstructorOpGroup::CollectViableFunctions(Cm::BoundTree::BoundComp
                     {
                         Cm::Sym::FunctionGroupTypeSymbol* functionGroupTypeSymbol = static_cast<Cm::Sym::FunctionGroupTypeSymbol*>(rightType);
                         Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
-                        Cm::Sym::FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), span);
+                        Cm::Sym::FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), functionGroupSymbol->BoundTemplateArguments(), span);
                         DelegateTypeOpCache& cache = delegateTypeOpCacheMap[delegateType];
                         Cm::Sym::TypeSymbol* delegatePtrType = typeRepository.MakePointerType(delegateType, span);
                         viableFunctions.insert(cache.GetDelegateFromFunCtor(typeRepository, delegatePtrType, delegateType, functionSymbol));
@@ -286,7 +287,7 @@ void DelegateAssignmentOpGroup::CollectViableFunctions(Cm::BoundTree::BoundCompi
                 {
                     Cm::Sym::FunctionGroupTypeSymbol* functionGroupTypeSymbol = static_cast<Cm::Sym::FunctionGroupTypeSymbol*>(rightType);
                     Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
-                    Cm::Sym::FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), span);
+                    Cm::Sym::FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), functionGroupSymbol->BoundTemplateArguments(), span);
                     DelegateTypeOpCache& cache = delegateTypeOpCacheMap[delegateType];
                     Cm::Sym::TypeSymbol* delegatePtrType = typeRepository.MakePointerType(delegateType, span);
                     viableFunctions.insert(cache.GetDelegateFromFunAssignment(typeRepository, delegatePtrType, delegateType, functionSymbol));

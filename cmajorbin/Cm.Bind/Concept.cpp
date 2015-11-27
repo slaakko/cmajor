@@ -217,6 +217,18 @@ void ConstraintChecker::Visit(Cm::Ast::ConjunctiveConstraintNode& conjunctiveCon
     constraintCheckStack.Push(right);
 }
 
+class NamespaceTypeSymbol : public Cm::Sym::TypeSymbol
+{
+public:
+    NamespaceTypeSymbol(Cm::Sym::NamespaceSymbol* ns_) : Cm::Sym::TypeSymbol(Cm::Parsing::Span(), ns_->Name()), ns(ns_) {}
+    Cm::Sym::SymbolType GetSymbolType() const override { return Cm::Sym::SymbolType::namespaceSymbol; }
+    std::string GetMangleId() const override { return "X"; }
+    bool IsNamespaceTypeSymbol() const override { return true; }
+    Cm::Sym::NamespaceSymbol* Ns() const { return ns; }
+private:
+    Cm::Sym::NamespaceSymbol* ns;
+};
+
 void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     type = nullptr;
@@ -254,6 +266,15 @@ void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
         {
             conceptGroup = static_cast<Cm::Sym::ConceptGroupSymbol*>(symbol);
         }
+        else if (symbol->IsNamespaceSymbol())
+        {
+            Cm::Sym::NamespaceSymbol* ns = static_cast<Cm::Sym::NamespaceSymbol*>(symbol);
+            type = new NamespaceTypeSymbol(ns);
+            ns->AddSymbol(type);
+            Cm::Sym::FileScope* fileScope = new Cm::Sym::FileScope();
+            fileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), ns->FullName())));
+            boundCompileUnit->AddFileScope(fileScope);
+        }
         else
         {
             throw Cm::Core::ConceptCheckException("symbol '" + symbol->FullName() + "' does not denote a type or a concept", symbol->GetSpan());
@@ -279,6 +300,11 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
         throw Cm::Core::ConceptCheckException("symbol '" + dotNode.Subject()->ToString() + "' does not denot a type", dotNode.Subject()->GetSpan());
     }
     Cm::Sym::Scope* typeContainerScope = type->GetContainerScope();
+    if (type->IsNamespaceTypeSymbol())
+    {
+        NamespaceTypeSymbol* nsTypeSymbol = static_cast<NamespaceTypeSymbol*>(type);
+        typeContainerScope = nsTypeSymbol->Ns()->GetContainerScope();
+    }
     const std::string& memberName = dotNode.MemberId()->Str();
     Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName, Cm::Sym::ScopeLookup::this_and_base, lookupId);
     if (symbol)
@@ -293,9 +319,23 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
             Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
             type = typedefSymbol->GetType();
         }
+        else if (symbol->IsConceptGroupSymbol())
+        {
+            type = nullptr;
+            conceptGroup = static_cast<Cm::Sym::ConceptGroupSymbol*>(symbol);
+        }
+        else if (symbol->IsNamespaceSymbol())
+        {
+            Cm::Sym::NamespaceSymbol* ns = static_cast<Cm::Sym::NamespaceSymbol*>(symbol);
+            type = new NamespaceTypeSymbol(ns);
+            ns->AddSymbol(type);
+            Cm::Sym::FileScope* fileScope = new Cm::Sym::FileScope();
+            fileScope->InstallNamespaceImport(containerScope, new Cm::Ast::NamespaceImportNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), ns->FullName())));
+            boundCompileUnit->AddFileScope(fileScope);
+        }
         else
         {
-            throw Cm::Core::ConceptCheckException("symbol '" + symbol->FullName() + "' does not denote a type", symbol->GetSpan());
+            throw Cm::Core::ConceptCheckException("symbol '" + symbol->FullName() + "' does not denote a type or namespace", symbol->GetSpan());
         }
     }
     else

@@ -6,6 +6,7 @@ reference <../Cm.Sym/Cm.Sym.cml>;
 reference <../Cm.Parser/Cm.Parser.cml>;
 reference <../Cm.Core/Cm.Core.cml>;
 source <BoundClass.cm>;
+source <BoundCompileUnit.cm>;
 source <BoundConcept.cm>;
 source <BoundExpression.cm>;
 source <BoundFunction.cm>;

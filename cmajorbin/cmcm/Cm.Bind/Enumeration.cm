@@ -1,0 +1,56 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    internal void BindEnumConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumConstantNode* enumConstantNode)
+    {
+        Cm.Sym.Symbol* symbol = containerScope->Lookup(enumConstantNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupEnumConstant);
+        if (symbol != null)
+        {
+            if (symbol is Cm.Sym.EnumConstantSymbol*)
+            {
+                Cm.Sym.EnumConstantSymbol* enumConstantSymbol = cast<Cm.Sym.EnumConstantSymbol*>(symbol);
+                if (enumConstantSymbol->Evaluating())
+                {
+                    throw Cm.Core.Error("cyclic enumeration constant definitions detected", enumConstantSymbol->GetSpan());
+                }
+                if (enumConstantSymbol->IsBound())
+                {
+                    return; 
+                }
+                if (!(containerScope->Container() is Cm.Sym.EnumTypeSymbol*))
+                {
+                    throw Exception("enumeration constant not contained by enumeration type");
+                }
+                Cm.Sym.EnumTypeSymbol* enumType = cast<Cm.Sym.EnumTypeSymbol*>(containerScope->Container());
+                Cm.Sym.TypeSymbol* underlyingType = enumType->GetUnderlyingType();
+                Cm.Sym.SymbolType symbolType = underlyingType->GetSymbolType();
+                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+                enumConstantSymbol->SetEvaluating();
+                Cm.Sym.Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+                enumConstantSymbol->ResetEvaluating();
+                enumConstantSymbol->SetValue(value);
+                enumConstantSymbol->SetBound();
+            }
+            else
+            {
+                throw Cm.Core.Error("symbol '" + symbol->FullName() + "' does not denote an enumeration constant", symbol->GetSpan());
+            }
+        }
+        else
+        {
+            throw Cm.Core.Error("enumeration constant symbol '" + enumConstantNode->Id()->Str() + "' not found");
+        }
+    }
+}

@@ -269,6 +269,12 @@ namespace Cm.BoundTree
         public virtual void EndVisit(BoundFunction& boundFunction)
         {
         }
+        public virtual void BeginVisit(BoundCompileUnit& boundCompileUnit)
+        {
+        }
+        public virtual void EndVisit(BoundCompileUnit& boundCompileUnit)
+        {
+        }
         private bool visitFunctionBody;
         private bool skipContent;
         private Stack<bool> skipContentStack;

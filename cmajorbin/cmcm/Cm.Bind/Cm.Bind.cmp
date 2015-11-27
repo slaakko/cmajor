@@ -1,0 +1,16 @@
+project Cm.Bind;
+target=library;
+assembly <Cm.Bind.cma>;
+reference <../Cm.Core/Cm.Core.cml>;
+reference <../Cm.Sym/Cm.Sym.cml>;
+reference <../Cm.BoundTree/Cm.BoundTree.cml>;
+reference <../Cm.IrIntf/Cm.IrIntf.cml>;
+reference <../Cm.Parser/Cm.Parser.cml>;
+reference <../Cm.Ser/Cm.Ser.cml>;
+reference <../Ir.Intf/Ir.Intf.cml>;
+reference <../Llvm.Ir/Llvm.Ir.cml>;
+reference <../C.Ir/C.Ir.cml>;
+reference <../Cm.Ast/Cm.Ast.cml>;
+source <Constant.cm>;
+source <Enumeration.cm>;
+source <Evaluator.cm>;

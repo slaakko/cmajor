@@ -8,11 +8,12 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public enum ValueType 
+    public enum ValueType : byte
     {
         none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
     }
@@ -20,7 +21,10 @@ namespace Cm.Sym
     public concept ValueClass<T>
     {
         where Derived<T, Value>;
+        typename T.OperandType;
         T();
+        T(T.OperandType);
+        T.OperandType T.Value();
     }
     
     public nothrow string ValueTypeStr(ValueType valueType)
@@ -44,6 +48,229 @@ namespace Cm.Sym
             case ValueType.stringValue: return "string";
         }
         return "";
+    }
+    
+    internal class CommonTypeMap
+    {
+        static CommonTypeMap() : instance(new CommonTypeMap())
+        {
+        }
+        public static nothrow CommonTypeMap& Instance()
+        {
+            return *instance;
+        }
+        public nothrow ValueType GetCommonType(ValueType left, ValueType right)
+        {
+            return commonTypeMap[cast<int>(left)][cast<int>(right)];
+        }
+        private CommonTypeMap()
+        {
+            commonTypeMap.Reserve(cast<int>(ValueType.max));
+            
+            List<ValueType> noneValues = None();
+            commonTypeMap.Add(Rvalue(noneValues));
+            
+            List<ValueType> boolValues = None();
+            boolValues[cast<int>(ValueType.boolValue)] = ValueType.boolValue;
+            commonTypeMap.Add(Rvalue(boolValues));
+            
+            List<ValueType> charValues = None();
+            charValues[cast<int>(ValueType.charValue)] = ValueType.charValue;
+            commonTypeMap.Add(Rvalue(charValues));
+            
+            List<ValueType> sbyteValues = None();
+            sbyteValues[cast<int>(ValueType.sbyteValue)] = ValueType.sbyteValue;
+            sbyteValues[cast<int>(ValueType.byteValue)] = ValueType.shortValue;
+            sbyteValues[cast<int>(ValueType.shortValue)] = ValueType.shortValue;
+            sbyteValues[cast<int>(ValueType.ushortValue)] = ValueType.intValue;
+            sbyteValues[cast<int>(ValueType.intValue)] = ValueType.intValue;
+            sbyteValues[cast<int>(ValueType.uintValue)] = ValueType.longValue;
+            sbyteValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            sbyteValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            sbyteValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(sbyteValues));
+
+            List<ValueType> byteValues = None();
+            byteValues[cast<int>(ValueType.sbyteValue)] = ValueType.shortValue;
+            byteValues[cast<int>(ValueType.byteValue)] = ValueType.byteValue;
+            byteValues[cast<int>(ValueType.shortValue)] = ValueType.shortValue;
+            byteValues[cast<int>(ValueType.ushortValue)] = ValueType.ushortValue;
+            byteValues[cast<int>(ValueType.intValue)] = ValueType.intValue;
+            byteValues[cast<int>(ValueType.uintValue)] = ValueType.uintValue;
+            byteValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            byteValues[cast<int>(ValueType.ulongValue)] = ValueType.ulongValue;
+            byteValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            byteValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(byteValues));
+
+            List<ValueType> shortValues = None();
+            shortValues[cast<int>(ValueType.sbyteValue)] = ValueType.shortValue;
+            shortValues[cast<int>(ValueType.byteValue)] = ValueType.shortValue;
+            shortValues[cast<int>(ValueType.shortValue)] = ValueType.shortValue;
+            shortValues[cast<int>(ValueType.ushortValue)] = ValueType.intValue;
+            shortValues[cast<int>(ValueType.intValue)] = ValueType.intValue;
+            shortValues[cast<int>(ValueType.uintValue)] = ValueType.longValue;
+            shortValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            shortValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            shortValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(shortValues));
+
+            List<ValueType> ushortValues = None();
+            ushortValues[cast<int>(ValueType.sbyteValue)] = ValueType.intValue;
+            ushortValues[cast<int>(ValueType.byteValue)] = ValueType.ushortValue;
+            ushortValues[cast<int>(ValueType.shortValue)] = ValueType.intValue;
+            ushortValues[cast<int>(ValueType.ushortValue)] = ValueType.ushortValue;
+            ushortValues[cast<int>(ValueType.intValue)] = ValueType.intValue;
+            ushortValues[cast<int>(ValueType.uintValue)] = ValueType.uintValue;
+            ushortValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            ushortValues[cast<int>(ValueType.ulongValue)] = ValueType.ulongValue;
+            ushortValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            ushortValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(ushortValues));
+
+            List<ValueType> intValues = None();
+            intValues[cast<int>(ValueType.sbyteValue)] = ValueType.intValue;
+            intValues[cast<int>(ValueType.byteValue)] = ValueType.intValue;
+            intValues[cast<int>(ValueType.shortValue)] = ValueType.intValue;
+            intValues[cast<int>(ValueType.ushortValue)] = ValueType.intValue;
+            intValues[cast<int>(ValueType.intValue)] = ValueType.intValue;
+            intValues[cast<int>(ValueType.uintValue)] = ValueType.longValue;
+            intValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            intValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            intValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(intValues));
+
+            List<ValueType> uintValues = None();
+            uintValues[cast<int>(ValueType.sbyteValue)] = ValueType.longValue;
+            uintValues[cast<int>(ValueType.byteValue)] = ValueType.uintValue;
+            uintValues[cast<int>(ValueType.shortValue)] = ValueType.longValue;
+            uintValues[cast<int>(ValueType.ushortValue)] = ValueType.uintValue;
+            uintValues[cast<int>(ValueType.intValue)] = ValueType.longValue;
+            uintValues[cast<int>(ValueType.uintValue)] = ValueType.uintValue;
+            uintValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            uintValues[cast<int>(ValueType.ulongValue)] = ValueType.ulongValue;
+            uintValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            uintValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(uintValues));
+
+            List<ValueType> longValues = None();
+            longValues[cast<int>(ValueType.sbyteValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.byteValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.shortValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.ushortValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.intValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.uintValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.longValue)] = ValueType.longValue;
+            longValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            longValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(longValues));
+                        
+            List<ValueType> ulongValues = None();
+            ulongValues[cast<int>(ValueType.byteValue)] = ValueType.ulongValue;
+            ulongValues[cast<int>(ValueType.ushortValue)] = ValueType.ulongValue;
+            ulongValues[cast<int>(ValueType.uintValue)] = ValueType.ulongValue;
+            ulongValues[cast<int>(ValueType.ulongValue)] = ValueType.ulongValue;
+            ulongValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            ulongValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(ulongValues));
+
+            List<ValueType> floatValues = None();
+            floatValues[cast<int>(ValueType.sbyteValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.byteValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.shortValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.ushortValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.intValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.uintValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.longValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.ulongValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.floatValue)] = ValueType.floatValue;
+            floatValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(floatValues));
+
+            List<ValueType> doubleValues = None();
+            doubleValues[cast<int>(ValueType.sbyteValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.byteValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.shortValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.ushortValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.intValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.uintValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.longValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.ulongValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.floatValue)] = ValueType.doubleValue;
+            doubleValues[cast<int>(ValueType.doubleValue)] = ValueType.doubleValue;
+            commonTypeMap.Add(Rvalue(doubleValues));
+
+            List<ValueType> nullValues = None();
+            nullValues[cast<int>(ValueType.nullValue)] = ValueType.nullValue;
+            commonTypeMap.Add(Rvalue(nullValues));
+
+            List<ValueType> stringValues = None();
+            stringValues[cast<int>(ValueType.stringValue)] = ValueType.stringValue;
+            commonTypeMap.Add(Rvalue(stringValues));
+        }
+        private List<ValueType> None()
+        {
+            List<ValueType> none;
+            int n = cast<int>(ValueType.max);
+            none.Reserve(n);
+            for (int i = 0; i < n; ++i)
+            {
+                none.Add(ValueType.none);
+            }
+            return none;
+        }
+        private static UniquePtr<CommonTypeMap> instance;    
+        private List<List<ValueType>> commonTypeMap;
+    }
+    
+    public nothrow ValueType GetCommonType(ValueType left, ValueType right)
+    {
+        return CommonTypeMap.Instance().GetCommonType(left, right);
+    }
+    
+    internal class ValueTypeMap
+    {
+        static ValueTypeMap() : instance(new ValueTypeMap())
+        {
+        }
+        public nothrow static ValueTypeMap& Instance() 
+        {
+            return *instance;
+        }
+        private ValueTypeMap()
+        {
+            int n = SymbolType.maxSymbol;
+            valueTypes.Reserve(n);
+            for (int i = 0; i < n; ++i)
+            {
+                valueTypes.Add(ValueType.none);
+            }
+            valueTypes[cast<int>(SymbolType.boolSymbol)] = ValueType.boolValue;
+            valueTypes[cast<int>(SymbolType.charSymbol)] = ValueType.charValue;
+            valueTypes[cast<int>(SymbolType.sbyteSymbol)] = ValueType.sbyteValue;
+            valueTypes[cast<int>(SymbolType.byteSymbol)] = ValueType.byteValue;
+            valueTypes[cast<int>(SymbolType.shortSymbol)] = ValueType.shortValue;
+            valueTypes[cast<int>(SymbolType.ushortSymbol)] = ValueType.ushortValue;
+            valueTypes[cast<int>(SymbolType.intSymbol)] = ValueType.intValue;
+            valueTypes[cast<int>(SymbolType.uintSymbol)] = ValueType.uintValue;
+            valueTypes[cast<int>(SymbolType.longSymbol)] = ValueType.longValue;
+            valueTypes[cast<int>(SymbolType.ulongSymbol)] = ValueType.ulongValue;
+            valueTypes[cast<int>(SymbolType.floatSymbol)] = ValueType.floatValue;
+            valueTypes[cast<int>(SymbolType.doubleSymbol)] = ValueType.doubleValue;
+            valueTypes[cast<int>(SymbolType.nullptrSymbol)] = ValueType.nullValue;
+
+        }
+        public nothrow ValueType GetValueType(SymbolType symbolType) const
+        {
+            return valueTypes[cast<int>(symbolType)];
+        }
+        private static UniquePtr<ValueTypeMap> instance;
+        private List<ValueType> valueTypes;
+    }
+    
+    public nothrow ValueType GetValueTypeFor(SymbolType symbolType)
+    {
+        return ValueTypeMap.Instance().GetValueType(symbolType);
     }
     
     public abstract class Value
@@ -1948,6 +2175,14 @@ namespace Cm.Sym
     
     public class NullValue : Value
     {
+        typedef char OperandType; // dummy operand type to satisfy requirements of ValueClass
+        
+        public nothrow NullValue() : type(null)
+        {
+        }
+        public nothrow NullValue(char dummy) // dummy constructor to satisfy requirements of ValueClass
+        {
+        }
         public nothrow override ValueType GetValueType() const
         {
             return ValueType.nullValue;
@@ -1981,11 +2216,17 @@ namespace Cm.Sym
         {
             return "null";
         }
+        public nothrow inline char Value() const // dummy Value() function to satisfy requirements of ValueClass
+        {
+            return '\0';
+        }
         private TypeSymbol* type;
     }    
     
     public class StringValue : Value
     {
+        typedef string OperandType;
+        
         public nothrow StringValue() : value("")
         {
         }
