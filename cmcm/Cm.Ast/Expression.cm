@@ -830,6 +830,10 @@ namespace Cm.Ast
             Subject()->Accept(visitor);
             visitor.EndVisit(*this);
         }
+        public nothrow inline IdentifierNode* MemberId() const
+        {
+            return memberId.GetPtr();
+        }
         private UniquePtr<IdentifierNode> memberId;
     }
 
@@ -1342,6 +1346,14 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+        }
+        public nothrow inline Node* TargetTypeExpr() const
+        {
+            return targetTypeExpr.GetPtr();
+        }
+        public nothrow inline Node* SourceExpr() const
+        {
+            return sourceExpr.GetPtr();
         }
         private UniquePtr<Node> targetTypeExpr;
         private UniquePtr<Node> sourceExpr;

@@ -204,4 +204,76 @@ namespace System
             return left >= right;
         }
     }
+    
+    public class LogicalAnd<T = bool> : BinaryPred<bool, bool>
+    {
+        public nothrow inline bool operator()(bool left, bool right) const
+        {
+            return left && right;
+        }
+    }
+    
+    public class LogicalOr<T = bool> : BinaryPred<bool, bool>
+    {
+        public nothrow inline bool operator()(bool left, bool right) const
+        {
+            return left || right;
+        }
+    }
+    
+    public class LogicalNot<T = bool> : UnaryPred<bool>
+    {
+        public nothrow inline bool operator()(bool operand) const
+        {
+            return !operand;
+        }
+    }
+    
+    public class BitAnd<T> : BinaryFun<T, T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& left, const T& right) const
+        {
+            return left & right;
+        }
+    }
+
+    public class BitOr<T> : BinaryFun<T, T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& left, const T& right) const
+        {
+            return left | right;
+        }
+    }
+
+    public class BitXor<T> : BinaryFun<T, T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& left, const T& right) const
+        {
+            return left ^ right;
+        }
+    }
+
+    public class BitNot<T> : UnaryFun<T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& operand) const
+        {
+            return ~operand;
+        }
+    }
+    
+    public class ShiftLeft<T> : BinaryFun<T, T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& left, const T& right) const
+        {
+            return left << right;
+        }
+    }
+
+    public class ShiftRight<T> : BinaryFun<T, T, T> where T is Semiregular
+    {
+        public nothrow inline T operator()(const T& left, const T& right) const
+        {
+            return left >> right;
+        }
+    }
 }

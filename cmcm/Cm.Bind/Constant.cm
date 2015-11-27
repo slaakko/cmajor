@@ -1,0 +1,42 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    internal void BindConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
+        Cm.Ast.ConstantNode* constantNode)
+    {
+        Cm.Sym.Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupConstant);
+        if (symbol != null)
+        {
+            if (symbol is Cm.Sym.ConstantSymbol*)
+            {
+                Cm.Sym.ConstantSymbol* constantSymbol = cast<Cm.Sym.ConstantSymbol*>(symbol);
+                BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode, constantSymbol);
+            }
+            else
+            {
+                throw Cm.Core.Error("symbol '" + symbol->FullName() + "' does not denote a constant", symbol->GetSpan());
+            }
+        }
+        else
+        {
+            throw Cm.Core.Error("constant symbol '" + constantNode->Id()->Str() + "' not found");
+        }
+    }
+    
+    internal void BindConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ConstantNode* constantNode, Cm.Sym.ConstantSymbol* constantSymbol)
+    {
+        // todo
+    }
+}

@@ -732,6 +732,10 @@ void Binder::BeginVisit(Cm::Ast::SimpleStatementNode& simpleStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode)
 {
+    if (boundFunction->GetFunctionSymbol()->Name() == "@constructor(Cm.Bind.DisjunctionDelegates*)")
+    {
+        int x = 0;
+    }
     AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get());
     assignmentStatementNode.Accept(binder);
     currentParent->AddStatement(binder.Result());

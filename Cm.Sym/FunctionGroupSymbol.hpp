@@ -29,11 +29,14 @@ public:
     ContainerScope* GetContainerScope() const override { return const_cast<ContainerScope*>(containerScope); }
     FunctionSymbol* GetOverload() const;
     void Dump(CodeFormatter& formatter) override;
+    const std::vector<TypeSymbol*>& BoundTemplateArguments() const { return boundTemplateArguments; }
+    void SetBoundTemplateArguments(const std::vector<TypeSymbol*>& boundTemplateArguments_);
 private:
     typedef std::unordered_map<int, std::vector<FunctionSymbol*>> ArityFunctionListMap;
     typedef ArityFunctionListMap::iterator ArityFunctionListMapIt;
     ArityFunctionListMap arityFunctionListMap;
     ContainerScope* containerScope;
+    std::vector<TypeSymbol*> boundTemplateArguments;
 };
 
 class FunctionGroupTypeSymbol : public TypeSymbol

@@ -1,0 +1,366 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace Cm.BoundTree
+{
+    public class BoundCompileUnit : Cm.Sym.BoundCompileUnit
+    {
+        public nothrow BoundCompileUnit(Cm.Sym.SymbolTable& symbolTable_) : base(), symbolTable(symbolTable_), syntaxUnit(null), conversionTable(symbolTable.GetStandardConversionTable()), 
+            classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()),
+            hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                externalConstantRepository.Reset(new Cm.Core.LlvmExternalConstantRepository());
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                externalConstantRepository.Reset(new Cm.Core.CExternalConstantRepository());
+            }
+        }
+        public BoundCompileUnit(Cm.Sym.SymbolTable& symbolTable_, Cm.Ast.CompileUnitNode* syntaxUnit_, const string& irFilePath_) : base(), symbolTable(symbolTable_), syntaxUnit(syntaxUnit_),
+            irFilePath(irFilePath_), conversionTable(symbolTable.GetStandardConversionTable()), 
+            classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()),
+            hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
+        {
+            objectFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".o"));
+            optIrFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".opt.ll"));
+            dependencyFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".dep"));
+            changedFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".chg"));
+            debugInfoFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".cdi"));
+            bcuPath = GetFullPath(Path.ChangeExtension(irFilePath, ".bcu"));
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                stringRepository.Reset(new Cm.Core.LlvmStringRepository());
+                irClassTypeRepository.Reset(new Cm.Core.LlvmIrClassTypeRepository());
+                externalConstantRepository.Reset(new Cm.Core.LlvmExternalConstantRepository());
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                stringRepository.Reset(new Cm.Core.CStringRepository());
+                irClassTypeRepository.Reset(new Cm.Core.CIrClassTypeRepository());
+                externalConstantRepository.Reset(new Cm.Core.CExternalConstantRepository());
+            }
+            else 
+            {
+                #assert(false);
+            }
+        }
+        public void SetPaths(const string& basePath)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                irFilePath = GetFullPath(basePath + ".ll");
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                irFilePath = GetFullPath(basePath + ".c");
+            }
+            objectFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".o"));
+            optIrFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".opt.ll"));
+        }
+        public nothrow inline const string& ProjectName() const
+        {
+            return projectName;
+        }
+        public nothrow inline void SetProjectName(const string& projectName_)
+        {
+            projectName = projectName_;
+        }
+        public nothrow inline const string& FileName() const
+        {
+            return fileName;
+        }
+        public nothrow inline void SetFileName(const string& fileName_)
+        {
+            fileName = fileName_;
+        }
+        public nothrow inline Cm.Ast.CompileUnitNode* SyntaxUnit() const
+        {
+            return syntaxUnit;
+        }
+        public void AddFileScope(Cm.Sym.FileScope* fileScope)
+        {
+            fileScopes.Add(UniquePtr<Cm.Sym.FileScope>(fileScope));
+        }
+        public void RemoveLastFileScope()
+        {
+            fileScopes.RemoveLast();
+        }
+        public nothrow inline const List<UniquePtr<Cm.Sym.FileScope>>& FileScopes() const
+        {
+            return fileScopes;
+        }
+        public nothrow inline const string& IrFilePath() const
+        {
+            return irFilePath;
+        }
+        public nothrow inline const string& OptIrFilePath() const
+        {
+            return optIrFilePath;
+        }
+        public nothrow inline const string& ObjectFilePath() const
+        {
+            return objectFilePath;
+        }
+        public nothrow inline const string& CDebugInfoFilePath() const
+        {
+            return debugInfoFilePath;
+        }
+        public nothrow inline const string& BcuPath() const
+        {
+            return bcuPath;
+        }
+        public nothrow inline Cm.Sym.SymbolTable& SymbolTable()
+        {
+            return symbolTable;
+        }
+        public nothrow inline Cm.Sym.ConversionTable& ConversionTable()
+        {
+            return conversionTable;
+        }
+        public nothrow inline Cm.Core.ClassConversionTable& ClassConversionTable()
+        {
+            return classConversionTable;
+        }
+        public nothrow inline Cm.Core.DerivedTypeOpRepository& DerivedTypeOpRepository()
+        {
+            return derivedTypeOpRepository;
+        }
+        public nothrow inline Cm.Core.EnumTypeOpRepository& EnumTypeOpRepository()
+        {
+            return enumTypeOpRepository;
+        }
+        public nothrow inline Cm.Core.StringRepository& StringRepository()
+        {
+            return *stringRepository;
+        }
+        public nothrow inline Cm.Core.IrFunctionRepository& IrFunctionRepository()
+        {
+            return irFunctionRepository;
+        }
+        public nothrow inline Cm.Core.IrClassTypeRepository& IrClassTypeRepository()
+        {
+            return *irClassTypeRepository;
+        }
+        public nothrow inline Cm.Core.ExternalConstantRepository& ExternalConstantRepository()
+        {
+            return *externalConstantRepository;
+        }
+        public nothrow inline Cm.Core.SynthesizedClassFunRepository& SynthesizedClassFunRepository()
+        {
+            return *synthesizedClassFunRepository;
+        }
+        public nothrow inline void SetSynthesizedClassFunRepository(Cm.Core.SynthesizedClassFunRepository* synthesizedClassFunRepository_)
+        {
+            synthesizedClassFunRepository.Reset(synthesizedClassFunRepository_);
+        }
+        public nothrow inline Cm.Core.ClassTemplateRepository& ClassTemplateRepository()
+        {
+            return *classTemplateRepository;
+        }
+        public nothrow inline void SetClassTemplateRepository(Cm.Core.ClassTemplateRepository* classTemplateRepository_)
+        {
+            classTemplateRepository.Reset(classTemplateRepository_);
+        }
+        public nothrow inline Cm.Core.FunctionTemplateRepository& FunctionTemplateRepository()
+        {
+            return functionTemplateRepository;
+        }
+        public nothrow inline Cm.Core.InlineFunctionRepository& InlineFunctionRepository()
+        {
+            return *inlineFunctionRepository;
+        }
+        public nothrow void SetInlineFunctionRepository(Cm.Core.InlineFunctionRepository* inlineFunctionRepository_)
+        {
+            inlineFunctionRepository.Reset(inlineFunctionRepository_);
+        }
+        public nothrow inline Cm.Core.DelegateTypeOpRepository& DelegateTypeOpRepository()
+        {
+            return *delegateTypeOpRepository;
+        }
+        public nothrow inline void SetDelegateTypeOpRepository(Cm.Core.DelegateTypeOpRepository* delegateTypeOpRepository_)
+        {
+            delegateTypeOpRepository.Reset(delegateTypeOpRepository_);
+        }
+        public nothrow inline Cm.Core.ClassDelegateTypeOpRepository& ClassDelegateTypeOpRepository()
+        {
+            return *classDelegateTypeOpRepository;
+        }
+        public nothrow inline void SetClassDelegateTypeOpRepository(Cm.Core.ClassDelegateTypeOpRepository* classDelegateTypeOpRepository_)
+        {
+            classDelegateTypeOpRepository.Reset(classDelegateTypeOpRepository_);
+        }
+        public nothrow inline Cm.Core.ArrayTypeOpRepository& ArrayTypeOpRepository()
+        {
+            return *arrayTypeOpRepository;
+        }
+        public nothrow inline void SetArrayTypeOpRepository(Cm.Core.ArrayTypeOpRepository* arrayTypeOpRepository_)
+        {
+            arrayTypeOpRepository.Reset(arrayTypeOpRepository_);
+        }
+        public nothrow inline Cm.Core.ConceptRepository& ConceptRepository()
+        {
+            return conceptRepository;
+        }
+        public void AddBoundNode(BoundNode* boundNode)
+        {
+            boundNodes.Add(UniquePtr<BoundNode>(boundNode));
+        }
+        public override void Own(Cm.Sym.FunctionSymbol* functionSymbol)
+        {
+            if (!functionSymbol->Owned())
+            {
+                functionSymbol->SetOwned();
+                ownedFunctionSymbols.Add(UniquePtr<Cm.Sym.FunctionSymbol>(functionSymbol));
+            }
+        }
+        public void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            for (const UniquePtr<BoundNode>& boundNode : boundNodes)
+            {
+                boundNode->Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        public nothrow inline bool Instantiated(Cm.Sym.FunctionSymbol* functionSymbol) const
+        {
+            return instantiatedFunctions.CFind(functionSymbol) != instantiatedFunctions.CEnd();
+        }
+        public void AddToInstantiated(Cm.Sym.FunctionSymbol* functionSymbol)
+        {
+            instantiatedFunctions.Insert(functionSymbol);
+        }
+        public nothrow inline bool HasGotos() const
+        {
+            return hasGotos;
+        }
+        public nothrow inline void SetHasGotos()
+        {
+            hasGotos = true;
+        }
+        public nothrow inline bool IsPrebindCompileUnit() const
+        {
+            return isPrebindCompileUnit;
+        }
+        public nothrow inline void SetPrebindCompileUnit()
+        {
+            isPrebindCompileUnit = true;
+        }
+        public bool Changed() const
+        {
+            if (!FileExists(irFilePath)) return true;
+            if (LastWriteTimeLess(irFilePath, syntaxUnit->FilePath())) return true;
+            if (!FileExists(objectFilePath)) return true;
+            if (LastWriteTimeLess(objectFilePath, syntaxUnit->FilePath())) return true;
+            if (LastWriteTimeLess(objectFilePath, irFilePath)) return true;
+            return false;
+        }
+        public void AddDependentUnit(Cm.BoundTree.BoundCompileUnit* dependentUnit)
+        {
+            dependentUnits.Insert(dependentUnit);
+        }
+        public nothrow inline const HashSet<Cm.BoundTree.BoundCompileUnit*>& DependentUnits() const
+        {
+            return dependentUnits;
+        }
+        public void ReadDependencyFile()
+        {
+            if (FileExists(dependencyFilePath))
+            {
+                InputFileStream dependencyFile(dependencyFilePath);
+                while (!dependencyFile.EndOfStream())
+                {
+                    string dependentFilePath = dependencyFile.ReadLine();
+                    if (!dependentFilePath.IsEmpty())
+                    {
+                        Cm.Sym.BoundCompileUnit* compileUnit = Cm.Sym.GetCompileUnitMap()->GetBoundCompileUnit(dependentFilePath);
+                        if (compileUnit != null)
+                        {
+                            if (compileUnit is Cm.BoundTree.BoundCompileUnit*)
+                            {
+                                Cm.BoundTree.BoundCompileUnit* dependentUnit = cast<Cm.BoundTree.BoundCompileUnit*>(compileUnit);
+                                AddDependentUnit(dependentUnit);
+                            }
+                        }
+                    }                    
+                }                
+            }
+        }
+        public void WriteDependencyFile()
+        {
+            OutputFileStream dependencyFile(dependencyFilePath);
+            for (Cm.BoundTree.BoundCompileUnit* dependentUnit : dependentUnits)
+            {
+                dependencyFile << dependentUnit->SyntaxUnit()->FilePath() << endl();
+            }
+        }
+        public bool HasChangedFile() const
+        {
+            return FileExists(changedFilePath);
+        }
+        public void WriteChangedFile()
+        {
+            OutputFileStream changedFile(changedFilePath);
+            changedFile << "changed" << endl();
+        }
+        public void RemoveChangedFile() 
+        {
+            RemoveFile(changedFilePath);
+        }
+        public nothrow inline bool IsMainUnit() const
+        {
+            return isMainUnit;
+        }
+        public nothrow inline void SetMainUnit() 
+        {
+            isMainUnit = true;
+        }
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Ast.CompileUnitNode* syntaxUnit;
+        private List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
+        private string irFilePath;
+        private string objectFilePath;
+        private string optIrFilePath;
+        private string dependencyFilePath;
+        private string changedFilePath;
+        private string debugInfoFilePath;
+        private string bcuPath;
+        private string fileName;
+        private string projectName;
+        private Cm.Sym.ConversionTable conversionTable;
+        private Cm.Core.ClassConversionTable classConversionTable;
+        private Cm.Core.DerivedTypeOpRepository derivedTypeOpRepository;
+        private Cm.Core.EnumTypeOpRepository enumTypeOpRepository;
+        private UniquePtr<Cm.Core.StringRepository> stringRepository;
+        private Cm.Core.IrFunctionRepository irFunctionRepository;
+        private UniquePtr<Cm.Core.IrClassTypeRepository> irClassTypeRepository;
+        private UniquePtr<Cm.Core.ExternalConstantRepository> externalConstantRepository;
+        private UniquePtr<Cm.Core.SynthesizedClassFunRepository> synthesizedClassFunRepository;
+        private UniquePtr<Cm.Core.ClassTemplateRepository> classTemplateRepository;
+        private Cm.Core.FunctionTemplateRepository functionTemplateRepository;
+        private UniquePtr<Cm.Core.InlineFunctionRepository> inlineFunctionRepository;
+        private UniquePtr<Cm.Core.DelegateTypeOpRepository> delegateTypeOpRepository;
+        private UniquePtr<Cm.Core.ClassDelegateTypeOpRepository> classDelegateTypeOpRepository;
+        private UniquePtr<Cm.Core.ArrayTypeOpRepository> arrayTypeOpRepository;
+        private Cm.Core.ConceptRepository conceptRepository;
+        private List<UniquePtr<BoundNode>> boundNodes;
+        private List<UniquePtr<Cm.Sym.FunctionSymbol>> ownedFunctionSymbols;
+        private HashSet<Cm.Sym.FunctionSymbol*> instantiatedFunctions;
+        private bool hasGotos;
+        private bool isPrebindCompileUnit;
+        private bool isMainUnit;
+        private HashSet<Cm.BoundTree.BoundCompileUnit*> dependentUnits;
+    }
+}

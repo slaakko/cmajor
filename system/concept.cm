@@ -312,16 +312,26 @@ namespace System.Concepts
     {
         where T is TotallyOrdered;
     }
+    
+    public concept ConversionFromSByte<T>
+    {
+        T(sbyte); 
+    }
+
+    public concept ConversionFromByte<T>
+    {
+        T(byte); 
+    }
 
     public concept AdditiveMonoid<T>: AdditiveSemigroup<T>
     {
-        T(sbyte); // ensure zero can be converted to T
+        where ConversionFromSByte<T> or ConversionFromByte<T>; // ensure zero can be converted to T
         axiom zeroIsIdentityElement(T a) { a + 0 == a && 0 + a == a; }
     }
 
     public concept MultiplicativeMonoid<T>: MultiplicativeSemigroup<T>
     {
-        T(sbyte); // ensure one can be converted to T
+        where ConversionFromSByte<T> or ConversionFromByte<T>; // ensure one can be converted to T
         axiom oneIsIdentityElement(T a) { a * 1 == a && 1 * a == a; }
     }
 

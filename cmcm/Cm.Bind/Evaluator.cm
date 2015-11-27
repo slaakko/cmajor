@@ -1,0 +1,1256 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.Concepts;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    public Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
+        const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository)
+    {
+        Evaluator evaluator(targetType, cast_, symbolTable, containerScope, fileScopes, classTemplateRepository);
+        return evaluator.DoEvaluate(value);
+    }
+    
+    internal class Evaluator : Cm.Ast.Visitor
+    {
+        public nothrow Evaluator(Cm.Sym.ValueType targetType_, bool cast__, Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_) : base(true, true), targetType(targetType_), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_), 
+            fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantAndEnumConstantSymbols)
+        {
+        }
+        public Cm.Sym.Value* DoEvaluate(Cm.Ast.Node* value)
+        {
+            value->Accept(*this);
+            UniquePtr<Cm.Sym.Value> result(evaluationStack.Pop());
+            result.Reset(result->As(targetType, cast_, value->GetSpan()));
+            return result.Release();
+        }
+        public override void Visit(Cm.Ast.BooleanLiteralNode& booleanLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(booleanLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.SByteLiteralNode& sbyteLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.SByteValue(sbyteLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ByteLiteralNode& byteLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ByteValue(byteLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ShortLiteralNode& shortLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ShortValue(shortLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.UShortLiteralNode& ushortLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UShortValue(ushortLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.IntLiteralNode& intLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.IntValue(intLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.UIntLiteralNode& uintLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UIntValue(uintLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.LongLiteralNode& longLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.LongValue(longLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ULongLiteralNode& ulongLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ULongValue(ulongLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.FloatLiteralNode& floatLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.FloatValue(floatLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.DoubleLiteralNode& doubleLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.DoubleValue(doubleLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.CharLiteralNode& charLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.CharValue(charLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.StringLiteralNode& stringLiteralNode)
+        {
+            ThrowCannotEvaluateStatically(stringLiteralNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.NullLiteralNode& nullLiteralNode)
+        {
+            ThrowCannotEvaluateStatically(nullLiteralNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.EquivalenceNode& equivalenceNode)
+        {
+            ThrowCannotEvaluateStatically(equivalenceNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.ImplicationNode& implicationNode)
+        {
+            ThrowCannotEvaluateStatically(implicationNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.DisjunctionNode& disjunctionNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, DisjunctionDelegates.Instance().Get(), cast_, disjunctionNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ConjunctionNode& conjunctionNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, ConjunctionDelegates.Instance().Get(), cast_, conjunctionNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitOrNode& bitOrNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, BitwiseOrDelegates.Instance().Get(), cast_, bitOrNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitAndNode& bitAndNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, BitwiseAndDelegates.Instance().Get(), cast_, bitAndNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitXorNode& bitXorNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, BitwiseXorDelegates.Instance().Get(), cast_, bitXorNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.EqualNode& equalNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, EqualityDelegates.Instance().Get(), cast_, equalNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.NotEqualNode& notEqualNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, InequalityDelegates.Instance().Get(), cast_, notEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.LessNode& lessNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, LessThanRelationDelegates.Instance().Get(), cast_, lessNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.GreaterNode& greaterNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, GreaterThanRelationDelegates.Instance().Get(), cast_, greaterNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.LessOrEqualNode& lessOrEqualNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, LessOrEqualRelationDelegates.Instance().Get(), cast_, lessOrEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.GreaterOrEqualNode& greaterOrEqualNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, GreaterOrEqualRelationDelegates.Instance().Get(), cast_, greaterOrEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ShiftLeftNode& shiftLeftNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, ShiftLeftDelegates.Instance().Get(), cast_, shiftLeftNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ShiftRightNode& shiftRightNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, ShiftRightDelegates.Instance().Get(), cast_, shiftRightNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.AddNode& addNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, AddDelegates.Instance().Get(), cast_, addNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.SubNode& subNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, SubDelegates.Instance().Get(), cast_, subNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.MulNode& mulNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, MulDelegates.Instance().Get(), cast_, mulNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.DivNode& divNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, DivDelegates.Instance().Get(), cast_, divNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.RemNode& remNode)
+        {
+            EvaluateBinOp(targetType, evaluationStack, RemDelegates.Instance().Get(), cast_, remNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.InvokeNode& invokeNode)
+        {
+            ThrowCannotEvaluateStatically(invokeNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.IndexNode& indexNode)
+        {
+            ThrowCannotEvaluateStatically(indexNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupContainerSymbols;
+        }
+        public override void EndVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupId = lookupIdStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is ScopedValue*)
+            {
+                ScopedValue* scopedValue = cast<ScopedValue*>(value.GetPtr());
+                Cm.Sym.ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
+                Cm.Sym.ContainerScope* scope = containerSymbol->GetContainerScope();
+                Cm.Sym.Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
+                if (symbol != null)
+                {
+                    EvaluateSymbol(symbol);
+                }
+                else
+                {
+                    throw Cm.Core.Error("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("expression '" + dotNode.Subject()->FullName() + "' must denote a namespace, class or enumerated type", dotNode.Subject()->GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.ArrowNode& arrowNode)
+        {
+            ThrowCannotEvaluateStatically(arrowNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.PostfixIncNode& postfixIncNode)
+        {
+            ThrowCannotEvaluateStatically(postfixIncNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.PostfixDecNode& postfixDecNode)
+        {
+            ThrowCannotEvaluateStatically(postfixDecNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.DerefNode& derefNode)
+        {
+            ThrowCannotEvaluateStatically(derefNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.AddrOfNode& addrOfNode)
+        {
+            ThrowCannotEvaluateStatically(addrOfNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.NotNode& notNode)
+        {
+            EvaluateUnaryOp(targetType, evaluationStack, NotDelegates.Instance().Get(), cast_, notNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.UnaryPlusNode& unaryPlusNode)
+        {
+            EvaluateUnaryOp(targetType, evaluationStack, UnaryPlusDelegates.Instance().Get(), cast_, unaryPlusNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.UnaryMinusNode& unaryMinusNode)
+        {
+            EvaluateUnaryOp(targetType, evaluationStack, UnaryMinusDelegates.Instance().Get(), cast_, unaryMinusNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ComplementNode& complementNode)
+        {
+            EvaluateUnaryOp(targetType, evaluationStack, BitwiseComplementDelegates.Instance().Get(), cast_, complementNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
+        {
+            ThrowCannotEvaluateStatically(prefixIncNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.PrefixDecNode& prefixDecNode)
+        {
+            ThrowCannotEvaluateStatically(prefixDecNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.SizeOfNode& sizeOfNode)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Visit(Cm.Ast.TypeNameNode& typeNameNode)
+        {
+            ThrowCannotEvaluateStatically(typeNameNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.CastNode& castNode)
+        {
+            Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
+            UniquePtr<Cm.Sym.TypeSymbol> type(null);//ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
+            Cm.Sym.SymbolType symbolType = type->GetSymbolType();
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository)));
+        }
+        public override void Visit(Cm.Ast.IsNode& isNode)
+        {
+            ThrowCannotEvaluateStatically(isNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.AsNode& asNode)
+        {
+            ThrowCannotEvaluateStatically(asNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.NewNode& newNode)
+        {
+            ThrowCannotEvaluateStatically(newNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.ConstructNode& constructNode)
+        {
+            ThrowCannotEvaluateStatically(constructNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.ThisNode& thisNode)
+        {
+            ThrowCannotEvaluateStatically(thisNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.BaseNode& baseNode)
+        {
+            ThrowCannotEvaluateStatically(baseNode.GetSpan());
+        }
+        public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
+        {
+            ThrowCannotEvaluateStatically(templateIdNode.GetSpan());
+        }
+        private Cm.Sym.ValueType targetType;
+        private bool cast_;
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Sym.ContainerScope* containerScope;
+        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
+        private Cm.Sym.SymbolTypeSetId lookupId;
+        private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
+        private void EvaluateSymbol(Cm.Sym.Symbol* symbol)
+        {
+            if (symbol is Cm.Sym.ContainerSymbol*)
+            {
+                Cm.Sym.ContainerSymbol* containerSymbol = cast<Cm.Sym.ContainerSymbol*>(symbol);
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(containerSymbol)));
+            }
+            else if (symbol is Cm.Sym.ConstantSymbol*)
+            {
+                Cm.Sym.ConstantSymbol* constantSymbol = cast<Cm.Sym.ConstantSymbol*>(symbol);
+                if (constantSymbol->GetValue() == null)
+                {
+                    Cm.Ast.Node* node = symbolTable.GetNode(constantSymbol);
+                    if (node is Cm.Ast.ConstantNode*)
+                    {
+                        Cm.Ast.ConstantNode* constantNode = cast<Cm.Ast.ConstantNode*>(node);
+                        BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode);
+                    }
+                    else
+                    {
+                        throw Exception("constant node expected");
+                    }
+                }
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(constantSymbol->GetValue()->Clone()));
+            }
+            else if (symbol is Cm.Sym.EnumConstantSymbol*)
+            {
+                Cm.Sym.EnumConstantSymbol* enumConstantSymbol = cast<Cm.Sym.EnumConstantSymbol*>(symbol);
+                if (enumConstantSymbol->GetValue() == null)
+                {
+                    Cm.Ast.Node* node = symbolTable.GetNode(enumConstantSymbol);
+                    if (node is Cm.Ast.EnumConstantNode*)
+                    {
+                        Cm.Ast.EnumConstantNode* enumConstantNode = cast<Cm.Ast.EnumConstantNode*>(node);
+                        Cm.Sym.ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
+                        BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                    }
+                    else
+                    {
+                        throw Exception("enum constant node expected");
+                    }
+                }
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(enumConstantSymbol->GetValue()->Clone()));
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(symbol->GetSpan());
+            }
+        }
+    }
+    
+    public void ThrowNotImplemented()
+    {
+        throw Exception("member function not implemented");
+    }
+    
+    public class ScopedValue : Cm.Sym.Value
+    {
+        public nothrow ScopedValue(Cm.Sym.ContainerSymbol* containerSymbol_) : containerSymbol(containerSymbol_)
+        {
+        }
+        public nothrow inline Cm.Sym.ContainerSymbol* ContainerSymbol() const
+        {
+            return containerSymbol;
+        }
+        public nothrow override Cm.Sym.ValueType GetValueType() const 
+        {
+            #assert(false);
+            return Cm.Sym.ValueType.none;
+        }
+        public nothrow override Cm.Sym.Value* Clone() const
+        {
+            #assert(false);
+            return null;
+        }
+        public override Cm.Sym.Value* As(Cm.Sym.ValueType targetType, bool cast_, const Span& span_)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        private Cm.Sym.ContainerSymbol* containerSymbol;
+    }
+    
+    internal void ThrowCannotEvaluateStatically(const Span& span)
+    {
+        throw Cm.Core.Error("cannot evaluate statically", span);
+    }
+    
+    internal delegate Cm.Sym.Value* BinaryOperatorDelegate(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span);
+    internal delegate Cm.Sym.Value* UnaryOperatorDelegate(Cm.Sym.Value* operand, const Span& span);
+
+    internal Cm.Sym.Value* NotSupported(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span)
+    {
+        throw Cm.Core.Error("operation not supported for types " + Cm.Sym.ValueTypeStr(left->GetValueType()) + " and " + Cm.Sym.ValueTypeStr(right->GetValueType()), span);
+    }
+    
+    internal Cm.Sym.Value* NotSupported(Cm.Sym.Value* operand, const Span& span)
+    {
+        throw Cm.Core.Error("operation not supported for type " + Cm.Sym.ValueTypeStr(operand->GetValueType()), span);
+    }
+
+    internal List<BinaryOperatorDelegate> DefaultBinaryDelegates()
+    {
+        List<BinaryOperatorDelegate> defaultBinaryDelegates;
+        int n = cast<int>(Cm.Sym.ValueType.max);
+        for (int i = 0; i < n; ++i)
+        {
+            defaultBinaryDelegates.Add(BinaryOperatorDelegate(NotSupported));
+        }
+        return defaultBinaryDelegates;
+    }
+    
+    internal List<UnaryOperatorDelegate> DefaultUnaryDelegates()
+    {
+        List<UnaryOperatorDelegate> defaultUnaryDelegates;
+        int n = cast<int>(Cm.Sym.ValueType.max);
+        for (int i = 0; i < n; ++i)
+        {
+            defaultUnaryDelegates.Add(UnaryOperatorDelegate(NotSupported));
+        }
+        return defaultUnaryDelegates;
+    }
+                        
+    internal class DisjunctionDelegates
+    {
+        static DisjunctionDelegates() : instance(new DisjunctionDelegates())
+        {
+        }
+        public static nothrow DisjunctionDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private DisjunctionDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Disjunction<Cm.Sym.BoolValue>);
+        }
+        private static UniquePtr<DisjunctionDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+    
+    internal void EvaluateBinOp(Cm.Sym.ValueType targetType, Stack<UniquePtr<Cm.Sym.Value>>& evaluationStack, const List<BinaryOperatorDelegate>& delegates, bool cast_, const Span& span)
+    {
+        UniquePtr<Cm.Sym.Value> right = evaluationStack.Pop();
+        UniquePtr<Cm.Sym.Value> left = evaluationStack.Pop();
+        Cm.Sym.ValueType leftType = left->GetValueType();
+        Cm.Sym.ValueType rightType = right->GetValueType();
+        Cm.Sym.ValueType commonType = Cm.Sym.GetCommonType(leftType, rightType);
+        Cm.Sym.ValueType operationType = commonType;
+        if (targetType > commonType)
+        {
+            operationType = targetType;
+        }
+        UniquePtr<Cm.Sym.Value> leftOperand(left->As(operationType, cast_, span));
+        UniquePtr<Cm.Sym.Value> rightOperand(right->As(operationType, cast_, span));
+        BinaryOperatorDelegate dlg = delegates[cast<int>(operationType)];
+        evaluationStack.Push(UniquePtr<Cm.Sym.Value>(dlg(leftOperand.GetPtr(), rightOperand.GetPtr(), span)));
+    }
+    
+    internal Cm.Sym.Value* BinaryEvaluate<ValueT, Op>(Cm.Sym.Value* left, Cm.Sym.Value* right, Op op) where ValueT is Cm.Sym.ValueClass and Op is BinaryFunction
+    {
+        ValueT* leftOperand = cast<ValueT*>(left);
+        ValueT* rightOperand = cast<ValueT*>(right);
+        return new ValueT(op(leftOperand->Value(), rightOperand->Value()));
+    }
+    
+    internal Cm.Sym.Value* Disjunction<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, LogicalOr<ValueT.OperandType>());
+    }
+    
+    internal class ConjunctionDelegates
+    {
+        static ConjunctionDelegates() : instance(new ConjunctionDelegates())
+        {
+        }
+        public static nothrow ConjunctionDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private ConjunctionDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Conjunction<Cm.Sym.BoolValue>);
+        }
+        private static UniquePtr<ConjunctionDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Conjunction<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, LogicalAnd<ValueT.OperandType>());
+    }
+   
+    internal class BitwiseOrDelegates
+    {
+        static BitwiseOrDelegates() : instance(new BitwiseOrDelegates())
+        {
+        }
+        public static nothrow BitwiseOrDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private BitwiseOrDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(BitwiseOr<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<BitwiseOrDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* BitwiseOr<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, BitOr<ValueT.OperandType>());
+    }
+
+    internal class BitwiseAndDelegates
+    {
+        static BitwiseAndDelegates() : instance(new BitwiseAndDelegates())
+        {
+        }
+        public static nothrow BitwiseAndDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private BitwiseAndDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(BitwiseAnd<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<BitwiseAndDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* BitwiseAnd<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, BitAnd<ValueT.OperandType>());
+    }
+
+    internal class BitwiseXorDelegates
+    {
+        static BitwiseXorDelegates() : instance(new BitwiseXorDelegates())
+        {
+        }
+        public static nothrow BitwiseXorDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private BitwiseXorDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(BitwiseXor<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<BitwiseXorDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* BitwiseXor<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, BitXor<ValueT.OperandType>());
+    }
+
+    internal class EqualityDelegates
+    {
+        static EqualityDelegates() : instance(new EqualityDelegates())
+        {
+        }
+        public static nothrow EqualityDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private EqualityDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<EqualityDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* BinaryPredEvaluate<ValueT, Op>(Cm.Sym.Value* left, Cm.Sym.Value* right, Op op) where ValueT is Cm.Sym.ValueClass and Op is Relation
+    {
+        ValueT* leftOperand = cast<ValueT*>(left);
+        ValueT* rightOperand = cast<ValueT*>(right);
+        return new Cm.Sym.BoolValue(op(leftOperand->Value(), rightOperand->Value()));
+    }
+    
+    internal Cm.Sym.Value* Equality<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, EqualTo<ValueT.OperandType>());
+    }
+
+    internal class InequalityDelegates
+    {
+        static InequalityDelegates() : instance(new InequalityDelegates())
+        {
+        }
+        public static nothrow InequalityDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private InequalityDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<InequalityDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Inequality<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, NotEqualTo<ValueT.OperandType>());
+    }
+
+    internal class LessThanRelationDelegates
+    {
+        static LessThanRelationDelegates() : instance(new LessThanRelationDelegates())
+        {
+        }
+        public static nothrow LessThanRelationDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private LessThanRelationDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<LessThanRelationDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* LessThanRelation<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, Less<ValueT.OperandType>());
+    }
+
+    internal class GreaterThanRelationDelegates
+    {
+        static GreaterThanRelationDelegates() : instance(new GreaterThanRelationDelegates())
+        {
+        }
+        public static nothrow GreaterThanRelationDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private GreaterThanRelationDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<GreaterThanRelationDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* GreaterThanRelation<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, Greater<ValueT.OperandType>());
+    }
+
+    internal class LessOrEqualRelationDelegates
+    {
+        static LessOrEqualRelationDelegates() : instance(new LessOrEqualRelationDelegates())
+        {
+        }
+        public static nothrow LessOrEqualRelationDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private LessOrEqualRelationDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<LessOrEqualRelationDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* LessOrEqualRelation<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, LessOrEqualTo<ValueT.OperandType>());
+    }
+
+    internal class GreaterOrEqualRelationDelegates
+    {
+        static GreaterOrEqualRelationDelegates() : instance(new GreaterOrEqualRelationDelegates())
+        {
+        }
+        public static nothrow GreaterOrEqualRelationDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private GreaterOrEqualRelationDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<GreaterOrEqualRelationDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* GreaterOrEqualRelation<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryPredEvaluate<ValueT>(left, right, GreaterOrEqualTo<ValueT.OperandType>());
+    }
+
+    internal class ShiftLeftDelegates
+    {
+        static ShiftLeftDelegates() : instance(new ShiftLeftDelegates())
+        {
+        }
+        public static nothrow ShiftLeftDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private ShiftLeftDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(ShiftLeftOp<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<ShiftLeftDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* ShiftLeftOp<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, ShiftLeft<ValueT.OperandType>());
+    }
+
+    internal class ShiftRightDelegates
+    {
+        static ShiftRightDelegates() : instance(new ShiftRightDelegates())
+        {
+        }
+        public static nothrow ShiftRightDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private ShiftRightDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(ShiftRightOp<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<ShiftRightDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* ShiftRightOp<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, ShiftRight<ValueT.OperandType>());
+    }
+
+    internal class AddDelegates
+    {
+        static AddDelegates() : instance(new AddDelegates())
+        {
+        }
+        public static nothrow AddDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private AddDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Add<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Add<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Add<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Add<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Add<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Add<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Add<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Add<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Add<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Add<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<AddDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Add<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, Plus<ValueT.OperandType>());
+    }
+
+    internal class SubDelegates
+    {
+        static SubDelegates() : instance(new SubDelegates())
+        {
+        }
+        public static nothrow SubDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private SubDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Sub<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<SubDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Sub<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, Minus<ValueT.OperandType>());
+    }
+
+    internal class MulDelegates
+    {
+        static MulDelegates() : instance(new MulDelegates())
+        {
+        }
+        public static nothrow MulDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private MulDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Mul<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<MulDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Mul<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, Multiplies<ValueT.OperandType>());
+    }
+
+    internal class DivDelegates
+    {
+        static DivDelegates() : instance(new DivDelegates())
+        {
+        }
+        public static nothrow DivDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private DivDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Div<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Div<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Div<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Div<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Div<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Div<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Div<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Div<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Div<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Div<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<DivDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Div<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, Divides<ValueT.OperandType>());
+    }
+
+    internal class RemDelegates
+    {
+        static RemDelegates() : instance(new RemDelegates())
+        {
+        }
+        public static nothrow RemDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private RemDelegates()
+        {
+            delegates = DefaultBinaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Rem<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<RemDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* Rem<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return BinaryEvaluate<ValueT>(left, right, Remainder<ValueT.OperandType>());
+    }
+    
+    internal void EvaluateUnaryOp(Cm.Sym.ValueType targetType, Stack<UniquePtr<Cm.Sym.Value>>& evaluationStack, const List<UnaryOperatorDelegate>& delegates, bool cast_, const Span& span)
+    {
+        UniquePtr<Cm.Sym.Value> operand = evaluationStack.Pop();
+        Cm.Sym.ValueType operandType = operand->GetValueType();
+        Cm.Sym.ValueType operationType = operandType;
+        if (targetType > operandType)
+        {
+            operationType = targetType;
+        }
+        UniquePtr<Cm.Sym.Value> operandAsOperationType(operand->As(operationType, cast_, span));
+        UnaryOperatorDelegate dlg = delegates[cast<int>(operationType)];
+        evaluationStack.Push(UniquePtr<Cm.Sym.Value>(dlg(operandAsOperationType.GetPtr(), span)));
+    }
+
+    internal class NotDelegates
+    {
+        static NotDelegates() : instance(new NotDelegates())
+        {
+        }
+        public static nothrow NotDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private NotDelegates()
+        {
+            delegates = DefaultUnaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = UnaryOperatorDelegate(Not<Cm.Sym.BoolValue>);
+        }
+        private static UniquePtr<NotDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* UnaryPredEvaluate<ValueT, Op>(Cm.Sym.Value* operand, Op op) where ValueT is Cm.Sym.ValueClass and Op is UnaryPredicate
+    {
+        ValueT* operandValue = cast<ValueT*>(operand);
+        return new Cm.Sym.BoolValue(op(operandValue->Value()));
+    }
+    
+    internal Cm.Sym.Value* Not<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return UnaryPredEvaluate<ValueT>(operand, LogicalNot<ValueT.OperandType>());
+    }
+
+    internal class UnaryPlusDelegates
+    {
+        static UnaryPlusDelegates() : instance(new UnaryPlusDelegates())
+        {
+        }
+        public static nothrow UnaryPlusDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private UnaryPlusDelegates()
+        {
+            delegates = DefaultUnaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = UnaryOperatorDelegate(UnaryPlus<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<UnaryPlusDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* UnaryEvaluate<ValueT, Op>(Cm.Sym.Value* operand, Op op) where ValueT is Cm.Sym.ValueClass and Op is UnaryFunction
+    {
+        ValueT* operandValue = cast<ValueT*>(operand);
+        return new ValueT(op(operandValue->Value()));
+    }
+
+    internal Cm.Sym.Value* UnaryPlus<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return UnaryEvaluate<ValueT>(operand, Identity<ValueT.OperandType>());
+    }
+
+    internal class UnaryMinusDelegates
+    {
+        static UnaryMinusDelegates() : instance(new UnaryMinusDelegates())
+        {
+        }
+        public static nothrow UnaryMinusDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private UnaryMinusDelegates()
+        {
+            delegates = DefaultUnaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = UnaryOperatorDelegate(UnaryMinus<Cm.Sym.DoubleValue>);
+        }
+        private static UniquePtr<UnaryMinusDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+
+    internal Cm.Sym.Value* UnaryMinus<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return UnaryEvaluate<ValueT>(operand, Negate<ValueT.OperandType>());
+    }
+    
+    internal class BitwiseComplementDelegates
+    {
+        static BitwiseComplementDelegates() : instance(new BitwiseComplementDelegates())
+        {
+        }
+        public static nothrow BitwiseComplementDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private BitwiseComplementDelegates()
+        {
+            delegates = DefaultUnaryDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = UnaryOperatorDelegate(BitwiseComplement<Cm.Sym.ULongValue>);
+        }
+        private static UniquePtr<BitwiseComplementDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+    
+    internal Cm.Sym.Value* BitwiseComplement<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
+    {
+        return UnaryEvaluate<ValueT>(operand, BitNot<ValueT.OperandType>());
+    }
+}

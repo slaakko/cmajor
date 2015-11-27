@@ -2,5 +2,6 @@ project Cm.Build;
 target=library;
 assembly <Cm.Build.cma>;
 reference <../Cm.Core/Cm.Core.cml>;
+reference <../Cm.Bind/Cm.Bind.cml>;
 source <Build.cm>;
 source <MainUnit.cm>;

@@ -1,6 +1,7 @@
 solution cmcm;
 project <C.Ir/C.Ir.cmp>;
 project <Cm.Ast/Cm.Ast.cmp>;
+project <Cm.Bind/Cm.Bind.cmp>;
 project <Cm.BoundTree/Cm.BoundTree.cmp>;
 project <Cm.Build/Cm.Build.cmp>;
 project <Cm.Compiler/Cm.Compiler.cmp>;
@@ -30,3 +31,4 @@ dependency Llvm.Ir(Ir.Intf);
 dependency C.Ir(Ir.Intf);
 dependency Cm.IrIntf(C.Ir, Llvm.Ir, Ir.Intf);
 dependency Cm.BoundTree(C.Ir, Cm.Ast, Cm.Core, Cm.IrIntf, Cm.Parser, Cm.Ser, Cm.Sym, Ir.Intf, Llvm.Ir);
+dependency Cm.Bind(C.Ir, Cm.Ast, Cm.BoundTree, Cm.Core, Cm.IrIntf, Cm.Parser, Cm.Ser, Cm.Sym, Ir.Intf, Llvm.Ir);

@@ -56,6 +56,11 @@ void FunctionGroupSymbol::Dump(CodeFormatter& formatter)
 {
 }
 
+void FunctionGroupSymbol::SetBoundTemplateArguments(const std::vector<TypeSymbol*>& boundTemplateArguments_)
+{
+    boundTemplateArguments = boundTemplateArguments_;
+}
+
 FunctionGroupTypeSymbol::FunctionGroupTypeSymbol(Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : TypeSymbol(functionGroupSymbol_->GetSpan(), functionGroupSymbol_->Name()), 
     functionGroupSymbol(functionGroupSymbol_)
 {

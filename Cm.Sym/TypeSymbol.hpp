@@ -69,6 +69,7 @@ public:
     virtual bool IsArrayType() const { return false; }
     virtual bool IsPureArrayType() const { return false; }
     virtual bool IsPrimitiveSingleDimensionArrayType() const { return false; }
+    virtual bool IsNamespaceTypeSymbol() const { return false; }
     virtual DerivationCounts GetDerivationCounts() const { return DerivationCounts(); }
     virtual const Cm::Ast::DerivationList& Derivations() const { return emptyDerivationList; }
     virtual int GetLastArrayDimension() const { return 0; }

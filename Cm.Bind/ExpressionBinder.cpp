@@ -1598,6 +1598,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     Cm::Sym::FunctionLookupSet ctorLookups;
     ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
     std::vector<Cm::Core::Argument> ctorResolutionArguments;
+    std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
     temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
     temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
     ctorResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(typeSymbol, node->GetSpan())));
@@ -2477,6 +2478,7 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
             boundTemplateArguments.push_back(templateArgumentType);
         }
         boundFunctionGroup->SetBoundTemplateArguments(boundTemplateArguments);
+        boundFunctionGroup->GetFunctionGroupSymbol()->SetBoundTemplateArguments(boundTemplateArguments);
         boundExpressionStack.Push(subject.release());
     }
     else if (subject->IsBoundTypeExpression())
