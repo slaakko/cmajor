@@ -1,0 +1,206 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Sym
+{
+    public string MangleName(const string& namespaceName, const string& functionGroupName, const List<Cm.Sym.TypeSymbol*>& templateArguments, const List<Cm.Sym.ParameterSymbol*>& parameters)
+    {
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            string mangledNs = namespaceName;
+            int nm = mangledNs.Length();
+            if (nm > 0)
+            {
+                mangledNs.Append('.');
+            }
+            string mangledName = mangledNs;
+            mangledName.Append(FunctionGroupMangleMap.Instance().MangleFunctionGroupName(functionGroupName));
+            if (!templateArguments.IsEmpty())
+            {
+                mangledName.Append("$$");
+                int n = templateArguments.Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    if (i > 0)
+                    {
+                        mangledName.Append('.');
+                    }
+                    mangledName.Append(Cm.IrIntf.MakeAssemblyName(templateArguments[i]->FullName()));
+                }
+                mangledName.Append("$$");
+            }
+            int n = parameters.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.ParameterSymbol* parameter = parameters[i];
+                Cm.Sym.TypeSymbol* type = parameter->GetType();
+                mangledName.Append(type->GetMangleId());
+            }
+            return mangledName;
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            string mangledNs;
+            int n = namespaceName.Length();
+            for (int i = 0; i < n; ++i)
+            {
+                if (namespaceName[i] == '.')
+                {
+                    mangledNs.Append("_N_");
+                }
+                else
+                {
+                    mangledNs.Append(namespaceName[i]);
+                }
+            }
+            int nm = mangledNs.Length();
+            if (nm > 0)
+            {
+                mangledNs.Append("_N_");
+            }
+            string mangledName = mangledNs;
+            mangledName.Append(FunctionGroupMangleMap.Instance().MangleFunctionGroupName(functionGroupName));
+            if (!templateArguments.IsEmpty())
+            {
+                mangledName.Append("_B_");
+                int n = templateArguments.Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    if (i > 0)
+                    {
+                        mangledName.Append('_');
+                    }
+                    mangledName.Append(Cm.IrIntf.MakeAssemblyName(templateArguments[i]->FullName()));
+                }
+                mangledName.Append("_E_");
+            }
+            int np = parameters.Count();
+            if (np > 0)
+            {
+                mangledName.Append("_T_");
+            }
+            for (int i = 0; i < np; ++i)
+            {
+                Cm.Sym.ParameterSymbol* parameter = parameters[i];
+                Cm.Sym.TypeSymbol* type = parameter->GetType();
+                mangledName.Append(type->GetMangleId());
+            }
+            return mangledName;
+        }
+        else
+        {
+            return "";
+        }
+    }
+    
+    public class FunctionGroupMangleMap
+    {
+        static FunctionGroupMangleMap() : instance(new FunctionGroupMangleMap())
+        {
+        }
+        public static FunctionGroupMangleMap& Instance()
+        {
+            #assert(!instance.IsNull());
+            return *instance;
+        }
+        private FunctionGroupMangleMap()
+        {
+            mangledFunctionGroupNames["operator+"] = "pl";
+            mangledFunctionGroupNames["operator-"] = "mi";
+            mangledFunctionGroupNames["operator*"] = "tm";
+            mangledFunctionGroupNames["operator/"] = "di";
+            mangledFunctionGroupNames["operator%"] = "mo";
+            mangledFunctionGroupNames["operator=="] = "eq";
+            mangledFunctionGroupNames["operator<"] = "ls";
+            mangledFunctionGroupNames["operator!"] = "nt";
+            mangledFunctionGroupNames["operator~"] = "cp";
+            mangledFunctionGroupNames["operator&"] = "an";
+            mangledFunctionGroupNames["operator|"] = "or";
+            mangledFunctionGroupNames["operator^"] = "xo";
+            mangledFunctionGroupNames["operator<<"] = "sl";
+            mangledFunctionGroupNames["operator>>"] = "sr";
+            mangledFunctionGroupNames["operator->"] = "pm";
+            mangledFunctionGroupNames["operator++"] = "pp";
+            mangledFunctionGroupNames["operator--"] = "mm";
+            mangledFunctionGroupNames["operator="] = "as";
+            mangledFunctionGroupNames["operator()"] = "ap";
+            mangledFunctionGroupNames["operator[]"] = "ix";
+            mangledFunctionGroupNames["@operator_conv"] = "cv";
+            mangledFunctionGroupNames["@constructor"] = "ct";
+            mangledFunctionGroupNames["@destructor"] = "dt";
+            mangledFunctionGroupNames["@static_constructor"] = "sc";
+        
+            functionGroupDocIds["operator+"] = "operator.plus";
+            functionGroupDocIds["operator-"] = "operator.minus";
+            functionGroupDocIds["operator*"] = "operator.times";
+            functionGroupDocIds["operator/"] = "operator.divides";
+            functionGroupDocIds["operator%"] = "operator.remainder";
+            functionGroupDocIds["operator=="] = "operator.equal";
+            functionGroupDocIds["operator<"] = "operator.less";
+            functionGroupDocIds["operator!"] = "operator.not";
+            functionGroupDocIds["operator~"] = "operator.complement";
+            functionGroupDocIds["operator&"] = "operator.and";
+            functionGroupDocIds["operator|"] = "operator.or";
+            functionGroupDocIds["operator^"] = "operator.xor";
+            functionGroupDocIds["operator<<"] = "operator.shiftLeft";
+            functionGroupDocIds["operator>>"] = "operator.shiftRight";
+            functionGroupDocIds["operator->"] = "operator.pointer";
+            functionGroupDocIds["operator++"] = "operator.increment";
+            functionGroupDocIds["operator--"] = "operator.decrement";
+            functionGroupDocIds["operator="] = "operator.assign";
+            functionGroupDocIds["operator()"] = "operator.apply";
+            functionGroupDocIds["operator[]"] = "operator.index";
+            functionGroupDocIds["@operator_conv"] = "operator.convert";
+            functionGroupDocIds["@constructor"] = "constructor";
+            functionGroupDocIds["@destructor"] = "destructor";
+            functionGroupDocIds["@static_constructor"] = "staticConstructor";
+        }
+        public nothrow string MangleFunctionGroupName(const string& functionGroupName)
+        {
+            if (functionGroupName.StartsWith("@array_constructor"))
+            {
+                return "ac_" + functionGroupName.Substring(19);
+            }
+            else if (functionGroupName.StartsWith("@array_assignment"))
+            {
+                return "aa_" + functionGroupName.Substring(19);
+            }
+            HashMap<string, string>.ConstIterator i = mangledFunctionGroupNames.CFind(functionGroupName);
+            if (i != mangledFunctionGroupNames.CEnd())
+            {
+                return i->second;
+            }
+            return functionGroupName;
+        }
+        public nothrow string GetFunctionGroupDocId(const string& functionGroupName) const
+        {
+            if (functionGroupName.StartsWith("@array_constructor"))
+            {
+                return "arrayConstructor_" + functionGroupName.Substring(19);
+            }
+            else if (functionGroupName.StartsWith("@array_assignment"))
+            {
+                return "arrayAssignment_" + functionGroupName.Substring(19);
+            }
+            HashMap<string, string>.ConstIterator i = functionGroupDocIds.CFind(functionGroupName);
+            if (i != functionGroupDocIds.CEnd())
+            {
+                return i->second;
+            }
+            return functionGroupName;
+        }
+        private static UniquePtr<FunctionGroupMangleMap> instance;
+        private HashMap<string, string> mangledFunctionGroupNames;
+        private HashMap<string, string> functionGroupDocIds;
+    }
+}
