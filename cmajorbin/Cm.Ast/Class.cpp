@@ -16,6 +16,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <Cm.Ast/Exception.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -420,15 +421,23 @@ void StaticConstructorNode::Print(CodeFormatter& formatter)
 
 void StaticConstructorNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    if (visitor.VisitBodies())
+    try
     {
-        if (Body())
+        visitor.BeginVisit(*this);
+        if (visitor.VisitBodies())
         {
-            Body()->Accept(visitor);
+            if (Body())
+            {
+                Body()->Accept(visitor);
+            }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 ConstructorNode::ConstructorNode(const Span& span_) : FunctionNode(span_)
@@ -523,16 +532,24 @@ void ConstructorNode::Print(CodeFormatter& formatter)
 
 void ConstructorNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (visitor.VisitBodies())
+    try
     {
-        if (Body())
+        visitor.BeginVisit(*this);
+        const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
+        if (visitor.VisitBodies())
         {
-            Body()->Accept(visitor);
+            if (Body())
+            {
+                Body()->Accept(visitor);
+            }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 DestructorNode::DestructorNode(const Span& span_) : FunctionNode(span_)
@@ -613,15 +630,23 @@ void DestructorNode::Print(CodeFormatter& formatter)
 
 void DestructorNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    if (visitor.VisitBodies())
+    try
     {
-        if (Body())
+        visitor.BeginVisit(*this);
+        if (visitor.VisitBodies())
         {
-            Body()->Accept(visitor);
+            if (Body())
+            {
+                Body()->Accept(visitor);
+            }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 MemberFunctionNode::MemberFunctionNode(const Span& span_) : FunctionNode(span_)
@@ -706,16 +731,24 @@ void MemberFunctionNode::Print(CodeFormatter& formatter)
 
 void MemberFunctionNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
-    if (visitor.VisitBodies())
+    try
     {
-        if (Body())
+        visitor.BeginVisit(*this);
+        const_cast<ParameterNodeList&>(Parameters()).Accept(visitor);
+        if (visitor.VisitBodies())
         {
-            Body()->Accept(visitor);
+            if (Body())
+            {
+                Body()->Accept(visitor);
+            }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 ConversionFunctionNode::ConversionFunctionNode(const Span& span_) : MemberFunctionNode(span_)
@@ -800,15 +833,23 @@ void ConversionFunctionNode::Print(CodeFormatter& formatter)
 
 void ConversionFunctionNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    if (visitor.VisitBodies())
+    try
     {
-        if (Body())
+        visitor.BeginVisit(*this);
+        if (visitor.VisitBodies())
         {
-            Body()->Accept(visitor);
+            if (Body())
+            {
+                Body()->Accept(visitor);
+            }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 MemberVariableNode::MemberVariableNode(const Span& span_) : Node(span_)

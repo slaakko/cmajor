@@ -13,7 +13,7 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public const ulong noCid = 0xFFFFFFFFFFFFFFFFu;
+    public const ulong noCid = cast<ulong>(-1);
     
     public enum ClassTypeSymbolFlags : uint
     {
@@ -633,6 +633,18 @@ namespace Cm.Sym
         {
             return destructor;
         }
+        public nothrow inline const List<TypeParameterSymbol*>& TypeParameters() const
+        {
+            return typeParameters;
+        }
+        public nothrow inline const string& SourceFilePath() const
+        {
+            return sourceFilePath;
+        }
+        public nothrow inline void SetSourceFilePath(const string& sourceFilePath_)
+        {
+            sourceFilePath = sourceFilePath_;
+        }
         private ulong cid;
         private ulong key;
         private int level;
@@ -651,6 +663,7 @@ namespace Cm.Sym
         private List<FunctionSymbol*> vtbl;
         private HashSet<FunctionSymbol*> conversions;
         private Cm.Ast.CompileUnitNode* compileUnit;
+        
     }
     
     public nothrow bool Overrides(FunctionSymbol* f, FunctionSymbol* g)

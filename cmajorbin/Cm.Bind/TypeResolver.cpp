@@ -179,27 +179,10 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
     }
     else
     {
-        throw std::runtime_error("class type symbol expected");
+        throw Cm::Core::Exception("class type symbol expected", templateIdNode.GetSpan(), subjectType->GetSpan());
     }
     typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
 }
-
-class NamespaceTypeSymbol : public Cm::Sym::TypeSymbol
-{
-public:
-    NamespaceTypeSymbol(Cm::Sym::NamespaceSymbol* ns_) : Cm::Sym::TypeSymbol(ns_->GetSpan(), ns_->Name()), ns(ns_)
-    {
-    }
-    Cm::Sym::NamespaceSymbol* Ns() const
-    {
-        return ns;
-    }
-    bool IsNamespaceTypeSymbol() const override { return true; }
-    std::string GetMangleId() const override { return std::string(); }
-    Cm::Sym::SymbolType GetSymbolType() const override { return Cm::Sym::SymbolType::namespaceSymbol; }
-private:
-    Cm::Sym::NamespaceSymbol* ns;
-};
 
 void TypeResolver::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {

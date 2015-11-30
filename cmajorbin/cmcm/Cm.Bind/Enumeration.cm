@@ -12,6 +12,113 @@ using System.Collections;
 
 namespace Cm.Bind
 {
+    internal void BindEnumType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumTypeNode* enumTypeNode)
+    {
+        Cm.Sym.Symbol* symbol = containerScope->Lookup(enumTypeNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupEnumType);
+        if (symbol != null)
+        {
+            if (symbol is Cm.Sym.EnumTypeSymbol*)
+            {
+                Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(symbol);
+                if (enumTypeSymbol->IsBound()) return;
+                BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, enumTypeNode, enumTypeSymbol);
+            }
+            else
+            {
+                throw Cm.Core.Error("symbol '" + symbol->FullName() + "' does not denote an enumerated type", symbol->GetSpan());
+            }
+        }
+        else
+        {
+            throw Cm.Core.Error("enumerated type symbol '" + enumTypeNode->Id()->Str() + "' not found", enumTypeNode->GetSpan());
+        }    
+    }
+    
+    internal void BindEnumType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumTypeNode* enumTypeNode, Cm.Sym.EnumTypeSymbol* enumTypeSymbol)
+    {
+        Cm.Ast.Specifiers specifiers = enumTypeNode->GetSpecifiers();
+        bool isClassMember = enumTypeNode->Parent() is Cm.Ast.ClassNode*;
+        SetAccess(enumTypeSymbol, specifiers, isClassMember);
+        if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be abstract", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be virtual", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.override_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be override", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be static", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.explicit_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be explicit", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.external) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be external", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.suppress_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be suppressed", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be default", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be inline", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be cdecl", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.nothrow_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be nothrow", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.throw_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be throw", enumTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.new_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("enumerated type cannot be new", enumTypeSymbol->GetSpan());
+        }
+        Cm.Ast.Node* underlyingTypeNode = enumTypeNode->GetUnderlyingType();
+        if (underlyingTypeNode != null)
+        {
+            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
+            Cm.Sym.TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScopes, classTemplateRepository, underlyingTypeNode);
+            if (underlyingType->IsIntegerTypeSymbol())
+            {
+                enumTypeSymbol->SetUnderlyingType(underlyingType);
+            }
+            else
+            {
+                throw Cm.Core.Error("underlying type for an enumerated type must be integer type", enumTypeSymbol->GetSpan());
+            }
+        }
+        else
+        {
+            enumTypeSymbol->SetUnderlyingType(symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+        }
+        if (!enumTypeSymbol->IrTypeMade())
+        {
+            enumTypeSymbol->SetIrType(enumTypeSymbol->GetUnderlyingType()->IrType()->Clone());
+            enumTypeSymbol->SetDefaultIrValue(enumTypeSymbol->GetUnderlyingType()->IrType()->CreateDefaultValue());
+        }
+        enumTypeSymbol->SetBound();
+    }
+    
     internal void BindEnumConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
         Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumConstantNode* enumConstantNode)
     {

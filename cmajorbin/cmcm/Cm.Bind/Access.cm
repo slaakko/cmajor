@@ -1,0 +1,111 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    internal void SetAccess(Cm.Sym.Symbol* symbol, Cm.Ast.Specifiers specifiers, bool isClassMember)
+    {
+        Cm.Sym.SymbolAccess access = Cm.Sym.SymbolAccess.internal_;
+        if (isClassMember)
+        {
+            access = Cm.Sym.SymbolAccess.private_;
+        }
+        Cm.Ast.Specifiers accessSpecifiers = cast<Cm.Ast.Specifiers>(specifiers & Cm.Ast.Specifiers.access);
+        if (accessSpecifiers == Cm.Ast.Specifiers.public_)
+        {
+            access = Cm.Sym.SymbolAccess.public_;
+        }
+        else if (accessSpecifiers == Cm.Ast.Specifiers.protected_)
+        {
+            if (isClassMember)
+            {
+                access = Cm.Sym.SymbolAccess.protected_;
+            }
+            else
+            {
+                throw Cm.Core.Error("only class members can have protected access", symbol->GetSpan());
+            }
+        }
+        else if (accessSpecifiers == Cm.Ast.Specifiers.internal_)
+        {
+            access = Cm.Sym.SymbolAccess.internal_;
+        }
+        else if (accessSpecifiers == Cm.Ast.Specifiers.private_)
+        {
+            if (isClassMember)
+            {
+                access = Cm.Sym.SymbolAccess.private_;
+            }
+            else
+            {
+                throw Cm.Core.Error("only class members can have private access", symbol->GetSpan());
+            }
+        }
+        else if (accessSpecifiers != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("invalid combination of access specifiers: " + Cm.Ast.SpecifierStr(accessSpecifiers), symbol->GetSpan());
+        }
+        symbol->SetAccess(access);
+    }
+    
+    internal void CheckAccess(Cm.Sym.Symbol* fromSymbol, const Span& fromSpan, Cm.Sym.Symbol* toSymbol)
+    {
+        if (fromSymbol == null || toSymbol == null) return;
+        Cm.Sym.FunctionSymbol* toContainingFunction = toSymbol->ContainingFunction();
+        if (toContainingFunction != null)
+        {
+            Cm.Sym.FunctionSymbol* fromFunction = fromSymbol->Function();
+            if (fromFunction == toContainingFunction) return;
+        }
+        if (fromSymbol is Cm.Sym.FunctionSymbol*)
+        {
+            Cm.Sym.FunctionSymbol* fromFun = cast<Cm.Sym.FunctionSymbol*>(fromSymbol);
+            if (fromFun->IsFunctionTemplateSpecialization()) return;
+            if (fromFun->IsMemberOfTemplateType()) return;
+        }
+        Cm.Sym.ClassTypeSymbol* toContainingClass = toSymbol->ContainingClass();
+        if (toContainingClass != null)
+        {
+            CheckAccess(fromSymbol, fromSpan, toContainingClass);
+        }
+        switch (toSymbol->DeclaredAccess())
+        {
+            case Cm.Sym.SymbolAccess.public_: return;
+            case Cm.Sym.SymbolAccess.protected_:
+            {
+                Cm.Sym.ClassTypeSymbol* fromContainingClass = fromSymbol->ContainingClass();
+                if (fromContainingClass != null)
+                {
+                    if (toContainingClass->IsSameParentOrAncestorOf(fromContainingClass)) return;
+                    if (fromContainingClass->HasBaseClass(toContainingClass)) return;
+                }
+                break;
+            }
+            case Cm.Sym.SymbolAccess.internal_: return;
+            case Cm.Sym.SymbolAccess.private_:
+            {
+                if (toContainingClass != null)
+                {
+                    Cm.Sym.ClassTypeSymbol* fromContainingClass = fromSymbol->ContainingClass();
+                    if (toContainingClass->IsSameParentOrAncestorOf(fromContainingClass)) return;
+                }
+                break;
+            }
+        }
+        Span span = fromSpan;
+        if (!span.Valid())
+        {
+            span = fromSymbol->GetSpan();
+        }
+        throw Cm.Core.Error(string(toSymbol->TypeString()) + " '" + toSymbol->FullName() + "' is inaccessible due to its protection level", span, toSymbol->GetSpan());
+    }
+}

@@ -12,16 +12,16 @@
 
 namespace Cm { namespace Core {
 
-Exception::Exception(const std::string& message_) : std::runtime_error(message_), message(message_), defined()
+Exception::Exception(const std::string& message_) : Cm::Ast::Exception(message_), message(message_), defined()
 {
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_) : std::runtime_error(Cm::Parser::Expand(message_, defined_)), message(message_), defined(defined_)
+Exception::Exception(const std::string& message_, const Span& defined_) : Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_)), message(message_), defined(defined_)
 {
 }
 
 Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : 
-    std::runtime_error(Cm::Parser::Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
+    Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
 {
     references.push_back(referenced_);
 }
@@ -35,15 +35,20 @@ std::vector<Span> MakeReferences(const Span& referenced1_, const Span& reference
 }
 
 Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced1_, const Span& referenced2_) :
-    std::runtime_error(Cm::Parser::Expand(message_, defined_, MakeReferences(referenced1_, referenced2_))), message(message_), defined(defined_)
+    Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_, MakeReferences(referenced1_, referenced2_))), message(message_), defined(defined_)
 {
     references.push_back(referenced1_);
     references.push_back(referenced2_);
 }
 
 Exception::Exception(const std::string& message_, const Span& defined_, const std::vector<Span>& references_) : 
-    std::runtime_error(Cm::Parser::Expand(message_, defined_, references_)), message(message_), defined(defined_), references(references_)
+    Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_, references_)), message(message_), defined(defined_), references(references_)
 {
+}
+
+void Exception::AddReference(const Span& span)
+{
+    references.push_back(span);
 }
 
 ToolErrorExcecption::ToolErrorExcecption(const Cm::Util::ToolError& toolError_) : toolError(toolError_)

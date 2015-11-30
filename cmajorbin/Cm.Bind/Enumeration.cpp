@@ -41,7 +41,7 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     }
     else
     {
-        throw Cm::Core::Exception("enumerated type symbol '" + enumTypeNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("enumerated type symbol '" + enumTypeNode->Id()->Str() + "' not found", enumTypeNode->GetSpan());
     }
 }
 
@@ -98,6 +98,10 @@ void BindEnumType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("enumerated type cannot be throw", enumTypeSymbol->GetSpan());
+    }
+    if ((specifiers & Cm::Ast::Specifiers::new_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("enumerated type cannot be new", enumTypeSymbol->GetSpan());
     }
     Cm::Ast::Node* underlyingTypeNode = enumTypeNode->GetUnderlyingType();
     if (underlyingTypeNode)

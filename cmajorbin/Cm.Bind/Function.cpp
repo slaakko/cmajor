@@ -147,7 +147,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
             throw Cm::Core::Exception("static class cannot have default members", functionSymbol->GetSpan());
         }
         functionSymbol->SetDefault();
-        if ((specifiers & Cm::Ast::Specifiers::throw_) != Cm::Ast::Specifiers::none)
+        if ((specifiers & Cm::Ast::Specifiers::throw_) == Cm::Ast::Specifiers::none)
         {
             functionSymbol->SetNothrow();
         }
@@ -469,7 +469,10 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
                 {
                     if (!TerminatesFunction(caseStatement.get(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return false;
                 }
-                return TerminatesFunction(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop);
+                if (TerminatesFunction(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop))
+                {
+                    return true;
+                }
             }
             break;
         }
@@ -520,7 +523,11 @@ bool TerminatesFunction(Cm::Ast::StatementNode* statement, Cm::Sym::SymbolTable&
         }
         default:
         {
-            return statement->IsFunctionTerminatingNode();
+            if (statement->IsFunctionTerminatingNode())
+            {
+                return true;
+            }
+            break;
         }
     }
     return false;
@@ -564,7 +571,6 @@ void CheckFunctionAccessLevels(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Conta
         BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterType);
         if (parameterType->Access() < functionSymbol->EffectiveAccess())
         {
-            std::string accessStr = Cm::Sym::AccessStr(parameterType->Access());
             throw Cm::Core::Exception("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
         }
     }

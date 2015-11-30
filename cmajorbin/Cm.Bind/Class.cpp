@@ -39,7 +39,7 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
     }
     else
     {
-        throw Cm::Core::Exception("symbol '" + classNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("class symbol '" + classNode->Id()->Str() + "' not found");
     }
 }
 
@@ -102,6 +102,10 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     {
         throw Cm::Core::Exception("class cannnot be throw", classTypeSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::new_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("class cannnot be new", classTypeSymbol->GetSpan());
+    }
     if (classNode->TemplateParameters().Count() > 0)
     {
         classTypeSymbol->SetBound();
@@ -110,10 +114,6 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
     if (baseClassTypeExpr)
     {
-        if (baseClassTypeExpr->IsIdentifierNode())
-        {
-            Cm::Ast::IdentifierNode* baseClassId = static_cast<Cm::Ast::IdentifierNode*>(baseClassTypeExpr);
-        }
         Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassTypeExpr);
         if (baseTypeSymbol)
         {

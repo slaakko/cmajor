@@ -16,6 +16,24 @@
 
 namespace Cm { namespace Bind {
 
+class NamespaceTypeSymbol : public Cm::Sym::TypeSymbol
+{
+public:
+    NamespaceTypeSymbol(Cm::Sym::NamespaceSymbol* ns_) : Cm::Sym::TypeSymbol(ns_->GetSpan(), ns_->Name()), ns(ns_)
+    {
+    }
+    Cm::Sym::NamespaceSymbol* Ns() const
+    {
+        return ns;
+    }
+    bool IsNamespaceTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return std::string(); }
+    Cm::Sym::SymbolType GetSymbolType() const override { return Cm::Sym::SymbolType::namespaceSymbol; }
+private:
+    Cm::Sym::NamespaceSymbol* ns;
+};
+
+
 enum class TypeResolverFlags: uint8_t
 {
     none = 0,

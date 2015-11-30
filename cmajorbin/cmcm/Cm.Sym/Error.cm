@@ -13,7 +13,7 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
-    public class Error : Exception
+    public class Error : Cm.Ast.Error
     {
         public Error(const string& message_) : base(message_), message(message_), defined(), referenced()
         {
@@ -35,6 +35,13 @@ namespace Cm.Sym
         public nothrow const Span& Referenced() const
         {
             return referenced;
+        }
+        public override void AddReference(const Span& reference)
+        {
+            if (!referenced.Valid())
+            {
+                referenced = reference;
+            }
         }
         private string message;
         private Span defined;

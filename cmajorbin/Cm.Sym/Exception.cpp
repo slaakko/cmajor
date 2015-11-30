@@ -12,13 +12,21 @@
 
 namespace Cm { namespace Sym {
 
-Exception::Exception(const std::string& message_, const Span& defined_) : std::runtime_error(Cm::Parser::Expand(message_, defined_)), message(message_), defined(defined_), referenced(Span())
+Exception::Exception(const std::string& message_, const Span& defined_) : Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_)), message(message_), defined(defined_), referenced(Span())
 {
 }
 
-Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : std::runtime_error(Cm::Parser::Expand(message_, defined_, referenced_)), message(message_), 
+Exception::Exception(const std::string& message_, const Span& defined_, const Span& referenced_) : Cm::Ast::Exception(Cm::Parser::Expand(message_, defined_, referenced_)), message(message_),
     defined(defined_), referenced(referenced_)
 {
+}
+
+void Exception::AddReference(const Span& span)
+{
+    if (!referenced.Valid())
+    {
+        referenced = span;
+    }
 }
 
 } } // namespace Cm::Sym

@@ -217,18 +217,6 @@ void ConstraintChecker::Visit(Cm::Ast::ConjunctiveConstraintNode& conjunctiveCon
     constraintCheckStack.Push(right);
 }
 
-class NamespaceTypeSymbol : public Cm::Sym::TypeSymbol
-{
-public:
-    NamespaceTypeSymbol(Cm::Sym::NamespaceSymbol* ns_) : Cm::Sym::TypeSymbol(Cm::Parsing::Span(), ns_->Name()), ns(ns_) {}
-    Cm::Sym::SymbolType GetSymbolType() const override { return Cm::Sym::SymbolType::namespaceSymbol; }
-    std::string GetMangleId() const override { return "X"; }
-    bool IsNamespaceTypeSymbol() const override { return true; }
-    Cm::Sym::NamespaceSymbol* Ns() const { return ns; }
-private:
-    Cm::Sym::NamespaceSymbol* ns;
-};
-
 void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
 {
     type = nullptr;

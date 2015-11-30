@@ -37,6 +37,102 @@ namespace Cm.Bind
     internal void BindConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
         Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ConstantNode* constantNode, Cm.Sym.ConstantSymbol* constantSymbol)
     {
-        // todo
+        if (constantSymbol->Evaluating())
+        {
+            throw Cm.Core.Error("cyclic constant definitions detected", constantSymbol->GetSpan());
+        }
+        if (constantSymbol->IsBound()) return;
+        Cm.Ast.Specifiers specifiers = constantNode->GetSpecifiers();
+        bool isClassMember = constantNode->Parent() is Cm.Ast.ClassNode*;
+        SetAccess(constantSymbol, specifiers, isClassMember);
+        if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be abstract", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be virtual", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.override_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be override", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be static", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.explicit_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be explicit", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.external) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be external", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.suppress_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be suppressed", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be default", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be inline", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be cdecl", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.nothrow_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be nothrow", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.throw_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be throw", constantSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.new_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("constant cannot be new", constantSymbol->GetSpan());
+        }
+        if (constantSymbol->Parent()->IsClassTemplateSymbol())
+        {
+            constantSymbol->SetBound();
+            return;
+        }
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode->TypeExpr());
+        if ((type is Cm.Sym.BoolTypeSymbol*) || (type is Cm.Sym.CharTypeSymbol*) || (type is Cm.Sym.EnumTypeSymbol*) || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
+        {
+            if (type is Cm.Sym.EnumTypeSymbol*)
+            {
+                Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(type);
+                if (!enumTypeSymbol->IsBound())
+                {
+                    Cm.Ast.Node* node = symbolTable.GetNode(enumTypeSymbol);
+                    if (node is Cm.Ast.EnumTypeNode*)
+                    {
+                        Cm.Ast.EnumTypeNode* enumTypeNode = cast<Cm.Ast.EnumTypeNode*>(node);
+                        Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(enumTypeNode);
+                        BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, enumTypeNode);
+                    }
+                }
+                type = enumTypeSymbol->GetUnderlyingType();
+            }
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
+            if (type->Access() < constantSymbol->Access())
+            {
+                throw Cm.Core.Error("type of a constant must be at least as accessible as the constant itself", type->GetSpan(), constantSymbol->GetSpan());
+            }
+            constantSymbol->SetType(type);
+            Cm.Sym.SymbolType symbolType = type->GetSymbolType();
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+            constantSymbol->SetEvaluating();
+            Cm.Sym.Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+            constantSymbol->ResetEvaluating();
+            constantSymbol->SetValue(value);
+            constantSymbol->SetBound();
+        }
     }
 }

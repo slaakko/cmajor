@@ -1,0 +1,353 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    public class NamespaceTypeSymbol : Cm.Sym.TypeSymbol
+    {
+        public nothrow NamespaceTypeSymbol(Cm.Sym.NamespaceSymbol* ns_) : base(ns_->GetSpan(), ns_->Name()), ns(ns_)
+        {
+        }
+        public nothrow inline Cm.Sym.NamespaceSymbol* Ns() const
+        {
+            return ns;
+        }
+        public override string GetMangleId() const
+        {
+            #assert(false);
+            return string();
+        }
+        public override nothrow Cm.Sym.SymbolType GetSymbolType() const
+        {
+            #assert(false);
+            return Cm.Sym.SymbolType.namespaceSymbol;
+        }
+        private Cm.Sym.NamespaceSymbol* ns;
+    }
+    
+    internal enum TypeResolverFlags : byte
+    {
+        none = 0u, dontThrow = 1u << 0u
+    }
+    
+    internal Cm.Sym.TypeSymbol* ResolveType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.Node* typeExpr)
+    {
+        return ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typeExpr, TypeResolverFlags.none);
+    }
+
+    internal Cm.Sym.TypeSymbol* ResolveType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.Node* typeExpr, TypeResolverFlags flags)
+    {
+        TypeResolver resolver(symbolTable, containerScope, fileScopes, classTemplateRepository, flags);
+        return resolver.Resolve(typeExpr);
+    }
+    
+    internal class TypeResolver : Cm.Ast.Visitor
+    {
+        public TypeResolver(Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_) : 
+            base(true, true), symbolTable(symbolTable_), containerScope(containerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), flags(flags_), typeSymbol(null), 
+            lookupId(Cm.Sym.SymbolTypeSetId.lookupTypeSymbols)
+        {
+        }
+        public Cm.Sym.TypeSymbol* Resolve(Cm.Ast.Node* typeExpr)
+        {
+            typeExpr->Accept(*this);
+            if (typeSymbol != null && (typeSymbol is NamespaceTypeSymbol*) && (flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+            {
+                throw Cm.Core.Error("symbol '" + typeSymbol->FullName() + "' denotes a namespace (type symbol expected)", typeExpr->GetSpan());
+            }
+            return typeSymbol;
+        }
+        public override void Visit(Cm.Ast.BoolNode& boolNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        }
+        public override void Visit(Cm.Ast.SByteNode& sbyteNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.sbyteId));
+        }
+        public override void Visit(Cm.Ast.ByteNode& byteNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.byteId));
+        }
+        public override void Visit(Cm.Ast.ShortNode& shortNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.shortId));
+        }
+        public override void Visit(Cm.Ast.UShortNode& ushortNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ushortId));
+        }
+        public override void Visit(Cm.Ast.IntNode& intNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        }
+        public override void Visit(Cm.Ast.UIntNode& uintNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.uintId));
+        }
+        public override void Visit(Cm.Ast.LongNode& longNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.longId));
+        }
+        public override void Visit(Cm.Ast.ULongNode& ulongNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+        }
+        public override void Visit(Cm.Ast.FloatNode& floatNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.floatId));
+        }
+        public override void Visit(Cm.Ast.DoubleNode& doubleNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.doubleId));
+        }
+        public override void Visit(CharNode& charNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
+        }
+        public override void Visit(VoidNode& voidNode)
+        {
+            typeSymbol = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+        }
+        public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
+        {
+            List<Cm.Sym.TypeSymbol*> typeArguments;
+            Cm.Sym.TypeSymbol* subjectType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, templateIdNode.Subject(), flags);
+            if (subjectType == null)
+            {
+                typeSymbol = null;
+                return;
+            }
+            if ((subjectType is NamespaceTypeSymbol*) && (flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+            {
+                throw Cm.Core.Error("symbol '" + subjectType->FullName() + "' denotes a namespace (type symbol expected)", templateIdNode.GetSpan());
+            }
+            for (const UniquePtr<Cm.Ast.Node>& templateArgNode : templateIdNode.TemplateArguments())
+            {
+                Cm.Sym.TypeSymbol* argumentType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, templateArgNode.GetPtr(), flags);
+                if (argumentType == null)
+                {
+                    typeSymbol = null;
+                    return;
+                }
+                if ((argumentType is NamespaceTypeSymbol*) && (flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+                {
+                    throw Cm.Core.Error("symbol '" + argumentType->FullName() + "' denotes a namespace (type symbol expected)", templateArgNode->GetSpan());
+                }
+                typeArguments.Add(argumentType);
+            }
+            if (subjectType is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* subjectClassType = cast<Cm.Sym.ClassTypeSymbol*>(subjectType);
+                int n = subjectClassType->TypeParameters().Count();
+                int m = typeArguments.Count();
+                if (m < n)
+                {
+                    classTemplateRepository.ResolveDefaultTypeArguments(typeArguments, subjectClassType, containerScope, fileScopes, templateIdNode.GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("class type symbol expected", templateIdNode.GetSpan(), subjectType->GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
+        {
+            Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, lookupId);
+            if (symbol == null)
+            {
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+                {
+                    symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
+                    if (symbol != null) break;
+                }
+            }
+            if (symbol != null)
+            {
+                ResolveSymbol(&identifierNode, symbol);
+            }
+            else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+            {
+                throw Cm.Core.Error("type symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+            }
+            else
+            {
+                typeSymbol = null;
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupClassAndNamespaceSymbols;
+        }
+        public override void EndVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupId = lookupIdStack.Pop();
+            if (typeSymbol == null)
+            {
+                return;
+            }
+            bool generateDocs = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_docs);
+            if ((typeSymbol is Cm.Sym.ClassTypeSymbol*) || (typeSymbol is NamespaceTypeSymbol*) || (generateDocs && (typeSymbol is Cm.Sym.TypeParameterSymbol*)))
+            {
+                if (typeSymbol is Cm.Sym.TemplateTypeSymbol*)
+                {
+                    if (!typeSymbol->IsBound())
+                    {
+                        Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(typeSymbol);
+                        classTemplateRepository.BindTemplateTypeSymbol(templateTypeSymbol, containerScope, fileScopes);
+                    }
+                }
+                Cm.Sym.Scope* scope = null;
+                if ((typeSymbol is Cm.Sym.ClassTypeSymbol*) || (generateDocs && (typeSymbol is Cm.Sym.TypeParameterSymbol*)))
+                {
+                    scope = typeSymbol->GetContainerScope();
+                }
+                else
+                {
+                    NamespaceTypeSymbol* nsTypeSymbol = cast<NamespaceTypeSymbol*>(typeSymbol);
+                    scope = nsTypeSymbol->Ns()->GetContainerScope();
+                }
+                const string& memberName = dotNode.MemberId()->Str();
+                Cm.Sym.Symbol* symbol = scope->Lookup(memberName, Cm.Sym.ScopeLookup.this_and_base, lookupId);
+                if (symbol != null)
+                {
+                    ResolveSymbol(&dotNode, symbol);
+                }
+                else if (generateDocs && (typeSymbol is Cm.Sym.TypeParameterSymbol*))
+                {
+                    symbol = new Cm.Sym.TypeParameterSymbol(dotNode.GetSpan(), memberName);
+                    typeSymbol->AddSymbol(symbol);
+                    typeSymbol = cast<Cm.Sym.TypeSymbol*>(symbol);
+                }
+                else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+                {
+                    throw Cm.Core.Error("symbol '" + typeSymbol->FullName() + "' does not denote a class or a namespace", dotNode.GetSpan(), typeSymbol->GetSpan());
+                }
+                else
+                {
+                    typeSymbol = null;
+                }
+            }
+        }
+        public override void Visit(Cm.Ast.DerivedTypeExprNode& derivedTypeExprNode)
+        {
+            Cm.Sym.TypeSymbol* baseType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, derivedTypeExprNode.BaseTypeExprNode(), flags);
+            if (baseType == null)
+            {
+                typeSymbol = null;
+                return;
+            }
+            List<int> arrayDimensions;
+            int n = derivedTypeExprNode.NumArrayDimensions();
+            if (n > 0)
+            {
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Sym.Value* value = Evaluate(Cm.Sym.ValueType.intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, containerScope, fileScopes, classTemplateRepository);
+                    if (value is Cm.Sym.IntValue*)
+                    {
+                        Cm.Sym.IntValue* intValue = cast<Cm.Sym.IntValue*>(value);
+                        int arrayDimension = intValue->Value();
+                        if (arrayDimension <= 0)
+                        {
+                            if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+                            {
+                                throw Cm.Core.Error("array dimension must be positive", derivedTypeExprNode.GetSpan());
+                            }
+                            else
+                            {
+                                typeSymbol = null;
+                                return;
+                            }
+                        }
+                        arrayDimensions.Add(arrayDimension);
+                    }
+                    else
+                    {
+                        throw Exception("int value expected");
+                    }
+                }
+            }
+            typeSymbol = symbolTable.GetTypeRepository().MakeDerivedType(derivedTypeExprNode.Derivations(), baseType, arrayDimensions, derivedTypeExprNode.GetSpan());
+        }
+        private void ResolveSymbol(Cm.Ast.Node* node, Cm.Sym.Symbol* symbol)
+        {
+            if (symbol is Cm.Sym.TypedefSymbol*)
+            {
+                Cm.Sym.TypedefSymbol* typedefSymbol = cast<Cm.Sym.TypedefSymbol*>(symbol);
+                if (!typedefSymbol->IsBound())
+                {
+                    Cm.Ast.Node* tn = symbolTable.GetNode(typedefSymbol);
+                    if (tn is Cm.Ast.TypedefNode*)
+                    {
+                        Cm.Ast.TypedefNode* typedefNode = cast<Cm.Ast.TypedefNode*>(tn);
+                        Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
+                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+                    }
+                    else if (tn is Cm.Ast.TypedefStatementNode*)
+                    {
+                        Cm.Ast.TypedefStatementNode* typedefStatementNode = cast<Cm.Ast.TypedefStatementNode*>(tn);
+                        Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(typedefStatementNode);
+                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+                    }
+                    else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+                    {
+                        throw Cm.Core.Error("typedef node or typedef statement node expected", node->GetSpan(), tn->GetSpan());
+                    }
+                    else
+                    {
+                        typeSymbol = null;
+                        return;
+                    }
+                }
+                symbol = typedefSymbol->GetType();
+            }
+            else if (symbol is Cm.Sym.BoundTypeParameterSymbol*)
+            {
+                Cm.Sym.BoundTypeParameterSymbol* boundTemplateParam = cast<Cm.Sym.BoundTypeParameterSymbol*>(symbol);
+                symbol = boundTemplateParam->GetType();
+            }
+            if (symbol is Cm.Sym.TypeSymbol*)
+            {
+                typeSymbol = cast<Cm.Sym.TypeSymbol*>(symbol);
+            }
+            else if (symbol is Cm.Sym.NamespaceSymbol*)
+            {
+                nsTypeSymbol.Reset(new NamespaceTypeSymbol(cast<Cm.Sym.NamespaceSymbol*>(symbol)));
+                typeSymbol = nsTypeSymbol.GetPtr();
+            }
+            else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+            {
+                throw Cm.Core.Error("symbol '" + symbol->FullName() + "' does not denote a type", node->GetSpan(), symbol->GetSpan());
+            }
+            else
+            {
+                typeSymbol = null;
+            }
+        }
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Sym.ContainerScope* containerScope;
+        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private TypeResolverFlags flags;
+        private Cm.Sym.TypeSymbol* typeSymbol;
+        private UniquePtr<Cm.Sym.TypeSymbol> nsTypeSymbol;
+        private Cm.Sym.SymbolTypeSetId lookupId;
+        private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
+    }
+    
+    
+}

@@ -135,7 +135,7 @@ UnaryOperatorFun complement[uint8_t(Cm::Sym::ValueType::max)] =
     Complement<Cm::Sym::LongValue>, Complement<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
 
-void EvaluateUnaryOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, UnaryOperatorFun* fun, const Span& span)
+void EvaluateUnaryOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, UnaryOperatorFun* fun, bool cast, const Span& span)
 {
     std::unique_ptr<Cm::Sym::Value> subject(stack.Pop());
     Cm::Sym::ValueType subjectType = subject->GetValueType();
@@ -144,7 +144,7 @@ void EvaluateUnaryOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, Unar
     {
         operationType = targetType;
     }
-    std::unique_ptr<Cm::Sym::Value> subject_(subject->As(operationType, false, span));
+    std::unique_ptr<Cm::Sym::Value> subject_(subject->As(operationType, cast, span));
     UnaryOperatorFun operation = fun[uint8_t(operationType)];
     stack.Push(operation(subject_.get(), span));
 }
@@ -329,7 +329,7 @@ BinaryOperatorFun conjunction[uint8_t(Cm::Sym::ValueType::max)] =
     NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 
-void EvaluateBinOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, BinaryOperatorFun* fun, const Span& span)
+void EvaluateBinOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, BinaryOperatorFun* fun, bool cast, const Span& span)
 {
     std::unique_ptr<Cm::Sym::Value> right(stack.Pop());
     std::unique_ptr<Cm::Sym::Value> left(stack.Pop());
@@ -341,8 +341,8 @@ void EvaluateBinOp(Cm::Sym::ValueType targetType, EvaluationStack& stack, Binary
     {
         operationType = targetType;
     }
-    std::unique_ptr<Cm::Sym::Value> left_(left->As(operationType, false, span));
-    std::unique_ptr<Cm::Sym::Value> right_(right->As(operationType, false, span));
+    std::unique_ptr<Cm::Sym::Value> left_(left->As(operationType, cast, span));
+    std::unique_ptr<Cm::Sym::Value> right_(right->As(operationType, cast, span));
     BinaryOperatorFun operation = fun[uint8_t(operationType)];
     stack.Push(operation(left_.get(), right_.get(), span));
 }
@@ -613,92 +613,92 @@ void Evaluator::BeginVisit(Cm::Ast::ImplicationNode& implicationNode)
 
 void Evaluator::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
 {
-    EvaluateBinOp(targetType, stack, disjunction, disjunctionNode.GetSpan());
+    EvaluateBinOp(targetType, stack, disjunction, cast, disjunctionNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
 {
-    EvaluateBinOp(targetType, stack, conjunction, conjunctionNode.GetSpan());
+    EvaluateBinOp(targetType, stack, conjunction, cast, conjunctionNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::BitOrNode& bitOrNode)
 {
-    EvaluateBinOp(targetType, stack, bitOr, bitOrNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitOr, cast, bitOrNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::BitXorNode& bitXorNode)
 {
-    EvaluateBinOp(targetType, stack, bitXor, bitXorNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitXor, cast, bitXorNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::BitAndNode& bitAndNode)
 {
-    EvaluateBinOp(targetType, stack, bitAnd, bitAndNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitAnd, cast, bitAndNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::EqualNode& equalNode)
 {
-    EvaluateBinOp(targetType, stack, equal, equalNode.GetSpan());
+    EvaluateBinOp(targetType, stack, equal, cast, equalNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::NotEqualNode& notEqualNode)
 {
-    EvaluateBinOp(targetType, stack, notEqual, notEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, notEqual, cast, notEqualNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::LessNode& lessNode)
 {
-    EvaluateBinOp(targetType, stack, less, lessNode.GetSpan());
+    EvaluateBinOp(targetType, stack, less, cast, lessNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::GreaterNode& greaterNode)
 {
-    EvaluateBinOp(targetType, stack, greater, greaterNode.GetSpan());
+    EvaluateBinOp(targetType, stack, greater, cast, greaterNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::LessOrEqualNode& lessOrEqualNode)
 {
-    EvaluateBinOp(targetType, stack, lessOrEqual, lessOrEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, lessOrEqual, cast, lessOrEqualNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::GreaterOrEqualNode& greaterOrEqualNode)
 {
-    EvaluateBinOp(targetType, stack, greaterOrEqual, greaterOrEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, greaterOrEqual, cast, greaterOrEqualNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::ShiftLeftNode& shiftLeftNode)
 {
-    EvaluateBinOp(targetType, stack, shiftLeft, shiftLeftNode.GetSpan());
+    EvaluateBinOp(targetType, stack, shiftLeft, cast, shiftLeftNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::ShiftRightNode& shiftRightNode)
 {
-    EvaluateBinOp(targetType, stack, shiftRight, shiftRightNode.GetSpan());
+    EvaluateBinOp(targetType, stack, shiftRight, cast, shiftRightNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::AddNode& addNode)
 {
-    EvaluateBinOp(targetType, stack, add, addNode.GetSpan());
+    EvaluateBinOp(targetType, stack, add, cast, addNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::SubNode& subNode)
 {
-    EvaluateBinOp(targetType, stack, sub, subNode.GetSpan());
+    EvaluateBinOp(targetType, stack, sub, cast, subNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::MulNode& mulNode)
 {
-    EvaluateBinOp(targetType, stack, mul, mulNode.GetSpan());
+    EvaluateBinOp(targetType, stack, mul, cast, mulNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::DivNode& divNode)
 {
-    EvaluateBinOp(targetType, stack, div, divNode.GetSpan());
+    EvaluateBinOp(targetType, stack, div, cast, divNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::RemNode& remNode)
 {
-    EvaluateBinOp(targetType, stack, rem, remNode.GetSpan());
+    EvaluateBinOp(targetType, stack, rem, cast, remNode.GetSpan());
 }
 
 void Evaluator::BeginVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
@@ -713,22 +713,22 @@ void Evaluator::BeginVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
 
 void Evaluator::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode)
 {
-    EvaluateUnaryOp(targetType, stack, unaryPlus, unaryPlusNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, unaryPlus, cast, unaryPlusNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode)
 {
-    EvaluateUnaryOp(targetType, stack, negate, unaryMinusNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, negate, cast, unaryMinusNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::NotNode& notNode)
 {
-    EvaluateUnaryOp(targetType, stack, not_, notNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, not_, cast, notNode.GetSpan());
 }
 
 void Evaluator::EndVisit(Cm::Ast::ComplementNode& complementNode)
 {
-    EvaluateUnaryOp(targetType, stack, complement, complementNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, complement, cast, complementNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::AddrOfNode& addrOfNode)
@@ -839,7 +839,7 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr);
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
     stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository));
@@ -1147,109 +1147,109 @@ void BooleanEvaluator::BeginVisit(Cm::Ast::ImplicationNode& implicationNode)
 void BooleanEvaluator::EndVisit(Cm::Ast::DisjunctionNode& disjunctionNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, disjunction, disjunctionNode.GetSpan());
+    EvaluateBinOp(targetType, stack, disjunction, cast, disjunctionNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::ConjunctionNode& conjunctionNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, conjunction, conjunctionNode.GetSpan());
+    EvaluateBinOp(targetType, stack, conjunction, cast, conjunctionNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::BitOrNode& bitOrNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, bitOr, bitOrNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitOr, cast, bitOrNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::BitXorNode& bitXorNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, bitXor, bitXorNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitXor, cast, bitXorNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::BitAndNode& bitAndNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, bitAnd, bitAndNode.GetSpan());
+    EvaluateBinOp(targetType, stack, bitAnd, cast, bitAndNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::EqualNode& equalNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, equal, equalNode.GetSpan());
+    EvaluateBinOp(targetType, stack, equal, cast, equalNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::NotEqualNode& notEqualNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, notEqual, notEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, notEqual, cast, notEqualNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::LessNode& lessNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, less, lessNode.GetSpan());
+    EvaluateBinOp(targetType, stack, less, cast, lessNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::GreaterNode& greaterNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, greater, greaterNode.GetSpan());
+    EvaluateBinOp(targetType, stack, greater, cast, greaterNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::LessOrEqualNode& lessOrEqualNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, lessOrEqual, lessOrEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, lessOrEqual, cast, lessOrEqualNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::GreaterOrEqualNode& greaterOrEqualNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, greaterOrEqual, greaterOrEqualNode.GetSpan());
+    EvaluateBinOp(targetType, stack, greaterOrEqual, cast, greaterOrEqualNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::ShiftLeftNode& shiftLeftNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, shiftLeft, shiftLeftNode.GetSpan());
+    EvaluateBinOp(targetType, stack, shiftLeft, cast, shiftLeftNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::ShiftRightNode& shiftRightNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, shiftRight, shiftRightNode.GetSpan());
+    EvaluateBinOp(targetType, stack, shiftRight, cast, shiftRightNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::AddNode& addNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, add, addNode.GetSpan());
+    EvaluateBinOp(targetType, stack, add, cast, addNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::SubNode& subNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, sub, subNode.GetSpan());
+    EvaluateBinOp(targetType, stack, sub, cast, subNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::MulNode& mulNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, mul, mulNode.GetSpan());
+    EvaluateBinOp(targetType, stack, mul, cast, mulNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::DivNode& divNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, div, divNode.GetSpan());
+    EvaluateBinOp(targetType, stack, div, cast, divNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::RemNode& remNode)
 {
     if (interrupted) return;
-    EvaluateBinOp(targetType, stack, rem, remNode.GetSpan());
+    EvaluateBinOp(targetType, stack, rem, cast, remNode.GetSpan());
 }
 
 void BooleanEvaluator::BeginVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
@@ -1265,25 +1265,25 @@ void BooleanEvaluator::BeginVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
 void BooleanEvaluator::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode)
 {
     if (interrupted) return;
-    EvaluateUnaryOp(targetType, stack, unaryPlus, unaryPlusNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, unaryPlus, cast, unaryPlusNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::UnaryMinusNode& unaryMinusNode)
 {
     if (interrupted) return;
-    EvaluateUnaryOp(targetType, stack, negate, unaryMinusNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, negate, cast, unaryMinusNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::NotNode& notNode)
 {
     if (interrupted) return;
-    EvaluateUnaryOp(targetType, stack, not_, notNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, not_, cast, notNode.GetSpan());
 }
 
 void BooleanEvaluator::EndVisit(Cm::Ast::ComplementNode& complementNode)
 {
     if (interrupted) return;
-    EvaluateUnaryOp(targetType, stack, complement, complementNode.GetSpan());
+    EvaluateUnaryOp(targetType, stack, complement, cast, complementNode.GetSpan());
 }
 
 void BooleanEvaluator::Visit(Cm::Ast::AddrOfNode& addrOfNode)

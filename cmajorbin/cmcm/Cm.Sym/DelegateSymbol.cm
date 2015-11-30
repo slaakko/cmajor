@@ -222,10 +222,18 @@ namespace Cm.Sym
         {
             SetFlag(ClassDelegateSymbolFlags.throw_);
         }
+        public nothrow inline TypeSymbol* GetReturnType() const
+        {
+            return returnType;
+        }
         public nothrow inline void SetReturnType(TypeSymbol* returnType_)
         {
             returnType = returnType_;
         }
+        public nothrow inline const List<ParameterSymbol*>& Parameters() const
+        {
+            return parameters;
+        }        
         public override void SetType(TypeSymbol* type, int index)
         {
             SetReturnType(type);

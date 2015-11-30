@@ -9,6 +9,7 @@
 
 #ifndef CM_CORE_EXCEPTION_INCLUDED
 #define CM_CORE_EXCEPTION_INCLUDED
+#include <Cm.Ast/Exception.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Util/ToolError.hpp>
 #include <stdexcept>
@@ -17,7 +18,7 @@ namespace Cm { namespace Core {
 
 using Cm::Parsing::Span;
 
-class Exception : public std::runtime_error
+class Exception : public Cm::Ast::Exception
 {
 public:
     Exception(const std::string& message_);
@@ -28,6 +29,7 @@ public:
     const Span& Defined() const { return defined; }
     const std::vector<Span>& References() const { return references; }
     const std::string& Message() const { return message; }
+    void AddReference(const Span& span) override;
 private:
     std::string message;
     Span defined;

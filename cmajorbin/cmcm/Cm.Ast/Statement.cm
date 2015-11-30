@@ -316,6 +316,14 @@ namespace Cm.Ast
         {
             return !elseS.IsNull();
         }
+        public nothrow inline StatementNode* ThenS() const
+        {
+            return thenS.GetPtr();
+        }
+        public nothrow inline StatementNode* ElseS() const
+        {
+            return elseS.GetPtr();
+        }
         private UniquePtr<Node> condition;
         private UniquePtr<StatementNode> thenS;
         private UniquePtr<StatementNode> elseS;
@@ -545,6 +553,10 @@ namespace Cm.Ast
             statement->SetParent(this);
             statements.Add(statement);
         }
+        public inline nothrow const NodeList<StatementNode>& Statements() const
+        {
+            return statements;
+        }
         private NodeList<StatementNode> statements;
     }
     
@@ -665,6 +677,14 @@ namespace Cm.Ast
             }
             visitor.EndVisit(*this);
         }
+        public nothrow inline Node* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline StatementNode* Statement() const
+        {
+            return statement.GetPtr();
+        }
         private UniquePtr<Node> condition;
         private UniquePtr<StatementNode> statement;
     }
@@ -715,6 +735,14 @@ namespace Cm.Ast
                 condition->Accept(visitor);
             }
             visitor.EndVisit(*this);
+        }
+        public nothrow inline Node* Condition() const
+        {
+            return condition.GetPtr();
+        }
+        public nothrow inline StatementNode* Statement() const
+        {
+            return statement.GetPtr();
         }
         private UniquePtr<Node> condition;
         private UniquePtr<StatementNode> statement;
