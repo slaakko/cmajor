@@ -8,21 +8,37 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 using Expand = Cm.Parser.Expand;
 using Span = System.Text.Parsing.Span;
 
 namespace Cm.Core
 {
-    public class Error : Exception
+    public List<Span> MakeReferences(const Span& referenced1_, const Span& referenced2_)
     {
-        public Error(const string& message_) : base(message_), message(message_), defined(), referenced()
+        List<Span> references;
+        references.Add(referenced1_);
+        references.Add(referenced2_);
+        return references;
+    }
+    
+    public class Error : Cm.Ast.Error
+    {
+        public Error(const string& message_) : base(message_), message(message_), defined(), references()
         {
         }
-        public Error(const string& message_, const Span& defined_) : base(Expand(message_, defined_)), message(message_), defined(defined_), referenced()
+        public Error(const string& message_, const Span& defined_) : base(Expand(message_, defined_)), message(message_), defined(defined_), references()
         {
         }
-        public Error(const string& message_, const Span& defined_, const Span& referenced_) : base(Expand(message_, defined_, referenced_)), message(message_), defined(defined_), referenced(referenced_)
+        public Error(const string& message_, const Span& defined_, const Span& referenced_) : base(Expand(message_, defined_, referenced_)), message(message_), defined(defined_)
         {
+            references.Add(referenced_);
+        }
+        public Error(const string& message_, const Span& defined_, const Span& referenced1_, const Span& referenced2_) : 
+            base(Expand(message_, defined_, MakeReferences(referenced1_, referenced2_))), message(message_), defined(defined_)
+        {
+            references.Add(referenced1_);
+            references.Add(referenced2_);
         }
         public nothrow const string& Message() const
         {
@@ -32,13 +48,17 @@ namespace Cm.Core
         {
             return defined;
         }
-        public nothrow const Span& Referenced() const
+        public nothrow const List<Span>& References() const
         {
-            return referenced;
+            return references;
+        }
+        public override void AddReference(const Span& reference)
+        {
+            references.Add(reference);
         }
         private string message;
         private Span defined;
-        private Span referenced;
+        private List<Span> references;
     }
     
     public class ConceptCheckError : Error

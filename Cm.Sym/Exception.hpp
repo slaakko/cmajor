@@ -10,13 +10,13 @@
 #ifndef CM_SYM_EXCEPTION_INCLUDED
 #define CM_SYM_EXCEPTION_INCLUDED
 #include <Cm.Parsing/Scanner.hpp>
-#include <stdexcept>
+#include <Cm.Ast/Exception.hpp>
 
 namespace Cm { namespace Sym {
 
 using Cm::Parsing::Span;
 
-class Exception : public std::runtime_error
+class Exception : public Cm::Ast::Exception
 {
 public:
     Exception(const std::string& message_, const Span& defined_);
@@ -24,6 +24,7 @@ public:
     const Span& Defined() const { return defined; }
     const Span& Referenced() const { return referenced; }
     const std::string& Message() const { return message; }
+    void AddReference(const Span& span) override;
 private:
     std::string message;
     Span defined;

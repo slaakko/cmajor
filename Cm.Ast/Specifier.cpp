@@ -32,7 +32,7 @@ std::string SpecifierStr(Specifiers s)
         }
         str.append("public");
     }
-    else if ((access & Specifiers::protected_) != Specifiers::none)
+    if ((access & Specifiers::protected_) != Specifiers::none)
     {
         if (!str.empty())
         {
@@ -40,7 +40,7 @@ std::string SpecifierStr(Specifiers s)
         }
         str.append("protect");
     }
-    else if ((access & Specifiers::internal_) != Specifiers::none)
+    if ((access & Specifiers::internal_) != Specifiers::none)
     {
         if (!str.empty())
         {
@@ -48,7 +48,7 @@ std::string SpecifierStr(Specifiers s)
         }
         str.append("internal");
     }
-    else if ((access & Specifiers::private_) != Specifiers::none)
+    if ((access & Specifiers::private_) != Specifiers::none)
     {
         if (!str.empty())
         {
@@ -143,6 +143,14 @@ std::string SpecifierStr(Specifiers s)
             str.append(1, ' ');
         }
         str.append("inline");
+    }
+    if ((s & Specifiers::new_) != Specifiers::none)
+    {
+        if (!str.empty())
+        {
+            str.append(1, ' ');
+        }
+        str.append("new");
     }
     return str;
 }

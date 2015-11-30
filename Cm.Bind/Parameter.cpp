@@ -19,8 +19,7 @@
 namespace Cm { namespace Bind {
 
 void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ParameterNode* parameterNode,
-    int parameterIndex)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ParameterNode* parameterNode, int parameterIndex)
 {
     Cm::Sym::Symbol* symbol = nullptr;
     if (parameterNode->Id())
@@ -51,7 +50,14 @@ void BindParameter(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
     }
     else
     {
-        throw Cm::Core::Exception("parameter symbol '" + parameterNode->Id()->Str() + "' not found");
+        if (parameterNode->Id())
+        {
+            throw Cm::Core::Exception("parameter symbol '" + parameterNode->Id()->Str() + "' not found", parameterNode->GetSpan());
+        }
+        else
+        {
+            throw Cm::Core::Exception("parameter symbol '__parameter" + std::to_string(parameterIndex) + "' not found", parameterNode->GetSpan());
+        }
     }
 }
 

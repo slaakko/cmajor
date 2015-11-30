@@ -99,7 +99,7 @@ namespace Cm.Sym
         justSymbol = 1u << 10u
     }
     
-    public const uint noSid = 0xFFFFFFFFu;
+    public const uint noSid = cast<uint>(-1);
     
     public abstract class Symbol
     {

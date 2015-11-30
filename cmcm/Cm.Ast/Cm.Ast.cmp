@@ -11,6 +11,7 @@ source <Concept.cm>;
 source <Constant.cm>;
 source <Delegate.cm>;
 source <Enumeration.cm>;
+source <Error.cm>;
 source <Expression.cm>;
 source <Factory.cm>;
 source <Function.cm>;

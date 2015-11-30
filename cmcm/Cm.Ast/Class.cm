@@ -359,15 +359,24 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            if (visitor.VisitBodies())
+            try
             {
-                if (Body() != null)
+                visitor.BeginVisit(*this);
+                if (visitor.VisitBodies())
                 {
-                    Body()->Accept(visitor);
+                    if (Body() != null)
+                    {
+                        Body()->Accept(visitor);
+                    }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
         private NodeList<InitializerNode> initializers;
     }
@@ -439,16 +448,25 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            Parameters().Accept(visitor);
-            if (visitor.VisitBodies())
+            try
             {
-                if (Body() != null)
+                visitor.BeginVisit(*this);
+                Parameters().Accept(visitor);
+                if (visitor.VisitBodies())
                 {
-                    Body()->Accept(visitor);
+                    if (Body() != null)
+                    {
+                        Body()->Accept(visitor);
+                    }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
         private NodeList<InitializerNode> initializers;
     }
@@ -493,15 +511,24 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            if (visitor.VisitBodies())
+            try
             {
-                if (Body() != null)
+                visitor.BeginVisit(*this);
+                if (visitor.VisitBodies())
                 {
-                    Body()->Accept(visitor);
+                    if (Body() != null)
+                    {
+                        Body()->Accept(visitor);
+                    }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
     }
     
@@ -562,16 +589,25 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            Parameters().Accept(visitor);
-            if (visitor.VisitBodies())
+            try
             {
-                if (Body() != null)
+                visitor.BeginVisit(*this);
+                Parameters().Accept(visitor);
+                if (visitor.VisitBodies())
                 {
-                    Body()->Accept(visitor);
+                    if (Body() != null)
+                    {
+                        Body()->Accept(visitor);
+                    }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
         public nothrow inline bool IsConst() const
         {
@@ -627,15 +663,24 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            if (visitor.VisitBodies())
+            try
             {
-                if (Body() != null)
+                visitor.BeginVisit(*this);
+                if (visitor.VisitBodies())
                 {
-                    Body()->Accept(visitor);
+                    if (Body() != null)
+                    {
+                        Body()->Accept(visitor);
+                    }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
     }
     

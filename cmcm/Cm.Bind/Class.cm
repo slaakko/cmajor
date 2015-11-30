@@ -1,0 +1,208 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    internal Cm.Sym.ClassTypeSymbol* BindClass(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository,Cm.Ast.ClassNode* classNode)
+    {
+        Cm.Sym.Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupClassSymbols);
+        if (symbol != null)
+        {
+            if (symbol is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* classTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(symbol);
+                BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, classTypeSymbol);
+                return classTypeSymbol;
+            }
+            else
+            {
+                throw Cm.Core.Error("symbol '" + symbol->FullName() + "' does not denote a class", symbol->GetSpan());
+            }
+        }
+        else
+        {
+            throw Cm.Core.Error("class symbol '" + classNode->Id()->Str() + "' not found");
+        }
+    }
+    
+    internal void BindClass(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ClassNode* classNode, Cm.Sym.ClassTypeSymbol* classTypeSymbol)
+    {
+        if (classTypeSymbol->IsBound()) return;
+        if (classNode->GetCompileUnit() != null)
+        {
+            classTypeSymbol->SetSourceFilePath(classNode->GetCompileUnit()->FilePath());
+        }
+        Cm.Ast.Specifiers specifiers = classNode->GetSpecifiers();
+        bool isClassMember = classNode->Parent() is Cm.Ast.ClassNode*;
+        SetAccess(classTypeSymbol, specifiers, isClassMember);
+        if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+        {
+            classTypeSymbol->SetStatic();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
+        {
+            classTypeSymbol->SetAbstract();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be virtual", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.override_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be override", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.explicit_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be explicit", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.external) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be external", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.suppress_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be suppressed", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be default", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be inline", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be cdecl", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.nothrow_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be nothrow", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.throw_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be throw", classTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.new_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be new", classTypeSymbol->GetSpan());
+        }
+        if (classNode->TemplateParameters().Count() > 0)
+        {
+            classTypeSymbol->SetBound();
+            return;
+        }
+        Cm.Ast.Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
+        if (baseClassTypeExpr != null)
+        {
+            Cm.Sym.TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassTypeExpr);
+            if (baseTypeSymbol != null)
+            {
+                if (baseTypeSymbol is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* baseClassTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(baseTypeSymbol);
+                    if (Cm.Sym.TypesEqual(classTypeSymbol, baseClassTypeSymbol))
+                    {
+                        throw Cm.Core.Error("class cannot derived from itself", classTypeSymbol->GetSpan());
+                    }
+                    Cm.Ast.Node* node = symbolTable.GetNode(baseClassTypeSymbol, false);
+                    if (node != null)
+                    {
+                        if (node is Cm.Ast.ClassNode*)
+                        {
+                            Cm.Ast.ClassNode* baseClassNode = cast<Cm.Ast.ClassNode*>(node);
+                            Cm.Sym.ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
+                            BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassTypeSymbol);
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("class node expected", node->GetSpan(), baseClassTypeSymbol->GetSpan());
+                        }
+                    }
+                    if (baseClassTypeSymbol->Access() < classTypeSymbol->Access())
+                    {
+                        throw Cm.Core.Error("base class type must be at least as accessible as the class type itself", baseClassTypeSymbol->GetSpan(), classTypeSymbol->GetSpan());
+                    }
+                    classTypeSymbol->SetBaseClass(baseClassTypeSymbol);
+                    classTypeSymbol->GetContainerScope()->SetBase(baseClassTypeSymbol->GetContainerScope());
+                }
+                else
+                {
+                    throw Cm.Core.Error("base class type expression does not denote a class type", baseClassTypeExpr->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("base class type expression does not denote a type", baseClassTypeExpr->GetSpan());
+            }
+        }
+        if (!classTypeSymbol->IrTypeMade())
+        {
+            classTypeSymbol->SetIrType(Cm.IrIntf.CreateClassTypeName(classTypeSymbol->FullName()));
+        }
+        classTypeSymbol->SetBound();
+    }
+    
+    internal void AddClassTypeToIrClassTypeRepository(Cm.Sym.ClassTypeSymbol* classType, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope)
+    {
+        if (boundCompileUnit.IsPrebindCompileUnit()) return;
+        if (boundCompileUnit.IrClassTypeRepository().Added(classType)) return;
+        boundCompileUnit.IrClassTypeRepository().AddClassType(classType);
+        if (!classType->IsBound())
+        {
+            if (classType is Cm.Sym.TemplateTypeSymbol*)
+            {
+                Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(classType);
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.FileScopes());
+                boundCompileUnit.ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, templateTypeSymbol);
+            }
+        }
+        if (classType->BaseClass() != null)
+        {
+            AddClassTypeToIrClassTypeRepository(classType->BaseClass(), boundCompileUnit, containerScope);
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVar : classType->MemberVariables())
+        {
+            Cm.Sym.TypeSymbol* memberVariableBaseType = memberVar->GetType()->GetBaseType();
+            if (memberVariableBaseType is Cm.Sym.ClassTypeSymbol*)
+            {
+                AddClassTypeToIrClassTypeRepository(cast<Cm.Sym.ClassTypeSymbol*>(memberVariableBaseType), boundCompileUnit, containerScope);
+            }
+        }
+        if (classType->IsVirtual())
+        {
+            for (Cm.Sym.FunctionSymbol* virtualFunction : classType->Vtbl())
+            {
+                if (virtualFunction != null)
+                {
+                    Cm.Sym.TypeSymbol* returnType = virtualFunction->GetReturnType();
+                    if (returnType != null && (returnType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        Cm.Sym.ClassTypeSymbol* returnClassType = cast<Cm.Sym.ClassTypeSymbol*>(returnType);
+                        AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
+                    }
+                    for (Cm.Sym.ParameterSymbol* parameter : virtualFunction->Parameters())
+                    {
+                        Cm.Sym.TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
+                        if (parameterBaseType is Cm.Sym.ClassTypeSymbol*)
+                        {
+                            Cm.Sym.ClassTypeSymbol* parameterClassType = cast<Cm.Sym.ClassTypeSymbol*>(parameterBaseType);
+                            AddClassTypeToIrClassTypeRepository(parameterClassType, boundCompileUnit, containerScope);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

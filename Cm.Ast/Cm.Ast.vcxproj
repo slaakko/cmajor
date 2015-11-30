@@ -27,6 +27,7 @@
     <ClInclude Include="Constant.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="Enumeration.hpp" />
+    <ClInclude Include="Exception.hpp" />
     <ClInclude Include="Expression.hpp" />
     <ClInclude Include="Factory.hpp" />
     <ClInclude Include="Function.hpp" />
@@ -59,6 +60,7 @@
     <ClCompile Include="Constant.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="Enumeration.cpp" />
+    <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="IntrinsicConcept.cpp" />

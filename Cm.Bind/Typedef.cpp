@@ -37,12 +37,12 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         }
         else
         {
-            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a typedef", symbol->GetSpan());
+            throw Cm::Core::Exception("symbol '" + symbol->FullName() + "' does not denote a typedef", typedefNode->GetSpan(), symbol->GetSpan());
         }
     }
     else
     {
-        throw Cm::Core::Exception("typedef symbol '" + typedefNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("typedef symbol '" + typedefNode->Id()->Str() + "' not found", typedefNode->GetSpan());
     }
 }
 

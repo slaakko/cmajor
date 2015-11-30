@@ -147,11 +147,11 @@ namespace Cm.Ast
         {
             return subject.GetPtr();
         }
-        public nothrow inline const NodeList<Node>& TempateArguments() const
+        public nothrow inline const NodeList<Node>& TemplateArguments() const
         {
             return templateArguments;
         }
-        public nothrow inline NodeList<Node>& TempateArguments() 
+        public nothrow inline NodeList<Node>& TemplateArguments() 
         {
             return templateArguments;
         }

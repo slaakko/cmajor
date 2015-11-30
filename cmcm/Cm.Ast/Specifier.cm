@@ -41,4 +41,143 @@ namespace Cm.Ast
     {
         return (s & Specifiers.static_) != Specifiers.none;
     }
+    
+    public nothrow string SpecifierStr(Specifiers s)
+    {
+        string str;
+        if ((s & Specifiers.external) != Specifiers.none)
+        {
+            str.Append("extern");
+        }
+        Specifiers access = cast<Specifiers>(s & Specifiers.access);
+        if ((access & Specifiers.public_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("public");
+        }
+        if ((access & Specifiers.protected_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("protected");
+        }
+        if ((access & Specifiers.internal_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("internal");
+        }
+        if ((access & Specifiers.private_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("private");
+        }
+        if ((s & Specifiers.cdecl_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("cdecl");
+        }
+        if ((s & Specifiers.nothrow_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("nothrow");
+        }
+        if ((s & Specifiers.throw_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("throw");
+        }
+        if ((s & Specifiers.static_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("static");
+        }
+        if ((s & Specifiers.virtual_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("virtual");
+        }
+        if ((s & Specifiers.abstract_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("abstract");
+        }
+        if ((s & Specifiers.override_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("override");
+        }
+        if ((s & Specifiers.suppress_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("suppress");
+        }
+        if ((s & Specifiers.default_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("default");
+        }
+        if ((s & Specifiers.explicit_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("explicit");
+        }
+        if ((s & Specifiers.inline_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("inline");
+        }
+        if ((s & Specifiers.new_) != Specifiers.none)
+        {
+            if (!str.IsEmpty())
+            {
+                str.Append(' ');
+            }
+            str.Append("new");
+        }
+        return str;
+    }
 }

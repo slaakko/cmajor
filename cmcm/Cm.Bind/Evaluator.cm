@@ -14,7 +14,7 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
-    public Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
+    internal Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
         const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository)
     {
         Evaluator evaluator(targetType, cast_, symbolTable, containerScope, fileScopes, classTemplateRepository);
@@ -34,6 +34,36 @@ namespace Cm.Bind
             UniquePtr<Cm.Sym.Value> result(evaluationStack.Pop());
             result.Reset(result->As(targetType, cast_, value->GetSpan()));
             return result.Release();
+        }
+        public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
+        {
+            Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, lookupId);
+            if (symbol == null)
+            {
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+                {
+                    symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
+                    if (symbol != null) break;
+                }
+            }
+            if (symbol != null)
+            {
+                EvaluateSymbol(symbol);
+            }
+            else
+            {
+                throw Cm.Core.Error("constant or enumeration constant symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.NamespaceNode& namespaceNode)
+        {
+            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&namespaceNode);
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
+        }
+        public override void BeginVisit(Cm.Ast.ClassNode& classNode)
+        {
+            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&classNode);
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
         }
         public override void Visit(Cm.Ast.BooleanLiteralNode& booleanLiteralNode)
         {
@@ -263,7 +293,7 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.CastNode& castNode)
         {
             Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
-            UniquePtr<Cm.Sym.TypeSymbol> type(null);//ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, targetTypeExpr);
             Cm.Sym.SymbolType symbolType = type->GetSymbolType();
             Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository)));
@@ -296,15 +326,11 @@ namespace Cm.Bind
         {
             ThrowCannotEvaluateStatically(templateIdNode.GetSpan());
         }
-        private Cm.Sym.ValueType targetType;
-        private bool cast_;
-        private Cm.Sym.SymbolTable& symbolTable;
-        private Cm.Sym.ContainerScope* containerScope;
-        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
-        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
-        private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
-        private Cm.Sym.SymbolTypeSetId lookupId;
-        private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
+        public override void BeginVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
+        {
+            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&enumTypeNode);
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
+        }
         private void EvaluateSymbol(Cm.Sym.Symbol* symbol)
         {
             if (symbol is Cm.Sym.ContainerSymbol*)
@@ -354,6 +380,15 @@ namespace Cm.Bind
                 ThrowCannotEvaluateStatically(symbol->GetSpan());
             }
         }
+        private Cm.Sym.ValueType targetType;
+        private bool cast_;
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Sym.ContainerScope* containerScope;
+        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
+        private Cm.Sym.SymbolTypeSetId lookupId;
+        private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
     }
     
     public void ThrowNotImplemented()

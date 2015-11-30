@@ -14,6 +14,7 @@
 #include <Cm.Ast/Reader.hpp>
 #include <Cm.Ast/Writer.hpp>
 #include <Cm.Ast/Visitor.hpp>
+#include <Cm.Ast/Exception.hpp>
 
 namespace Cm { namespace Ast {
 
@@ -207,20 +208,28 @@ std::string FunctionNode::FullGroupName() const
 
 void FunctionNode::Accept(Visitor& visitor)
 {
-    visitor.BeginVisit(*this);
-    if (!visitor.SkipContent())
+    try
     {
-        templateParameters.Accept(visitor);
-        parameters.Accept(visitor);
-        if (visitor.VisitBodies())
+        visitor.BeginVisit(*this);
+        if (!visitor.SkipContent())
         {
-            if (body)
+            templateParameters.Accept(visitor);
+            parameters.Accept(visitor);
+            if (visitor.VisitBodies())
             {
-                body->Accept(visitor);
+                if (body)
+                {
+                    body->Accept(visitor);
+                }
             }
         }
+        visitor.EndVisit(*this);
     }
-    visitor.EndVisit(*this);
+    catch (Cm::Ast::Exception& ex)
+    {
+        ex.AddReference(GetSpan());
+        throw;
+    }
 }
 
 void FunctionNode::SetBodySource(CompoundStatementNode* bodySource_)

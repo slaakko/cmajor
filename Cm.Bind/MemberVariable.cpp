@@ -37,7 +37,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     }
     else
     {
-        throw Cm::Core::Exception("member variable symbol '" + memberVariableNode->Id()->Str() + "' not found");
+        throw Cm::Core::Exception("member variable symbol '" + memberVariableNode->Id()->Str() + "' not found", memberVariableNode->GetSpan());
     }
 }
 

@@ -171,20 +171,29 @@ namespace Cm.Ast
         }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            if (!visitor.SkipContent())
+            try
             {
-                templateParameters.Accept(visitor);
-                parameters.Accept(visitor);
-                if (visitor.VisitBodies())
+                visitor.BeginVisit(*this);
+                if (!visitor.SkipContent())
                 {
-                    if (!body.IsNull())
+                    templateParameters.Accept(visitor);
+                    parameters.Accept(visitor);
+                    if (visitor.VisitBodies())
                     {
-                        body->Accept(visitor);
+                        if (!body.IsNull())
+                        {
+                            body->Accept(visitor);
+                        }
                     }
                 }
+                visitor.EndVisit(*this);
             }
-            visitor.EndVisit(*this);
+            catch (Cm.Ast.Error& ex)
+            {
+                ex.AddReference(GetSpan());
+                ExceptionPtr x = CaptureCurrentException();
+                RethrowException(x);
+            }
         }
         public override nothrow string Name() const
         {
