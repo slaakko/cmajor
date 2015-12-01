@@ -1,0 +1,568 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    internal Cm.Sym.FunctionSymbol* BindFunction(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Ast.FunctionNode* functionNode, Cm.Sym.ClassTypeSymbol* currentClass)
+    {
+        Cm.Sym.FunctionSymbol* functionSymbol = symbolTable.GetFunctionSymbol(functionNode);
+        if (!functionSymbol->IsBound())
+        {
+            Cm.Ast.Specifiers specifiers = functionNode->GetSpecifiers();
+            bool isClassMember = currentClass != null;
+            SetAccess(functionSymbol, specifiers, isClassMember);
+        }
+        return functionSymbol;
+    }
+    
+    internal void CompleteBindFunction(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.FunctionNode* functionNode, Cm.Sym.FunctionSymbol* functionSymbol, Cm.Sym.ClassTypeSymbol* currentClass)
+    {
+        if (currentClass != null && currentClass->IsClassTemplateSymbol())
+        {
+            functionSymbol->SetMemberOfClassTemplate();
+            return;
+        }
+        bool staticClass = false;
+        if (currentClass != null && currentClass->IsStatic())
+        {
+            staticClass = true;
+        }
+        functionSymbol->ComputeName();
+        if (functionSymbol->HasConstraint())
+        {
+            functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->Constraint()->ToString());
+        }
+        else if (functionNode->Constraint() != null)
+        {
+            functionSymbol->SetName(functionSymbol->Name() + " " + functionNode->Constraint()->ToString());
+        }
+        Cm.Ast.Specifiers specifiers = functionNode->GetSpecifiers();
+        if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be static", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsDestructor())
+            {
+                throw Cm.Core.Error("destructor cannot be static", functionSymbol->GetSpan());
+            }
+            if (!functionNode->HasBody())
+            {
+                throw Cm.Core.Error("static functions must have body", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetStatic();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.explicit_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsConstructor())
+            {
+                throw Cm.Core.Error("only constructors can be explicit", functionSymbol->GetSpan());
+            }
+            if (currentClass == null || !(currentClass is Cm.Sym.TemplateTypeSymbol*))
+            {
+                if (!functionNode->HasBody())
+                {
+                    throw Cm.Core.Error("explicit functions must have body", functionSymbol->GetSpan());
+                }
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have explicit constructor", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetExplicit();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.external) != Cm.Ast.Specifiers.none)
+        {
+            if (functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("member functions cannot be external", functionSymbol->GetSpan());
+            }
+            if (functionNode->HasBody())
+            {
+                throw Cm.Core.Error("external functions cannot have body", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetExternal();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.suppress_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be suppressed", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsDestructor())
+            {
+                throw Cm.Core.Error("destructor cannot be suppressed", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be suppressed", functionSymbol->GetSpan());
+            }
+            if (functionNode->HasBody())
+            {
+                throw Cm.Core.Error("suppressed functions cannot have body", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have suppressed members", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetSuppressed();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be default", functionSymbol->GetSpan());
+            }
+            if (functionNode->HasBody())
+            {
+                throw Cm.Core.Error("default functions cannot have body", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be default", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have default members", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetDefault();
+            if ((specifiers & Cm.Ast.Specifiers.throw_) == Cm.Ast.Specifiers.none)
+            {
+                functionSymbol->SetNothrow();
+            }
+        }
+        if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
+        {
+            if (currentClass == null || !(currentClass is Cm.Sym.TemplateTypeSymbol*))
+            {
+                if (!functionNode->HasBody())
+                {
+                    throw Cm.Core.Error("inline functions must have body", functionSymbol->GetSpan());
+                }
+            }
+            functionSymbol->SetInline();
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                functionSymbol->SetReplicated();
+            }
+        }
+        if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
+        {
+            if (functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("member functions cannot be cdecl", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetCDecl();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.nothrow_) != Cm.Ast.Specifiers.none)
+        {
+            functionSymbol->SetNothrow();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.throw_) != Cm.Ast.Specifiers.none)
+        {
+            functionSymbol->ResetNothrow();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be abstract", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsConstructor())
+            {
+                throw Cm.Core.Error("constructor cannot be abstract", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be abstract", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsDestructor())
+            {
+                throw Cm.Core.Error("destructor cannot be abstract", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have abstract members", functionSymbol->GetSpan());
+            }
+            if (functionNode->HasBody())
+            {
+                throw Cm.Core.Error("abstract functions cannot have body", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetAbstract();
+            if (!currentClass->IsAbstract())
+            {
+                throw Cm.Core.Error("class containing abstract member functions must be declared abstract", currentClass->GetSpan(), functionSymbol->GetSpan());
+            }
+            currentClass->SetVirtual();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be virtual", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsConstructor())
+            {
+                throw Cm.Core.Error("constructor cannot be virtual", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be virtual", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have virtual members", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetVirtual();
+            currentClass->SetVirtual();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be override", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsConstructor())
+            {
+                throw Cm.Core.Error("constructor cannot be override", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be override", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have override members", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetOverride();
+            currentClass->SetVirtual();
+        }
+        if ((specifiers & Cm.Ast.Specifiers.new_) != Cm.Ast.Specifiers.none)
+        {
+            if (!functionSymbol->IsMemberFunctionSymbol())
+            {
+                throw Cm.Core.Error("free functions cannot be new", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsConstructor())
+            {
+                throw Cm.Core.Error("constructor cannot be new", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsStaticConstructor())
+            {
+                throw Cm.Core.Error("static constructor cannot be new", functionSymbol->GetSpan());
+            }
+            if (staticClass)
+            {
+                throw Cm.Core.Error("static class cannot have new members", functionSymbol->GetSpan());
+            }
+            functionSymbol->SetNew();
+        }
+        if (functionNode->ReturnTypeExpr() != null)
+        {
+            Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, functionNode->ReturnTypeExpr());
+            functionSymbol->SetReturnType(returnType);
+            if (functionSymbol->ReturnValue() != null)
+            {
+                functionSymbol->ReturnValue()->SetType(returnType);
+            }
+        }
+        if (currentClass != null && (currentClass is Cm.Sym.TemplateTypeSymbol*))
+        {
+            functionSymbol->SetMemberOfTemplateType();
+            functionSymbol->SetReplicated();
+        }
+        if (functionSymbol->IsMemberFunctionSymbol())
+        {
+            if (functionSymbol->IsDefaultConstructor())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedDefaultConstructor();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateDefaultConstructor();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedConstructor();
+                    currentClass->SetHasUserDefinedDefaultConstructor();
+                }
+            }
+            else if (functionSymbol->IsCopyConstructor())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedCopyConstructor();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateCopyConstructor();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedConstructor();
+                    currentClass->SetHasUserDefinedCopyConstructor();
+                }
+            }
+            else if (functionSymbol->IsMoveConstructor())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedMoveConstructor();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateMoveConstructor();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedConstructor();
+                    currentClass->SetHasUserDefinedMoveConstructor();
+                }
+            }
+            else if (functionSymbol->IsStaticConstructor())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    throw Cm.Core.Error("static constructor cannot be suppressed", functionSymbol->GetSpan());
+                }
+                else 
+                {
+                    currentClass->SetHasUserDefinedStaticConstructor();
+                }
+            }
+            else if (functionSymbol->CheckIfConvertingConstructor())
+            {
+                functionSymbol->SetConvertingConstructor();
+                currentClass->AddConversion(functionSymbol);
+            }
+            else if (functionSymbol->IsCopyAssignment())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedCopyAssignment();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateCopyAssignment();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedCopyAssignment();
+                }
+            }
+            else if (functionSymbol->IsMoveAssignment())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedMoveAssignment();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateMoveAssignment();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedMoveAssignment();
+                }
+            }
+            else if (functionSymbol->IsDestructor())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    throw Cm.Core.Error("destructor cannot be suppressed", functionSymbol->GetSpan());
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateDestructor();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedDestructor();
+                }
+            }
+            else if (functionNode->GetNodeType() == Cm.Ast.NodeType.conversionFunctionNode)
+            {
+                functionSymbol->SetConversionFunction();
+                currentClass->AddConversion(functionSymbol);
+                functionSymbol->ComputeName();
+            }
+            if (functionSymbol->IsAbstract() && functionSymbol->IsVirtual())
+            {
+                throw Cm.Core.Error("function cannot be at the same time abstract and virtual", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsAbstract() && functionSymbol->IsOverride())
+            {
+                throw Cm.Core.Error("function cannot be at the same time abstract and override", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsVirtual() && functionSymbol->IsOverride())
+            {
+                throw Cm.Core.Error("function cannot be at the same time virtual and override", functionSymbol->GetSpan());
+            }
+            if (functionSymbol->IsNew() && functionSymbol->IsVirtualAbstractOrOverride())
+            {
+                throw Cm.Core.Error("function cannot be at the same time virtual, abstract or override, and new", functionSymbol->GetSpan());
+            }
+        }
+    }
+    
+    internal void CheckFunctionReturnPaths(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.FunctionSymbol* functionSymbol, Cm.Ast.FunctionNode* functionNode)
+    {
+        if (functionSymbol->GetReturnType() == null || (functionSymbol->GetReturnType() is Cm.Sym.VoidTypeSymbol*) || !functionNode->HasBody()) return;
+        Cm.Ast.CompoundStatementNode* body = functionNode->Body();
+        for (const UniquePtr<Cm.Ast.StatementNode>& statement : body->Statements())
+        {
+            if (IsFunctionTerminatingStatement(statement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, false)) return;
+        }
+        throw Cm.Core.Error("not all control paths terminate in return statement or throw statement", functionNode->GetSpan());
+    }
+    
+    internal bool IsFunctionTerminatingStatement(Cm.Ast.StatementNode* statement, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, bool inForEverLoop)
+    {
+        switch (statement->GetNodeType())
+        {
+            case Cm.Ast.NodeType.compoundStatementNode:
+            {
+                Cm.Ast.CompoundStatementNode* compoundStatement = cast<Cm.Ast.CompoundStatementNode*>(statement);
+                for (const UniquePtr<Cm.Ast.StatementNode>& stat : compoundStatement->Statements())
+                {
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.conditionalStatementNode:
+            {
+                Cm.Ast.ConditionalStatementNode* conditionalStatement = cast<Cm.Ast.ConditionalStatementNode*>(statement);
+                if (inForEverLoop || conditionalStatement->HasElseStatement())
+                {
+                    if (IsFunctionTerminatingStatement(conditionalStatement->ThenS(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop) &&
+                        (inForEverLoop || (conditionalStatement->HasElseStatement() && IsFunctionTerminatingStatement(conditionalStatement->ElseS(), symbolTable, containerScope, fileScopes, 
+                        classTemplateRepository, inForEverLoop))))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.switchStatementNode:
+            {
+                Cm.Ast.SwitchStatementNode* switchStatement = cast<Cm.Ast.SwitchStatementNode*>(statement);
+                if (switchStatement->DefaultStatement() != null)
+                {
+                    for (const UniquePtr<Cm.Ast.CaseStatementNode>& caseStatement : switchStatement->CaseStatements())
+                    {
+                        if (!IsFunctionTerminatingStatement(caseStatement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop))
+                        {
+                            return false;
+                        }
+                    }
+                    if (IsFunctionTerminatingStatement(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop))
+                    {
+                        return true;
+                    }
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.caseStatementNode:
+            {
+                Cm.Ast.CaseStatementNode* caseStatement = cast<Cm.Ast.CaseStatementNode*>(statement);
+                for (const UniquePtr<Cm.Ast.StatementNode>& stat : caseStatement->Statements())
+                {
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.defaultStatementNode:
+            {
+                Cm.Ast.DefaultStatementNode* defaultStatement = cast<Cm.Ast.DefaultStatementNode*>(statement);
+                for (const UniquePtr<Cm.Ast.StatementNode>& stat : defaultStatement->Statements())
+                {
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.whileStatementNode:
+            {
+                Cm.Ast.WhileStatementNode* whileStatement = cast<Cm.Ast.WhileStatementNode*>(statement);
+                if (IsAlwaysTrue(whileStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                {
+                    if (IsFunctionTerminatingStatement(whileStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.doStatementNode:
+            {
+                Cm.Ast.DoStatementNode* doStatement = cast<Cm.Ast.DoStatementNode*>(statement);
+                if (IsAlwaysTrue(doStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                {
+                    if (IsFunctionTerminatingStatement(doStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                }
+                break;
+            }
+            case Cm.Ast.NodeType.forStatementNode:
+            {
+                Cm.Ast.ForStatementNode* forStatement = cast<Cm.Ast.ForStatementNode*>(statement);
+                if (forStatement->Condition() == null || IsAlwaysTrue(forStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                {
+                    if (IsFunctionTerminatingStatement(forStatement->Action(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                }
+                break;
+            }
+            default:
+            {
+                if (statement->IsFunctionTerminatingNode())
+                {
+                    return true;
+                }
+                break;
+            }
+        }
+        return false;
+    }
+    
+    internal void CheckFunctionAccessLevels(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.FunctionSymbol* functionSymbol)
+    {
+        if (functionSymbol->IsMemberOfTemplateType() || functionSymbol->IsFunctionTemplateSpecialization()) return;
+        Cm.Sym.TypeSymbol* returnType = functionSymbol->GetReturnType();
+        if (returnType != null)
+        {
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, returnType);
+            if (returnType->Access() < functionSymbol->EffectiveAccess())
+            {
+                throw Cm.Core.Error("return type of a function must be at least as accessible as the function itself", returnType->GetSpan(), functionSymbol->GetSpan());
+            }
+        }
+        int n = functionSymbol->Parameters().Count();
+        int start = 0;
+        if (functionSymbol->IsMemberFunctionSymbol() && !functionSymbol->IsStatic())
+        {
+            start = 1;
+        }
+        for (int i = start; i < n; ++i)
+        {
+            Cm.Sym.ParameterSymbol* param = functionSymbol->Parameters()[i];
+            Cm.Sym.TypeSymbol* parameterType = param->GetType();
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterType);
+            if (parameterType->Access() < functionSymbol->EffectiveAccess())
+            {
+                throw Cm.Core.Error("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
+            }            
+        }
+    }
+}

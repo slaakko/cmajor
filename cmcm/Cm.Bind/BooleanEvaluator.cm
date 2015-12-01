@@ -1,0 +1,427 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.Concepts;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    internal bool IsAlwaysTrue(Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
+        Cm.Core.ClassTemplateRepository& classTemplateRepository)
+    {
+        try
+        {
+            BooleanEvaluator evaluator(false, symbolTable, containerScope, fileScopes, classTemplateRepository);
+            return evaluator.DoEvaluate(value);
+        }
+        catch (const Exception& ex)
+        {
+        }
+        return false;
+    }
+    
+    internal class BooleanEvaluator : Cm.Ast.Visitor
+    {
+        public nothrow BooleanEvaluator(bool cast__, Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_) : base(true, true), targetType(Cm.Sym.ValueType.boolValue), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_),
+            fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), interrupted(false), lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantAndEnumConstantSymbols)
+        {
+        }
+        public bool DoEvaluate(Cm.Ast.Node* value)
+        {
+            try
+            {
+                value->Accept(*this);
+                if (interrupted) return false;
+                UniquePtr<Cm.Sym.Value> result(evaluationStack.Pop());
+                if (result->GetValueType() == Cm.Sym.ValueType.boolValue)
+                {
+                    Cm.Sym.BoolValue* boolValue = cast<Cm.Sym.BoolValue*>(result.GetPtr());
+                    return boolValue->Value() == true;
+                }
+            }
+            catch (const Exception& ex)
+            {
+            }
+            return false;
+        }
+        public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
+        {
+            Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, lookupId);
+            if (symbol == null)
+            {
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+                {
+                    symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
+                    if (symbol != null) break;
+                }
+            }
+            if (symbol != null)
+            {
+                EvaluateSymbol(symbol);
+            }
+            else
+            {
+                interrupted = true;
+            }
+        }    
+        public override void Visit(Cm.Ast.BooleanLiteralNode& booleanLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(booleanLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.SByteLiteralNode& sbyteLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.SByteValue(sbyteLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ByteLiteralNode& byteLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ByteValue(byteLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ShortLiteralNode& shortLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ShortValue(shortLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.UShortLiteralNode& ushortLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UShortValue(ushortLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.IntLiteralNode& intLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.IntValue(intLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.UIntLiteralNode& uintLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UIntValue(uintLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.LongLiteralNode& longLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.LongValue(longLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.ULongLiteralNode& ulongLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ULongValue(ulongLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.FloatLiteralNode& floatLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.FloatValue(floatLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.DoubleLiteralNode& doubleLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.DoubleValue(doubleLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.CharLiteralNode& charLiteralNode)
+        {
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.CharValue(charLiteralNode.Value())));
+        }
+        public override void Visit(Cm.Ast.StringLiteralNode& stringLiteralNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.NullLiteralNode& nullLiteralNode)
+        {
+            interrupted = true;
+        }
+        public override void BeginVisit(Cm.Ast.EquivalenceNode& equivalenceNode)
+        {
+            interrupted = true;
+        }
+        public override void BeginVisit(Cm.Ast.ImplicationNode& implicationNode)
+        {
+            interrupted = true;
+        }
+        public override void EndVisit(Cm.Ast.DisjunctionNode& disjunctionNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, DisjunctionDelegates.Instance().Get(), cast_, disjunctionNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ConjunctionNode& conjunctionNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, ConjunctionDelegates.Instance().Get(), cast_, conjunctionNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitOrNode& bitOrNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, BitwiseOrDelegates.Instance().Get(), cast_, bitOrNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitAndNode& bitAndNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, BitwiseAndDelegates.Instance().Get(), cast_, bitAndNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.BitXorNode& bitXorNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, BitwiseXorDelegates.Instance().Get(), cast_, bitXorNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.EqualNode& equalNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, EqualityDelegates.Instance().Get(), cast_, equalNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.NotEqualNode& notEqualNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, InequalityDelegates.Instance().Get(), cast_, notEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.LessNode& lessNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, LessThanRelationDelegates.Instance().Get(), cast_, lessNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.GreaterNode& greaterNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, GreaterThanRelationDelegates.Instance().Get(), cast_, greaterNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.LessOrEqualNode& lessOrEqualNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, LessOrEqualRelationDelegates.Instance().Get(), cast_, lessOrEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.GreaterOrEqualNode& greaterOrEqualNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, GreaterOrEqualRelationDelegates.Instance().Get(), cast_, greaterOrEqualNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ShiftLeftNode& shiftLeftNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, ShiftLeftDelegates.Instance().Get(), cast_, shiftLeftNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ShiftRightNode& shiftRightNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, ShiftRightDelegates.Instance().Get(), cast_, shiftRightNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.AddNode& addNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, AddDelegates.Instance().Get(), cast_, addNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.SubNode& subNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, SubDelegates.Instance().Get(), cast_, subNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.MulNode& mulNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, MulDelegates.Instance().Get(), cast_, mulNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.DivNode& divNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, DivDelegates.Instance().Get(), cast_, divNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.RemNode& remNode)
+        {
+            if (interrupted) return;
+            EvaluateBinOp(targetType, evaluationStack, RemDelegates.Instance().Get(), cast_, remNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.InvokeNode& invokeNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.IndexNode& indexNode)
+        {
+            interrupted = true;
+        }
+        public override void BeginVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupContainerSymbols;
+        }
+        public override void EndVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupId = lookupIdStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is ScopedValue*)
+            {
+                ScopedValue* scopedValue = cast<ScopedValue*>(value.GetPtr());
+                Cm.Sym.ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
+                Cm.Sym.ContainerScope* scope = containerSymbol->GetContainerScope();
+                Cm.Sym.Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
+                if (symbol != null)
+                {
+                    EvaluateSymbol(symbol);
+                }
+                else
+                {
+                    interrupted = true;
+                }
+            }
+            else
+            {
+                interrupted = true;
+            }
+        }
+        public override void BeginVisit(Cm.Ast.ArrowNode& arrowNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.PostfixIncNode& postfixIncNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.PostfixDecNode& postfixDecNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.DerefNode& derefNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.AddrOfNode& addrOfNode)
+        {
+            interrupted = true;
+        }
+        public override void EndVisit(Cm.Ast.NotNode& notNode)
+        {
+            if (interrupted) return;
+            EvaluateUnaryOp(targetType, evaluationStack, NotDelegates.Instance().Get(), cast_, notNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.UnaryPlusNode& unaryPlusNode)
+        {
+            if (interrupted) return;
+            EvaluateUnaryOp(targetType, evaluationStack, UnaryPlusDelegates.Instance().Get(), cast_, unaryPlusNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.UnaryMinusNode& unaryMinusNode)
+        {
+            if (interrupted) return;
+            EvaluateUnaryOp(targetType, evaluationStack, UnaryMinusDelegates.Instance().Get(), cast_, unaryMinusNode.GetSpan());
+        }
+        public override void EndVisit(Cm.Ast.ComplementNode& complementNode)
+        {
+            if (interrupted) return;
+            EvaluateUnaryOp(targetType, evaluationStack, BitwiseComplementDelegates.Instance().Get(), cast_, complementNode.GetSpan());
+        }
+        public override void BeginVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
+        {
+            interrupted = true;
+        }
+        public override void BeginVisit(Cm.Ast.PrefixDecNode& prefixDecNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.SizeOfNode& sizeOfNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.TypeNameNode& typeNameNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.CastNode& castNode)
+        {
+            Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, targetTypeExpr);
+            Cm.Sym.SymbolType symbolType = type->GetSymbolType();
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+            bool value = IsAlwaysTrue(castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+            if (value)
+            {
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(true)));
+            }            
+            else
+            {
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(false)));
+            }
+        }
+        public override void Visit(Cm.Ast.IsNode& isNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.AsNode& asNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.NewNode& newNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.ConstructNode& constructNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.ThisNode& thisNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.BaseNode& baseNode)
+        {
+            interrupted = true;
+        }
+        public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
+        {
+            interrupted = true;
+        }
+        private void EvaluateSymbol(Cm.Sym.Symbol* symbol)
+        {
+            if (symbol is Cm.Sym.ContainerSymbol*)
+            {
+                Cm.Sym.ContainerSymbol* containerSymbol = cast<Cm.Sym.ContainerSymbol*>(symbol);
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(containerSymbol)));
+            }
+            else if (symbol is Cm.Sym.ConstantSymbol*)
+            {
+                Cm.Sym.ConstantSymbol* constantSymbol = cast<Cm.Sym.ConstantSymbol*>(symbol);
+                if (constantSymbol->GetValue() == null)
+                {
+                    Cm.Ast.Node* node = symbolTable.GetNode(constantSymbol);
+                    if (node is Cm.Ast.ConstantNode*)
+                    {
+                        Cm.Ast.ConstantNode* constantNode = cast<Cm.Ast.ConstantNode*>(node);
+                        BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode);
+                    }
+                    else
+                    {
+                        throw Exception("constant node expected");
+                    }
+                }
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(constantSymbol->GetValue()->Clone()));
+            }
+            else if (symbol is Cm.Sym.EnumConstantSymbol*)
+            {
+                Cm.Sym.EnumConstantSymbol* enumConstantSymbol = cast<Cm.Sym.EnumConstantSymbol*>(symbol);
+                if (enumConstantSymbol->GetValue() == null)
+                {
+                    Cm.Ast.Node* node = symbolTable.GetNode(enumConstantSymbol);
+                    if (node is Cm.Ast.EnumConstantNode*)
+                    {
+                        Cm.Ast.EnumConstantNode* enumConstantNode = cast<Cm.Ast.EnumConstantNode*>(node);
+                        Cm.Sym.ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
+                        BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                    }
+                    else
+                    {
+                        throw Exception("enum constant node expected");
+                    }
+                }
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(enumConstantSymbol->GetValue()->Clone()));
+            }
+            else
+            {
+                interrupted = true;
+            }
+        }
+        private Cm.Sym.ValueType targetType;
+        private bool cast_;
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Sym.ContainerScope* containerScope;
+        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
+        private bool interrupted;
+        private Cm.Sym.SymbolTypeSetId lookupId;
+        private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
+    }
+}

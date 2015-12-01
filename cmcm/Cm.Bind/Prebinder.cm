@@ -1,0 +1,285 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+
+namespace Cm.Bind
+{
+    public class Prebinder : Cm.Ast.Visitor
+    {
+        public nothrow Prebinder(Cm.Sym.SymbolTable& symbolTable_, Cm.Core.ClassTemplateRepository& classTemplateRepository_) : 
+            base(false, false), symbolTable(symbolTable_), classTemplateRepository(classTemplateRepository_), containerScope(null), parameterIndex(0), currentClass(null), currentFunction(null), 
+            currentDelegate(null), currentClassDelegate(null), dontCompleteFunctions(false)
+        {
+        }
+        public void BeginCompileUnit()
+        {
+            fileScopes.Add(UniquePtr<Cm.Sym.FileScope>(new Cm.Sym.FileScope()));
+            usingNodes.Clear();
+        }
+        public void EndCompileUnit()
+        {
+            fileScope = fileScopes.RemoveFirst();
+        }
+        public Cm.Sym.FileScope* ReleaseFileScope()
+        {
+            return fileScope.Release();
+        }
+        public override void BeginVisit(Cm.Ast.CompileUnitNode& compileUnitNode)
+        {
+            BeginCompileUnit();
+        }
+        public override void EndVisit(Cm.Ast.CompileUnitNode& compileUnitNode)
+        {
+            EndCompileUnit();
+        }
+        public override void BeginVisit(Cm.Ast.NamespaceNode& namespaceNode)
+        {            
+            BeginContainerScope(symbolTable.GetContainerScope(&namespaceNode));
+        }
+        public override void EndVisit(Cm.Ast.NamespaceNode& namespaceNode)
+        {
+            EndContainerScope();
+        }
+        public override void Visit(Cm.Ast.AliasNode& aliasNode)
+        {
+            fileScopes.Front()->InstallAlias(containerScope, &aliasNode);
+            usingNodes.Add(&aliasNode);
+        }
+        public override void Visit(Cm.Ast.NamespaceImportNode& namespaceImportNode)
+        {
+            fileScopes.Front()->InstallNamespaceImport(containerScope, &namespaceImportNode);
+            usingNodes.Add(&namespaceImportNode);
+        }
+        public override void BeginVisit(Cm.Ast.ClassNode& classNode)
+        {
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, &classNode);
+            if (classNode.TemplateParameters().Count() > 0)
+            {
+                classTypeSymbol->SetUsingNodes(usingNodes);
+            }
+            classStack.Push(currentClass);
+            currentClass = classTypeSymbol;
+            BeginContainerScope(symbolTable.GetContainerScope(&classNode));
+        }
+        public override void EndVisit(Cm.Ast.ClassNode& classNode)
+        {
+            EndContainerScope();
+            currentClass = classStack.Pop();
+        }
+        public override void BeginVisit(Cm.Ast.ConstructorNode& constructorNode)
+        {
+            currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &constructorNode, currentClass);
+            if (!currentClass->IsClassTemplateSymbol() && (constructorNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                currentFunction->SetUsingNodes(usingNodes);
+            }
+            BeginContainerScope(symbolTable.GetContainerScope(&constructorNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.ConstructorNode& constructorNode)
+        {
+            if (!dontCompleteFunctions)
+            {
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &constructorNode, currentFunction, currentClass);
+            }
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.DestructorNode& destructorNode)
+        {
+            currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &destructorNode, currentClass);
+            if (!currentClass->IsClassTemplateSymbol() && (destructorNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                currentFunction->SetUsingNodes(usingNodes);
+            }
+            BeginContainerScope(symbolTable.GetContainerScope(&destructorNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.DestructorNode& destructorNode)
+        {
+            if (!dontCompleteFunctions)
+            {
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &destructorNode, currentFunction, currentClass);
+            }
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
+        {
+            currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &memberFunctionNode, currentClass);
+            if (!currentClass->IsClassTemplateSymbol() && (memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                currentFunction->SetUsingNodes(usingNodes);
+            }
+            BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
+        {
+            if (!dontCompleteFunctions)
+            {
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &memberFunctionNode, currentFunction, currentClass);
+            }
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.ConversionFunctionNode& conversionFunctionNode)
+        {
+            currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &conversionFunctionNode, currentClass);
+            if (!currentClass->IsClassTemplateSymbol() && (conversionFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                currentFunction->SetUsingNodes(usingNodes);
+            }
+            BeginContainerScope(symbolTable.GetContainerScope(&conversionFunctionNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.ConversionFunctionNode& conversionFunctionNode)
+        {
+            if (!dontCompleteFunctions)
+            {
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &conversionFunctionNode, currentFunction, currentClass);
+            }
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.StaticConstructorNode& staticConstructorNode)
+        {
+            currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &staticConstructorNode, currentClass);
+            if (!currentClass->IsClassTemplateSymbol() && (staticConstructorNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                currentFunction->SetUsingNodes(usingNodes);
+            }
+            BeginContainerScope(symbolTable.GetContainerScope(&staticConstructorNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.StaticConstructorNode& staticConstructorNode)
+        {
+            if (!dontCompleteFunctions)
+            {
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &staticConstructorNode, currentFunction, currentClass);
+            }
+            EndContainerScope();
+        }
+        public override void Visit(Cm.Ast.MemberVariableNode& memberVariableNode)
+        {
+            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, &memberVariableNode);
+        }
+        public override void BeginVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
+        {
+            BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, &enumTypeNode);
+            BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
+        }
+        public override void EndVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
+        {
+            EndContainerScope();
+        }
+        public override void Visit(Cm.Ast.EnumConstantNode& enumConstantNode)
+        {
+            BindEnumConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, &enumConstantNode);
+        }
+        public override void Visit(Cm.Ast.TypedefNode& typedefNode)
+        {
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, &typedefNode);
+        }
+        public override void Visit(Cm.Ast.TypedefStatementNode& typedefStatementNode)
+        {
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, &typedefStatementNode);
+        }
+        public override void Visit(Cm.Ast.ConstantNode& constantNode)
+        {
+            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, &constantNode);
+        }
+        public override void Visit(Cm.Ast.ParameterNode& parameterNode)
+        {
+            if (currentClass != null && currentClass->IsClassTemplateSymbol())
+            {
+                return;
+            }
+            BindParameter(symbolTable, containerScope, fileScopes, classTemplateRepository, &parameterNode, parameterIndex);
+            ++parameterIndex;
+        }
+        public override void BeginVisit(Cm.Ast.FunctionNode& functionNode)
+        {
+            if (functionNode.TemplateParameters().Count() > 0)
+            {
+                PushSkipContent(true);
+                Cm.Sym.FunctionSymbol* templateFunction = BindFunction(symbolTable, containerScope, fileScopes, &functionNode, null);
+                templateFunction->SetUsingNodes(usingNodes);
+            }
+            else
+            {
+                currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &functionNode, null);
+                if (!currentClass->IsClassTemplateSymbol() && (functionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+                {
+                    currentFunction->SetUsingNodes(usingNodes);
+                }
+                BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
+                parameterIndex = 0;
+            }            
+        }
+        public override void EndVisit(Cm.Ast.FunctionNode& functionNode)
+        {
+            if (functionNode.TemplateParameters().Count() > 0)
+            {
+                PopSkipContent();
+            }
+            else
+            {
+                if (!dontCompleteFunctions)
+                {
+                    CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &functionNode, currentFunction, null);
+                }
+                EndContainerScope();
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DelegateNode& delegateNode)
+        {
+            currentDelegate = BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, &delegateNode);
+            BeginContainerScope(symbolTable.GetContainerScope(&delegateNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.DelegateNode& delegateNode)
+        {
+            CompleteBindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, currentDelegate, &delegateNode);
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.ClassDelegateNode& classDelegateNode)
+        {
+            currentClassDelegate = BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, &classDelegateNode);
+            BeginContainerScope(symbolTable.GetContainerScope(&classDelegateNode));
+            parameterIndex = 0;
+        }
+        public override void EndVisit(Cm.Ast.ClassDelegateNode& classDelegateNode)
+        {
+            CompleteBindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, currentClassDelegate, &classDelegateNode);
+            EndContainerScope();
+        }
+        public void BeginContainerScope(Cm.Sym.ContainerScope* scope)
+        {
+            containerScopeStack.Push(containerScope);
+            containerScope = scope;
+        }
+        public void EndContainerScope()
+        {
+            containerScope = containerScopeStack.Pop();
+        }
+        private Cm.Sym.SymbolTable& symbolTable;
+        private List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
+        private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private UniquePtr<Cm.Sym.FileScope> fileScope;
+        private Cm.Sym.ContainerScope* containerScope;
+        private Stack<Cm.Sym.ContainerScope*> containerScopeStack;
+        private int parameterIndex;
+        private Cm.Sym.ClassTypeSymbol* currentClass;
+        private Stack<Cm.Sym.ClassTypeSymbol*> classStack;
+        private Cm.Sym.FunctionSymbol* currentFunction;
+        private Cm.Sym.DelegateTypeSymbol* currentDelegate;
+        private Cm.Sym.ClassDelegateTypeSymbol* currentClassDelegate;
+        private List<Cm.Ast.Node*> usingNodes;
+        private bool dontCompleteFunctions;
+    }
+}
