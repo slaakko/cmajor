@@ -444,11 +444,11 @@ void ClassTypeSymbol::SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNode
     if (!persistentClassData)
     {
         persistentClassData.reset(new PersistentClassData());
-        for (Cm::Ast::Node* usingNode : usingNodes_)
-        {
-            Cm::Ast::CloneContext cloneContext;
-            persistentClassData->usingNodes.Add(usingNode->Clone(cloneContext));
-        }
+    }
+    for (Cm::Ast::Node* usingNode : usingNodes_)
+    {
+        Cm::Ast::CloneContext cloneContext;
+        persistentClassData->usingNodes.Add(usingNode->Clone(cloneContext));
     }
 }
 

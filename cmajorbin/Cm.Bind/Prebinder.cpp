@@ -40,7 +40,7 @@ void Prebinder::BeginCompileUnit()
 void Prebinder::EndCompileUnit()
 {
     fileScope = std::move(fileScopes.front());
-    fileScopes.pop_back();
+    fileScopes.erase(fileScopes.begin()); // changed to erase from pop_back
 }
 
 void Prebinder::BeginContainerScope(Cm::Sym::ContainerScope* containerScope)
@@ -68,7 +68,6 @@ void Prebinder::EndVisit(Cm::Ast::CompileUnitNode& compileUnitNode)
 void Prebinder::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
     Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&namespaceNode);
-    Cm::Sym::ContainerSymbol* container = containerScope->Container();
     BeginContainerScope(containerScope);
 }
 
@@ -290,7 +289,7 @@ void Prebinder::EndVisit(Cm::Ast::FunctionNode& functionNode)
     {
         if (!dontCompleteFunctions)
         {
-            CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &functionNode, currentFunction, currentClass);
+            CompleteBindFunction(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &functionNode, currentFunction, nullptr);
         }
         EndContainerScope();
     }

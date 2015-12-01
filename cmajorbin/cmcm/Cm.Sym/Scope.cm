@@ -267,7 +267,10 @@ namespace Cm.Sym
     
     public class FileScope : Scope
     {
-        public FileScope(const FileScope& that) : containerScopes(that.containerScopes), aliasSymbolMap(that.aliasSymbolMap)
+        public nothrow FileScope() : base(), containerScopes(), aliasSymbolMap()
+        {
+        }
+        public FileScope(const FileScope& that) : base(), containerScopes(that.containerScopes), aliasSymbolMap(that.aliasSymbolMap)
         {
         }
         public void InstallAlias(ContainerScope* currentContainerScope, Cm.Ast.AliasNode* aliasNode)

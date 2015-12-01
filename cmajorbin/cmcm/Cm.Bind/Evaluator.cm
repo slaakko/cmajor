@@ -55,16 +55,6 @@ namespace Cm.Bind
                 throw Cm.Core.Error("constant or enumeration constant symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
             }
         }
-        public override void BeginVisit(Cm.Ast.NamespaceNode& namespaceNode)
-        {
-            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&namespaceNode);
-            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
-        }
-        public override void BeginVisit(Cm.Ast.ClassNode& classNode)
-        {
-            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&classNode);
-            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
-        }
         public override void Visit(Cm.Ast.BooleanLiteralNode& booleanLiteralNode)
         {
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(booleanLiteralNode.Value())));
@@ -325,11 +315,6 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
         {
             ThrowCannotEvaluateStatically(templateIdNode.GetSpan());
-        }
-        public override void BeginVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
-        {
-            Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(&enumTypeNode);
-            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new ScopedValue(scope->Container())));
         }
         private void EvaluateSymbol(Cm.Sym.Symbol* symbol)
         {

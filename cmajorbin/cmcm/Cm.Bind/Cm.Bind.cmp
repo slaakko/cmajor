@@ -22,6 +22,7 @@ source <Function.cm>;
 source <LocalVariable.cm>;
 source <MemberVariable.cm>;
 source <Parameter.cm>;
+source <Prebinder.cm>;
 source <Type.cm>;
 source <Typedef.cm>;
 source <TypeResolver.cm>;

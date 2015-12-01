@@ -493,6 +493,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public void SetUsingNodes(const List<Cm.Ast.Node*>& usingNodes)
+        {
+            if (persistentClassData.IsNull())
+            {
+                persistentClassData.Reset(new PersistentClassData());
+            }
+            for (Cm.Ast.Node* usingNode : usingNodes)
+            {
+                Cm.Ast.CloneContext cloneContext;
+                persistentClassData->usingNodes.Add(usingNode->Clone(cloneContext));
+            }
+        }
         public nothrow inline bool GetFlag(ClassTypeSymbolFlags flag) const
         {
             return (flags & flag) != ClassTypeSymbolFlags.none;
