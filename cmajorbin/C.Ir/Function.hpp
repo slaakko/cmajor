@@ -9,6 +9,7 @@
 
 #ifndef C_IR_FUNCTION_INCLUDED
 #define C_IR_FUNCTION_INCLUDED
+#include <C.Ir/Type.hpp>
 #include <Ir.Intf/Function.hpp>
 
 namespace C {
@@ -26,11 +27,16 @@ public:
     void AddInstruction(Ir::Intf::Instruction* instruction) override;
     void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_) override;
     void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) override;
+    void ReplaceFunctionPtrTypes() override;
     bool ContainsExceptionCodeParam() const override;
+    std::vector<std::unique_ptr<C::Typedef>> Tdfs() { return std::move(tdfs); }
 protected:
     std::string ParameterListStr() const override;
 private:
     std::vector<Ir::Intf::Object*> registers;
+    std::vector<std::unique_ptr<C::Typedef>> tdfs;
+    std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*> tdfMap;
+    bool functionPtrTypesReplaced;
 };
 
 Ir::Intf::Function* CreateMemSetFunction(Ir::Intf::Type* i8Ptr);

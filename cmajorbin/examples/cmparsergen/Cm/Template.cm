@@ -143,16 +143,16 @@ namespace Cm
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.TypeExprGrammar.Create(parsingDomain);
+                grammar0 = Cm.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.IdentifierGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.TypeExprGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.IdentifierGrammar.Create(parsingDomain);
+                grammar1 = Cm.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }

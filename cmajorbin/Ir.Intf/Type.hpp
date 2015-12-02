@@ -10,6 +10,8 @@
 #ifndef IR_INTF_TYPE_INCLUDED
 #define IR_INTF_TYPE_INCLUDED
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace Ir { namespace Intf {
 
@@ -31,12 +33,16 @@ public:
     virtual bool IsFunctionType() const { return false; }
     virtual bool IsFunctionPointerType() const { return false; }
     virtual bool IsFunctionPtrPtrType() const { return false; }
+    virtual void GetFunctionPtrTypes(std::unordered_set<Type*>& functionPtrTypes) const {}
+    virtual void ReplaceFunctionPtrTypes(const std::unordered_map<Type*, Type*>& tdfMap) {}
     virtual bool IsLabelType() const { return false; }
     virtual bool IsTypeName() const { return false; }
     virtual bool IsArrayType() const { return false; }
     virtual std::string Prefix() const { return Name() + " "; }
     virtual std::string Suffix() const { return std::string(); }
     virtual const std::string& GetTagName() const { return name; }
+    virtual Type* GetBaseType() const { return const_cast<Type*>(this); }
+    virtual const std::string& BaseName() const { return name; }
     virtual Object* CreateDefaultValue() const;
     virtual Object* CreateMinusOne() const;
     virtual Object* CreatePlusOne() const;

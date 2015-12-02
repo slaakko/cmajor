@@ -80,11 +80,48 @@ void CFunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
             end = sourceFile.End();
         }
     }
+    std::unordered_set<Ir::Intf::Type*> functionPtrTypes;
+    std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*> tdfMap;
+    GetLocalVariableIrObjectRepository().GetFunctionPtrTypes(functionPtrTypes);
+    if (!functionPtrTypes.empty())
+    {
+        for (Ir::Intf::Type* functionPtrType : functionPtrTypes)
+        {
+            std::unique_ptr<C::Typedef> tdf(new C::Typedef(Ir::Intf::GetCurrentTempTypedefProvider()->GetNextTempTypedefName(), functionPtrType->Clone()));
+            tdfMap[functionPtrType] = tdf.get();
+            tdfs.push_back(std::move(tdf));
+        }
+        GetLocalVariableIrObjectRepository().ReplaceFunctionPtrTypes(tdfMap);
+    }
+}
+
+Ir::Intf::Type* CFunctionEmitter::ReplaceFunctionPtrType(Ir::Intf::Type* localVariableIrType)
+{
+    std::unordered_set<Ir::Intf::Type*> functionPtrTypes;
+    std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*> tdfMap;
+    localVariableIrType->GetFunctionPtrTypes(functionPtrTypes);
+    if (!functionPtrTypes.empty())
+    {
+        for (Ir::Intf::Type* functionPtrType : functionPtrTypes)
+        {
+            std::unique_ptr<C::Typedef> tdf(new C::Typedef(Ir::Intf::GetCurrentTempTypedefProvider()->GetNextTempTypedefName(), functionPtrType->Clone()));
+            tdfMap[functionPtrType] = tdf.get();
+            tdfs.push_back(std::move(tdf));
+        }
+        localVariableIrType->ReplaceFunctionPtrTypes(tdfMap);
+    }
+    return localVariableIrType;
 }
 
 void CFunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     FunctionEmitter::EndVisit(boundFunction);
+    C::Function* function = static_cast<C::Function*>(Emitter()->GetIrFunction());
+    std::vector<std::unique_ptr<C::Typedef>> funTdfs = std::move(function->Tdfs());
+    for (std::unique_ptr<C::Typedef>& tdf : funTdfs)
+    {
+        tdfs.push_back(std::move(tdf));
+    }
 }
 
 void CFunctionEmitter::EmitDummyVar(Cm::Core::Emitter* emitter)

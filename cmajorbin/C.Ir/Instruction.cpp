@@ -299,20 +299,39 @@ std::string AllocaInst::ToString() const
 {
     std::string alloca;
     std::string space(1, ' ');
-    if (type->IsFunctionPointerType() || type->IsFunctionPtrPtrType())
+/*
+    std::unordered_set<Ir::Intf::Type*> functionPtrTypes;
+    type->GetFunctionPtrTypes(functionPtrTypes);
+    if (!functionPtrTypes.empty())
     {
-        alloca.append(type->Prefix()).append(result->Name()).append(type->Suffix());
-    }
-    else
-    {
-        alloca.append(type->Name()).append(space).append(result->Name());
-        if (numElements > 0)
+        for (Ir::Intf::Type* functionPtrType : functionPtrTypes)
         {
-            alloca.append("[").append(std::to_string(numElements)).append("]");
+            std::unique_ptr<Typedef> tdf(new Typedef(Ir::Intf::GetCurrentTempTypedefProvider()->GetNextTempTypedefName(), functionPtrType));
+            tdfMap[functionPtrType] = tdf.get();
+            tdfs.push_back(std::move(tdf));
         }
+        type->ReplaceFunctionPtrTypes(tdfMap);
+    }
+*/
+    alloca.append(type->Name()).append(space).append(result->Name());
+    if (numElements > 0)
+    {
+        alloca.append("[").append(std::to_string(numElements)).append("]");
     }
     return alloca;
 }
+
+/*
+std::vector<Ir::Intf::Type*> AllocaInst::GetTypedefs() const
+{
+    std::vector<Ir::Intf::Type*> typedefs;
+    for (const std::unique_ptr<Typedef>& tdf : tdfs)
+    {
+        typedefs.push_back(tdf.get());
+    }
+    return typedefs;
+}
+*/
 
 LoadInst::LoadInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Indirection leftIndirection_, Ir::Intf::Indirection rightIndirection_) : 
     Ir::Intf::Instruction("load"), type(type_), result(result_), ptr(ptr_), alignment(0), leftIndirection(leftIndirection_), rightIndirection(rightIndirection_)

@@ -162,6 +162,7 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("class type symbol expected", templateIdNode.GetSpan(), subjectType->GetSpan());
             }
+            typeSymbol = symbolTable.GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
         }
         public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
         {

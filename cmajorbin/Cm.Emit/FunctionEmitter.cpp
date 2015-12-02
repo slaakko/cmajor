@@ -171,6 +171,24 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::GetLocalVariableIrObject(Cm::
     throw std::runtime_error("local variable '" + localVariableOrParameter->Name() + "' not found");
 }
 
+void LocalVariableIrObjectRepository::GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes)
+{
+    for (const std::pair<uint32_t, Ir::Intf::Object*>& p : localVariableObjectMap)
+    {
+        Ir::Intf::Type* type = p.second->GetType();
+        type->GetFunctionPtrTypes(functionPtrTypes);
+    }
+}
+
+void LocalVariableIrObjectRepository::ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap)
+{
+    for (const std::pair<uint32_t, Ir::Intf::Object*>& p : localVariableObjectMap)
+    {
+        Ir::Intf::Type* type = p.second->GetType();
+        type->ReplaceFunctionPtrTypes(tdfMap);
+    }
+}
+
 IrObjectRepository::IrObjectRepository() 
 {
 }
@@ -287,11 +305,13 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         if (localVariableType->IsPureArrayType())
         {
             localVariableIrType = localVariableType->GetBaseType()->GetIrType();
+            localVariableIrType = ReplaceFunctionPtrType(localVariableIrType);
             emitter->Emit(Cm::IrIntf::Alloca(localVariableIrType, localVariableIrObject, Ir::Intf::GetFactory()->GetI32(), localVariableType->GetLastArrayDimension()));
             localVariableIrObject->SetType(Cm::IrIntf::Pointer(localVariableIrType, 1));
         }
         else
         {
+            localVariableIrType = ReplaceFunctionPtrType(localVariableIrType);
             emitter->Emit(Cm::IrIntf::Alloca(localVariableIrType, localVariableIrObject));
         }
     }

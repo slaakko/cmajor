@@ -11,6 +11,7 @@
 #define CM_EMIT_C_FUNCTION_EMITTER_INCLUDED
 #include <Cm.Emit/FunctionEmitter.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
+#include <C.Ir/Function.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -24,6 +25,7 @@ public:
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_, bool profile_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
+    Ir::Intf::Type* CFunctionEmitter::ReplaceFunctionPtrType(Ir::Intf::Type* localVariableIrType) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
@@ -61,6 +63,7 @@ public:
     void PatchDebugNodes(const std::unordered_set<Cm::Core::CfgNode*>& nodeSet, Cm::Core::CfgNode* nextNode) override;
     void SetCFilePath(const std::string& cFilePath_) { cFilePath = cFilePath_; }
     Cm::Core::CFunctionDebugInfo* GetFunctionDebugInfo() const override { return functionDebugInfo.get(); }
+    std::vector<std::unique_ptr<C::Typedef>> Tdfs() { return std::move(tdfs); }
 private:
     std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap;
     bool generateDebugInfo;
@@ -69,6 +72,7 @@ private:
     const char* end;
     std::vector<std::unordered_set<Cm::Core::CfgNode*>> debugNodeSets;
     std::string cFilePath;
+    std::vector<std::unique_ptr<C::Typedef>> tdfs;
 };
 
 } } // namespace Cm::Emit

@@ -61,7 +61,7 @@ void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
 
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository());
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), std::vector<Ir::Intf::Type*>());
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
         if (InternalFunctionNames().find(function->Name()) == InternalFunctionNames().end())

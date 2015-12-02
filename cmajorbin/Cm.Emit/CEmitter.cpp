@@ -58,7 +58,22 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 
 void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository());
+    std::vector<Ir::Intf::Type*> tdfsTypes;
+    for (Ir::Intf::Function* function : ExternalFunctions())
+    {
+        function->ReplaceFunctionPtrTypes();
+        C::Function* fun = static_cast<C::Function*>(function);
+        std::vector<std::unique_ptr<C::Typedef>> funTdfs = fun->Tdfs();
+        for (std::unique_ptr<C::Typedef>& tdf : funTdfs)
+        {
+            tdfs.push_back(std::move(tdf));
+        }
+    }
+    for (const std::unique_ptr<C::Typedef>& tdf : tdfs)
+    {
+        tdfsTypes.push_back(tdf.get());
+    }
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
         std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>::iterator i = functionMap.find(function);
@@ -136,6 +151,11 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     functionEmitter.SetSymbolTable(SymbolTable());
     functionEmitter.SetTpGraph(TpGraph());
     boundFunction.Accept(functionEmitter);
+    std::vector<std::unique_ptr<C::Typedef>> funTdfs = functionEmitter.Tdfs();
+    for (std::unique_ptr<C::Typedef>& tdf : funTdfs)
+    {
+        tdfs.push_back(std::move(tdf));
+    }
     funLine = funFormatter.Line();
     if (debugInfoFile)
     {

@@ -351,7 +351,7 @@ PointerType* MakePointerType(Ir::Intf::Type* baseType)
     if (baseType->IsPointerType())
     {
         PointerType* basePtrType = static_cast<PointerType*>(baseType);
-        return new PointerType(basePtrType->BaseType()->Clone(), basePtrType->NumPointers() + 1);
+        return new PointerType(basePtrType->GetBaseType()->Clone(), basePtrType->NumPointers() + 1);
     }
     return new PointerType(baseType, 1);
 }
@@ -361,7 +361,7 @@ PointerType* MakePointerType(Ir::Intf::Type* baseType, int numPointers)
     if (baseType->IsPointerType())
     {
         PointerType* basePtrType = static_cast<PointerType*>(baseType);
-        return new PointerType(basePtrType->BaseType(), basePtrType->NumPointers() + numPointers);
+        return new PointerType(basePtrType->GetBaseType(), basePtrType->NumPointers() + numPointers);
     }
     return new PointerType(baseType, numPointers);
 }
@@ -370,9 +370,13 @@ RvalueRefType::RvalueRefType(Ir::Intf::Type* baseType_) : PointerType(baseType_,
 {
 }
 
+RvalueRefType::RvalueRefType(Ir::Intf::Type* baseType_, uint8_t numPointers_) : PointerType(baseType_, numPointers_)
+{
+}
+
 Ir::Intf::Type* RvalueRefType::Clone() const
 {
-    return new RvalueRefType(BaseType()->Clone());
+    return new RvalueRefType(GetBaseType()->Clone(), NumPointers());
 }
 
 Ir::Intf::Object* RvalueRefType::CreateDefaultValue() const
@@ -382,6 +386,11 @@ Ir::Intf::Object* RvalueRefType::CreateDefaultValue() const
 
 Ir::Intf::Type* RvalueRef(Ir::Intf::Type* baseType)
 {
+    if (baseType->IsPointerType())
+    {
+        PointerType* basePtrType = static_cast<PointerType*>(baseType);
+        return new RvalueRefType(basePtrType->GetBaseType()->Clone(), basePtrType->NumPointers() + 1);
+    }
     return new RvalueRefType(baseType);
 }
 

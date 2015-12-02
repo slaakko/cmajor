@@ -406,26 +406,26 @@ namespace Syntax
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Syntax.ElementGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.ElementGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Syntax.ElementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("Signature", this, "ElementGrammar.Signature"));
-            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRule(new LibraryFileRule("LibraryFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

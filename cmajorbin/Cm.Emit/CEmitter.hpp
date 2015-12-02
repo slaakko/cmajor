@@ -11,6 +11,7 @@
 #define CM_EMIT_C_EMITTER_INCLUDED
 #include <Cm.Emit/Emitter.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
+#include <C.Ir/Function.hpp>
 
 namespace Cm { namespace Emit {
 
@@ -36,6 +37,7 @@ private:
     std::string cFilePath;
     void GenerateDebugInfo(Cm::Sym::ClassTypeSymbol* classTypeSymbol);
     std::unordered_set<std::string> generatedFunctions;
+    std::vector<std::unique_ptr<C::Typedef>> tdfs;
 };
 
 } } // namespace Cm::Emit

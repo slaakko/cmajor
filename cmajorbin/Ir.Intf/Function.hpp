@@ -29,6 +29,15 @@ public:
     virtual void Own(Function* fun) = 0;
 };
 
+class TempTypedefProvider
+{
+public:
+    virtual std::string GetNextTempTypedefName() = 0;
+};
+
+TempTypedefProvider* GetCurrentTempTypedefProvider();
+void SetCurrentTempTypedefProvider(TempTypedefProvider* tempTypedefProvider);
+
 class Function
 {
 public:
@@ -45,6 +54,7 @@ public:
     virtual void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_) = 0;
     void WriteInlineDefinition(CodeFormatter& formatter);
     virtual void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) = 0;
+    virtual void ReplaceFunctionPtrTypes() {}
     virtual bool ContainsExceptionCodeParam() const = 0;
     virtual bool IsDoNothingFunction() const { return false; }
     virtual bool IsMemSetFunction() const { return false; }

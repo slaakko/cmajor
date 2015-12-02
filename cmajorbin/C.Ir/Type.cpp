@@ -387,6 +387,16 @@ Ir::Intf::Type* ArrayType::Clone() const
     }
 }
 
+void ArrayType::GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const
+{
+    itemType->GetFunctionPtrTypes(functionPtrTypes);
+}
+
+void ArrayType::ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap)
+{
+    itemType->ReplaceFunctionPtrTypes(tdfMap);
+}
+
 ArrayType* Array(Ir::Intf::Type* itemType, int size)
 {
     return new ArrayType(itemType, size);
@@ -419,7 +429,7 @@ StructureType::StructureType(const std::string& tagName_, const std::vector<Ir::
         }
         elementType->SetOwned();
         elementTypes.push_back(std::unique_ptr<Ir::Intf::Type>(elementType));
-        if (elementType->IsFunctionPointerType() || elementType->IsFunctionPtrPtrType())
+        if (elementType->GetBaseType()->IsFunctionType())
         {
             name.append(elementType->Prefix()).append(elementNames[i]).append(elementType->Suffix()).append(";");
         }
@@ -450,6 +460,22 @@ Ir::Intf::Type* StructureType::Clone() const
     return new StructureType(tagName, clonedElementTypes, elementNames);
 }
 
+void StructureType::GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const
+{
+    for (const std::unique_ptr<Ir::Intf::Type>& elementType : elementTypes)
+    {
+        elementType->GetFunctionPtrTypes(functionPtrTypes);
+    }
+}
+
+void StructureType::ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap)
+{
+    for (const std::unique_ptr<Ir::Intf::Type>& elementType : elementTypes)
+    {
+        elementType->ReplaceFunctionPtrTypes(tdfMap);
+    }
+}
+
 Ir::Intf::Type* Structure(const std::string& tagName, const std::vector<Ir::Intf::Type*>& elementTypes, const std::vector<std::string>& elementNames)
 {
     return new StructureType(tagName, elementTypes, elementNames);
@@ -462,7 +488,7 @@ PointerType::PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_) : Ir::
         baseType->SetOwned();
         ownedBaseType.reset(baseType);
     }
-    if (IsFunctionPointerType() || IsFunctionPtrPtrType())
+    if (GetBaseType()->IsFunctionType())
     {
         SetName(Prefix() + Suffix());
     }
@@ -483,27 +509,39 @@ bool PointerType::IsFunctionPtrPtrType() const
     return baseType->IsFunctionType() && numPointers == 2;
 }
 
+void PointerType::GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const
+{
+    if (GetBaseType()->IsFunctionType())
+    {
+        functionPtrTypes.insert(const_cast<PointerType*>(this));
+    }
+}
+
+void PointerType::ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap)
+{
+    std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>::const_iterator i = tdfMap.find(this);
+    if (i != tdfMap.cend())
+    {
+        SetName(i->second->BaseName());
+    }
+}
+
 std::string PointerType::Prefix() const
 {
-    if (IsFunctionPointerType())
+    if (GetBaseType()->IsFunctionType())
     {
-        FunctionType* funType = static_cast<FunctionType*>(baseType);
-        return funType->ReturnType()->Name() + " (*";
-    }
-    else if (IsFunctionPtrPtrType())
-    {
-        FunctionType* funType = static_cast<FunctionType*>(baseType);
-        return funType->ReturnType()->Name() + " (**";
+        FunctionType* funType = static_cast<FunctionType*>(GetBaseType());
+        return funType->ReturnType()->Name() + " (" + std::string(numPointers, '*');
     }
     return Ir::Intf::Type::Prefix();
 }
 
 std::string PointerType::Suffix() const
 {
-    if (IsFunctionPointerType() || IsFunctionPtrPtrType())
+    if (GetBaseType()->IsFunctionType())
     {
         std::string parameterList = ")(";
-        FunctionType* funType = static_cast<FunctionType*>(baseType);
+        FunctionType* funType = static_cast<FunctionType*>(GetBaseType());
         bool first = true;
         for (const std::unique_ptr<Ir::Intf::Type>& paramType : funType->ParameterTypes())
         {
@@ -533,7 +571,7 @@ PointerType* MakePointerType(Ir::Intf::Type* baseType)
     if (baseType->IsPointerType())
     {
         PointerType* basePtrType = static_cast<PointerType*>(baseType);
-        return new PointerType(basePtrType->BaseType()->Clone(), basePtrType->NumPointers() + 1);
+        return new PointerType(basePtrType->GetBaseType()->Clone(), basePtrType->NumPointers() + 1);
     }
     return new PointerType(baseType, 1);
 }
@@ -543,7 +581,7 @@ PointerType* MakePointerType(Ir::Intf::Type* baseType, int numPointers)
     if (baseType->IsPointerType())
     {
         PointerType* basePtrType = static_cast<PointerType*>(baseType);
-        return new PointerType(basePtrType->BaseType(), basePtrType->NumPointers() + numPointers);
+        return new PointerType(basePtrType->GetBaseType()->Clone(), basePtrType->NumPointers() + numPointers);
     }
     return new PointerType(baseType, numPointers);
 }
@@ -552,9 +590,13 @@ RvalueRefType::RvalueRefType(Ir::Intf::Type* baseType_) : PointerType(baseType_,
 {
 }
 
+RvalueRefType::RvalueRefType(Ir::Intf::Type* baseType_, uint8_t numPointers_) : PointerType(baseType_, numPointers_)
+{
+}
+
 Ir::Intf::Type* RvalueRefType::Clone() const
 {
-    return new RvalueRefType(BaseType()->Clone());
+    return new RvalueRefType(GetBaseType()->Clone(), NumPointers());
 }
 
 Ir::Intf::Object* RvalueRefType::CreateDefaultValue() const
@@ -564,6 +606,11 @@ Ir::Intf::Object* RvalueRefType::CreateDefaultValue() const
 
 Ir::Intf::Type* RvalueRef(Ir::Intf::Type* baseType)
 {
+    if (baseType->IsPointerType())
+    {
+        PointerType* basePtrType = static_cast<PointerType*>(baseType);
+        return new RvalueRefType(basePtrType->GetBaseType()->Clone(), basePtrType->NumPointers() + 1);
+    }
     return new RvalueRefType(baseType);
 }
 
@@ -654,6 +701,11 @@ Ir::Intf::Type* TypeName(const std::string& name, bool global)
 Typedef::Typedef(const std::string& name_, Ir::Intf::Type* type_) :
     Ir::Intf::Type("typedef " + type_->Prefix() + name_ + type_->Suffix()), baseName(name_), type(type_)
 {
+    if (!type->Owned())
+    {
+        type->SetOwned();
+        ownedType.reset(type);
+    }
 }
 
 Ir::Intf::Type* Typedef::Clone() const

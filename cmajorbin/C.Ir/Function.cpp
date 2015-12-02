@@ -18,7 +18,7 @@ namespace C {
 const char* exceptionCodeParamName = "_X_ex_p";
 const char* classObjectResultParamName = "_X_result";
 
-Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_) : Ir::Intf::Function(name_, returnType_, parameters_)
+Function::Function(const std::string& name_, Ir::Intf::Type* returnType_, const std::vector<Ir::Intf::Parameter*>& parameters_) : Ir::Intf::Function(name_, returnType_, parameters_), functionPtrTypesReplaced(false)
 {
 }
 
@@ -47,14 +47,7 @@ std::string Function::ParameterListStr() const
                 parameterList.append(", ");
             }
             Ir::Intf::Type* paramType = parameter->GetType();
-            if (paramType->IsFunctionPointerType() || paramType->IsFunctionPtrPtrType())
-            {
-                parameterList.append(paramType->Prefix() + parameter->Name() + paramType->Suffix());
-            }
-            else
-            {
-                parameterList.append(paramType->Name() + " " + parameter->Name());
-            }
+            parameterList.append(paramType->Name() + " " + parameter->Name());
         }
     }
     parameterList.append(")");
@@ -81,8 +74,48 @@ void Function::AddInstruction(Ir::Intf::Instruction* instruction)
     Own(instruction);
 }
 
+void Function::ReplaceFunctionPtrTypes()
+{
+    if (functionPtrTypesReplaced) return;
+    functionPtrTypesReplaced = true;
+    Ir::Intf::Type* returnType = GetReturnType();
+    std::unordered_set<Ir::Intf::Type*> functionPtrTypes;
+    returnType->GetFunctionPtrTypes(functionPtrTypes);
+    for (Ir::Intf::Parameter* parameter : Parameters())
+    {
+        Ir::Intf::Type* paramType = parameter->GetType();
+        paramType->GetFunctionPtrTypes(functionPtrTypes);
+    }
+    for (Ir::Intf::Object* r : registers)
+    {
+        Ir::Intf::Type* regType = r->GetType();
+        regType->GetFunctionPtrTypes(functionPtrTypes);
+    }
+    if (!functionPtrTypes.empty())
+    {
+        for (Ir::Intf::Type* functionPtrType : functionPtrTypes)
+        {
+            std::unique_ptr<Typedef> tdf(new Typedef(Ir::Intf::GetCurrentTempTypedefProvider()->GetNextTempTypedefName(), functionPtrType->Clone()));
+            tdfMap[functionPtrType] = tdf.get();
+            tdfs.push_back(std::move(tdf));
+        }
+        returnType->ReplaceFunctionPtrTypes(tdfMap);
+        for (Ir::Intf::Parameter* parameter : Parameters())
+        {
+            Ir::Intf::Type* paramType = parameter->GetType();
+            paramType->ReplaceFunctionPtrTypes(tdfMap);
+        }
+        for (Ir::Intf::Object* r : registers)
+        {
+            Ir::Intf::Type* regType = r->GetType();
+            regType->ReplaceFunctionPtrTypes(tdfMap);
+        }
+    }
+}
+
 void Function::WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_)
 {
+    ReplaceFunctionPtrTypes();
     std::string declaration;
     if (inline_)
     {
@@ -94,6 +127,7 @@ void Function::WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inl
 
 void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_)
 {
+    ReplaceFunctionPtrTypes();
     formatter.WriteLine();
     if (!Comment().empty())
     {
@@ -111,14 +145,7 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
     for (Ir::Intf::Object* r : registers)
     {
         Ir::Intf::Type* regType = r->GetType();
-        if (regType->IsFunctionPointerType() || regType->IsFunctionPtrPtrType())
-        {
-            formatter.WriteLine(regType->Prefix() + r->Name() + regType->Suffix() + ";");
-        }
-        else
-        {
-            formatter.WriteLine(regType->Name() + " " + r->Name() + ";");
-        }
+        formatter.WriteLine(regType->Name() + " " + r->Name() + ";");
     }
     Ir::Intf::Instruction* prev = nullptr;
     for (Ir::Intf::Instruction* inst : Instructions())

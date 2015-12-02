@@ -412,10 +412,10 @@ namespace Cm
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
-            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
-            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
+            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
+            AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
             AddRule(new LiteralRule("Literal", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

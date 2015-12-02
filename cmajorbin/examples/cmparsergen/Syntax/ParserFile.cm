@@ -350,27 +350,27 @@ namespace Syntax
                 grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.NamespaceGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.NamespaceGrammar.Create(parsingDomain);
+                grammar1 = Syntax.GrammarGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Syntax.GrammarGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.NamespaceGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Syntax.GrammarGrammar.Create(parsingDomain);
+                grammar2 = Cm.NamespaceGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
             AddRuleLink(new RuleLink("NamespaceImport", this, "Cm.NamespaceGrammar.NamespaceImport"));
             AddRuleLink(new RuleLink("Alias", this, "Cm.NamespaceGrammar.Alias"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new ParserFileRule("ParserFile", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
