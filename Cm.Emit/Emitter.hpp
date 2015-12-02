@@ -20,7 +20,7 @@
 
 namespace Cm { namespace Emit {
 
-class Emitter : public Cm::BoundTree::Visitor
+class Emitter : public Cm::BoundTree::Visitor, public Ir::Intf::TempTypedefProvider
 {
 public:
     Emitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
@@ -29,6 +29,7 @@ public:
     virtual void WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter) = 0;
     virtual Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() = 0;
     void SetTpGraph(Cm::Opt::TpGraph* tpGraph_) { tpGraph = tpGraph_; }
+    std::string GetNextTempTypedefName() override;
 protected:
     const std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() const { return externalFunctions; }
     std::unordered_set<Ir::Intf::Function*>& ExternalFunctions() { return externalFunctions; }
@@ -72,6 +73,7 @@ private:
     Cm::Sym::SymbolTable* symbolTable;
     Cm::Opt::TpGraph* tpGraph;
     bool profile;
+    int nextTempTypedefNumber;
 };
 
 } } // namespace Cm::Emit

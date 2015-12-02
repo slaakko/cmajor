@@ -104,7 +104,8 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
     classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
 }
 
-void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, 
+    const std::vector<Ir::Intf::Type*>& tdfs)
 {
     WriteDestructionNodeDef(codeFormatter);
     for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
@@ -328,7 +329,7 @@ std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::unordered_map
     return classOrder;
 }
 
-void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const std::vector<Ir::Intf::Type*>& tdfs)
 {
     WriteDestructionNodeDef(codeFormatter);
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap;
@@ -374,6 +375,10 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
         WriteIrLayout(classType, codeFormatter);
+    }
+    for (Ir::Intf::Type* tdf : tdfs)
+    {
+        codeFormatter.WriteLine(tdf->Name() + ";");
     }
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {

@@ -171,7 +171,7 @@ class PointerType : public Ir::Intf::Type
 {
 public:
     PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_);
-    Ir::Intf::Type* BaseType() const { return baseType; }
+    Ir::Intf::Type* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return true; }
     bool IsFunctionPointerType() const override;
     bool IsFunctionPtrPtrType() const override;
@@ -191,6 +191,7 @@ class RvalueRefType: public PointerType
 {
 public:
     RvalueRefType(Ir::Intf::Type* baseType_);
+    RvalueRefType(Ir::Intf::Type* baseType_, uint8_t numPointers_);
     bool IsRvalueRefType() const override { return true; }
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;

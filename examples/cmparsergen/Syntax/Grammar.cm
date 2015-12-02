@@ -305,9 +305,9 @@ namespace Syntax
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
             AddRuleLink(new RuleLink("Identifier", this, "ElementGrammar.Identifier"));
             AddRuleLink(new RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("Rule", this, "RuleGrammar.Rule"));
             AddRuleLink(new RuleLink("RuleLink", this, "ElementGrammar.RuleLink"));
             AddRule(new GrammarRule("Grammar", GetScope(),
                 new SequenceParser(

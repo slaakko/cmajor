@@ -193,6 +193,8 @@ public:
     int Size() const { return size; }
     Ir::Intf::Type* Clone() const override;
     bool IsArrayType() const override { return true; }
+    void GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const override;
+    void ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap) override;
 private:
     Ir::Intf::Type* itemType;
     std::unique_ptr<Ir::Intf::Type> ownedItemType;
@@ -222,6 +224,8 @@ public:
     const std::vector<std::string>& ElementNames() const { return elementNames; }
     const std::string& GetTagName() const override { return tagName; }
     Ir::Intf::Type* Clone() const override;
+    void GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const override;
+    void ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap) override;
 private:
     std::string tagName;
     std::vector<std::unique_ptr<Ir::Intf::Type>> elementTypes;
@@ -234,10 +238,12 @@ class PointerType : public Ir::Intf::Type
 {
 public:
     PointerType(Ir::Intf::Type* baseType_, uint8_t numPointers_);
-    Ir::Intf::Type* BaseType() const { return baseType; }
+    Ir::Intf::Type* GetBaseType() const override { return baseType; }
     bool IsPointerType() const override { return true; }
     bool IsFunctionPointerType() const override;
     bool IsFunctionPtrPtrType() const override;
+    void GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes) const override;
+    void ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap) override;
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
     uint8_t NumPointers() const override { return numPointers; }
@@ -256,6 +262,7 @@ class RvalueRefType : public PointerType
 {
 public:
     RvalueRefType(Ir::Intf::Type* baseType_);
+    RvalueRefType(Ir::Intf::Type* baseType_, uint8_t numPointers_);
     bool IsRvalueRefType() const override { return true; }
     Ir::Intf::Type* Clone() const override;
     Ir::Intf::Object* CreateDefaultValue() const override;
@@ -294,6 +301,7 @@ public:
     TypeNameType(const std::string& name_, bool global);
     virtual bool IsTypeNameType() const { return true; }
     Ir::Intf::Type* Clone() const override;
+    const std::string& BaseName() const override { return baseName; }
 private:
     std::string baseName;
     bool isGlobal;
@@ -307,9 +315,11 @@ class Typedef : public Ir::Intf::Type
 public:
     Typedef(const std::string& name_, Ir::Intf::Type* type_);
     Ir::Intf::Type* Clone() const override;
+    const std::string& BaseName() const override { return baseName; }
 private:
     std::string baseName;
     Ir::Intf::Type* type;
+    std::unique_ptr<Ir::Intf::Type> ownedType;
 };
 
 Ir::Intf::Type* CreateTypedef(const std::string& name, Ir::Intf::Type* type);

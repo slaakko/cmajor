@@ -20,8 +20,9 @@ Emitter::Emitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRep
     Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
     Cm::BoundTree::Visitor(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_),
     externalConstantRepository(externalConstantRepository_), irFile(irFilePath), codeFormatter(irFile), currentClass(nullptr), enterFrameFun(nullptr), leaveFrameFun(nullptr),
-    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr), symbolTable(nullptr), profile(false), tpGraph(nullptr)
+    enterTracedCallFun(nullptr), leaveTracedCallFun(nullptr), symbolTable(nullptr), profile(false), tpGraph(nullptr), nextTempTypedefNumber(0)
 {
+    Ir::Intf::SetCurrentTempTypedefProvider(this);
 }
 
 void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
@@ -45,6 +46,11 @@ void Emitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     {
         profile = true;
     }
+}
+
+std::string Emitter::GetNextTempTypedefName()
+{
+    return "__tdf_X_" + std::to_string(nextTempTypedefNumber++);
 }
 
 } } // namespace Cm::Emit

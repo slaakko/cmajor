@@ -11,6 +11,18 @@
 
 namespace Ir { namespace Intf {
 
+TempTypedefProvider* currentTempTypedefProvider = nullptr;
+
+TempTypedefProvider* GetCurrentTempTypedefProvider()
+{
+    return currentTempTypedefProvider;
+}
+
+void SetCurrentTempTypedefProvider(TempTypedefProvider* tempTypedefProvider)
+{
+    currentTempTypedefProvider = tempTypedefProvider;
+}
+
 Function::Function(const std::string& name_, Type* returnType_, const std::vector<Parameter*>& parameters_): 
     name(name_), returnType(returnType_), parameters(parameters_), instNumber(0)
 {

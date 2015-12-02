@@ -15,6 +15,7 @@
 #include <C.Ir/Type.hpp>
 #include <string>
 #include <set>
+#include <unordered_map>
 
 namespace C {
 
@@ -268,12 +269,15 @@ public:
     void SetAlignment(int alignment_) override;
     std::string ToString() const override;
     Ir::Intf::Object* GetResult() const override { return result; }
+    bool IsAlloca() const override { return true; }
 private:
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
     Ir::Intf::Type* numElementsType;
     int numElements;
     int alignment;
+    mutable std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*> tdfMap;
+    mutable std::vector<std::unique_ptr<Typedef>> tdfs;
 };
 
 Ir::Intf::Instruction* Alloca(Ir::Intf::Type* type, Ir::Intf::Object* result);

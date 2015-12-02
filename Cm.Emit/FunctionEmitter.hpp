@@ -33,6 +33,8 @@ public:
     void SetExceptionCodeVariable(Ir::Intf::Object* exceptionCodeVariable_) { exceptionCodeVariable = exceptionCodeVariable_; }
     Ir::Intf::Object* GetExceptionCodeVariable() const { return exceptionCodeVariable; }
     std::string MakeUniqueAssemblyName(const std::string& name);
+    void GetFunctionPtrTypes(std::unordered_set<Ir::Intf::Type*>& functionPtrTypes);
+    void ReplaceFunctionPtrTypes(const std::unordered_map<Ir::Intf::Type*, Ir::Intf::Type*>& tdfMap);
 private:
     Cm::Core::IrFunctionRepository* irFunctionRepository;
     typedef std::unordered_map<uint32_t, Ir::Intf::Object*>  LocalVariableObjectMap;
@@ -185,6 +187,7 @@ protected:
     void GenerateCall(Cm::Sym::FunctionSymbol* functionSymbol, Ir::Intf::Function* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result, bool constructorOrDestructorCall);
     Cm::Sym::ParameterSymbol* ThisParam() { return thisParam; }
     Cm::Core::StaticMemberVariableRepository& StaticMemberVariableRepository() { return staticMemberVariableRepository; }
+    LocalVariableIrObjectRepository& GetLocalVariableIrObjectRepository() { return localVariableIrObjectRepository; }
     Cm::BoundTree::BoundFunction* CurrentFunction() const { return currentFunction; }
     std::shared_ptr<Cm::Core::GenResult> CompoundResult() const { return compoundResult; }
     void PushGenDebugInfo(bool generate);
@@ -194,6 +197,7 @@ protected:
     Cm::Sym::SymbolTable* GetSymbolTable() const { return symbolTable; }
     void GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
     void GenJumpingBoolCode(Cm::Core::GenResult& result);
+    virtual Ir::Intf::Type* ReplaceFunctionPtrType(Ir::Intf::Type* localVariableIrType) { return localVariableIrType; }
 private:
     bool generateDebugInfo;
     std::stack<bool> generateDebugInfoStack;

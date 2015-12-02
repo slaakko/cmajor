@@ -529,7 +529,33 @@ namespace Cm.Build
         const List<string>& compileFileNames, List<string>& debugInfoFilePaths, List<string>& bcuPaths)
     {
         bool changed = false;
-        // todo
+        if (syntaxTree.CompileUnits().IsEmpty()) return changed;
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        string ext;
+        if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+        {
+            ext = ".ll";
+        }
+        else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+        {
+            ext = ".c";
+        }
+        string prebindCompileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, "__prebind__" + ext));
+        Cm.BoundTree.BoundCompileUnit prebindCompileUnit(symbolTable, syntaxTree.CompileUnits().Front().GetPtr(), prebindCompileUnitIrFilePath);
+        prebindCompileUnit.SetPrebindCompileUnit();
+        prebindCompileUnit.SetClassTemplateRepository(new Cm.Bind.ClassTemplateRepository(prebindCompileUnit));
+        prebindCompileUnit.SetInlineFunctionRepository(new Cm.Bind.InlineFunctionRepository(prebindCompileUnit));
+        prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm.Bind.SynthesizedClassFunRepository(prebindCompileUnit));
+        prebindCompileUnit.SetDelegateTypeOpRepository(new Cm.Bind.DelegateTypeOpRepository(prebindCompileUnit));
+        prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm.Bind.ClassDelegateTypeOpRepository(prebindCompileUnit));
+        prebindCompileUnit.SetArrayTypeOpRepository(new Cm.Bind.ArrayTypeOpRepository(prebindCompileUnit));
+        List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
+        for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm.Bind.Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
+            compileUnit->Accept(prebinder);
+            fileScopes.Add(UniquePtr<Cm.Sym.FileScope>(prebinder.ReleaseFileScope()));
+        }
         return changed;
     }
     
