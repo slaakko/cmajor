@@ -40,9 +40,12 @@ const char* MappedInputFile::Begin() const
     const char* start = impl->Data();
     if (impl->Size() >= 3)
     {
-        if ((unsigned char)*start == (unsigned char)0xEF) ++start;
-        if ((unsigned char)*start == (unsigned char)0xBB) ++start;
-        if ((unsigned char)*start == (unsigned char)0xBF) ++start;
+        if ((unsigned char)start[0] == (unsigned char)0xEF &&
+            (unsigned char)start[1] == (unsigned char)0xBB &&
+            (unsigned char)start[2] == (unsigned char)0xBF)
+        {
+            start += 3;
+        }
     }
     return start;
 }

@@ -863,7 +863,17 @@ namespace System.IO
         }
         public inline nothrow const char* Begin() const 
         {
-            return begin;
+            const char* start = begin;
+            if (end - begin >= 3)
+            {
+                if (cast<byte>(start[0]) == 0xEFu && 
+                    cast<byte>(start[1]) == 0xBBu &&
+                    cast<byte>(start[2]) == 0xBFu)
+                {
+                    start = start + 3;
+                }
+            }
+            return start;
         }
         public inline nothrow const char* End() const 
         {
