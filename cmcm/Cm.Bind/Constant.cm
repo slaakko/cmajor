@@ -43,6 +43,7 @@ namespace Cm.Bind
         }
         if (constantSymbol->IsBound()) return;
         Cm.Ast.Specifiers specifiers = constantNode->GetSpecifiers();
+        #assert(constantNode->Parent() != null);
         bool isClassMember = constantNode->Parent() is Cm.Ast.ClassNode*;
         SetAccess(constantSymbol, specifiers, isClassMember);
         if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
@@ -97,6 +98,7 @@ namespace Cm.Bind
         {
             throw Cm.Core.Error("constant cannot be new", constantSymbol->GetSpan());
         }
+        #assert(constantSymbol->Parent() != null);
         if (constantSymbol->Parent()->IsClassTemplateSymbol())
         {
             constantSymbol->SetBound();

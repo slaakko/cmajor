@@ -209,6 +209,7 @@ namespace Cm.Ast
         }
         public string FullGroupName() const
         {
+            #assert(Parent() != null);
             if (Parent() is NamespaceNode*)
             {
                 return cast<NamespaceNode*>(Parent())->FullName() + "." + groupId->Str();

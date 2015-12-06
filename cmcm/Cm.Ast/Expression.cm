@@ -675,6 +675,7 @@ namespace Cm.Ast
         }
         public override void AddArgument(Node* argument)
         {
+            argument->SetParent(this);
             arguments.Add(argument);
         }
         public override void Read(Reader& reader)
@@ -718,6 +719,7 @@ namespace Cm.Ast
         }
         public nothrow IndexNode(const Span& span_, Node* subject_, Node* index_) : base(span_, subject_), index(index_)
         {
+            index->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -776,6 +778,7 @@ namespace Cm.Ast
         }
         public nothrow DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : base(span_, subject_), memberId(memberId_)
         {
+            memberId->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -844,6 +847,7 @@ namespace Cm.Ast
         }
         public nothrow ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : base(span_, subject_), memberId(memberId_)
         {
+            memberId->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -1316,6 +1320,8 @@ namespace Cm.Ast
         }
         public nothrow CastNode(const Span& span_, Node* targetTypeExpr_, Node* sourceExpr_) : base(span_), targetTypeExpr(targetTypeExpr_), sourceExpr(sourceExpr_)
         {
+            targetTypeExpr->SetParent(this);
+            sourceExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -1366,6 +1372,8 @@ namespace Cm.Ast
         }
         public nothrow IsNode(const Span& span_, Node* expr_, Node* typeExpr_) : base(span_), expr(expr_), typeExpr(typeExpr_)
         {
+            expr->SetParent(this);
+            typeExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -1416,6 +1424,8 @@ namespace Cm.Ast
         }
         public nothrow AsNode(const Span& span_, Node* expr_, Node* typeExpr_) : base(span_), expr(expr_), typeExpr(typeExpr_)
         {
+            expr->SetParent(this);
+            typeExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -1466,6 +1476,7 @@ namespace Cm.Ast
         }
         public nothrow NewNode(const Span& span_, Node* typeExpr_) : base(span_), typeExpr(typeExpr_)
         {
+            typeExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -1522,6 +1533,7 @@ namespace Cm.Ast
         }
         public nothrow ConstructNode(const Span& span_, Node* typeExpr_) : base(span_), typeExpr(typeExpr_)
         {
+            typeExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {

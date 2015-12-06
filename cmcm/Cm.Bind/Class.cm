@@ -44,6 +44,7 @@ namespace Cm.Bind
             classTypeSymbol->SetSourceFilePath(classNode->GetCompileUnit()->FilePath());
         }
         Cm.Ast.Specifiers specifiers = classNode->GetSpecifiers();
+        #assert(classNode->Parent() != null);
         bool isClassMember = classNode->Parent() is Cm.Ast.ClassNode*;
         SetAccess(classTypeSymbol, specifiers, isClassMember);
         if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)

@@ -32,6 +32,7 @@ namespace Cm.Bind
         Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.DelegateNode* delegateNode, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = delegateNode->GetSpecifiers();
+        #assert(delegateNode->Parent() != null);
         bool isClassMember = delegateNode->Parent() is Cm.Ast.ClassNode*;
         SetAccess(delegateTypeSymbol, specifiers, isClassMember);
         if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
@@ -117,6 +118,7 @@ namespace Cm.Bind
         Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ClassDelegateNode* classDelegateNode, Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = classDelegateNode->GetSpecifiers();
+        #assert(classDelegateNode->Parent() != null);
         bool isClassMember = classDelegateNode->Parent() is Cm.Ast.ClassNode*;
         SetAccess(classDelegateTypeSymbol, specifiers, isClassMember);
         if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)

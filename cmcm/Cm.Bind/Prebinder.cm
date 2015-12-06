@@ -213,7 +213,7 @@ namespace Cm.Bind
             else
             {
                 currentFunction = BindFunction(symbolTable, containerScope, fileScopes, &functionNode, null);
-                if (!currentClass->IsClassTemplateSymbol() && (functionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+                if ((functionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
                 {
                     currentFunction->SetUsingNodes(usingNodes);
                 }

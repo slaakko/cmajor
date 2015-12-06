@@ -19,6 +19,11 @@ namespace Cm.Ast
         }
         public nothrow ParameterNode(const Span& span_, Node* typeExpr_, IdentifierNode* id_) : base(span_), typeExpr(typeExpr_), id(id_)
         {
+            typeExpr->SetParent(this);
+            if (!id.IsNull())
+            {
+                id->SetParent(this);
+            }            
         }
         public nothrow override NodeType GetNodeType() const
         {
