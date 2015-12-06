@@ -110,8 +110,9 @@ namespace Cm.Ast
         public nothrow WhereConstraintNode(const Span& span_) : base(span_)
         {
         }
-        public nothrow WhereConstraintNode(const Span& span_, ConstraintNode* constraint_)
+        public nothrow WhereConstraintNode(const Span& span_, ConstraintNode* constraint_) : base(span_), constraint(constraint_)
         {
+            constraint->SetParent(this);
         }
         public override nothrow NodeType GetNodeType() const
         {
@@ -190,6 +191,7 @@ namespace Cm.Ast
         }
         public nothrow MultiParamConstraintNode(const Span& span_, IdentifierNode* conceptId_) : base(span_), conceptId(conceptId_)
         {
+            conceptId->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {

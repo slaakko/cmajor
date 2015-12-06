@@ -84,6 +84,7 @@ namespace Cm.Bind
         {
             throw Cm.Core.Error("member variable cannot be throw", memberVariableSymbol->GetSpan());
         }
+        #assert(memberVariableSymbol->Parent() != null);
         if (memberVariableSymbol->Parent()->IsClassTemplateSymbol())
         {
             memberVariableSymbol->SetBound();

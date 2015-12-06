@@ -100,10 +100,6 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     boost::filesystem::remove(funFilePath);
     if (debugInfoFile)
     {
-        if (compileUnit.IrFilePath().find("Value.c") != std::string::npos)
-        {
-            int x = 0;
-        }
         Cm::Ser::BinaryWriter writer(compileUnit.CDebugInfoFilePath());
         debugInfoFile->Write(writer);
     }

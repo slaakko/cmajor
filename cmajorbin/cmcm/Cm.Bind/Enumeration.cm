@@ -39,6 +39,7 @@ namespace Cm.Bind
         Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumTypeNode* enumTypeNode, Cm.Sym.EnumTypeSymbol* enumTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = enumTypeNode->GetSpecifiers();
+        #assert(enumTypeNode->Parent() != null);
         bool isClassMember = enumTypeNode->Parent() is Cm.Ast.ClassNode*;
         SetAccess(enumTypeSymbol, specifiers, isClassMember);
         if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)

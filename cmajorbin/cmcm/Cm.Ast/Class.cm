@@ -19,6 +19,7 @@ namespace Cm.Ast
         }
         public nothrow ClassNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), id(id_), compileUnit(null)
         {
+            id->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -200,6 +201,7 @@ namespace Cm.Ast
         }
         public nothrow MemberInitializerNode(const Span& span_, IdentifierNode* memberId_) : base(span_), memberId(memberId_)
         {
+            memberId->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {

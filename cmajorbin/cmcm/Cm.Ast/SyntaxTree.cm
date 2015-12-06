@@ -14,12 +14,6 @@ namespace Cm.Ast
 {
     public class SyntaxTree
     {
-        public nothrow SyntaxTree()
-        {
-        }
-        public nothrow SyntaxTree(SyntaxTree&& that) : compileUnits(Rvalue(compileUnits))
-        {
-        }
         public void AddCompileUnit(CompileUnitNode* compileUnit)
         {
             compileUnits.Add(UniquePtr<CompileUnitNode>(compileUnit));

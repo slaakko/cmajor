@@ -75,12 +75,93 @@ namespace Cm.Bind
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
         Cm.Ast.TypedefNode* typedefNode, Cm.Sym.TypedefSymbol* typedefSymbol)
     {
-        // todo
+        if (typedefSymbol->Evaluating())
+        {
+            throw Cm.Core.Error("cyclic typedef definitions detected", typedefSymbol->GetSpan());
+        }
+        if (typedefSymbol->IsBound())
+        {
+            return;
+        }
+        Cm.Ast.Specifiers specifiers = typedefNode->GetSpecifiers();
+        bool isClassMember = typedefNode->Parent() is Cm.Ast.ClassNode*;
+        SetAccess(typedefSymbol, specifiers, isClassMember);
+        if ((specifiers & Cm.Ast.Specifiers.abstract_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be abstract", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be virtual", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.override_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be override", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.static_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be static", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.explicit_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be explicit", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.external) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be external", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.suppress_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be suppressed", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be default", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be inline", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be cdecl", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.nothrow_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be nothrow", typedefSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.throw_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("typedef cannot be throw", typedefSymbol->GetSpan());
+        }
+        if (typedefSymbol->Parent()->IsClassTemplateSymbol())
+        {
+            typedefSymbol->SetBound();
+            return;
+        }
+        typedefSymbol->SetEvaluating();
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode->TypeExpr());
+        typedefSymbol->ResetEvaluating();
+        typedefSymbol->SetType(type);
+        typedefSymbol->SetBound();
     }
 
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
         Cm.Ast.TypedefStatementNode* typedefStatementNode, Cm.Sym.TypedefSymbol* typedefSymbol)
     {
-        // todo
+        if (typedefSymbol->Evaluating())
+        {
+            throw Cm.Core.Error("cyclic typedef definitions detected", typedefSymbol->GetSpan());
+        }
+        if (typedefSymbol->IsBound())
+        {
+            return;
+        }
+        SetAccess(typedefSymbol, Cm.Ast.Specifiers.public_, false);
+        typedefSymbol->SetEvaluating();
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode->TypeExpr());
+        typedefSymbol->ResetEvaluating();
+        typedefSymbol->SetType(type);
+        typedefSymbol->SetBound();
     }
 }

@@ -20,6 +20,7 @@ namespace Cm.Ast
         }
         public nothrow NamespaceNode(const Span& span_, IdentifierNode* id_) : base(span_), id(id_)
         {
+            id->SetParent(this);
         }
         public override nothrow NodeType GetNodeType() const 
         {
@@ -37,6 +38,7 @@ namespace Cm.Ast
         }
         public void AddMember(Node* member)
         {
+            member->SetParent(this);
             members.Add(member);
         }
         public override nothrow string Name() const
@@ -128,6 +130,8 @@ namespace Cm.Ast
         }
         public nothrow AliasNode(const Span& span_, const IdentifierNode* id_, const IdentifierNode* qid_) : base(span_), id(id_), qid(qid_)
         {
+            id->SetParent(this);
+            qid->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {
@@ -172,6 +176,7 @@ namespace Cm.Ast
         }
         public nothrow NamespaceImportNode(const Span& span_, IdentifierNode* ns_) : base(span_), ns(ns_)
         {
+            ns->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const 
         {

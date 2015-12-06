@@ -1101,6 +1101,25 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
                 if (symbolExpr->IsBoundFunctionGroup())
                 {
                     boundExpressionStack.Push(symbolExpr.release());
+                    if (!classObject->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase))
+                    {
+                        Cm::Sym::Symbol* parent = symbol->Parent();
+                        if (!parent->IsClassTypeSymbol())
+                        {
+                            throw std::runtime_error("member variable parent not class type");
+                        }
+                        Cm::Sym::ClassTypeSymbol* functionGroupOwnerClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parent);
+                        int distance = 0;
+                        if (classType->HasBaseClass(functionGroupOwnerClassType, distance))
+                        {
+                            Cm::Sym::TypeSymbol* functionGroupOwnerClassTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(functionGroupOwnerClassType, dotNode.GetSpan());
+                            Cm::Sym::TypeSymbol* classTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classType, dotNode.GetSpan());
+                            Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(functionGroupOwnerClassTypePtr, classTypePtr, distance,
+                                dotNode.GetSpan());
+                            classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                            classObject = CreateBoundConversion(containerScope, boundCompileUnit, &dotNode, classObject, derivedBaseConversion, currentFunction);
+                        }
+                    }
                     classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
                     classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg);
                     boundExpressionStack.Push(classObject);
@@ -1147,6 +1166,10 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberId)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "Cm.Sym.DelegateTypeSymbol.AddSymbol(Cm.Sym.DelegateTypeSymbol*, Cm.Sym.Symbol*)")
+    {
+        int x = 0;
+    }
     BindUnaryOp(node, "operator->");
     std::unique_ptr<Cm::BoundTree::BoundExpression> boundUnaryOpExpr(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());
@@ -1181,6 +1204,24 @@ void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberI
                         if (symbolExpr->IsBoundFunctionGroup())
                         {
                             boundExpressionStack.Push(symbolExpr.release());
+                            if (!classObject->GetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase))
+                            {
+                                Cm::Sym::Symbol* parent = symbol->Parent();
+                                if (!parent->IsClassTypeSymbol())
+                                {
+                                    throw std::runtime_error("member variable parent not class type");
+                                }
+                                Cm::Sym::ClassTypeSymbol* functionGroupOwnerClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parent);
+                                int distance = 0;
+                                if (classTypeSymbol->HasBaseClass(functionGroupOwnerClassType, distance))
+                                {
+                                    Cm::Sym::TypeSymbol* functionGroupOwnerClassTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(functionGroupOwnerClassType, node->GetSpan());
+                                    Cm::Sym::TypeSymbol* classTypePtr = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, node->GetSpan());
+                                    Cm::Sym::FunctionSymbol* derivedBaseConversion = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(functionGroupOwnerClassTypePtr, classTypePtr, distance,
+                                        node->GetSpan());
+                                    classObject = CreateBoundConversion(containerScope, boundCompileUnit, node, classObject, derivedBaseConversion, currentFunction);
+                                }
+                            }
                             classObject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg);
                             boundExpressionStack.Push(classObject);
                         }
@@ -1332,10 +1373,6 @@ void ExpressionBinder::BindIndexClass(Cm::Ast::Node* indexNode, Cm::BoundTree::B
 
 void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "NodeList<ConstraintNode>.Read(NodeList<ConstraintNode>*, Reader&)")
-    {
-        int x = 0;
-    }
     bool generateVirtualCall = false;
     expressionCount = expressionCountStack.top();
     expressionCountStack.pop();

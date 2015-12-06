@@ -567,6 +567,7 @@ namespace Cm.Ast
         }
         public nothrow GotoCaseStatementNode(const Span& span_, Node* targetCaseExpr_) : base(span_), targetCaseExpr(targetCaseExpr_)
         {
+            targetCaseExpr->SetParent(this);
         }
         public nothrow override NodeType GetNodeType() const
         {

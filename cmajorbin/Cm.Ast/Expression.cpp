@@ -928,6 +928,8 @@ IsNode::IsNode(const Span& span_) : Node(span_)
 
 IsNode::IsNode(const Span& span_, Node* expr_, Node* typeExpr_) : Node(span_), expr(expr_), typeExpr(typeExpr_)
 {
+    expr->SetParent(this);
+    typeExpr->SetParent(this);
 }
 
 Node* IsNode::Clone(CloneContext& cloneContext) const
@@ -967,6 +969,8 @@ AsNode::AsNode(const Span& span_) : Node(span_)
 
 AsNode::AsNode(const Span& span_, Node* expr_, Node* typeExpr_) : Node(span_), expr(expr_), typeExpr(typeExpr_)
 {
+    expr->SetParent(this);
+    typeExpr->SetParent(this);
 }
 
 Node* AsNode::Clone(CloneContext& cloneContext) const
