@@ -228,7 +228,7 @@ namespace Cm.Bind
             functionSymbol->SetVirtual();
             currentClass->SetVirtual();
         }
-        if ((specifiers & Cm.Ast.Specifiers.virtual_) != Cm.Ast.Specifiers.none)
+        if ((specifiers & Cm.Ast.Specifiers.override_) != Cm.Ast.Specifiers.none)
         {
             if (!functionSymbol->IsMemberFunctionSymbol())
             {

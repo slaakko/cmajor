@@ -1166,10 +1166,6 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void ExpressionBinder::BindArrow(Cm::Ast::Node* node, const std::string& memberId)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "Cm.Sym.DelegateTypeSymbol.AddSymbol(Cm.Sym.DelegateTypeSymbol*, Cm.Sym.Symbol*)")
-    {
-        int x = 0;
-    }
     BindUnaryOp(node, "operator->");
     std::unique_ptr<Cm::BoundTree::BoundExpression> boundUnaryOpExpr(boundExpressionStack.Pop());
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(boundUnaryOpExpr->GetType());
@@ -1285,6 +1281,10 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "foo(const System.Collections.List<int>&)")
+    {
+        int x = 0;
+    }
     lookupIdStack.Push(lookupId);
     lookupId = Cm::Sym::SymbolTypeSetId::lookupInvokeSubject;
     invokeNode.Subject()->Accept(*this);

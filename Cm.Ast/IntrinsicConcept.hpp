@@ -60,6 +60,14 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
 };
 
+class NonReferenceTypeConstraintNode : public IntrinsicConstraintNode
+{
+public:
+    NonReferenceTypeConstraintNode();
+    void Accept(Visitor& visitor) override;
+    Node* Clone(CloneContext& cloneContext) const override;
+};
+
 class SameConceptNode : public ConceptNode
 {
 public:
@@ -93,6 +101,13 @@ class CommonConceptNode : public ConceptNode
 public:
     CommonConceptNode();
     bool IsCommonConceptNode() const override { return true; }
+    bool IsIntrinsicConceptNode() const { return true; }
+};
+
+class NonReferenceTypeConceptNode : public ConceptNode
+{
+public:
+    NonReferenceTypeConceptNode();
     bool IsIntrinsicConceptNode() const { return true; }
 };
 

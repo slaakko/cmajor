@@ -88,6 +88,20 @@ Node* CommonConstraintNode::Clone(CloneContext& cloneContext) const
     return new CommonConstraintNode();
 }
 
+NonReferenceTypeConstraintNode::NonReferenceTypeConstraintNode() : IntrinsicConstraintNode()
+{
+}
+
+void NonReferenceTypeConstraintNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+Node* NonReferenceTypeConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new NonReferenceTypeConstraintNode();
+}
+
 SameConceptNode::SameConceptNode() : ConceptNode(Cm::Parsing::Span(), Specifiers::public_, new IdentifierNode(Cm::Parsing::Span(), "Same"))
 {
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
@@ -121,6 +135,12 @@ CommonConceptNode::CommonConceptNode() : ConceptNode(Cm::Parsing::Span(), Specif
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
     AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "U"));
     AddConstraint(new CommonConstraintNode());
+}
+
+NonReferenceTypeConceptNode::NonReferenceTypeConceptNode() : ConceptNode(Cm::Parsing::Span(), Specifiers::public_, new IdentifierNode(Cm::Parsing::Span(), "NonReferenceType"))
+{ 
+    AddTypeParameter(new IdentifierNode(Cm::Parsing::Span(), "T"));
+    AddConstraint(new NonReferenceTypeConstraintNode());
 }
 
 } } // namespace Cm::Ast
