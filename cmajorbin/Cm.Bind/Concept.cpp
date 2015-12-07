@@ -85,6 +85,7 @@ public:
     void Visit(Cm::Ast::ConvertibleConstraintNode& convertibleConstraintNode) override;
     void Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) override;
     void Visit(Cm::Ast::CommonConstraintNode& commonConstraintNode) override;
+    void Visit(Cm::Ast::NonReferenceTypeConstraintNode& monReferenceTypeConstraintNode) override;
 private:
     Cm::Sym::TypeSymbol* firstTypeArgument;
     Cm::Sym::TypeSymbol* secondTypeArgument;
@@ -841,6 +842,26 @@ void ConstraintChecker::Visit(Cm::Ast::CommonConstraintNode& commonConstraintNod
     else
     {
         throw Cm::Core::ConceptCheckException("Intrinsic 'Common' concept needs two type arguments");
+    }
+}
+
+void ConstraintChecker::Visit(Cm::Ast::NonReferenceTypeConstraintNode& monReferenceTypeConstraintNode)
+{
+    if (firstTypeArgument)
+    {
+        bool isNonReferenceType = !(firstTypeArgument->IsReferenceType() || firstTypeArgument->IsRvalueRefType());
+        if (!isNonReferenceType)
+        {
+            throw Cm::Core::ConceptCheckException("type '" + firstTypeArgument->FullName() + "' is not non-reference type");
+        }
+        else
+        {
+            constraintCheckStack.Push(true);
+        }
+    }
+    else
+    {
+        throw Cm::Core::ConceptCheckException("Intrinsic 'NonReferenceType' concept needs one type argument");
     }
 }
 

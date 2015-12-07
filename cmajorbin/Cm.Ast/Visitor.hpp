@@ -170,6 +170,7 @@ class DerivedConstraintNode;
 class ConvertibleConstraintNode;
 class ExplicitlyConvertibleConstraintNode;
 class CommonConstraintNode;
+class NonReferenceTypeConstraintNode;
 class SameConceptNode;
 class DerivedConceptNode;
 class ConvertibleConceptNode;
@@ -404,6 +405,7 @@ public:
     virtual void Visit(ConvertibleConstraintNode& convertibleConstraintNode) {}
     virtual void Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) {}
     virtual void Visit(CommonConstraintNode& commonConstraintNode) {}
+    virtual void Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode) {}
     virtual void Visit(SameConceptNode& sameConceptNode) {}
     virtual void Visit(DerivedConceptNode& derivedConceptNode) {}
     virtual void Visit(ConvertibleConceptNode& convertibleConceptNode) {}

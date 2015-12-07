@@ -20,6 +20,7 @@ namespace System.Concepts
     public concept DefaultConstructible<T>
     {
         T();
+        where NonReferenceType<T>;
     }
 
     public concept CopyConstructible<T>

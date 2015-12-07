@@ -88,7 +88,7 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
     }
     if (type->IsReferenceType() || type->IsRvalueRefType())
     {
-        if (type->GetBaseType()->IsClassTypeSymbol())
+        if (type->GetBaseType()->IsClassTypeSymbol() || type->GetBaseType()->IsDelegateTypeSymbol())
         {
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
