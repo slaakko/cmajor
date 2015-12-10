@@ -103,7 +103,7 @@ private:
 ConstraintChecker::ConstraintChecker(Cm::Sym::TypeSymbol* firstTypeArgument_, Cm::Sym::TypeSymbol* secondTypeArgument_, Cm::Sym::ContainerScope* containerScope_, 
     Cm::BoundTree::BoundCompileUnit* boundCompileUnit_, Cm::Sym::FileScope* functionFileScope_) :
     Cm::Ast::Visitor(false, true), containerScope(containerScope_), firstTypeArgument(firstTypeArgument_), secondTypeArgument(secondTypeArgument_), boundCompileUnit(boundCompileUnit_), 
-    functionFileScope(functionFileScope_), type(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols)
+    functionFileScope(functionFileScope_), type(nullptr), conceptGroup(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeAndConceptSymbols)
 {
 }
 
@@ -991,8 +991,8 @@ bool CheckConstraint(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bou
                 secondTypeArgument = templateArgument;
             }
             Cm::Sym::BoundTypeParameterSymbol* boundTypeParameter = new Cm::Sym::BoundTypeParameterSymbol(templateParameter->GetSpan(), templateParameter->Name());
-            boundTypeParameters.push_back(std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>(boundTypeParameter));
             boundTypeParameter->SetType(templateArgument);
+            boundTypeParameters.push_back(std::unique_ptr<Cm::Sym::BoundTypeParameterSymbol>(boundTypeParameter));
             constraintCheckScope.Install(boundTypeParameter);
         }
         ConstraintChecker constraintChecker(firstTypeArgument, secondTypeArgument, &constraintCheckScope, &boundCompileUnit, functionFileScope);

@@ -31,6 +31,10 @@ namespace Cm.Bind
             #assert(false);
             return Cm.Sym.SymbolType.namespaceSymbol;
         }
+        public override nothrow bool IsNamespaceTypeSymbol() const
+        {
+            return true;
+        }
         private Cm.Sym.NamespaceSymbol* ns;
     }
     
@@ -222,6 +226,10 @@ namespace Cm.Bind
                     scope = nsTypeSymbol->Ns()->GetContainerScope();
                 }
                 const string& memberName = dotNode.MemberId()->Str();
+                if (memberName == "Iterator")
+                {
+                    int x = 0;
+                }
                 Cm.Sym.Symbol* symbol = scope->Lookup(memberName, Cm.Sym.ScopeLookup.this_and_base, lookupId);
                 if (symbol != null)
                 {
@@ -241,6 +249,14 @@ namespace Cm.Bind
                 {
                     typeSymbol = null;
                 }
+            }
+            else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
+            {
+                throw Cm.Core.Error("symbol '" + typeSymbol->FullName() + "' does not denote a class or a namespace", dotNode.GetSpan(), typeSymbol->GetSpan());
+            }
+            else
+            {
+                typeSymbol = null;
             }
         }
         public override void Visit(Cm.Ast.DerivedTypeExprNode& derivedTypeExprNode)

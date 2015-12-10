@@ -277,6 +277,10 @@ namespace Cm.Sym
         { 
             return false; 
         }
+        public virtual nothrow bool IsNamespaceTypeSymbol() const
+        {
+            return false;
+        }
         public virtual nothrow const char* TypeString() const
         {
             return "symbol";

@@ -35,6 +35,18 @@ namespace Cm.Ast
                     clone->AddTemplateParameter(cast<TemplateParameterNode*>(templateParam->Clone(cloneContext)));
                 }
             }
+            if (!baseClassTypeExpr.IsNull())
+            {
+                clone->SetBaseClassTypeExpr(baseClassTypeExpr->Clone(cloneContext));
+            }
+            if (!constraint.IsNull())
+            {
+                clone->SetConstraint(cast<WhereConstraintNode*>(constraint->Clone(cloneContext)));
+            }
+            for (const UniquePtr<Node>& member : members)
+            {
+                clone->AddMember(member->Clone(cloneContext));
+            }
             return clone;
         }
         public override void AddTemplateParameter(TemplateParameterNode* templateParam)

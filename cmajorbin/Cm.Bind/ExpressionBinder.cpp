@@ -1281,10 +1281,6 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "foo(const System.Collections.List<int>&)")
-    {
-        int x = 0;
-    }
     lookupIdStack.Push(lookupId);
     lookupId = Cm::Sym::SymbolTypeSetId::lookupInvokeSubject;
     invokeNode.Subject()->Accept(*this);
@@ -2382,7 +2378,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
     }
     if (type->IsAbstract())
     {
-        throw Cm::Core::Exception("cannot instantiate an abstract class", node->GetSpan());
+        throw Cm::Core::Exception("cannot instantiate an abstract class", type->GetSpan(), node->GetSpan());
     }
     Cm::Sym::TypeSymbol* returnType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(type, node->GetSpan());
     int n = argumentNodes.Count();

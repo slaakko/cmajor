@@ -36,7 +36,7 @@ namespace Cm.Sym
         public abstract Symbol* Lookup(const string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const;
     }
     
-    public abstract class ContainerScope : Scope
+    public class ContainerScope : Scope
     {
         public nothrow ContainerScope() : baseScope(null), parentScope(null), container(null)
         {

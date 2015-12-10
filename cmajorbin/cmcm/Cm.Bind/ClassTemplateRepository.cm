@@ -29,7 +29,136 @@ namespace Cm.Bind
         }
         public override void BindTemplateTypeSymbol(Cm.Sym.TemplateTypeSymbol* templateTypeSymbol, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes)
         {
-            // todo
+            if (templateTypeSymbol->IsBound()) return;
+            templateTypeSymbols.Insert(templateTypeSymbol);
+            List<Cm.Sym.FileScope*> clonedFileScopes;
+            for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+            {
+                clonedFileScopes.Add(fileScope->Clone());
+            }
+            int numAddedFileScopes = clonedFileScopes.Count();
+            for (Cm.Sym.FileScope* fileScope : clonedFileScopes)
+            {
+                boundCompileUnit.AddFileScope(fileScope);
+            }
+            Cm.Sym.TypeSymbol* subjectTypeSymbol = templateTypeSymbol->SubjectType();
+            if (!(subjectTypeSymbol is Cm.Sym.ClassTypeSymbol*))
+            {
+                throw Exception("class type expected");
+            }
+            Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(subjectTypeSymbol);
+            Cm.Sym.FileScope* subjectFileScope = new Cm.Sym.FileScope();
+            if (!subjectClassTypeSymbol->Ns()->IsGlobalNamespace())
+            {
+                subjectFileScope->InstallNamespaceImport(containerScope, new Cm.Ast.NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), 
+                    new Cm.Ast.IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+            }
+            boundCompileUnit.AddFileScope(subjectFileScope);
+            ++numAddedFileScopes;
+            classTemplates.Insert(subjectClassTypeSymbol);
+            Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
+            if (node == null)
+            {
+                subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable(), subjectClassTypeSymbol->GetSpan().FileIndex());
+                node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol);
+            }
+            if (!(node is Cm.Ast.ClassNode*))
+            {
+                throw Exception("class node expected");
+            }
+            Cm.Ast.ClassNode* classNode = cast<Cm.Ast.ClassNode*>(node);
+            Cm.Ast.NamespaceNode* currentNs = null;
+            UniquePtr<Cm.Ast.NamespaceNode> globalNs(CreateNamespaces(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName(), subjectClassTypeSymbol->UsingNodes(), currentNs));
+            Cm.Ast.CloneContext cloneContext;
+            cloneContext.SetInstantiateClassNode();
+            Cm.Ast.ClassNode* classInstanceNode = cast<Cm.Ast.ClassNode*>(classNode->Clone(cloneContext));
+            int n = subjectClassTypeSymbol->TypeParameters().Count();
+            int m = templateTypeSymbol->TypeArguments().Count();
+            if (n < m)
+            {
+                throw Cm.Core.Error("too many template arguments", templateTypeSymbol->GetSpan());
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.TypeParameterSymbol* typeParameterSymbol = subjectClassTypeSymbol->TypeParameters()[i];
+                Cm.Sym.BoundTypeParameterSymbol* boundTypeParam = new Cm.Sym.BoundTypeParameterSymbol(typeParameterSymbol->GetSpan(), typeParameterSymbol->Name());
+                Cm.Sym.TypeSymbol* typeArgument = null;
+                if (i < m)
+                {
+                    typeArgument = templateTypeSymbol->TypeArguments()[i];
+                }
+                else
+                {
+                    if (i >= classNode->TemplateParameters().Count())
+                    {
+                        throw Cm.Core.Error("too few template arguments", templateTypeSymbol->GetSpan());
+                    }
+                    Cm.Ast.TemplateParameterNode* templateParameterNode = classNode->TemplateParameters()[i];
+                    Cm.Ast.Node* defaultTemplateArgumentNode = templateParameterNode->DefaultTemplateArgument();
+                    if (defaultTemplateArgumentNode == null)
+                    {
+                        throw Cm.Core.Error("too few template arguments", templateTypeSymbol->GetSpan());
+                    }
+                    typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.FileScopes(), *this, defaultTemplateArgumentNode);
+                    templateTypeSymbol->AddTypeArgument(typeArgument);
+                }
+                boundTypeParam->SetType(typeArgument);
+                templateTypeSymbol->AddSymbol(boundTypeParam);
+            }
+            if (m < n)
+            {
+                Cm.Sym.TypeId completeId = Cm.Sym.ComputeTemplateTypeId(templateTypeSymbol->SubjectType(), templateTypeSymbol->TypeArguments());
+                templateTypeSymbol->SetName(Cm.Sym.MakeTemplateTypeSymbolName(templateTypeSymbol->SubjectType(), templateTypeSymbol->TypeArguments()));
+                templateTypeSymbol->SetId(completeId);
+                templateTypeSymbol->RecomputeIrType();
+                boundCompileUnit.SymbolTable().GetTypeRepository().AddType(templateTypeSymbol); // add to type repository with new id
+            }
+            Cm.Ast.IdentifierNode* classInstanceId = new Cm.Ast.IdentifierNode(classInstanceNode->GetSpan(), templateTypeSymbol->FullName());
+            classInstanceNode->SetId(classInstanceId);
+            currentNs->AddMember(classInstanceNode);
+            if (subjectClassTypeSymbol->Name().Find("Map") != -1)
+            {
+                int x = 0;
+            }
+            Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+            declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
+            globalNs->Accept(declarationVisitor);
+            Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+            prebinder.BeginCompileUnit();
+            globalNs->Accept(prebinder);
+            prebinder.EndCompileUnit();
+            Cm.Sym.FileScope* fileScope = prebinder.ReleaseFileScope();
+            templateTypeSymbol->SetFileScope(fileScope);
+            if (classNode->Constraint() != null)
+            {
+                if (boundCompileUnit.IsPrebindCompileUnit()) // cannot check constraints in prebind context, so set to template type symbol for checking later...
+                {
+                    Cm.Ast.CloneContext cloneContext;
+                    templateTypeSymbol->SetConstraint(cast<Cm.Ast.WhereConstraintNode*>(classNode->Constraint()->Clone(cloneContext)));
+                }
+                else
+                {
+                    Cm.Core.ConceptCheckError exception;
+                    bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
+                        exception);
+                    if (!constraintSatisfied)
+                    {
+                        throw Cm.Core.Error("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
+                    }
+                }
+            }
+            if (!Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_docs))
+            {
+                VirtualBinder virtualBinder(boundCompileUnit.SymbolTable(), boundCompileUnit.SyntaxUnit(), boundCompileUnit);
+                globalNs->Accept(virtualBinder);
+                Binder binder(boundCompileUnit);
+                globalNs->Accept(binder);
+            }
+            templateTypeSymbol->SetGlobalNs(globalNs.Release());
+            for (int i = 0; i < numAddedFileScopes; ++i)
+            {
+                boundCompileUnit.RemoveLastFileScope();
+            }
         }
         public override void InstantiateVirtualFunctionsFor(Cm.Sym.ContainerScope* containerScope, Cm.Sym.ClassTypeSymbol* templateTypeSymbol)
         {
@@ -38,8 +167,73 @@ namespace Cm.Bind
         public override void ResolveDefaultTypeArguments(List<Cm.Sym.TypeSymbol*>& typeArguments, Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
             const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, const Span& span)
         {
-            // todo
+            List<Cm.Sym.FileScope*> clonedFileScopes;
+            for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+            {
+                clonedFileScopes.Add(fileScope->Clone());
+            }
+            int numAddedFileScopes = clonedFileScopes.Count();
+            for (Cm.Sym.FileScope* fileScope : clonedFileScopes)
+            {
+                boundCompileUnit.AddFileScope(fileScope);
+            }
+            Cm.Sym.FileScope* subjectFileScope = new Cm.Sym.FileScope();
+            if (!subjectClassTypeSymbol->Ns()->IsGlobalNamespace())
+            {
+                subjectFileScope->InstallNamespaceImport(containerScope, new Cm.Ast.NamespaceImportNode(subjectClassTypeSymbol->GetSpan(), 
+                    new Cm.Ast.IdentifierNode(subjectClassTypeSymbol->GetSpan(), subjectClassTypeSymbol->Ns()->FullName())));
+            }
+            boundCompileUnit.AddFileScope(subjectFileScope);
+            ++numAddedFileScopes;
+            Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(subjectClassTypeSymbol, false);
+            if (node == null)
+            {
+                subjectClassTypeSymbol->ReadClassNode(boundCompileUnit.SymbolTable(), subjectClassTypeSymbol->GetSpan().FileIndex());
+                node = boundCompileUnit.SymbolTable().GetNode(subjectClassTypeSymbol);
+            }
+            if (!(node is Cm.Ast.ClassNode*))
+            {
+                throw Exception("class node expected");
+            }
+            Cm.Ast.ClassNode* classNode = cast<Cm.Ast.ClassNode*>(node);
+            int n = subjectClassTypeSymbol->TypeParameters().Count();
+            int m = typeArguments.Count();
+            Cm.Sym.ContainerScope resolveDefaultTemplateArgumentScope;
+            resolveDefaultTemplateArgumentScope.SetParent(containerScope);
+            List<UniquePtr<Cm.Sym.BoundTypeParameterSymbol>> boundTypeParams;
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.TypeParameterSymbol* typeParameterSymbol = subjectClassTypeSymbol->TypeParameters()[i];
+                Cm.Sym.BoundTypeParameterSymbol* boundTypeParam = new Cm.Sym.BoundTypeParameterSymbol(typeParameterSymbol->GetSpan(), typeParameterSymbol->Name());
+                boundTypeParams.Add(UniquePtr<Cm.Sym.BoundTypeParameterSymbol>(boundTypeParam));
+                if (i < m)
+                {
+                    boundTypeParam->SetType(typeArguments[i]);
+                    resolveDefaultTemplateArgumentScope.Install(boundTypeParam);
+                }
+                else
+                {
+                    if (i >= classNode->TemplateParameters().Count())
+                    {
+                        throw Cm.Core.Error("too few template arguments", span);
+                    }
+                    Cm.Ast.TemplateParameterNode* templateParameterNode = classNode->TemplateParameters()[i];
+                    Cm.Ast.Node* defaultTemplateArgumentNode = templateParameterNode->DefaultTemplateArgument();
+                    if (defaultTemplateArgumentNode == null)
+                    {
+                        throw Cm.Core.Error("too few template arguments", span);
+                    }
+                    Cm.Sym.TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgumentScope, boundCompileUnit.FileScopes(), *this, defaultTemplateArgumentNode);
+                    typeArguments.Add(typeArgument);
+                }
+            }
+            for (int i = 0; i < numAddedFileScopes; ++i)
+            {
+                boundCompileUnit.RemoveLastFileScope();
+            }
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private HashSet<Cm.Sym.TemplateTypeSymbol*> templateTypeSymbols;
+        private HashSet<Cm.Sym.ClassTypeSymbol*> classTemplates;
     }
 }

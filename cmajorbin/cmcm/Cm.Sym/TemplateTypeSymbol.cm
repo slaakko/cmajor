@@ -199,7 +199,7 @@ namespace Cm.Sym
                 SetSource(SymbolSource.library);
             }
         }
-        public nothrow void SetConstaint(Cm.Ast.WhereConstraintNode* constraint_)
+        public nothrow void SetConstraint(Cm.Ast.WhereConstraintNode* constraint_)
         {
             constraint.Reset(constraint_);
         }

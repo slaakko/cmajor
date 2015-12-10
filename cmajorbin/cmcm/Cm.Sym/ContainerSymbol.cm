@@ -77,7 +77,7 @@ namespace Cm.Sym
         }
         public virtual void AddSymbol(Symbol* symbol)
         {
-            if (!symbol->Name().IsEmpty() && !(symbol is FunctionSymbol*) && !(symbol is ConceptSymbol*))
+            if (!symbol->Name().IsEmpty() && !(symbol is FunctionSymbol*) && !(symbol is ConceptSymbol*) && !(symbol is DeclarationBlock*) && !symbol->IsNamespaceTypeSymbol())
             {
                 containerScope.Install(symbol);
             }

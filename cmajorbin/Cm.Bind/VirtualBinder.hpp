@@ -18,9 +18,9 @@ class VirtualBinder : public Cm::Ast::Visitor
 {
 public:
     VirtualBinder(Cm::Sym::SymbolTable& symbolTable_, Cm::Ast::CompileUnitNode* compileUnit_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_);
-    Cm::Sym::SymbolTable& symbolTable;
     void EndVisit(Cm::Ast::ClassNode& classNode) override;
 private:
+    Cm::Sym::SymbolTable& symbolTable;
     Cm::Ast::CompileUnitNode* compileUnit;
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     void BindTemplateTypeSymbols(Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope);
