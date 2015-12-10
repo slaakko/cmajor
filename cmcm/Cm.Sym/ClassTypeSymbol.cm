@@ -418,7 +418,31 @@ namespace Cm.Sym
                 throw Exception("source file path not set");
             }
             writer.GetBinaryWriter().Write(sourceFilePath);
-        }        
+        }  
+        public void ReadClassNode(SymbolTable& symbolTable, int fileIndex)
+        {
+            #assert(!persistentClassData.IsNull());
+            const string& cmlFilePath = persistentClassData->cmlFilePath;
+            Cm.Ser.BinaryReader binaryReader(cmlFilePath);
+            binaryReader.SetPos(persistentClassData->classNodePos);
+            Cm.Ast.Reader astReader(binaryReader);
+            astReader.SetReplaceFileIndex(fileIndex);
+            Cm.Ast.Node* node = astReader.ReadNode();
+            if (node is Cm.Ast.ClassNode*)
+            {
+                symbolTable.SetNode(this, node);
+                persistentClassData->classNode.Reset(cast<Cm.Ast.ClassNode*>(node));
+            }
+            else
+            {
+                throw Exception("class node expected");
+            }
+        }
+        public nothrow inline const Cm.Ast.NodeList<Cm.Ast.Node>& UsingNodes() const
+        {
+            #assert(!persistentClassData.IsNull());
+            return persistentClassData->usingNodes;
+        }
         public override void SetType(TypeSymbol* typeSymbol, int index)
         {
             if (index == -2)

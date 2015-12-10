@@ -61,6 +61,10 @@ namespace Cm.Bind
         public override void BeginVisit(Cm.Ast.ClassNode& classNode)
         {
             Cm.Sym.ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, &classNode);
+            if (classTypeSymbol->Name() == "ParsingDomain")
+            {
+                int x = 0;
+            }
             if (classNode.TemplateParameters().Count() > 0)
             {
                 classTypeSymbol->SetUsingNodes(usingNodes);

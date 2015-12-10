@@ -309,6 +309,10 @@ namespace Cm.Ast
             }
             return derivationList;
         }
+        public nothrow inline void SetReplaceFileIndex(int replaceFileIndex_)
+        {
+            replaceFileIndex = replaceFileIndex_;
+        }
         private NodeType ReadNodeType()
         {
             return cast<NodeType>(binaryReader.ReadByte());

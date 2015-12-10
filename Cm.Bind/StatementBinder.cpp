@@ -89,7 +89,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     Cm::Sym::TypeSymbol* localVariableType = constructionStatement->LocalVariable()->GetType();
     if (localVariableType->IsAbstract())
     {
-        throw Cm::Core::Exception("cannot instantiate an abstract class", constructionStatementNode.GetSpan());
+        throw Cm::Core::Exception("cannot instantiate an abstract class", localVariableType->GetSpan(), constructionStatementNode.GetSpan());
     }
     Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(localVariableType, constructionStatementNode.GetSpan()));
     resolutionArguments.push_back(variableArgument);
@@ -1011,7 +1011,7 @@ void ThrowStatementBinder::EndVisit(Cm::Ast::ThrowStatementNode& throwStatementN
         Cm::Sym::ClassTypeSymbol* exceptionClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(plainExceptionType);
         if (exceptionClassType->IsAbstract())
         {
-            throw Cm::Core::Exception("cannot instantiate an abstract class", throwStatementNode.GetSpan());
+            throw Cm::Core::Exception("cannot instantiate an abstract class", exceptionClassType->GetSpan(), throwStatementNode.GetSpan());
         }
         Cm::Sym::Symbol* systemExceptionSymbol = SymbolTable().GlobalScope()->Lookup("System.Exception");
         if (systemExceptionSymbol)
@@ -1265,7 +1265,7 @@ void CatchBinder::Visit(Cm::Ast::CatchNode& catchNode)
             Cm::Sym::ClassTypeSymbol* catchedExceptionClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(plainCatchedExceptionType);
             if (catchedExceptionClassType->IsAbstract())
             {
-                throw Cm::Core::Exception("cannot instantiate an abstract class", catchNode.GetSpan());
+                throw Cm::Core::Exception("cannot instantiate an abstract class", catchedExceptionClassType->GetSpan(), catchNode.GetSpan());
             }
             Cm::Sym::Symbol* systemExceptionSymbol = SymbolTable().GlobalScope()->Lookup("System.Exception");
             if (systemExceptionSymbol)
@@ -1574,6 +1574,10 @@ void AssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
     Cm::Sym::TypeSymbol* constCharPtrType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakeConstCharPtrType(assertStatementNode.GetSpan());
     assertStatementNode.AssertExpr()->Accept(*this);
     std::unique_ptr<Cm::BoundTree::BoundExpression> expr(Pop());
+    if (!expr->GetType()->IsBoolTypeSymbol())
+    {
+        throw Cm::Core::Exception("#assert expression must be of type bool", assertStatementNode.GetSpan());
+    }
     Cm::BoundTree::BoundExpressionList failAssertionArguments;
     std::string assertExpr = assertStatementNode.AssertExpr()->ToString();
     int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);

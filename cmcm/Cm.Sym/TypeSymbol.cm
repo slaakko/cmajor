@@ -115,6 +115,10 @@ namespace Cm.Sym
         {
             return id;
         }
+        public nothrow inline void SetId(const TypeId& id_)
+        {
+            id = id_;
+        }
         public nothrow virtual bool IsValueTypeSymbol() const
         {
             return false;

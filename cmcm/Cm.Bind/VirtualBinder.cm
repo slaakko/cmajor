@@ -1,0 +1,24 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Bind
+{
+    public class VirtualBinder : Cm.Ast.Visitor
+    {
+        public nothrow VirtualBinder(Cm.Sym.SymbolTable& symbolTable_, Cm.Ast.CompileUnitNode* compileUnit_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) :
+            base(false, false), symbolTable(symbolTable_), compileUnit(compileUnit_), boundCompileUnit(boundCompileUnit_)
+        {
+        }
+        private Cm.Sym.SymbolTable& symbolTable;
+        private Cm.Ast.CompileUnitNode* compileUnit;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+    }
+}

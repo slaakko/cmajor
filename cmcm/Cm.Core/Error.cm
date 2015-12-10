@@ -40,6 +40,9 @@ namespace Cm.Core
             references.Add(referenced1_);
             references.Add(referenced2_);
         }
+        public Error(const string& message_, const Span& defined_, const List<Span>& references_) : base(Expand(message_, defined_, references_)), message(message_), defined(defined_), references(references_)
+        {
+        }
         public nothrow const string& Message() const
         {
             return message;
