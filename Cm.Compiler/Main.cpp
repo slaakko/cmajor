@@ -171,6 +171,7 @@ int main(int argc, const char** argv)
         bool prevWasDatalayout = false;
         bool emitNoTriple = false;
         bool emitNoLayout = false;
+        uint64_t stackSizeOpt = 0;
         std::string targetTriple = GetTargetTriple();
         std::string datalayout = GetDataLayout();
         if (argc < 2)
@@ -204,6 +205,7 @@ int main(int argc, const char** argv)
                 "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
                 "-vcall_dbg      : debug virtual calls (only full config)\n" << 
                 "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
+                "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
                 std::endl;
             std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
                 "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
@@ -277,6 +279,10 @@ int main(int argc, const char** argv)
                                 {
                                     std::string vCallFileName = v[1];
                                     Cm::Core::GetGlobalSettings()->SetVirtualCallFileName(vCallFileName);
+                                }
+                                else if (v[0] == "-stack")
+                                {
+                                    stackSizeOpt = std::stoi(v[1]);
                                 }
                                 else
                                 {
@@ -448,11 +454,11 @@ int main(int argc, const char** argv)
                 std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers);
+                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers);
+                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
                 }
                 else
                 {

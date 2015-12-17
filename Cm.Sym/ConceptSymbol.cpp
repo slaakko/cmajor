@@ -122,7 +122,7 @@ TypeId ComputeInstantiatedConceptSymbolTypeId(ConceptSymbol* conceptSymbol, cons
     uint8_t n = uint8_t(typeArguments.size());
     if (n >= typeIdRepSize)
     {
-        throw std::runtime_error("only " + std::to_string(typeIdRepSize - 1) + " supported");
+        throw std::runtime_error("only " + std::to_string(typeIdRepSize - 1) + " type arguments supported");
     }
     for (uint8_t i = 0; i < n; ++i)
     {

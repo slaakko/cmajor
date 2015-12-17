@@ -82,6 +82,10 @@ namespace Cm.Sym
         {
             return Count(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.pointer);
         }
+        public nothrow override int GetPointerCountAfterArray() const
+        {
+            return CountPointersAfterArray(derivations);
+        }
         public nothrow override bool IsReferenceType() const
         {
             return Find(derivations.CBegin(), derivations.CEnd(), Cm.Ast.Derivation.reference) != derivations.CEnd();
@@ -292,5 +296,28 @@ namespace Cm.Sym
             }
         }
         return mangleId;
+    }
+    
+    internal nothrow int CountPointersAfterArray(const Cm.Ast.DerivationList& derivations)
+    {
+        int numPointers = 0;
+        int n = derivations.Count();
+        for (int i = n - 1; i >= 0; --i)
+        {
+            Cm.Ast.Derivation d = derivations[i];
+            if (d == Cm.Ast.Derivation.pointer) ++numPointers; 
+            else if (d == Cm.Ast.Derivation.array) break;
+        }
+        return numPointers;
+    }
+    
+    public nothrow bool HasPointerToArrayDerivation(const Cm.Ast.DerivationList& derivations)
+    {
+        int n = derivations.Count();
+        if (n > 1)
+        {
+            if (derivations[n - 1] == Cm.Ast.Derivation.pointer && derivations[n - 2] == Cm.Ast.Derivation.array) return true;
+        }
+        return false;
     }
 }

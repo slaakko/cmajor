@@ -15,14 +15,294 @@ namespace Cm.Bind
 {
     public class ArrayTypeOpRepository : Cm.Core.ArrayTypeOpRepository
     {
-        public nothrow ArrayTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
+        public ArrayTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
         {
+            arrayTypeOpFunGroupMap["@constructor"] = &arrayTypeConstructorGroup;
+            arrayTypeOpFunGroupMap["operator="] = &arrayTypeAssignmentGroup;
+            arrayTypeOpFunGroupMap["operator[]"] = &arrayTypeIndexGroup;
         }
         public override void CollectViableFunctions(const string& groupName, int arity, const List<Argument>& arguments, Cm.Sym.ContainerScope* containerScope, const Span& span, 
             HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
         {
-            // todo
+            if (arity < 1 || arity > 2) return;
+            Cm.Sym.TypeSymbol* leftArgType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* arrayType = null;
+            if (groupName != "operator[]")
+            {
+                if (!leftArgType->IsArrayType() || leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerType() || leftArgType->GetPointerCountAfterArray() != 1) return;
+                Cm.Sym.DerivedTypeSymbol* ptrArrayType = cast<Cm.Sym.DerivedTypeSymbol*>(leftArgType);
+                if (!Cm.Sym.HasPointerToArrayDerivation(ptrArrayType->Derivations())) return;
+                Cm.Ast.DerivationList derivations = ptrArrayType->Derivations();
+                derivations.RemoveLastPointer();
+                arrayType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(ptrArrayType->Derivations(), ptrArrayType->GetBaseType(), ptrArrayType->ArrayDimensions(), span);
+            }
+            else
+            {
+                if (!leftArgType->IsArrayType()) return;
+                arrayType = leftArgType;
+            }
+            HashMap<string, ArrayTypeOpFunGroup*>.ConstIterator i = arrayTypeOpFunGroupMap.CFind(groupName);
+            if (i != arrayTypeOpFunGroupMap.CEnd())
+            {
+                ArrayTypeOpFunGroup* group = i->second;
+                group->CollectViableFunctions(cacheMap, caches, arrayType, containerScope, boundCompileUnit, span, arity, arguments, viableFunctions);
+            }
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private HashMap<Cm.Sym.TypeSymbol*, ArrayTypeOpCache*> cacheMap;
+        private List<UniquePtr<ArrayTypeOpCache>> caches;
+        private HashMap<string, ArrayTypeOpFunGroup*> arrayTypeOpFunGroupMap;
+        private ArrayTypeConstructorGroup arrayTypeConstructorGroup;
+        private ArrayTypeAssignmentGroup arrayTypeAssignmentGroup;
+        private ArrayTypeIndexGroup arrayTypeIndexGroup;
+    }
+    
+    public abstract class ArrayTypeOpFunGroup
+    {
+        public virtual ~ArrayTypeOpFunGroup()
+        {
+        }
+        public abstract void CollectViableFunctions(HashMap<Cm.Sym.TypeSymbol*, ArrayTypeOpCache*>& cacheMap, List<UniquePtr<ArrayTypeOpCache>>& caches, 
+            Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, int arity, 
+            const List<Cm.Core.Argument>& arguments, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions);
+    }
+    
+    public class ArrayTypeConstructorGroup : ArrayTypeOpFunGroup
+    {
+        public override void CollectViableFunctions(HashMap<Cm.Sym.TypeSymbol*, ArrayTypeOpCache*>& cacheMap, List<UniquePtr<ArrayTypeOpCache>>& caches, 
+            Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, int arity, 
+            const List<Cm.Core.Argument>& arguments, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            switch (arity)
+            {
+                case 1:
+                {
+                    ArrayTypeOpCache* cache = cacheMap[arrayType];
+                    if (cache == null)
+                    {
+                        cache = new ArrayTypeOpCache();
+                        cacheMap[arrayType] = cache;
+                        caches.Add(UniquePtr<ArrayTypeOpCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* defaultConstructor = cache->GetDefaultConstructor(containerScope, boundCompileUnit, arrayType);
+                    if (defaultConstructor != null)
+                    {
+                        viableFunctions.Insert(defaultConstructor);
+                    }
+                    break;
+                }
+                case 2:
+                {
+                    Cm.Sym.TypeSymbol* plainArg1Type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(arguments[1].Type());
+                    if (Cm.Sym.TypesEqual(arrayType, plainArg1Type))
+                    {
+                        ArrayTypeOpCache* cache = cacheMap[arrayType];
+                        if (cache == null)
+                        {
+                            cache = new ArrayTypeOpCache();
+                            cacheMap[arrayType] = cache;
+                            caches.Add(UniquePtr<ArrayTypeOpCache>(cache));
+                        }
+                        Cm.Sym.FunctionSymbol* copyConstructor = cache->GetCopyConstructor(containerScope, boundCompileUnit, arrayType);
+                        if (copyConstructor != null)
+                        {
+                            viableFunctions.Insert(copyConstructor);
+                        }
+                    }                
+                    break;
+                }
+            }
+        }
+    }    
+
+    public class ArrayTypeAssignmentGroup : ArrayTypeOpFunGroup
+    {
+        public override void CollectViableFunctions(HashMap<Cm.Sym.TypeSymbol*, ArrayTypeOpCache*>& cacheMap, List<UniquePtr<ArrayTypeOpCache>>& caches, 
+            Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, int arity, 
+            const List<Cm.Core.Argument>& arguments, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* plainArg1Type = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(arguments[1].Type());
+                if (Cm.Sym.TypesEqual(arrayType, plainArg1Type))
+                {
+                    ArrayTypeOpCache* cache = cacheMap[arrayType];
+                    if (cache == null)
+                    {
+                        cache = new ArrayTypeOpCache();
+                        cacheMap[arrayType] = cache;
+                        caches.Add(UniquePtr<ArrayTypeOpCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* copyAssignment = cache->GetCopyAssignment(containerScope, boundCompileUnit, arrayType);
+                    if (copyAssignment != null)
+                    {
+                        viableFunctions.Insert(copyAssignment);
+                    }
+                }
+            }
+        }
+    }    
+
+    public class ArrayTypeIndexGroup : ArrayTypeOpFunGroup
+    {
+        public override void CollectViableFunctions(HashMap<Cm.Sym.TypeSymbol*, ArrayTypeOpCache*>& cacheMap, List<UniquePtr<ArrayTypeOpCache>>& caches, 
+            Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, int arity, 
+            const List<Cm.Core.Argument>& arguments, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* indexType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(arguments[1].Type());
+                if (indexType->IsIntegerTypeSymbol())
+                {
+                    ArrayTypeOpCache* cache = cacheMap[arrayType];
+                    if (cache == null)
+                    {
+                        cache = new ArrayTypeOpCache();
+                        cacheMap[arrayType] = cache;
+                        caches.Add(UniquePtr<ArrayTypeOpCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* indexing = cache->GetIndexing(containerScope, boundCompileUnit, arrayType);
+                    if (indexing != null)
+                    {
+                        viableFunctions.Insert(indexing);
+                    }
+                }
+            }
+        }
+    }
+    
+    public class ArrayTypeOpCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultConstructor(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
+        {
+            if (defaultConstructor.IsNull())
+            {
+                if (type->IsPrimitiveSingleDimensionArrayType())
+                {
+                    defaultConstructor.Reset(new PrimitiveArrayTypeDefaultConstructor(boundCompileUnit.SymbolTable().GetTypeRepository(), type));
+                }
+                else
+                {
+                    defaultConstructor.Reset(GenerateArrayTypeDefaultConstructor(type, containerScope, boundCompileUnit));
+                }
+            }
+            return defaultConstructor.GetPtr();
+        }    
+        public Cm.Sym.FunctionSymbol* GetCopyConstructor(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
+        {
+            return copyConstructor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
+        {
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetIndexing(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
+        {
+            return indexing.GetPtr();
+        }
+        private UniquePtr<Cm.Sym.FunctionSymbol> defaultConstructor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyConstructor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> indexing;
+    }
+    
+    public class PrimitiveArrayTypeDefaultConstructor : Cm.Core.BasicTypeOp
+    {
+        public PrimitiveArrayTypeDefaultConstructor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
+        {
+            Ir.Intf.Object* zero = Ir.Intf.Factory.Instance()->GetI8()->CreateDefaultValue();
+            emitter.Own(zero);
+            Ir.Intf.Object* dim = Cm.IrIntf.MakeI64Constant(Type()->GetLastArrayDimension());
+            emitter.Own(dim);
+            Ir.Intf.Object* size = Cm.IrIntf.SizeOf(emitter, Type()->GetBaseType()->IrType());
+            emitter.Own(size);
+            Ir.Intf.Object* len = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+            emitter.Own(len);
+            emitter.Emit(Cm.IrIntf.Mul(Ir.Intf.Factory.Instance()->GetI64(), len, dim, size));
+            Ir.Intf.Object* arrayObject = result.MainObject();
+            Ir.Intf.Type* arrayObjectType = arrayObject->GetType();
+            if (result.MemberVar())
+            {
+                Ir.Intf.Type* arrayType = Cm.IrIntf.Array(Type()->GetBaseType()->IrType(), Type()->GetLastArrayDimension());
+                emitter.Own(arrayType);
+                Ir.Intf.Type* ptrArrayType = Cm.IrIntf.Pointer(arrayType, 1u);
+                emitter.Own(ptrArrayType);
+                arrayObject->SetType(ptrArrayType);
+                arrayObjectType = ptrArrayType;
+            }
+            if (arrayObjectType->Name() == "i8*")
+            {
+                emitter.Emit(Cm.IrIntf.MemSet(arrayObject, zero, len, 1, false));
+            }
+            else
+            {
+                Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
+                emitter.Own(i8Ptr);
+                Ir.Intf.Object* dest = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+                emitter.Own(dest);
+                emitter.Emit(Cm.IrIntf.Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
+                emitter.Emit(Cm.IrIntf.MemSet(dest, zero, len, 1, false));
+            }
+        }
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        int n = arrayType->GetLastArrayDimension();
+        Cm.Sym.TypeSymbol* elementType = arrayType->GetBaseType();
+        Cm.Sym.TypeSymbol* ptrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Span());
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+        thisParam->SetType(ptrType);
+        Cm.Sym.FunctionSymbol* defaultConstructorSymbol = new Cm.Sym.FunctionSymbol(Span(), "@array_constructor");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(defaultConstructorSymbol);
+        defaultConstructorSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        defaultConstructorSymbol->SetGroupName("@array_constructor" + ToString(n));
+        defaultConstructorSymbol->SetParent(containerScope->Ns());
+        defaultConstructorSymbol->GetContainerScope()->SetParent(containerScope->Ns()->GetContainerScope());
+        defaultConstructorSymbol->SetConstructorOrDestructorSymbol();
+        defaultConstructorSymbol->SetMemberFunctionSymbol();
+        defaultConstructorSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        defaultConstructorSymbol->SetReplicated();
+        defaultConstructorSymbol->SetArrayConstructor();
+        defaultConstructorSymbol->AddSymbol(thisParam);
+        defaultConstructorSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        defaultConstructorSymbol->AddSymbol(entry);
+        UniquePtr<Cm.BoundTree.BoundFunction> defaultConstructor(new Cm.BoundTree.BoundFunction(null,  defaultConstructorSymbol));
+        Cm.Ast.CompoundStatementNode* body = new Cm.Ast.CompoundStatementNode(Span());
+        defaultConstructor->Own(body);
+        Cm.Ast.ConstructionStatementNode* constructLoopVarStatement = new Cm.Ast.ConstructionStatementNode(Span(), new Cm.Ast.IntNode(Span()), new Cm.Ast.IdentifierNode(Span(), "i"));
+        constructLoopVarStatement->AddArgument(new Cm.Ast.IntLiteralNode(Span(), n));
+        body->AddStatement(constructLoopVarStatement);
+        Cm.Ast.CompoundStatementNode* whileBlockContent = new Cm.Ast.CompoundStatementNode(Span());
+        Cm.Ast.ConstructNode* constructNode = new Cm.Ast.ConstructNode(Span(), MakeTypeIdNode(elementType, Span()));
+        constructNode->AddArgument(new Cm.Ast.ThisNode(Span()));
+        constructNode->AddArgument(new Cm.Ast.InvokeNode(Span(), MakeTypeIdNode(elementType, Span())));
+        Cm.Ast.SimpleStatementNode* constructStatement = new Cm.Ast.SimpleStatementNode(Span(), constructNode);
+        whileBlockContent->AddStatement(constructStatement);
+        whileBlockContent->AddStatement(new Cm.Ast.SimpleStatementNode(Span(), new Cm.Ast.PrefixIncNode(Span(), new Cm.Ast.ThisNode(Span()))));
+        whileBlockContent->AddStatement(new Cm.Ast.SimpleStatementNode(Span(), new Cm.Ast.PrefixDecNode(Span(), new Cm.Ast.IdentifierNode(Span(), "i"))));
+        Cm.Ast.WhileStatementNode* whileStatement = new Cm.Ast.WhileStatementNode(Span(), new Cm.Ast.GreaterNode(Span(), new Cm.Ast.IdentifierNode(Span(), "i"), new Cm.Ast.IntLiteralNode(Span(), 0)), 
+            whileBlockContent);
+        body->AddStatement(whileStatement);
+        Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+        body->Accept(declarationVisitor);
+        Binder binder(boundCompileUnit);
+        binder.SetCurrentFunction(defaultConstructor.Release());
+        body->Accept(binder);
+        Cm.BoundTree.BoundFunction* defaultCtor = binder.ReleaseCurrentFunction();
+        GenerateReceives(containerScope, boundCompileUnit, defaultCtor);
+        boundCompileUnit.AddBoundNode(defaultCtor);
+        return defaultConstructorSymbol;
     }
 }

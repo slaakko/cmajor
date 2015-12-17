@@ -247,6 +247,14 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
+        public nothrow inline IdentifierNode* ConceptId() const
+        {
+            return conceptId.GetPtr();
+        }
+        public nothrow inline const NodeList<Node>& TypeExprNodes() const
+        {
+            return typeExprNodes;
+        }
         private UniquePtr<IdentifierNode> conceptId;
         private NodeList<Node> typeExprNodes;
     }
@@ -536,6 +544,14 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
+        }
+        public nothrow inline FunctionGroupIdNode* GroupId() const
+        {
+            return functionGroupId.GetPtr();
+        }
+        public nothrow inline const NodeList<ParameterNode>& Parameters() const
+        {
+            return parameters;
         }
         private UniquePtr<Node> returnTypeExpr;
         private UniquePtr<FunctionGroupIdNode> functionGroupId;

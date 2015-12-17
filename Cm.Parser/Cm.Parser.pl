@@ -173,6 +173,7 @@ namespace Cm.Parser
         ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         CLibraryDeclaration: Cm::Ast::ProjectDeclaration*;
         TargetDeclaration: Cm::Ast::ProjectDeclaration*;
+        StackSizeDeclaration: Cm::Ast::ProjectDeclaration*;
         Properties: Cm::Ast::Properties;
         FilePath: std::string;
     }

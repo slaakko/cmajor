@@ -2,5 +2,6 @@ project Cm.Compiler;
 target=program;
 assembly <Cm.Compiler.cma>;
 executable <cmcm>;
+stack=4194304;
 reference <../Cm.Build/Cm.Build.cml>;
 source <Main.cm>;

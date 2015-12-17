@@ -25,4 +25,58 @@ namespace Cm.Bind
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
     }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateDestructorSymbol(Cm.Sym.SymbolTable& symbolTable, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Ast.CompileUnitNode* compileUnit)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = symbolTable.GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        symbolTable.SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.FunctionSymbol* destructorSymbol = new Cm.Sym.FunctionSymbol(span, "@dtor");
+        symbolTable.SetSidAndAddSymbol(destructorSymbol);
+        if (classTypeSymbol->IsVirtual())
+        {
+            if (classTypeSymbol->BaseClass() != null && classTypeSymbol->BaseClass()->IsVirtual())
+            {
+                destructorSymbol->SetOverride();
+            }
+            else
+            {
+                destructorSymbol->SetVirtual();
+            }
+        }
+        destructorSymbol->SetCompileUnit(compileUnit);
+        destructorSymbol->SetGroupName("@destructor");
+        destructorSymbol->SetParent(classTypeSymbol);
+        destructorSymbol->SetConstructorOrDestructorSymbol();
+        destructorSymbol->SetMemberFunctionSymbol();
+        destructorSymbol->AddSymbol(thisParam);
+        destructorSymbol->ComputeName();
+        destructorSymbol->SetNothrow();
+        destructorSymbol->SetPublic();
+        if (classTypeSymbol is Cm.Sym.TemplateTypeSymbol*)
+        {
+            destructorSymbol->SetMemberOfTemplateType();
+        }
+        return destructorSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateStaticConstructorSymbol(Cm.Sym.SymbolTable& symbolTable, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Ast.CompileUnitNode* compileUnit)
+    {
+        Cm.Sym.FunctionSymbol* staticConstructorSymbol = new Cm.Sym.FunctionSymbol(span, "@static_ctor");
+        symbolTable.SetSidAndAddSymbol(staticConstructorSymbol);
+        staticConstructorSymbol->SetStatic();
+        staticConstructorSymbol->SetCompileUnit(compileUnit);
+        staticConstructorSymbol->SetGroupName("@static_constructor");
+        staticConstructorSymbol->SetParent(classTypeSymbol);
+        staticConstructorSymbol->SetConstructorOrDestructorSymbol();
+        staticConstructorSymbol->SetMemberFunctionSymbol();
+        staticConstructorSymbol->ComputeName();
+        staticConstructorSymbol->SetNothrow();
+        staticConstructorSymbol->SetPublic();
+        staticConstructorSymbol->SetMutexId(Cm.Sym.MutexTable.Instance()->GetNextMutexId());
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(span);
+        staticConstructorSymbol->AddSymbol(entry);
+        return staticConstructorSymbol;
+    }
 }

@@ -211,6 +211,10 @@ namespace Cm.Sym
         {
             return 0;
         }
+        public virtual nothrow int GetPointerCountAfterArray() const
+        {
+            return 0;
+        }
         public virtual nothrow DerivationCounts GetDerivationCounts() const
         {
             return DerivationCounts();

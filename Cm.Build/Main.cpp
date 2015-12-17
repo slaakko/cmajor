@@ -37,7 +37,7 @@
 namespace Cm { namespace Build {
 
 bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, int numClassHierarchyTableEntries, 
-    bool changed)
+    uint64_t stackSize, bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -136,6 +136,23 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     if (userMainFunction->GetReturnType()->IsVoidTypeSymbol())
     {
+        if (stackSize != 0)
+        {
+            Cm::Sym::FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
+            if (!setStackSizeFun)
+            {
+                throw std::runtime_error("set_stack_size function not found");
+            }
+            Cm::BoundTree::BoundExpressionList setStackSizeArgs;
+            Cm::BoundTree::BoundLiteral* stackSizeArg = new Cm::BoundTree::BoundLiteral(nullptr);
+            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize));
+            Cm::Sym::TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+            stackSizeArg->SetType(ulongType);
+            setStackSizeArgs.Add(stackSizeArg);
+            Cm::BoundTree::BoundFunctionCallStatement* setStackSizeStatement = new Cm::BoundTree::BoundFunctionCallStatement(setStackSizeFun, std::move(setStackSizeArgs));
+            mainBody->AddStatement(setStackSizeStatement);
+        }
+
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
         {
             Cm::Sym::FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");
@@ -293,6 +310,24 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argcParam));
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
         }
+
+        if (stackSize != 0)
+        {
+            Cm::Sym::FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
+            if (!setStackSizeFun)
+            {
+                throw std::runtime_error("set_stack_size function not found");
+            }
+            Cm::BoundTree::BoundExpressionList setStackSizeArgs;
+            Cm::BoundTree::BoundLiteral* stackSizeArg = new Cm::BoundTree::BoundLiteral(nullptr);
+            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize));
+            Cm::Sym::TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+            stackSizeArg->SetType(ulongType);
+            setStackSizeArgs.Add(stackSizeArg);
+            Cm::BoundTree::BoundFunctionCallStatement* setStackSizeStatement = new Cm::BoundTree::BoundFunctionCallStatement(setStackSizeFun, std::move(setStackSizeArgs));
+            mainBody->AddStatement(setStackSizeStatement);
+        }
+
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debug_heap))
         {
             Cm::Sym::FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");

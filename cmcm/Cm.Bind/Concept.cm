@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
@@ -44,8 +45,10 @@ namespace Cm.Bind
                 boundTypeParameter->SetType(templateArgument);
                 boundTypeParameters.Add(UniquePtr<Cm.Sym.BoundTypeParameterSymbol>(boundTypeParameter));
                 constraintCheckScope.Install(boundTypeParameter);
-                result = true; // todo
             }
+            ConstraintChecker constraintChecker(firstTypeArgument, secondTypeArgument, &constraintCheckScope, boundCompileUnit, functionFileScope);
+            constraint->Accept(constraintChecker);
+            result = constraintChecker.GetResult();
         }
         catch (Cm.Core.ConceptCheckError& ex)
         {
@@ -62,6 +65,766 @@ namespace Cm.Bind
             boundCompileUnit(boundCompileUnit_), functionFileScope(functionFileScope_), type(null), conceptGroup(null), lookupId(Cm.Sym.SymbolTypeSetId.lookupTypeAndConceptSymbols)
         {
         }
+        public bool GetResult() 
+        {
+            return constraintCheckStack.Pop();
+        }
+        public override void Visit(Cm.Ast.ConceptNode& conceptNode)
+        {
+            if (conceptNode.Refinement() != null)
+            {
+                conceptNode.Refinement()->Accept(*this);
+                bool satisfied = constraintCheckStack.Pop();
+                if (!satisfied)
+                {
+                    constraintCheckStack.Push(false);
+                    return;
+                }
+            }
+            for (const UniquePtr<Cm.Ast.ConstraintNode>& constraint : conceptNode.Constraints())
+            {
+                constraint->Accept(*this);
+                bool satisfied = constraintCheckStack.Pop();
+                if (!satisfied)
+                {
+                    constraintCheckStack.Push(false);
+                    return;
+                }                
+            }
+            constraintCheckStack.Push(true);
+        }
+        public override void Visit(Cm.Ast.ConceptIdNode& conceptIdNode)
+        {
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupConceptGroup;
+            conceptIdNode.Accept(*this);
+            lookupId = lookupIdStack.Pop();
+            if (conceptGroup != null)
+            {
+                int n = conceptIdNode.TypeParameters().Count();
+                Cm.Sym.ConceptSymbol* conceptSymbol = conceptGroup->GetConcept(n);
+                List<Cm.Sym.TypeSymbol*> typeArguments;
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.Node* typeParamNode = conceptIdNode.TypeParameters()[i];
+                    typeParamNode->Accept(*this);
+                    if (type != null)
+                    {
+                        typeArguments.Add(type);
+                    }
+                }
+                Cm.Sym.TypeId conceptId = Cm.Sym.ComputeInstantiatedConceptSymbolTypeId(conceptSymbol, typeArguments);
+                Cm.Sym.InstantiatedConceptSymbol* instantiatedConcept = boundCompileUnit.ConceptRepository().GetInstantiatedConcept(conceptId);
+                if (instantiatedConcept != null)
+                {
+                    constraintCheckStack.Push(true);
+                    if (instantiatedConcept->CommonType() != null)
+                    {
+                        Cm.Sym.BoundTypeParameterSymbol* commonType = new Cm.Sym.BoundTypeParameterSymbol(Span(), "CommonType");
+                        commonType->SetType(instantiatedConcept->CommonType());
+                        containerScope->Install(commonType);
+                    }
+                }
+                else
+                {
+                    instantiatedConcept = Instantiate(containerScope, boundCompileUnit, functionFileScope, conceptSymbol, typeArguments);
+                    if (instantiatedConcept != null)
+                    {
+                        boundCompileUnit.ConceptRepository().AddInstantiatedConcept(conceptId, instantiatedConcept);
+                        constraintCheckStack.Push(true);
+                    }
+                    else
+                    {
+                        constraintCheckStack.Push(false);
+                    }
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("concept group expected", conceptIdNode.GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.DisjunctiveConstraintNode& disjunctiveConstraintNode)
+        {
+            bool left = false;
+            try
+            {
+                disjunctiveConstraintNode.Left()->Accept(*this);
+                left = constraintCheckStack.Pop();
+                if (left)
+                {
+                    constraintCheckStack.Push(true);
+                    return;
+                }
+            }
+            catch (const Exception& ex)
+            {
+            }
+            disjunctiveConstraintNode.Right()->Accept(*this);
+            bool right = constraintCheckStack.Pop();
+            constraintCheckStack.Push(right);
+        }
+        public override void Visit(Cm.Ast.ConjunctiveConstraintNode& conjunctiveConstraintNode)
+        {
+            conjunctiveConstraintNode.Left()->Accept(*this);
+            bool left = constraintCheckStack.Pop();
+            if (!left)
+            {
+                constraintCheckStack.Push(false);
+            }
+            else
+            {
+                conjunctiveConstraintNode.Right()->Accept(*this);
+                bool right = constraintCheckStack.Pop();
+                constraintCheckStack.Push(right);
+            }
+        }
+        public override void Visit(Cm.Ast.IsConstraintNode& isConstraintNode)
+        {
+            Cm.Ast.Node* typeExpr = isConstraintNode.TypeExpr();
+            typeExpr->Accept(*this);
+            Cm.Sym.TypeSymbol* leftType = type;
+            isConstraintNode.ConceptOrTypeName()->Accept(*this);
+            if (type != null)
+            {
+                Cm.Sym.TypeSymbol* rightType = type;
+                Cm.Sym.TypeSymbol* leftPlainType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(leftType);
+                Cm.Sym.TypeSymbol* rightPlainType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(rightType);
+                if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType))
+                {
+                    constraintCheckStack.Push(true);
+                }
+                else
+                {
+                    constraintCheckStack.Push(false);
+                }
+            }
+            else if (conceptGroup != null)
+            {
+                Cm.Sym.ConceptSymbol* conceptSymbol = conceptGroup->GetConcept(1);
+                List<Cm.Sym.TypeSymbol*> typeArguments;
+                typeArguments.Add(leftType);
+                Cm.Sym.TypeId conceptId = Cm.Sym.ComputeInstantiatedConceptSymbolTypeId(conceptSymbol, typeArguments);
+                Cm.Sym.InstantiatedConceptSymbol* instantiatedConcept = boundCompileUnit.ConceptRepository().GetInstantiatedConcept(conceptId);
+                if (instantiatedConcept != null)
+                {
+                    constraintCheckStack.Push(true);
+                    if (instantiatedConcept->CommonType() != null)
+                    {
+                        Cm.Sym.BoundTypeParameterSymbol* commonType = new Cm.Sym.BoundTypeParameterSymbol(Span(), "CommonType");
+                        commonType->SetType(instantiatedConcept->CommonType());
+                        containerScope->Install(commonType);
+                    }
+                }
+                else
+                {
+                    instantiatedConcept = Instantiate(containerScope, boundCompileUnit, functionFileScope, conceptSymbol, typeArguments);
+                    if (instantiatedConcept != null)
+                    {
+                        boundCompileUnit.ConceptRepository().AddInstantiatedConcept(conceptId, instantiatedConcept);
+                        constraintCheckStack.Push(true);
+                    }
+                    else
+                    {
+                        constraintCheckStack.Push(false);
+                    }
+                }
+            }
+        }
+        public override void Visit(Cm.Ast.MultiParamConstraintNode& multiParamConstraintNode)
+        {
+            multiParamConstraintNode.ConceptId()->Accept(*this);
+            if (conceptGroup != null)
+            {
+                int n = multiParamConstraintNode.TypeExprNodes().Count();
+                Cm.Sym.ConceptSymbol* conceptSymbol = conceptGroup->GetConcept(n);
+                List<Cm.Sym.TypeSymbol*> typeArguments;
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.Node* typeExprNode = multiParamConstraintNode.TypeExprNodes()[i];
+                    typeExprNode->Accept(*this);
+                    if (type != null)
+                    {
+                        typeArguments.Add(type);
+                    }
+                    else
+                    {
+                        throw Cm.Core.ConceptCheckError("'" + typeExprNode->ToString() + "' is not bound to a type", typeExprNode->GetSpan());
+                    }
+                }
+                Cm.Sym.TypeId conceptId = Cm.Sym.ComputeInstantiatedConceptSymbolTypeId(conceptSymbol, typeArguments);
+                Cm.Sym.InstantiatedConceptSymbol* instantiatedConcept = boundCompileUnit.ConceptRepository().GetInstantiatedConcept(conceptId);
+                if (instantiatedConcept != null)
+                {
+                    constraintCheckStack.Push(true);
+                    if (instantiatedConcept->CommonType() != null)
+                    {
+                        Cm.Sym.BoundTypeParameterSymbol* commonType = new Cm.Sym.BoundTypeParameterSymbol(Span(), "CommonType");
+                        commonType->SetType(instantiatedConcept->CommonType());
+                        containerScope->Install(commonType);
+                    }
+                }
+                else
+                {
+                    instantiatedConcept = Instantiate(containerScope, boundCompileUnit, functionFileScope, conceptSymbol, typeArguments);
+                    if (instantiatedConcept != null)
+                    {
+                        boundCompileUnit.ConceptRepository().AddInstantiatedConcept(conceptId, instantiatedConcept);
+                        constraintCheckStack.Push(true);
+                    }
+                    else
+                    {
+                        constraintCheckStack.Push(false);
+                    }
+                }
+                
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("'" + multiParamConstraintNode.ConceptId()->Str() + "' does not denote a concept group", multiParamConstraintNode.ConceptId()->GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.TypeNameConstraintNode& typeNameConstraintNode)
+        {
+            typeNameConstraintNode.TypeId()->Accept(*this);
+            constraintCheckStack.Push(type != null);
+        }
+        public override void Visit(Cm.Ast.ConstructorConstraintNode& constructorConstraintNode)
+        {
+            List<Cm.Core.Argument> resolutionArguments;
+            List<Cm.Sym.TypeSymbol*> parameterTypes;
+            Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(firstTypeArgument, constructorConstraintNode.GetSpan());
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+            int n = constructorConstraintNode.Parameters().Count();
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Ast.ParameterNode* parameterNode = constructorConstraintNode.Parameters()[i];
+                Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), 
+                    parameterNode->TypeExpr());
+                Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
+                if (parameterType->IsReferenceType())
+                {
+                    argumentCategory = Cm.Core.ArgumentCategory.lvalue;
+                }
+                resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
+                parameterTypes.Add(parameterType);
+            }
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
+                cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+            if (functionSymbol == null)
+            {
+                string signature;
+                signature.Append(firstTypeArgument->FullName()).Append('.').Append(firstTypeArgument->Name()).Append('(');
+                bool first = true;
+                for (Cm.Sym.TypeSymbol* parameterType : parameterTypes)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        signature.Append(", ");
+                    }
+                    signature.Append(parameterType->FullName());
+                }
+                signature.Append(')');
+                throw Cm.Core.ConceptCheckError("constructor signature '" + signature + "' not found");
+            }
+            else
+            {
+                constraintCheckStack.Push(true);
+            }
+        }
+        public override void Visit(Cm.Ast.DestructorConstraintNode& destructorConstraintNode)
+        {
+            constraintCheckStack.Push(true);
+        }
+        public override void Visit(Cm.Ast.MemberFunctionConstraintNode& memberFunctionConstraintNode)
+        {
+            memberFunctionConstraintNode.TypeParamId()->Accept(*this);
+            if (type == null)
+            {
+                throw Cm.Core.ConceptCheckError("type parameter '" + memberFunctionConstraintNode.TypeParamId()->Str() + "' is not bound to type", memberFunctionConstraintNode.TypeParamId()->GetSpan());
+            }
+            const string& groupName = memberFunctionConstraintNode.GroupId()->Str();
+            List<Cm.Sym.TypeSymbol*> parameterTypes;
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(type, memberFunctionConstraintNode.GetSpan());
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+            int n = memberFunctionConstraintNode.Parameters().Count();
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Ast.ParameterNode* parameterNode = memberFunctionConstraintNode.Parameters()[i];
+                Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), 
+                    parameterNode->TypeExpr());
+                Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
+                if (parameterType->IsReferenceType())
+                {
+                    argumentCategory = Cm.Core.ArgumentCategory.lvalue;
+                }
+                resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
+                parameterTypes.Add(parameterType);
+            }
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, functionLookups, memberFunctionConstraintNode.GetSpan(), conversions,
+                cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+            if (functionSymbol == null)
+            {
+                string signature;
+                signature.Append(type->FullName()).Append('.').Append(groupName).Append('(');
+                bool first = true;
+                for (Cm.Sym.TypeSymbol* parameterType : parameterTypes)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        signature.Append(", ");
+                    }
+                    signature.Append(parameterType->FullName());
+                }
+                signature.Append(')');
+                throw Cm.Core.ConceptCheckError("member function signature '" + signature + "' not found");
+            }
+            else
+            {
+                constraintCheckStack.Push(true);
+            }
+        }
+        public override void Visit(Cm.Ast.FunctionConstraintNode& functionConstraintNode)
+        {
+            const string& groupName = functionConstraintNode.GroupId()->Str();
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.FunctionLookupSet functionLookups;
+            Cm.Sym.FunctionSymbol* functionSymbol = null;
+            if (Cm.Core.IsMemberFunctionGroup(groupName))
+            {
+                Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(firstTypeArgument, functionConstraintNode.GetSpan());
+                resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+                int n = functionConstraintNode.Parameters().Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
+                    Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(),
+                        parameterNode->TypeExpr());
+                    Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
+                    if (parameterType->IsReferenceType())
+                    {
+                        argumentCategory = Cm.Core.ArgumentCategory.lvalue;
+                    }
+                    resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
+                }
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+                List<Cm.Sym.FunctionSymbol*> conversions;
+                functionSymbol = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
+                    cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+                if (functionSymbol == null)
+                {
+                    resolutionArguments.Clear();
+                    resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+                    for (int i = 1; i < n; ++i)
+                    {
+                        Cm.Ast.ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
+                        Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(),
+                            parameterNode->TypeExpr());
+                        Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
+                        if (parameterType->IsReferenceType())
+                        {
+                            argumentCategory = Cm.Core.ArgumentCategory.lvalue;
+                        }
+                        resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
+                    }
+                    List<Cm.Sym.FunctionSymbol*> conversions;
+                    functionSymbol = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
+                        cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+                }
+            }
+            List<Cm.Sym.TypeSymbol*> parameterTypes;
+            if (functionSymbol == null)
+            {
+                resolutionArguments.Clear();
+                functionLookups.Clear();
+                int n = functionConstraintNode.Parameters().Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
+                    Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(),
+                        parameterNode->TypeExpr());
+                    Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
+                    if (parameterType->IsReferenceType())
+                    {
+                        argumentCategory = Cm.Core.ArgumentCategory.lvalue;
+                    }
+                    resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
+                    parameterTypes.Add(parameterType);
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
+                }
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+                List<Cm.Sym.FunctionSymbol*> conversions;
+                functionSymbol = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
+                    cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+            }
+            if (functionSymbol == null)
+            {
+                string signature;
+                signature.Append(groupName).Append('(');
+                bool first = true;
+                for (Cm.Sym.TypeSymbol* parameterType : parameterTypes)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        signature.Append(", ");
+                    }
+                    signature.Append(parameterType->FullName());
+                }
+                signature.Append(')');
+                throw Cm.Core.ConceptCheckError("function signature '" + signature + "' not found");
+            }
+            else
+            {
+                constraintCheckStack.Push(true);
+            }
+        }
+        public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
+        {
+            type = null;
+            conceptGroup = null;
+            Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, lookupId);
+            if (symbol == null)
+            {
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : boundCompileUnit.FileScopes())
+                {
+                    symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
+                    if (symbol != null) 
+                    {
+                        break;
+                    }
+                }
+            }
+            if (symbol == null && functionFileScope != null)
+            {
+                symbol = functionFileScope->Lookup(identifierNode.Str(), lookupId);
+            }
+            if (symbol != null)
+            {
+                if (symbol is Cm.Sym.TypeSymbol*)
+                {
+                    type = cast<Cm.Sym.TypeSymbol*>(symbol);
+                }
+                else if (symbol is Cm.Sym.BoundTypeParameterSymbol*)
+                {
+                    Cm.Sym.BoundTypeParameterSymbol* boundTypeParameterSymbol = cast<Cm.Sym.BoundTypeParameterSymbol*>(symbol);
+                    type = boundTypeParameterSymbol->GetType();
+                }
+                else if (symbol is Cm.Sym.TypedefSymbol*)
+                {
+                    Cm.Sym.TypedefSymbol* typedefSymbol = cast<Cm.Sym.TypedefSymbol*>(symbol);
+                    type = typedefSymbol->GetType();
+                }
+                else if (symbol is Cm.Sym.ConceptGroupSymbol*)
+                {
+                    conceptGroup = cast<Cm.Sym.ConceptGroupSymbol*>(symbol);
+                }
+                else if (symbol is Cm.Sym.NamespaceSymbol*)
+                {
+                    Cm.Sym.NamespaceSymbol* ns = cast<Cm.Sym.NamespaceSymbol*>(symbol);
+                    type = new NamespaceTypeSymbol(ns);
+                    ns->AddSymbol(type);
+                    Cm.Sym.FileScope* fileScope = new Cm.Sym.FileScope();
+                    fileScope->InstallNamespaceImport(containerScope, new Cm.Ast.NamespaceImportNode(Span(), new Cm.Ast.IdentifierNode(Span(), ns->FullName())));
+                    boundCompileUnit.AddFileScope(fileScope);
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("symbol '" + symbol->FullName() + "' does not denote a type or a concept", symbol->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupContainerSymbols;
+        }
+        public override void EndVisit(Cm.Ast.DotNode& dotNode)
+        {
+            lookupId = lookupIdStack.Pop();
+            if (type == null)
+            {
+                throw Cm.Core.ConceptCheckError("symbol '" + dotNode.Subject()->ToString() + "' does not denote a type", dotNode.Subject()->GetSpan());
+            }
+            Cm.Sym.ContainerScope* typeContainerScope = type->GetContainerScope();
+            if (type->IsNamespaceTypeSymbol())
+            {
+                NamespaceTypeSymbol* nsTypeSymbol = cast<NamespaceTypeSymbol*>(type);
+                typeContainerScope = nsTypeSymbol->Ns()->GetContainerScope();
+            }
+            const string& memberName = dotNode.MemberId()->Str();
+            Cm.Sym.Symbol* symbol = typeContainerScope->Lookup(memberName, Cm.Sym.ScopeLookup.this_and_base, lookupId);
+            if (symbol != null)
+            {
+                if (symbol is Cm.Sym.BoundTypeParameterSymbol*)
+                {
+                    Cm.Sym.BoundTypeParameterSymbol* boundTypeParameterSymbol = cast<Cm.Sym.BoundTypeParameterSymbol*>(symbol);
+                    type = boundTypeParameterSymbol->GetType();
+                }
+                else if (symbol is Cm.Sym.TypedefSymbol*)
+                {
+                    Cm.Sym.TypedefSymbol* typedefSymbol = cast<Cm.Sym.TypedefSymbol*>(symbol);
+                    type = typedefSymbol->GetType();
+                }
+                else if (symbol is Cm.Sym.ConceptGroupSymbol*)
+                {
+                    type = null;
+                    conceptGroup = cast<Cm.Sym.ConceptGroupSymbol*>(symbol);
+                }
+                else if (symbol is Cm.Sym.NamespaceSymbol*)
+                {
+                    Cm.Sym.NamespaceSymbol* ns = cast<Cm.Sym.NamespaceSymbol*>(symbol);
+                    type = new NamespaceTypeSymbol(ns);
+                    ns->AddSymbol(type);
+                    Cm.Sym.FileScope*  fileScope = new Cm.Sym.FileScope();
+                    fileScope->InstallNamespaceImport(containerScope, new Cm.Ast.NamespaceImportNode(Span(), new Cm.Ast.IdentifierNode(Span(), ns->FullName())));
+                    boundCompileUnit.AddFileScope(fileScope);
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("symbol '" + symbol->FullName() + "' does not denote a type or namespace", symbol->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("symbol '" + memberName + "' not found", dotNode.GetSpan());
+            }        
+        }
+        public override void Visit(Cm.Ast.BoolNode& boolNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        }
+        public override void Visit(Cm.Ast.SByteNode& sbyteNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.sbyteId));
+        }
+        public override void Visit(Cm.Ast.ByteNode& byteNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.byteId));
+        }
+        public override void Visit(Cm.Ast.ShortNode& shortNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.shortId));
+        }
+        public override void Visit(Cm.Ast.UShortNode& ushortNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ushortId));
+        }
+        public override void Visit(Cm.Ast.IntNode& intNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        }
+        public override void Visit(Cm.Ast.UIntNode& uintNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.uintId));
+        }
+        public override void Visit(Cm.Ast.LongNode& longNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.longId));
+        }
+        public override void Visit(Cm.Ast.ULongNode& ulongNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+        }
+        public override void Visit(Cm.Ast.FloatNode& floatNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.floatId));
+        }
+        public override void Visit(Cm.Ast.DoubleNode& doubleNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.doubleId));
+        }
+        public override void Visit(Cm.Ast.CharNode& charNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
+        }
+        public override void Visit(Cm.Ast.VoidNode& voidNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+        }
+        public override void Visit(Cm.Ast.DerivedTypeExprNode& derivedTypeExprNode)
+        {
+            type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), &derivedTypeExprNode);
+        }
+        public override void Visit(Cm.Ast.SameConstraintNode& sameConstraintNode)
+        {
+            if (firstTypeArgument != null && secondTypeArgument != null)
+            {
+                bool same = Cm.Sym.TypesEqual(firstTypeArgument, secondTypeArgument);
+                if (!same)
+                {
+                    throw Cm.Core.ConceptCheckError("type '" + firstTypeArgument->FullName() + "' is not same as type '" + secondTypeArgument->FullName() + "'");
+                }
+                else
+                {
+                    constraintCheckStack.Push(true);
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'Same' concept needs two type arguments");
+            }
+        }
+        public override void Visit(Cm.Ast.DerivedConstraintNode& derivedConstraintNode)
+        {
+            if (firstTypeArgument != null && secondTypeArgument != null)
+            {
+                bool derived = false;
+                if ((firstTypeArgument is Cm.Sym.ClassTypeSymbol*) && (secondTypeArgument is Cm.Sym.ClassTypeSymbol*))
+                {
+                    Cm.Sym.ClassTypeSymbol* firstClassType = cast<Cm.Sym.ClassTypeSymbol*>(firstTypeArgument);
+                    Cm.Sym.ClassTypeSymbol* secondClassType = cast<Cm.Sym.ClassTypeSymbol*>(secondTypeArgument);
+                    derived = firstClassType->HasBaseClass(secondClassType);
+                }
+                if (!derived)
+                {
+                    throw Cm.Core.ConceptCheckError("type '" + firstTypeArgument->FullName() + "' is not derived from '" + secondTypeArgument->FullName() + "'");
+                }
+                else
+                {
+                    constraintCheckStack.Push(true);
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'Derived' concept needs two type arguments");
+            }
+        }
+        public override void Visit(Cm.Ast.ConvertibleConstraintNode& convertibleConstraintNode)
+        {
+            if (firstTypeArgument != null && secondTypeArgument != null)
+            {
+                if (!CheckConvertible(firstTypeArgument, secondTypeArgument, convertibleConstraintNode.GetSpan()))
+                {
+                    throw Cm.Core.ConceptCheckError("type '" + firstTypeArgument->FullName() + "' is not convertible to '" + secondTypeArgument->FullName() + "'");
+                }
+                else
+                {
+                    constraintCheckStack.Push(true);
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'Convertible' concept needs two type arguments");
+            }
+        }
+        public override void Visit(Cm.Ast.ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)
+        {
+            if (firstTypeArgument != null && secondTypeArgument != null)
+            {
+                Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(secondTypeArgument, explicitlyConvertibleConstraintNode.GetSpan());
+                Cm.Sym.TypeSymbol* thatParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(firstTypeArgument, explicitlyConvertibleConstraintNode.GetSpan());
+                List<Cm.Core.Argument> resolutionArguments;
+                Cm.Sym.FunctionLookupSet functionLookups;
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondTypeArgument->GetContainerScope()->ClassOrNsScope()));
+                resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+                resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thatParameterType));
+                List<Cm.Sym.FunctionSymbol*> conversions;
+                Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, explicitlyConvertibleConstraintNode.GetSpan(),
+                    conversions, Cm.Sym.ConversionType.explicit_, cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+                if (functionSymbol == null)
+                {
+                    throw Cm.Core.ConceptCheckError("type '" + firstTypeArgument->FullName() + "' is not explicitly convertible to type '" + secondTypeArgument->FullName() + "'");
+                }
+                else
+                {
+                    constraintCheckStack.Push(true);
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'ExplicitlyConvertible' concept needs two type arguments");
+            }
+        }
+        public override void Visit(Cm.Ast.CommonConstraintNode& commonConstraintNode)
+        {
+            if (firstTypeArgument != null && secondTypeArgument != null)
+            {
+                UniquePtr<Cm.Sym.BoundTypeParameterSymbol> commonType(new Cm.Sym.BoundTypeParameterSymbol(commonConstraintNode.GetSpan(), "CommonType"));
+                bool same = Cm.Sym.TypesEqual(firstTypeArgument, secondTypeArgument);
+                if (same)
+                {
+                    commonType->SetType(firstTypeArgument);
+                }
+                else if (CheckConvertible(firstTypeArgument, secondTypeArgument, commonConstraintNode.GetSpan()))
+                {
+                    commonType->SetType(secondTypeArgument);
+                }
+                else if (CheckConvertible(secondTypeArgument, firstTypeArgument, commonConstraintNode.GetSpan()))
+                {
+                    commonType->SetType(firstTypeArgument);
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("types '" + firstTypeArgument->FullName() + "' and '" + secondTypeArgument->FullName() + "' have no common type");
+                }
+                containerScope->Install(commonType.Release());
+                constraintCheckStack.Push(true);
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'Common' concept needs two type arguments");
+            }
+        }
+        public override void Visit(Cm.Ast.NonReferenceTypeConstraintNode& monReferenceTypeConstraintNode)
+        {
+            if (firstTypeArgument != null)
+            {
+                bool nonReferenceType = !(firstTypeArgument->IsReferenceType() || firstTypeArgument->IsRvalueRefType());
+                if (!nonReferenceType)
+                {
+                    throw Cm.Core.ConceptCheckError("type '" + firstTypeArgument->FullName() + "' is not non-reference type");
+                }
+                else
+                {
+                    constraintCheckStack.Push(true);
+                }
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("intrinsic 'NonReferenceType' concept needs one type argument");
+            }
+        }
+        private bool CheckConvertible(Cm.Sym.TypeSymbol* firstType, Cm.Sym.TypeSymbol* secondType, const Span& span)
+        {
+            Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(secondType, span);
+            Cm.Sym.TypeSymbol* thatParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(firstType, span);
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondType->GetContainerScope()->ClassOrNsScope()));
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thatParameterType));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions,
+                Cm.Sym.ConversionType.implicit, cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
+            return functionSymbol != null;
+        }
         private Cm.Sym.TypeSymbol* firstTypeArgument;
         private Cm.Sym.TypeSymbol* secondTypeArgument;
         private Cm.Sym.ContainerScope* containerScope;
@@ -72,6 +835,148 @@ namespace Cm.Bind
         private Cm.Sym.ConceptGroupSymbol* conceptGroup;
         private Cm.Sym.SymbolTypeSetId lookupId;
         private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
-        
+    }
+    
+    internal Cm.Sym.InstantiatedConceptSymbol* Instantiate(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FileScope* functionFileScope, 
+        Cm.Sym.ConceptSymbol* conceptSymbol, const List<Cm.Sym.TypeSymbol*>& typeArguments)
+    {
+        Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(conceptSymbol);
+        if (node != null && (node is Cm.Ast.ConceptNode*))
+        {
+            Cm.Ast.ConceptNode* conceptNode = cast<Cm.Ast.ConceptNode*>(node);
+            int n = conceptSymbol->TypeParameters().Count();
+            if (n != typeArguments.Count())
+            {
+                throw Exception("wrong number of type arguments");
+            }
+            Cm.Sym.ContainerScope instantiationScope;
+            instantiationScope.SetParent(containerScope);
+            List<UniquePtr<Cm.Sym.BoundTypeParameterSymbol>> boundTypeParameters;
+            Cm.Sym.TypeSymbol* firstTypeArgument = null;
+            Cm.Sym.TypeSymbol* secondTypeArgument = null;
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.TypeParameterSymbol* typeParameterSymbol = conceptSymbol->TypeParameters()[i];
+                Cm.Sym.TypeSymbol* typeArgument = typeArguments[i];
+                if (i == 0)
+                {
+                    firstTypeArgument = typeArgument;
+                }
+                else if (i == 1)
+                {
+                    secondTypeArgument = typeArgument;
+                }
+                Cm.Sym.BoundTypeParameterSymbol* boundTypeParameterSymbol = new Cm.Sym.BoundTypeParameterSymbol(conceptSymbol->GetSpan(), typeParameterSymbol->Name());
+                boundTypeParameterSymbol->SetType(typeArgument);
+                boundTypeParameters.Add(UniquePtr<Cm.Sym.BoundTypeParameterSymbol>(boundTypeParameterSymbol));
+                instantiationScope.Install(boundTypeParameterSymbol);
+            }
+            ConstraintChecker checker(firstTypeArgument, secondTypeArgument, &instantiationScope, boundCompileUnit, functionFileScope);
+            try
+            {
+                conceptNode->Accept(checker);
+            }
+            catch (const Cm.Core.ConceptCheckError& ex)
+            {
+                string message;
+                if (typeArguments.Count() == 1)
+                {
+                    message.Append("type '" + firstTypeArgument->FullName() + "' does not fulfill the requirements of concept ");
+                }
+                else
+                {
+                    message.Append("types (");
+                    bool first = true;
+                    for (Cm.Sym.TypeSymbol* typeArgument : typeArguments)
+                    {
+                        if (first)
+                        {
+                            first = true;
+                        }
+                        else
+                        {
+                            message.Append(", ");
+                        }
+                        message.Append("'" + typeArgument->FullName() + "'");
+                    }
+                    message.Append(") do not fulfill the requirements of concept ");
+                }
+                message.Append(conceptSymbol->FullName()).Append(" because:\n");
+                message.Append(ex.Message());
+                throw Cm.Core.ConceptCheckError(message, ex.Defined());
+            }
+            bool result = checker.GetResult();
+            if (result)
+            {
+                Cm.Sym.InstantiatedConceptSymbol* instantiatedConceptSymbol = new Cm.Sym.InstantiatedConceptSymbol(conceptSymbol, typeArguments);
+                Cm.Sym.Symbol* commonTypeSymbol = instantiationScope.Lookup("CommonType", Cm.Sym.SymbolTypeSetId.lookupTypeSymbols);
+                if (commonTypeSymbol != null)
+                {
+                    if (!(commonTypeSymbol is Cm.Sym.BoundTypeParameterSymbol*))
+                    {
+                        throw Exception("bound type parameter symbol expected");
+                    }
+                    Cm.Sym.BoundTypeParameterSymbol* commonType = cast<Cm.Sym.BoundTypeParameterSymbol*>(commonTypeSymbol);
+                    containerScope->Install(commonType);
+                    instantiatedConceptSymbol->SetCommonType(commonType->GetType());
+                }
+                return instantiatedConceptSymbol;
+            }
+            else
+            {
+                return null;
+            }
+        }        
+        else
+        {
+            throw Exception("concept node not found in symbol table");
+        }
+        return null;
+    }
+    
+    internal Cm.BoundTree.BoundConstraint* BindConstraint(const List<Cm.Sym.TypeParameterSymbol*>& templateParameters, const List<Cm.Sym.TypeSymbol*>& templateArguments,
+        Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FileScope* functionFileScope, Cm.Ast.WhereConstraintNode* constraint)
+    {
+        Cm.Sym.ContainerScope constraintBindingScope;
+        constraintBindingScope.SetParent(containerScope);
+        int n = templateParameters.Count();
+        if (n != templateArguments.Count())
+        {
+            throw Exception("wrong number of template arguments");
+        }
+        List<UniquePtr<Cm.Sym.BoundTypeParameterSymbol>> boundTypeParameters;
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.TypeParameterSymbol* templateParameter = templateParameters[i];
+            Cm.Sym.TypeSymbol* templateArgument = templateArguments[i];
+            Cm.Sym.BoundTypeParameterSymbol* boundTypeParameter = new Cm.Sym.BoundTypeParameterSymbol(templateParameter->GetSpan(), templateParameter->Name());
+            boundTypeParameters.Add(UniquePtr<Cm.Sym.BoundTypeParameterSymbol>(boundTypeParameter));
+            boundTypeParameter->SetType(templateArgument);
+            constraintBindingScope.Install(boundTypeParameter);
+        }
+        ConstraintBinder constraintBinder(&constraintBindingScope, boundCompileUnit, functionFileScope);
+        constraint->Accept(constraintBinder);
+        Cm.BoundTree.BoundConstraint* boundConstraint = constraintBinder.GetResult();
+        return boundConstraint;
+    }
+    
+    internal class ConstraintBinder : Cm.Ast.Visitor
+    {
+        public nothrow ConstraintBinder(Cm.Sym.ContainerScope* containerScope_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.FileScope* functionFileScope_) :
+            base(false, true), containerScope(containerScope_), boundCompileUnit(boundCompileUnit_), functionFileScope(functionFileScope_), type(null), conceptGroup(null), conceptSymbol(null)
+        {
+        }
+        public Cm.BoundTree.BoundConstraint* GetResult() 
+        {
+            Cm.BoundTree.BoundConstraint* result = constraintStack.Pop();
+            return result;   
+        }
+        private Cm.Sym.ContainerScope* containerScope;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private Cm.Sym.FileScope* functionFileScope;
+        private Cm.Sym.TypeSymbol* type;
+        private Cm.Sym.ConceptGroupSymbol* conceptGroup;
+        private Cm.Sym.ConceptSymbol* conceptSymbol;
+        private Stack<Cm.BoundTree.BoundConstraint*> constraintStack;
     }
 }

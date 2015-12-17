@@ -41,6 +41,18 @@ namespace Cm.Core
                 group->CollectViableFunctions(arity, arguments, conversionTable, span, typeRepository, derivedTypeOpCacheMap, caches, viableFunctions);
             }
         }
+        public void InsertPointerConversionsToConversionTable(Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeSymbol* pointerType, const Span& span)
+        {
+            DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
+            if (cache == null)
+            {
+                cache = new DerivedTypeOpCache();
+                caches.Add(UniquePtr<DerivedTypeOpCache>(cache));
+                derivedTypeOpCacheMap[pointerType] = cache;
+            }
+            Cm.Sym.FunctionSymbol* ptrToVoidPtrConversion = cache->GetPtrToVoidPtrConversion(typeRepository, pointerType, conversionTable, span);
+            Cm.Sym.FunctionSymbol* nullPtrToPtrConversion = cache->GetNullPtrToPtrConversion(typeRepository, pointerType, conversionTable);
+        }
         private Cm.Sym.TypeRepository& typeRepository;
         private HashMap<string, DerivedTypeOpGroup*> derivedTypeOpGroupMap;
         private HashMap<Cm.Sym.TypeSymbol*, DerivedTypeOpCache*> derivedTypeOpCacheMap;

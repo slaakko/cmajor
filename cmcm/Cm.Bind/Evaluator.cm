@@ -462,7 +462,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -497,7 +497,7 @@ namespace Cm.Bind
     {
         ValueT* leftOperand = cast<ValueT*>(left);
         ValueT* rightOperand = cast<ValueT*>(right);
-        return new ValueT(op(leftOperand->Value(), rightOperand->Value()));
+        return new ValueT(op(leftOperand->GetValue(), rightOperand->GetValue()));
     }
     
     internal Cm.Sym.Value* Disjunction<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
@@ -514,7 +514,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -541,7 +541,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -575,7 +575,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -609,7 +609,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -643,7 +643,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -671,7 +671,7 @@ namespace Cm.Bind
     {
         ValueT* leftOperand = cast<ValueT*>(left);
         ValueT* rightOperand = cast<ValueT*>(right);
-        return new Cm.Sym.BoolValue(op(leftOperand->Value(), rightOperand->Value()));
+        return new Cm.Sym.BoolValue(op(leftOperand->GetValue(), rightOperand->GetValue()));
     }
     
     internal Cm.Sym.Value* Equality<ValueT>(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span) where ValueT is Cm.Sym.ValueClass
@@ -688,7 +688,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -726,7 +726,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -764,7 +764,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -802,7 +802,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -840,7 +840,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -878,7 +878,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -912,7 +912,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -946,7 +946,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -982,7 +982,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1018,7 +1018,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1054,7 +1054,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1090,7 +1090,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<BinaryOperatorDelegate>& Get() const
+        public nothrow const List<BinaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1138,7 +1138,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        public nothrow const List<UnaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1154,7 +1154,7 @@ namespace Cm.Bind
     internal Cm.Sym.Value* UnaryPredEvaluate<ValueT, Op>(Cm.Sym.Value* operand, Op op) where ValueT is Cm.Sym.ValueClass and Op is UnaryPredicate
     {
         ValueT* operandValue = cast<ValueT*>(operand);
-        return new Cm.Sym.BoolValue(op(operandValue->Value()));
+        return new Cm.Sym.BoolValue(op(operandValue->GetValue()));
     }
     
     internal Cm.Sym.Value* Not<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
@@ -1171,7 +1171,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        public nothrow const List<UnaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1196,7 +1196,7 @@ namespace Cm.Bind
     internal Cm.Sym.Value* UnaryEvaluate<ValueT, Op>(Cm.Sym.Value* operand, Op op) where ValueT is Cm.Sym.ValueClass and Op is UnaryFunction
     {
         ValueT* operandValue = cast<ValueT*>(operand);
-        return new ValueT(op(operandValue->Value()));
+        return new ValueT(op(operandValue->GetValue()));
     }
 
     internal Cm.Sym.Value* UnaryPlus<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
@@ -1213,7 +1213,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        public nothrow const List<UnaryOperatorDelegate>& Get() const
         {
             return delegates;
         }
@@ -1249,7 +1249,7 @@ namespace Cm.Bind
         {
             return *instance;
         }
-        public nothrow inline const List<UnaryOperatorDelegate>& Get() const
+        public nothrow const List<UnaryOperatorDelegate>& Get() const
         {
             return delegates;
         }

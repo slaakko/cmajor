@@ -302,7 +302,7 @@ public:
     }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }
-    const std::unordered_set<FunctionSymbol*> Conversions() const { return conversions; }
+    const std::unordered_set<FunctionSymbol*>& Conversions() const { return conversions; }
     MemberVariableSymbol* InitializedVar() const { return initializedVar.get(); }
     void SetInitializedVar(MemberVariableSymbol* initializedVar_);
     int16_t VPtrIndex() const { return vptrIndex; }

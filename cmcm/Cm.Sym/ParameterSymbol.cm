@@ -89,6 +89,10 @@ namespace Cm.Sym
                 type = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
+        public nothrow inline Cm.Ast.ParameterNode* ParameterNode() const
+        {
+            return ownedParameterNode.GetPtr();
+        }
         private TypeSymbol* type;
         private UniquePtr<Cm.Ast.ParameterNode> ownedParameterNode;
     }

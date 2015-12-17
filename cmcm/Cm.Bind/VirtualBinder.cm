@@ -17,6 +17,38 @@ namespace Cm.Bind
             base(false, false), symbolTable(symbolTable_), compileUnit(compileUnit_), boundCompileUnit(boundCompileUnit_)
         {
         }
+        public override void EndVisit(Cm.Ast.ClassNode& classNode)
+        {
+            if (classNode.TemplateParameters().Count() > 0) return;
+            Cm.Sym.ContainerScope* containerScope = symbolTable.GetContainerScope(&classNode);
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = containerScope->Class();
+            BindTemplateTypeSymbols(classTypeSymbol, containerScope);
+            if (classTypeSymbol->DoGenerateDestructor())
+            {
+                Cm.Sym.FunctionSymbol* destructor = GenerateDestructorSymbol(symbolTable, classNode.GetSpan(), classTypeSymbol, compileUnit);
+                destructor->SetPublic();
+                classTypeSymbol->AddSymbol(destructor);
+            }
+            if (classTypeSymbol->DoGenerateStaticConstructor())
+            {
+                Cm.Sym.FunctionSymbol* staticConstructor = GenerateStaticConstructorSymbol(symbolTable, classNode.GetSpan(), classTypeSymbol, compileUnit);
+                staticConstructor->SetPublic();
+                classTypeSymbol->AddSymbol(staticConstructor);
+            }
+            classTypeSymbol->InitVtbl();
+        }
+        private void BindTemplateTypeSymbols(Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope)
+        {
+            if (classTypeSymbol->BaseClass() != null)
+            {
+                BindTemplateTypeSymbols(classTypeSymbol->BaseClass(), containerScope);
+            }
+            if ((classTypeSymbol is Cm.Sym.TemplateTypeSymbol*) && !classTypeSymbol->IsBound())
+            {
+                Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(classTypeSymbol);
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.FileScopes());
+            }
+        }
         private Cm.Sym.SymbolTable& symbolTable;
         private Cm.Ast.CompileUnitNode* compileUnit;
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;

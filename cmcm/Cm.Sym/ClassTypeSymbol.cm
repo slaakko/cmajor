@@ -274,6 +274,31 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.debugInfoGenerated);
         }
+        public nothrow bool DoGenerateDestructor() const
+        {
+            if (destructor != null) return false;   // already has one, don't generate
+            if (GenerateDestructor()) return true;  // asked to generate one, so generate
+            if (IsVirtual()) return true;           // virtual classes need to have one
+            if (HasNonTrivialMemberDestructor()) return true;   // member has one => need to have one
+            if (baseClass != null && baseClass->Destructor() != null) return true;  // base class has one => need to have one
+            return false;                           // else don't generate
+        }
+        public nothrow bool HasNonTrivialMemberDestructor() const
+        {
+            for (MemberVariableSymbol* memberVariableSymbol : memberVariables)
+            {
+                if (!(memberVariableSymbol->GetType() is ClassTypeSymbol*)) continue;
+                ClassTypeSymbol* memberVarClassType = cast<ClassTypeSymbol*>(memberVariableSymbol->GetType());
+                if (memberVarClassType->Destructor() != null) return true;
+            }
+            return false;
+        }
+        public nothrow bool DoGenerateStaticConstructor() const
+        {
+            if (staticConstructor != null) return false;    // already has one, don't generate
+            if (!staticMemberVariables.IsEmpty()) return true;  //  has static data => generate
+            return false;                                   // else don't generate
+        }
         public nothrow inline ClassTypeSymbol* BaseClass() const
         {
             return baseClass;
@@ -680,6 +705,10 @@ namespace Cm.Sym
         public nothrow inline void SetSourceFilePath(const string& sourceFilePath_)
         {
             sourceFilePath = sourceFilePath_;
+        }
+        public nothrow inline const HashSet<FunctionSymbol*>& Conversions() const 
+        { 
+            return conversions; 
         }
         private ulong cid;
         private ulong key;

@@ -18,6 +18,7 @@ namespace Cm.Parser
         using stdlib.identifier;
         using stdlib.qualified_id;
         using stdlib.spaces_and_comments;
+        using stdlib.ulong;
         skip spaces_and_comments;
 
         Project(std::string config, std::string backend, std::string os): Cm::Ast::Project*
@@ -38,6 +39,7 @@ namespace Cm.Parser
             |   ReferenceFileDeclaration(project){ value = ReferenceFileDeclaration; }
             |   CLibraryDeclaration{ value = CLibraryDeclaration; }
             |   TargetDeclaration{ value = TargetDeclaration; }
+            |   StackSizeDeclaration{ value = StackSizeDeclaration; }
             |   AssemblyFileDeclaration(project){ value = AssemblyFileDeclaration; }
             |   ExecutableFileDeclaration(project){ value = ExecutableFileDeclaration; }
             ;
@@ -80,6 +82,10 @@ namespace Cm.Parser
 
         TargetDeclaration: Cm::Ast::ProjectDeclaration*
             ::= keyword("target") '='! (keyword("program"){ value = new TargetDeclaration(span, Target::program); } | keyword("library"){ value = new TargetDeclaration(span, Target::library); })! ';'!
+            ;
+
+        StackSizeDeclaration: Cm::Ast::ProjectDeclaration*
+            ::= (keyword("stack") '='! ulong! ';'!){ value = new StackSizeDeclaration(span, ulong); }
             ;
 
         Properties: Cm::Ast::Properties

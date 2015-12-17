@@ -80,6 +80,18 @@ namespace Cm.Ast
         }
     }
     
+    public class NonReferenceTypeConstraintNode : IntrinsicConstraintNode
+    {
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new NonReferenceTypeConstraintNode();
+        }
+    }
+    
     public abstract class IntrinsicConceptNode : ConceptNode
     {
         public IntrinsicConceptNode(IdentifierNode* id_) : base(Span(), Specifiers.public_, id_)
@@ -134,6 +146,15 @@ namespace Cm.Ast
             AddTypeParameter(new IdentifierNode(Span(), "T"));
             AddTypeParameter(new IdentifierNode(Span(), "U"));
             AddConstraint(new CommonConstraintNode());
+        }
+    }
+    
+    public class NonReferenceTypeConceptNode : IntrinsicConceptNode
+    {
+        public NonReferenceTypeConceptNode() : base(new IdentifierNode(Span(), "NonReferenceType"))
+        {
+            AddTypeParameter(new IdentifierNode(Span(), "T"));
+            AddConstraint(new NonReferenceTypeConstraintNode());
         }
     }
 }

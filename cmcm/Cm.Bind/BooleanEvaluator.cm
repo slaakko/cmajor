@@ -45,7 +45,7 @@ namespace Cm.Bind
                 if (result->GetValueType() == Cm.Sym.ValueType.boolValue)
                 {
                     Cm.Sym.BoolValue* boolValue = cast<Cm.Sym.BoolValue*>(result.GetPtr());
-                    return boolValue->Value() == true;
+                    return boolValue->GetValue() == true;
                 }
             }
             catch (const Exception& ex)

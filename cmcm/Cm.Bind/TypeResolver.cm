@@ -277,7 +277,7 @@ namespace Cm.Bind
                     if (value is Cm.Sym.IntValue*)
                     {
                         Cm.Sym.IntValue* intValue = cast<Cm.Sym.IntValue*>(value);
-                        int arrayDimension = intValue->Value();
+                        int arrayDimension = intValue->GetValue();
                         if (arrayDimension <= 0)
                         {
                             if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
