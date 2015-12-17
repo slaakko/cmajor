@@ -14,7 +14,7 @@
 namespace Cm { namespace Build {
 
 bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, int numClassHierarchyTableEntries, 
-    bool changed);
+    uint64_t stackSize, bool changed);
 
 } } // namespace Bm::Build
 

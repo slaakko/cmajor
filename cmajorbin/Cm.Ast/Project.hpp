@@ -46,6 +46,7 @@ public:
     virtual ~ProjectDeclaration();
     virtual bool IsSourceFileDeclaration() const { return false; }
     virtual bool IsTargetDeclaration() const { return false; }
+    virtual bool IsStackSizeDeclaration() const { return false; }
     virtual bool IsAssemblyFileDeclaration() const { return false; }
     virtual bool IsExecutableFileDeclaration() const { return false; }
     virtual bool IsReferenceFileDeclaration() const { return false; }
@@ -114,9 +115,19 @@ class TargetDeclaration : public ProjectDeclaration
 public:
     TargetDeclaration(const Span& span_, Target target_);
     Target GetTarget() const { return target; }
-    virtual bool IsTargetDeclaration() const { return true; }
+    bool IsTargetDeclaration() const override { return true; }
 private:
     Target target;
+};
+
+class StackSizeDeclaration : public ProjectDeclaration
+{
+public:
+    StackSizeDeclaration(const Span& span_, uint64_t stackSize_);
+    uint64_t StackSize() const { return stackSize; }
+    bool IsStackSizeDeclaration() const override { return true; }
+private:
+    uint64_t stackSize;
 };
 
 class Project
@@ -141,6 +152,7 @@ public:
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
     const std::string& LibraryFilePath() const { return libraryFilePath; }
     const std::string& ExecutableFilePath() const { return executableFilePath; }
+    uint64_t StackSize() const { return stackSize; }
 private:
     std::string name;
     std::string filePath;
@@ -150,6 +162,7 @@ private:
     std::string backend;
     std::string os;
     Target target;
+    uint64_t stackSize;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::vector<std::string> sourceFilePaths;
     std::vector<std::string> asmSourceFilePaths;

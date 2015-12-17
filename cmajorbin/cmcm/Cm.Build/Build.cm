@@ -552,10 +552,14 @@ namespace Cm.Build
         List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
         for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
         {
-            Console.Out() << compileUnit->FilePath() << endl();
             Cm.Bind.Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
             compileUnit->Accept(prebinder);
             fileScopes.Add(UniquePtr<Cm.Sym.FileScope>(prebinder.ReleaseFileScope()));
+        }
+        for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm.Bind.VirtualBinder virtualBinder(symbolTable, compileUnit.GetPtr(), prebindCompileUnit);
+            compileUnit->Accept(virtualBinder);
         }
         return changed;
     }

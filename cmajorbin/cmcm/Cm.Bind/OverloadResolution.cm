@@ -1,0 +1,1174 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    internal enum OverloadResolutionFlags : byte
+    {
+        none = 0u,
+        nothrow_ = 1u << 0u,
+        bindOnlyMemberFunctions = 1u << 1u,
+        dontInstantiate = 1u << 2u
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions)
+    {
+        return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, OverloadResolutionFlags.none);
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, OverloadResolutionFlags flags, FunctionMatch& bestMatch, 
+        UniquePtr<Cm.Core.Error>& error)
+    {
+        List<Cm.Sym.TypeSymbol*> boundTemplateArguments;
+        return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, boundTemplateArguments, flags, bestMatch, error);
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, OverloadResolutionFlags flags)
+    {
+        return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, flags);
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, OverloadResolutionFlags flags)
+    {
+        List<Cm.Sym.TypeSymbol*> boundTemplateArguments;
+        return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, conversionType, boundTemplateArguments, flags);
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments,
+        OverloadResolutionFlags flags)
+    {
+        UniquePtr<Cm.Core.Error> error;
+        FunctionMatch bestMatch;
+        return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, conversionType, boundTemplateArguments, flags, bestMatch, error);
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+        const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments,
+        OverloadResolutionFlags flags, FunctionMatch& bestMatch, UniquePtr<Cm.Core.Error>& error)
+    {
+        for (Cm.Core.Argument& argument : arguments)
+        {
+            if (argument.Type()->GetBaseType() is Cm.Sym.TemplateTypeSymbol*)
+            {
+                Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(argument.Type()->GetBaseType());
+                if (!templateTypeSymbol->IsBound())
+                {
+                    boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(templateTypeSymbol, containerScope, boundCompileUnit.FileScopes());
+                }
+            }
+        }
+        HashSet<Cm.Sym.ClassTypeSymbol*> conversionClassTypes;
+        conversions.Clear();
+        int arity = arguments.Count();
+        HashSet<Cm.Sym.FunctionSymbol*> viableFunctions;
+        if ((flags & OverloadResolutionFlags.bindOnlyMemberFunctions) == OverloadResolutionFlags.none)
+        {
+            boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+            boundCompileUnit.ArrayTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, containerScope, span, viableFunctions);
+            boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+            boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+        }
+        UniquePtr<Cm.Core.Error> innerError;
+        boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions);
+        boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, arguments, span, containerScope, viableFunctions, innerError);
+        boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+        if (viableFunctions.IsEmpty())
+        {
+            bool fileScopesLookedUp = false;
+            HashSet<Cm.Sym.ContainerScope*> processedContainerScopes;
+            for (const Cm.Sym.FunctionLookup& functionLookup : functionLookups)
+            {
+                Cm.Sym.ScopeLookup lookup = functionLookup.Lookup();
+                Cm.Sym.ContainerScope* scope = functionLookup.Scope();
+                if (scope != null)
+                {
+                    scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
+                    processedContainerScopes.Insert(scope);
+                }
+                if ((lookup & Cm.Sym.ScopeLookup.fileScopes) != Cm.Sym.ScopeLookup.none && fileScopesLookedUp)
+                {
+                    fileScopesLookedUp = true;
+                    for (const UniquePtr<Cm.Sym.FileScope>& fileScope : boundCompileUnit.FileScopes())
+                    {
+                        fileScope->CollectViableFunctions(groupName, arity, viableFunctions, processedContainerScopes);
+                    }
+                }
+            }
+        }
+        if (arguments.Count() == 2 && (arguments[1].Type()->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+        {
+            Cm.Sym.ClassTypeSymbol* cls = cast<Cm.Sym.ClassTypeSymbol*>(arguments[1].Type()->GetBaseType());
+            for (Cm.Sym.FunctionSymbol* conversion : cls->Conversions())
+            {
+                if (conversion->IsConversionFunction())
+                {
+                    Cm.Sym.TypeSymbol* targetType = conversion->GetTargetType();
+                    Cm.Sym.TypeSymbol* ptrTargetType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, span);
+                    Cm.Sym.TypeSymbol* constRefTargetType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(targetType, span);
+                    List<Cm.Core.Argument> args;
+                    args.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, ptrTargetType));
+                    args.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, constRefTargetType));
+                    if ((flags & OverloadResolutionFlags.bindOnlyMemberFunctions) == OverloadResolutionFlags.none)
+                    {
+                        boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                        boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                        boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                    }
+                    boundCompileUnit.ClassTemplateRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions);
+                    boundCompileUnit.SynthesizedClassFunRepository().CollectViableFunctions(groupName, arity, args, span, containerScope, viableFunctions, innerError);
+                    boundCompileUnit.ClassDelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, args, boundCompileUnit.ConversionTable(), span, viableFunctions);
+                }
+            }
+        }
+        if (viableFunctions.IsEmpty())
+        {
+            string overloadName = MakeOverloadName(groupName, arguments);
+            if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
+            {
+                if (!innerError.IsNull())
+                {
+                    error.Reset(innerError.Release());
+                }
+                else
+                {
+                    error.Reset(new Cm.Core.Error("overload resolution failed: '" + overloadName + "' not found. No viable functions taking " + ToString(arity) + " arguments found in function group '" + 
+                        groupName + "'.", span));
+                }
+                return null;
+            }
+            else
+            {
+                if (!innerError.IsNull())
+                {
+                    Cm.Core.Error copyOfError = *innerError;
+                    throw copyOfError;
+                }
+                else
+                {
+                    throw Cm.Core.Error("overload resolution failed: '" + overloadName + "' not found. No viable functions taking " + ToString(arity) + " arguments found in function group '" + 
+                        groupName + "'.", span);
+                }
+            }
+        }
+        List<FunctionMatch> functionMatches;
+        Cm.Sym.FunctionSymbol* convertingCtor = null;
+        bool mustCast = false;
+        List<Cm.Core.ConceptCheckError> conceptCheckErrors;
+        for (Cm.Sym.FunctionSymbol* viableFunction : viableFunctions)
+        {
+            if (viableFunction->IsConvertingConstructor() || viableFunction->IsConversionFunction())
+            {
+                if (viableFunction->GetConversionType() == Cm.Sym.ConversionType.explicit_ && conversionType == Cm.Sym.ConversionType.implicit)
+                {
+                    FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
+                    bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, Cm.Sym.ConversionType.explicit_, span, functionMatch, conversionClassTypes);
+                    if (candidateFound)
+                    {
+                        mustCast = true;
+                        convertingCtor = viableFunction;
+                    }
+                    continue;
+                }
+            }
+            FunctionMatch functionMatch(viableFunction, containerScope, &boundCompileUnit);
+            if (viableFunction->IsFunctionTemplate())
+            {
+                bool candidateFound = DeduceTypeParameters(containerScope, boundCompileUnit, viableFunction->TypeParameters(), boundTemplateArguments, viableFunction->Parameters(), arguments, span, 
+                    conversionClassTypes, functionMatch);
+                Cm.Ast.WhereConstraintNode* constraintNode = null;
+                if (candidateFound)
+                {
+                    Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(viableFunction, false);
+                    if (node != null)
+                    {
+                        if (node is Cm.Ast.FunctionNode*)
+                        {
+                            Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+                            constraintNode = functionNode->Constraint();
+                        }
+                        else
+                        {
+                            throw Exception("function node expected");
+                        }                    
+                    }
+                    else
+                    {
+                        constraintNode = viableFunction->Constraint();
+                    }
+                }
+                if (candidateFound && constraintNode != null)
+                {
+                    Cm.Core.ConceptCheckError conceptCheckError;
+                    candidateFound = CheckConstraint(containerScope, boundCompileUnit, viableFunction->GetFileScope(containerScope), constraintNode, viableFunction->TypeParameters(), 
+                        functionMatch.TemplateArguments(), conceptCheckError);
+                    if (candidateFound)
+                    {
+                        functionMatch.SetConstraint(constraintNode);
+                    }
+                    else
+                    {
+                        conceptCheckErrors.Add(Rvalue(conceptCheckError));
+                    }
+                }
+                if (candidateFound)
+                {
+                    functionMatches.Add(Rvalue(functionMatch));
+                }
+            }
+            else if (boundTemplateArguments.IsEmpty())
+            {
+                bool candidateFound = FindConversions(boundCompileUnit, viableFunction->Parameters(), arguments, conversionType, span, functionMatch, conversionClassTypes);
+                if (candidateFound)
+                {
+                    functionMatches.Add(Rvalue(functionMatch));
+                }
+            }
+        }
+        if (functionMatches.IsEmpty())
+        {
+            if (mustCast)
+            {
+                if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
+                {
+                    error.Reset(new Cm.Core.Error("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", 
+                        span));
+                    return null;
+                }
+                else
+                {
+                    throw Cm.Core.Error("overload resolution failed: cannot convert '" + arguments[1].Type()->FullName() + "' to '" + convertingCtor->GetTargetType()->FullName() + "' without a cast", span);
+                }
+            }
+            else
+            {
+                string overloadName = MakeOverloadName(groupName, arguments);
+                string errorMessage = "overload resolution failed: '" + overloadName + "' not found, or there are no acceptable conversions for all argument types. " + ToString(viableFunctions.Count()) + 
+                    " viable functions examined";
+                Span conceptCheckSpan;
+                if (!conceptCheckErrors.IsEmpty())
+                {
+                    Cm.Core.ConceptCheckError& firstError = conceptCheckErrors.Front();
+                    conceptCheckSpan = firstError.Defined();
+                    errorMessage.Append(":\n").Append(firstError.Message());
+                }
+                else
+                {
+                    errorMessage.Append('.');
+                }
+                if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
+                {
+                    error.Reset(new Cm.Core.Error(errorMessage, span, conceptCheckSpan));
+                    return null;
+                }
+                else
+                {
+                    throw Cm.Core.Error(errorMessage, span, conceptCheckSpan);
+                }
+            }
+        }
+        else
+        {
+            Cm.Sym.FunctionSymbol* function = null;
+            FunctionMatch bm(function, containerScope, &boundCompileUnit);
+            bestMatch = Rvalue(bm);
+            if (functionMatches.Count() > 1)
+            {
+                List<UniquePtr<Cm.BoundTree.BoundConstraint>> boundConstraints;
+                BetterFunctionMatch betterFunctionMatch(&boundConstraints);
+                Sort(functionMatches.Begin(), functionMatches.End(), betterFunctionMatch);
+                if (betterFunctionMatch(functionMatches[0], functionMatches[1]))
+                {
+                    bestMatch = Rvalue(functionMatches[0]);
+                    conversions = bestMatch.Conversions();
+                    function = bestMatch.Function();
+                }
+                else
+                {
+                    string overloadName = MakeOverloadName(groupName, arguments);
+                    string matchedFunctionNames;
+                    bool first = true;
+                    FunctionMatch equalMatch = Rvalue(functionMatches[0]);
+                    List<FunctionMatch> equalMatches;
+                    equalMatches.Add(Rvalue(equalMatch));
+                    int n = functionMatches.Count();
+                    for (int i = 1; i < n; ++i)
+                    {
+                        FunctionMatch match = Rvalue(functionMatches[i]);
+                        if (!betterFunctionMatch(equalMatch, match))
+                        {
+                            equalMatches.Add(Rvalue(match));
+                        }
+                    }
+                    List<Span> references;
+                    for (const FunctionMatch& match : equalMatches)
+                    {
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            matchedFunctionNames.Append(" or ");
+                        }
+                        matchedFunctionNames.Append(match.Function()->FullName());
+                        references.Add(match.Function()->GetSpan());
+                    }
+                    if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
+                    {
+                        error.Reset(new Cm.Core.Error("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span, references));
+                        return null;
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span, references);
+                    }
+                }
+            }
+            else // single best
+            {
+                bestMatch = Rvalue(functionMatches[0]);
+                conversions = bestMatch.Conversions();
+                function = bestMatch.Function();
+            }
+            if (function->IsSuppressed())
+            {
+                if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
+                {
+                    error.Reset(new Cm.Core.Error("cannot call suppressed member function", span, function->GetSpan()));
+                }
+                else
+                {
+                    throw Cm.Core.Error("cannot call suppressed member function", span, function->GetSpan());
+                }
+            }
+            for (Cm.Sym.FunctionSymbol* conversion : conversions)
+            {
+                if (conversion != null && conversion->IsMemberOfTemplateType())
+                {
+                    if ((flags & OverloadResolutionFlags.dontInstantiate) == OverloadResolutionFlags.none)
+                    {
+                        boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, conversion);
+                    }
+                }
+            }
+            if (function->IsFunctionTemplate())
+            {
+                if ((flags & OverloadResolutionFlags.dontInstantiate) != OverloadResolutionFlags.none)
+                {
+                    return function;
+                }
+                function = Instantiate(boundCompileUnit.FunctionTemplateRepository(), containerScope, boundCompileUnit, function, bestMatch.TemplateArguments());
+            }
+            else if (function->IsMemberOfTemplateType())
+            {
+                if ((flags & OverloadResolutionFlags.dontInstantiate) != OverloadResolutionFlags.none)
+                {
+                    return function;
+                }
+                if (!function->IsAbstract())
+                {
+                    boundCompileUnit.ClassTemplateRepository().Instantiate(containerScope, function);
+                }
+            }
+            else if (function->IsInline() && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+            {
+                boundCompileUnit.InlineFunctionRepository().Instantiate(containerScope, function);
+            }
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap))
+            {
+                if (function->FullName() == "System.Support.MemAlloc(ulong)")
+                {
+                    function = boundCompileUnit.SymbolTable().GetOverload("System.Support.DebugHeapMemAlloc");
+                    if (function == null)
+                    {
+                        throw Exception("System.Support.DebugHeapMemAlloc not found");
+                    }
+                }
+                else if (function->FullName() == "System.Support.MemFree(void*)")
+                {
+                    function = boundCompileUnit.SymbolTable().GetOverload("System.Support.DebugHeapMemFree");
+                    if (function == null)
+                    {
+                        throw Exception("System.Support.DebugHeapMemFree not found");
+                    }
+                }
+            }
+            return function;
+        }
+    }
+    
+    internal class ArgumentMatch
+    {
+        public nothrow ArgumentMatch() : conversionRank(Cm.Sym.ConversionRank.exactMatch), conversionDistance(0)
+        {
+        }
+        public nothrow ArgumentMatch(Cm.Sym.ConversionRank conversionRank_) : conversionRank(conversionRank_), conversionDistance(0)
+        {
+        }
+        public nothrow ArgumentMatch(Cm.Sym.ConversionRank conversionRank_, const Cm.Sym.DerivationCounts& parameterDerivationCounts_, const Cm.Sym.DerivationCounts& argumentDerivationCounts_) :
+            conversionRank(conversionRank_), conversionDistance(0), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_)
+        {
+        }
+        public nothrow ArgumentMatch(Cm.Sym.ConversionRank conversionRank_, int conversionDistance_, const Cm.Sym.DerivationCounts& parameterDerivationCounts_, 
+            const Cm.Sym.DerivationCounts& argumentDerivationCounts_) :
+            conversionRank(conversionRank_), conversionDistance(conversionDistance_), parameterDerivationCounts(parameterDerivationCounts_), argumentDerivationCounts(argumentDerivationCounts_)
+        {
+        }
+        public nothrow inline Cm.Sym.ConversionRank ConversionRank() const
+        {
+            return conversionRank;
+        }
+        public nothrow inline int ConversionDistance() const
+        {
+            return conversionDistance;
+        }
+        public nothrow inline const Cm.Sym.DerivationCounts& ParameterDerivationCounts() const
+        {
+            return parameterDerivationCounts;
+        }
+        public nothrow inline const Cm.Sym.DerivationCounts& ArgumentDerivationCounts() const
+        {
+            return argumentDerivationCounts;
+        }
+        private Cm.Sym.ConversionRank conversionRank;
+        private int conversionDistance;
+        private Cm.Sym.DerivationCounts parameterDerivationCounts;
+        private Cm.Sym.DerivationCounts argumentDerivationCounts;
+    }
+    
+    internal nothrow bool BetterArgumentMatch(const ArgumentMatch& left, const ArgumentMatch& right)
+    {
+        if (Cm.Sym.BetterConversionRank(left.ConversionRank(), right.ConversionRank()))
+        {
+            return true;
+        }
+        else if (Cm.Sym.BetterConversionRank(right.ConversionRank(), left.ConversionRank()))
+        {
+            return false;
+        }
+        else if (left.ConversionDistance() < right.ConversionDistance())
+        {
+            return true;
+        }
+        else if (right.ConversionDistance() < left.ConversionDistance())
+        {
+            return false;
+        }
+        else if (left.ParameterDerivationCounts() < right.ParameterDerivationCounts())
+        {
+            return true;
+        }
+        else if (right.ParameterDerivationCounts() < left.ParameterDerivationCounts())
+        {
+            return false;
+        }
+        else if (left.ArgumentDerivationCounts() < right.ArgumentDerivationCounts())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    internal class FunctionMatch
+    {
+        public nothrow FunctionMatch() : function(null), numConversions(0), constraint(null), containerScope(null), boundCompileUnit(null), boundConstraint(null)
+        {
+        }
+        public nothrow FunctionMatch(Cm.Sym.FunctionSymbol* function_, Cm.Sym.ContainerScope* containerScope_, Cm.BoundTree.BoundCompileUnit* boundCompileUnit_) :
+            function(function_), numConversions(0), constraint(null), containerScope(containerScope_), boundCompileUnit(boundCompileUnit_), boundConstraint(null)
+        {
+        }
+        public nothrow FunctionMatch(const FunctionMatch& that) : 
+            function(that.function), argumentMatches(), numConversions(that.numConversions), templateArguments(), constraint(that.constraint), containerScope(that.containerScope), 
+            boundCompileUnit(that.boundCompileUnit), boundConstraint(that.boundConstraint)
+        {
+            try
+            {
+                argumentMatches = that.argumentMatches;
+                templateArguments = that.templateArguments;
+            }
+            catch (const Exception& ex)
+            {
+            }
+        }
+        public nothrow void operator=(const FunctionMatch& that)
+        {
+            try
+            {
+                function = that.function;
+                argumentMatches = that.argumentMatches;
+                numConversions = that.numConversions;
+                templateArguments = that.templateArguments;
+                constraint = that.constraint;
+                containerScope = that.containerScope;
+                boundCompileUnit = that.boundCompileUnit;
+                boundConstraint = that.boundConstraint;
+            }
+            catch (const Exception& ex)
+            {
+            }
+        }
+        public default nothrow FunctionMatch(FunctionMatch&&);
+        public default nothrow void operator=(FunctionMatch&&);
+        public nothrow inline Cm.Sym.FunctionSymbol* Function() const
+        {
+            return function;
+        }
+        public nothrow inline const List<ArgumentMatch>& ArgumentMatches() const
+        {
+            return argumentMatches;
+        }
+        public nothrow inline List<ArgumentMatch>& ArgumentMatches()
+        {
+            return argumentMatches;
+        }
+        public nothrow inline int NumConversions() const
+        {
+            return numConversions;
+        }
+        public nothrow inline int& NumConversions()
+        {
+            return numConversions;
+        }
+        public nothrow inline const List<Cm.Sym.FunctionSymbol*>& Conversions() const
+        {
+            return conversions;
+        }
+        public nothrow inline List<Cm.Sym.FunctionSymbol*>& Conversions()
+        {
+            return conversions;
+        }
+        public nothrow inline Cm.Ast.WhereConstraintNode* Constraint() const
+        {
+            return constraint;
+        }
+        public nothrow inline void SetConstraint(Cm.Ast.WhereConstraintNode* constraint_)
+        {
+            constraint = constraint_;
+        }
+        public nothrow inline Cm.BoundTree.BoundConstraint* BoundConstraint() const
+        {
+            return boundConstraint;
+        }
+        public nothrow inline void SetBoundConstraint(Cm.BoundTree.BoundConstraint* boundConstraint_)
+        {
+            boundConstraint = boundConstraint_;
+        }
+        public nothrow inline const List<Cm.Sym.TypeSymbol*>& TemplateArguments() const
+        {
+            return templateArguments;
+        }
+        public nothrow inline List<Cm.Sym.TypeSymbol*>& TemplateArguments()
+        {
+            return templateArguments;
+        }
+        public nothrow inline Cm.Sym.ContainerScope* ContainerScope() const
+        {
+            return containerScope;
+        }
+        public nothrow inline Cm.BoundTree.BoundCompileUnit* BoundCompileUnit() const
+        {
+            return boundCompileUnit;
+        }
+        private Cm.Sym.FunctionSymbol* function;
+        private List<ArgumentMatch> argumentMatches;
+        private int numConversions;
+        private List<Cm.Sym.FunctionSymbol*> conversions;
+        private List<Cm.Sym.TypeSymbol*> templateArguments;
+        private Cm.Ast.WhereConstraintNode* constraint;
+        private Cm.Sym.ContainerScope* containerScope;
+        private Cm.BoundTree.BoundCompileUnit* boundCompileUnit;
+        private Cm.BoundTree.BoundConstraint* boundConstraint;
+    }
+    
+    internal class BetterFunctionMatch : Rel<FunctionMatch>
+    {
+        public nothrow BetterFunctionMatch(List<UniquePtr<Cm.BoundTree.BoundConstraint>>* boundConstraints_) : boundConstraints(boundConstraints_)
+        {
+        }
+        public nothrow bool operator()(const FunctionMatch& left, const FunctionMatch& right) const
+        {
+            int leftBetterArgumentMatches = 0;
+            int rightBetterArgumentMatches = 0;
+            int n = Max(left.ArgumentMatches().Count(), right.ArgumentMatches().Count());
+            for (int i = 0; i < n; ++i)
+            {
+                ArgumentMatch leftMatch;
+                if (i < left.ArgumentMatches().Count())
+                {
+                    leftMatch = left.ArgumentMatches()[i];
+                }
+                ArgumentMatch rightMatch;
+                if (i < right.ArgumentMatches().Count())
+                {
+                    rightMatch = right.ArgumentMatches()[i];
+                }
+                if (BetterArgumentMatch(leftMatch, rightMatch))
+                {
+                    ++leftBetterArgumentMatches;
+                }
+                else if (BetterArgumentMatch(rightMatch, leftMatch))
+                {
+                    ++rightBetterArgumentMatches;
+                }
+            }
+            if (leftBetterArgumentMatches > rightBetterArgumentMatches)
+            {
+                return true;
+            }
+            else if (rightBetterArgumentMatches > leftBetterArgumentMatches)
+            {
+                return false;
+            }
+            else if (left.NumConversions() < right.NumConversions())
+            {
+                return true;
+            }
+            else if (right.NumConversions() < left.NumConversions())
+            {
+                return false;
+            }
+            else if (!left.Function()->IsFunctionTemplate() && right.Function()->IsFunctionTemplate())
+            {
+                return true;
+            }
+            else if (!right.Function()->IsFunctionTemplate() && left.Function()->IsFunctionTemplate())
+            {
+                return false;
+            }
+            else if (!left.Function()->IsFunctionTemplateSpecialization() && right.Function()->IsFunctionTemplateSpecialization())
+            {
+                return true;
+            }
+            else if (!right.Function()->IsFunctionTemplateSpecialization() && left.Function()->IsFunctionTemplateSpecialization())
+            {
+                return false;
+            }
+            else if (left.Function()->IsArrayConstructor() && !right.Function()->IsArrayConstructor())
+            {
+                return true;
+            }
+            else if (right.Function()->IsArrayConstructor() && !left.Function()->IsArrayConstructor())
+            {
+                return false;
+            }
+            else if (left.Function()->IsArrayAssignment() && !right.Function()->IsArrayAssignment())
+            {
+                return true;
+            }
+            else if (right.Function()->IsArrayAssignment() && !left.Function()->IsArrayAssignment())
+            {
+                return false;
+            }
+            else if (left.Constraint() != null && right.Constraint() == null)
+            {
+                return true;
+            }
+            else if (right.Constraint() != null && left.Constraint() == null)
+            {
+                return false;
+            }
+            else
+            {
+                try
+                {
+                    if (left.Constraint() != null && right.Constraint() != null)
+                    {
+                        if (left.BoundConstraint() == null)
+                        {
+                            Cm.BoundTree.BoundConstraint* boundConstraint = BindConstraint(left.Function()->TypeParameters(), left.TemplateArguments(), left.ContainerScope(), *left.BoundCompileUnit(), 
+                                left.Function()->GetFileScope(left.ContainerScope()), left.Constraint());
+                            left.SetBoundConstraint(boundConstraint);
+                            AddBoundConstraint(boundConstraint);
+                        }
+                        if (right.BoundConstraint() == null)
+                        {
+                            Cm.BoundTree.BoundConstraint* boundConstraint = BindConstraint(right.Function()->TypeParameters(), right.TemplateArguments(), right.ContainerScope(), *right.BoundCompileUnit(), 
+                                right.Function()->GetFileScope(right.ContainerScope()), right.Constraint());
+                            right.SetBoundConstraint(boundConstraint);
+                            AddBoundConstraint(boundConstraint);
+                        }
+                        bool leftImplyRight = left.BoundConstraint()->Imply(right.BoundConstraint());
+                        bool rightImplyLeft = right.BoundConstraint()->Imply(left.BoundConstraint());
+                        if (leftImplyRight && !rightImplyLeft)
+                        {
+                            return true;
+                        }
+                        else if (rightImplyLeft && !leftImplyRight)
+                        {
+                            return false;
+                        }
+                        else
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                catch (const Exception&)
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+        private void AddBoundConstraint(Cm.BoundTree.BoundConstraint* boundConstraint)
+        {
+            boundConstraints->Add(UniquePtr<Cm.BoundTree.BoundConstraint>(boundConstraint));
+        }
+        private List<UniquePtr<Cm.BoundTree.BoundConstraint>>* boundConstraints;
+    }
+        
+    internal nothrow string MakeOverloadName(const string& groupName, const List<Cm.Core.Argument>& arguments)
+    {
+        string overloadName(groupName);
+        overloadName.Append('(');
+        bool first = true;
+        for (const Cm.Core.Argument& argument : arguments)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                overloadName.Append(", ");
+            }
+            overloadName.Append(argument.Type()->FullName());
+            if (argument.BindToRvalueRef())
+            {
+                overloadName.Append("&&");
+            }
+        }
+        overloadName.Append(')');
+        return overloadName;
+    }
+    
+    internal inline bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)
+    {
+        return (flags & flag) != OverloadResolutionFlags.none;
+    }
+    
+    internal bool DeduceTypeParameters(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const List<Cm.Sym.TypeParameterSymbol*>& templateParameters, 
+        const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments, const List<Cm.Sym.ParameterSymbol*>& parameters, const List<Cm.Core.Argument>& arguments, const Span& span, 
+        HashSet<Cm.Sym.ClassTypeSymbol*>& conversionClassTypes, FunctionMatch& functionMatch)
+    {
+        int m = parameters.Count();
+        if (m != arguments.Count())
+        {
+            return false;
+        }
+        int n = templateParameters.Count();
+        functionMatch.TemplateArguments().Resize(n);
+        int b = boundTemplateArguments.Count();
+        if (b > n)
+        {
+            return false;
+        }        
+        if (b > 0)
+        {
+            for (int i = 0; i < b; ++i)
+            {
+                functionMatch.TemplateArguments()[i] = boundTemplateArguments[i];
+            }
+        }
+        Cm.Sym.ContainerScope deductionScope;
+        for (Cm.Sym.TypeParameterSymbol* templateParameter : templateParameters)
+        {
+            deductionScope.Install(templateParameter);
+        }
+        deductionScope.SetParent(containerScope);
+        for (int i = 0; i < m; ++i)
+        {
+            Cm.Sym.ParameterSymbol* parameterSymbol = parameters[i];
+            Cm.Ast.ParameterNode* parameterNode = cast<Cm.Ast.ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
+            Cm.Ast.Node* parameterTypeExpr = parameterNode->TypeExpr();
+            Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), parameterTypeExpr, 
+                TypeResolverFlags.dontThrow);
+            if (parameterType == null)
+            {
+                return false;
+            }
+            const Cm.Core.Argument& argument = arguments[i];
+            Cm.Sym.FunctionSymbol* conversion = null;
+            Cm.Bind.ArgumentMatch argumentMatch;
+            bool bound = DeduceTypeParameter(boundCompileUnit, span, parameterType, argument, functionMatch.TemplateArguments(), conversionClassTypes, conversion, argumentMatch, functionMatch.NumConversions());
+            if (bound)
+            {
+                functionMatch.Conversions().Add(conversion);
+                functionMatch.ArgumentMatches().Add(argumentMatch);
+            }
+            else
+            {
+                return false;
+            }        
+        }
+        for (Cm.Sym.TypeSymbol* templateArgumentType : functionMatch.TemplateArguments())
+        {
+            if (templateArgumentType == null) // unbound template parameter
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    internal bool DeduceTypeParameter(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, Cm.Sym.TypeSymbol* parameterType, const Cm.Core.Argument& argument, 
+        List<Cm.Sym.TypeSymbol*>& templateArguments, HashSet<Cm.Sym.ClassTypeSymbol*>& conversionClassTypes, Cm.Sym.FunctionSymbol*& conversion, Cm.Bind.ArgumentMatch& argumentMatch, int& numConversions)
+    {
+        conversion = null;
+        if (Cm.Sym.TypesEqual(parameterType, argument.Type()))
+        {
+            return true;
+        }
+        bool bindResult = Bind(boundCompileUnit, parameterType, argument.Type(), templateArguments);
+        if (bindResult)
+        {
+            return true;
+        }
+        else if (FindConversion(boundCompileUnit, span, Cm.Sym.ConversionType.implicit, parameterType, argument, conversionClassTypes, conversion, argumentMatch, numConversions))
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    internal bool Bind(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* parameterType, Cm.Sym.TypeSymbol* argumentType, List<Cm.Sym.TypeSymbol*>& templateArguments)
+    {
+        Cm.Sym.TypeSymbol* boundType = null;
+        return Bind(boundCompileUnit, parameterType, argumentType, templateArguments, boundType);
+    }
+    
+    internal bool Bind(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* parameterType, Cm.Sym.TypeSymbol* argumentType, List<Cm.Sym.TypeSymbol*>& templateArguments, 
+        Cm.Sym.TypeSymbol*& boundType)
+    {
+        if (parameterType is Cm.Sym.TypeParameterSymbol*)
+        {
+            Cm.Sym.TypeParameterSymbol* typeParameterSymbol = cast<Cm.Sym.TypeParameterSymbol*>(parameterType);
+            int index = typeParameterSymbol->Index();
+            Cm.Sym.TypeSymbol* templateArgumentType = templateArguments[index];
+            if (templateArgumentType == null) // unbound template argument
+            {
+                templateArguments[index] = argumentType;
+                boundType = argumentType;
+                return true;
+            }
+            else if (Cm.Sym.TypesEqual(templateArgumentType, argumentType)) // bound template argument
+            {
+                boundType = argumentType;
+                return true;
+            }
+        }
+        else
+        {
+            Cm.Sym.TypeSymbol* parameterBaseType = parameterType->GetBaseType();
+            if (parameterBaseType is Cm.Sym.TemplateTypeSymbol*)
+            {
+                Cm.Ast.DerivationList argumentTypeDerivations = Cm.Sym.RemoveDerivations(argumentType->Derivations(), parameterType->Derivations());
+                Cm.Sym.TypeSymbol* plainArgumentType = argumentType->GetBaseType();
+                if (argumentTypeDerivations.Count() > 0)
+                {
+                    plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), List<int>(), Span());
+                }
+                if (plainArgumentType is Cm.Sym.TemplateTypeSymbol*)
+                {
+                    Cm.Sym.TemplateTypeSymbol* argumentTemplateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(plainArgumentType);
+                    Cm.Sym.TemplateTypeSymbol* parameterTemplateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(parameterBaseType);
+                    if (Cm.Sym.TypesEqual(argumentTemplateTypeSymbol->SubjectType(), parameterTemplateTypeSymbol->SubjectType()))
+                    {
+                        int n = parameterTemplateTypeSymbol->TypeArguments().Count();
+                        int m = argumentTemplateTypeSymbol->TypeArguments().Count();
+                        if (m == n)
+                        {
+                            for (int i = 0; i < n; ++i)
+                            {
+                                Cm.Sym.TypeSymbol* argumentTypeArgumentSymbol = argumentTemplateTypeSymbol->TypeArguments()[i];
+                                Cm.Sym.TypeSymbol* parameterTypeArgumentSymbol = argumentTemplateTypeSymbol->TypeArguments()[i];
+                                if (parameterTypeArgumentSymbol is Cm.Sym.TypeParameterSymbol*)
+                                {
+                                    Cm.Sym.TypeParameterSymbol* typeParameterSymbol = cast<Cm.Sym.TypeParameterSymbol*>(parameterTypeArgumentSymbol);
+                                    int index = typeParameterSymbol->Index();
+                                    Cm.Sym.TypeSymbol* templateArgumentType = templateArguments[index];
+                                    if (templateArgumentType == null) // unbound template argument
+                                    {
+                                        templateArgumentType = argumentTypeArgumentSymbol;
+                                        templateArguments[index] = templateArgumentType;
+                                    }
+                                    else // bound template argument
+                                    {
+                                        if (!Cm.Sym.TypesEqual(argumentTypeArgumentSymbol, templateArgumentType))
+                                        {
+                                            return false;
+                                        }
+                                    }
+                                }
+                            }
+                            return true;
+                        }
+                    }
+                }
+            }
+            else if (parameterType is Cm.Sym.DerivedTypeSymbol*)
+            {
+                Cm.Ast.DerivationList argumentTypeDerivations = Cm.Sym.RemoveDerivations(argumentType->Derivations(), parameterType->Derivations());
+                Cm.Sym.TypeSymbol* plainArgumentType = argumentType->GetBaseType();
+                if (argumentTypeDerivations.Count() > 0)
+                {
+                    List<int> arrayDimensions;
+                    if (argumentType is Cm.Sym.DerivedTypeSymbol*)
+                    {
+                        Cm.Sym.DerivedTypeSymbol* derivedArgumentType = cast<Cm.Sym.DerivedTypeSymbol*>(argumentType);
+                        arrayDimensions = derivedArgumentType->ArrayDimensions();
+                    }
+                    plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(argumentTypeDerivations, argumentType->GetBaseType(), arrayDimensions, Span());
+                }
+                if (Bind(boundCompileUnit, parameterType->GetBaseType(), plainArgumentType, templateArguments, boundType))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    
+    internal bool FindConversions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const List<Cm.Sym.ParameterSymbol*>& parameters, const List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionType conversionType,
+        const Span& span, FunctionMatch& functionMatch, HashSet<Cm.Sym.ClassTypeSymbol*>& conversionClassTypes)
+    {
+        int arity = parameters.Count();
+        if (arity != arguments.Count())
+        {
+            throw Exception("wrong arity");
+        }
+        for (int i = 0; i < arity; ++i)
+        {
+            Cm.Sym.ParameterSymbol* parameter = parameters[i];
+            Cm.Sym.TypeSymbol* parameterType = parameter->GetType();
+            const Cm.Core.Argument& argument = arguments[i];
+            Cm.Sym.TypeSymbol* argumentType = argument.Type();
+            Cm.Sym.FunctionSymbol* conversion = null;
+            Cm.Bind.ArgumentMatch argumentMatch;
+            if (FindConversion(boundCompileUnit, span, conversionType, parameterType, argument, conversionClassTypes, conversion, argumentMatch, functionMatch.NumConversions()))
+            {
+                functionMatch.ArgumentMatches().Add(argumentMatch);
+                functionMatch.Conversions().Add(conversion);
+            }
+            else
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    internal bool FindConversion(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const Span& span, Cm.Sym.ConversionType conversionType, Cm.Sym.TypeSymbol* parameterType, const Cm.Core.Argument& argument,
+        HashSet<Cm.Sym.ClassTypeSymbol*>& conversionClassTypes, Cm.Sym.FunctionSymbol*& conversion, Cm.Bind.ArgumentMatch& argumentMatch, int& numConversions)
+    {
+        conversion = null;
+        Cm.Sym.TypeSymbol* argumentType = argument.Type();
+        if (Cm.Sym.TypesEqual(parameterType, argumentType))
+        {
+            if (argument.BindToRvalueRef() && !parameterType->IsRvalueRefType() && !parameterType->IsValueTypeSymbol())
+            {
+                argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+            }
+            else
+            {
+                argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.exactMatch);
+            }
+            return true;
+        }
+        if (!CheckArgVsParam(argument, parameterType)) return false;
+        Cm.Sym.TypeSymbol* plainParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(parameterType);
+        Cm.Sym.TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
+        if (Cm.Sym.TypesEqual(plainParameterType, plainArgumentType))
+        {
+            argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.exactMatch, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+            return true;
+        }
+        if (plainArgumentType->IsArrayType() && plainParameterType->IsPointerType())
+        {
+            if (Cm.Sym.TypesEqual(plainParameterType->GetBaseType(), plainArgumentType->GetBaseType()))
+            {
+                argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, 1, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+                return true;
+            }
+        }
+        int distance = 0;
+        Cm.Sym.FunctionSymbol* derivedBaseConversion = null;
+        if (BaseClassDerivedClassRelationShip(boundCompileUnit.ClassConversionTable(), ClassConversionType.derivedToBase, plainParameterType, plainArgumentType, parameterType, argumentType, distance, 
+            derivedBaseConversion, span))
+        {
+            argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+            conversion = derivedBaseConversion;
+            numConversions = numConversions + 1;
+            return true;
+        }
+        if (conversionType == Cm.Sym.ConversionType.explicit_)
+        {
+            int distance = 0;
+            Cm.Sym.FunctionSymbol* baseDerivedConversion = null;
+            if (BaseClassDerivedClassRelationShip(boundCompileUnit.ClassConversionTable(), ClassConversionType.baseToDerived, plainParameterType, plainArgumentType, parameterType, argumentType, distance,
+                baseDerivedConversion, span))
+            {
+                argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+                conversion = baseDerivedConversion;
+                numConversions = numConversions + 1;
+                return true;
+            }
+        }
+        if (plainArgumentType->IsPointerType())
+        {
+            boundCompileUnit.DerivedTypeOpRepository().InsertPointerConversionsToConversionTable(boundCompileUnit.ConversionTable(), plainArgumentType, span);
+        }
+        if (plainParameterType->IsPointerType())
+        {
+            boundCompileUnit.DerivedTypeOpRepository().InsertPointerConversionsToConversionTable(boundCompileUnit.ConversionTable(), plainParameterType, span);
+        }
+        if (plainArgumentType is Cm.Sym.EnumTypeSymbol*)
+        {
+            boundCompileUnit.EnumTypeOpRepository().InsertEnumConversionsToConversionTable(boundCompileUnit.ConversionTable(), plainArgumentType, span);
+        }
+        if (plainParameterType is Cm.Sym.EnumTypeSymbol*)
+        {
+            boundCompileUnit.EnumTypeOpRepository().InsertEnumConversionsToConversionTable(boundCompileUnit.ConversionTable(), plainParameterType, span);
+        }
+        Cm.Sym.ClassTypeSymbol* conversionClassType1 = null;
+        Cm.Sym.ClassTypeSymbol* conversionClassType2 = null;
+        if (plainArgumentType is Cm.Sym.ClassTypeSymbol*)
+        {
+            conversionClassType1 = cast<Cm.Sym.ClassTypeSymbol*>(plainArgumentType);
+            if (conversionClassTypes.CFind(conversionClassType1) != conversionClassTypes.CEnd())
+            {
+                conversionClassType1 = null;
+            }
+        }
+        if (plainParameterType is Cm.Sym.ClassTypeSymbol*)
+        {
+            conversionClassType2 = cast<Cm.Sym.ClassTypeSymbol*>(plainParameterType);
+            if (conversionClassTypes.CFind(conversionClassType2) != conversionClassTypes.CEnd())
+            {
+                conversionClassType2 = null;
+            }
+        }
+        if (conversionClassType1 != null)
+        {
+            conversionClassTypes.Insert(conversionClassType1);
+            for (Cm.Sym.FunctionSymbol* conversionFun : conversionClassType1->Conversions())
+            {
+                boundCompileUnit.ConversionTable().AddConversion(conversionFun);
+            }
+        }
+        if (conversionClassType2 != null && conversionClassType2 != conversionClassType1)
+        {
+            conversionClassTypes.Insert(conversionClassType2);
+            for (Cm.Sym.FunctionSymbol* conversionFun : conversionClassType2->Conversions())
+            {
+                boundCompileUnit.ConversionTable().AddConversion(conversionFun);
+            }
+        }
+        Cm.Sym.FunctionSymbol* otherConversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, plainParameterType);
+        if (otherConversion == null)
+        {
+            otherConversion = boundCompileUnit.ConversionTable().GetConversion(plainArgumentType, parameterType);
+        }
+        if (otherConversion != null)
+        {
+            if (otherConversion->IsConvertingConstructor() || otherConversion->IsConversionFunction())
+            {
+                argumentMatch = ArgumentMatch(otherConversion->GetConversionRank(), otherConversion->GetConversionDistance(), parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
+                conversion = otherConversion;
+                numConversions = numConversions + 1;
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    internal bool CheckArgVsParam(const Cm.Core.Argument& argument, Cm.Sym.TypeSymbol* parameterType)
+    {
+        if (parameterType->IsNonConstReferenceType())
+        {
+            if (argument.Category() != Cm.Core.ArgumentCategory.lvalue)
+            {
+                return false;
+            }
+            if (argument.Type()->IsConstType())
+            {
+                return false;
+            }
+        }
+        else if (parameterType->IsRvalueRefType() && !argument.BindToRvalueRef() && !argument.Type()->IsRvalueRefType())
+        {
+            return false;
+        }
+        return true;
+    }
+    
+    internal enum ClassConversionType
+    {
+        baseToDerived, derivedToBase
+    }
+    
+    internal bool BaseClassDerivedClassRelationShip(Cm.Core.ClassConversionTable& classConversionTable, ClassConversionType classConversionType, Cm.Sym.TypeSymbol* plainParameterType, 
+        Cm.Sym.TypeSymbol* plainArgumentType, Cm.Sym.TypeSymbol* parameterType, Cm.Sym.TypeSymbol* argumentType, int& distance, Cm.Sym.FunctionSymbol*& conversion, const Span& span)
+    {
+        int numParameterPointers = plainParameterType->GetPointerCount();
+        int numArgumentPointers = plainArgumentType->GetPointerCount();
+        bool bothArePointerTypes = numParameterPointers > 0 && numArgumentPointers > 0;
+        bool parameterTypeIsReferenceType = parameterType->IsReferenceType();
+        if (bothArePointerTypes && numParameterPointers == numArgumentPointers || parameterTypeIsReferenceType)
+        {
+            Cm.Sym.TypeSymbol* parameterBaseType = plainParameterType->GetBaseType();
+            Cm.Sym.TypeSymbol* argumentBaseType = plainArgumentType->GetBaseType();
+            if ((parameterBaseType is Cm.Sym.ClassTypeSymbol*) && (argumentBaseType is Cm.Sym.ClassTypeSymbol*))
+            {
+                Cm.Sym.ClassTypeSymbol* parameterClassType = cast<Cm.Sym.ClassTypeSymbol*>(parameterBaseType);
+                Cm.Sym.ClassTypeSymbol* argumentClassType = cast<Cm.Sym.ClassTypeSymbol*>(argumentBaseType);
+                distance = 0;
+                switch (classConversionType)
+                {
+                    case ClassConversionType.derivedToBase:
+                    {
+                        if (argumentClassType->HasBaseClass(parameterClassType, distance))
+                        {
+                            conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance, span);
+                            return true;
+                        }
+                        break;
+                    }
+                    case ClassConversionType.baseToDerived:
+                    {
+                        if (parameterClassType->HasBaseClass(argumentClassType, distance))
+                        {
+                            conversion = classConversionTable.MakeBaseClassDerivedClassConversion(parameterType, argumentType, distance, span);
+                            return true;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+}

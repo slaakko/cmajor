@@ -53,6 +53,77 @@ namespace Cm.Sym
         return left < right;
     }
     
+    public class FunctionLookup
+    {
+        public nothrow FunctionLookup(ScopeLookup scopeLookup_, ContainerScope* scope_) : scopeLookup(scopeLookup_), scope(scope_)
+        {
+        }
+        public nothrow inline ScopeLookup Lookup() const
+        {
+            return scopeLookup;
+        }
+        public nothrow inline void SetLookup(ScopeLookup lookup)
+        {
+            scopeLookup = lookup;
+        }
+        public nothrow inline ContainerScope* Scope() const
+        {
+            return scope;
+        }
+        private ScopeLookup scopeLookup;
+        private ContainerScope* scope;
+    }
+    
+    public class FunctionLookupSet
+    {
+        public typedef List<FunctionLookup>.ConstIterator ConstIterator;
+        public typedef List<FunctionLookup>.Iterator Iterator;
+        public inline nothrow ConstIterator CBegin() const 
+        {
+            return functionLookups.CBegin();
+        }
+        public inline nothrow ConstIterator CEnd() const
+        {
+            return functionLookups.CEnd();
+        }
+        public inline nothrow ConstIterator Begin() const
+        {
+            return functionLookups.CBegin();
+        }
+        public inline nothrow ConstIterator End() const
+        {
+            return functionLookups.CEnd();
+        }
+        public inline nothrow Iterator Begin()
+        {
+            return functionLookups.Begin();
+        }
+        public inline nothrow Iterator End()
+        {
+            return functionLookups.End();
+        }
+        public void Add(const FunctionLookup& lookup)
+        {
+            FunctionLookup toInsert = lookup;
+            for (const FunctionLookup& existingLookup : functionLookups)
+            {
+                if (toInsert.Scope() == existingLookup.Scope())
+                {
+                    toInsert.SetLookup(cast<ScopeLookup>(toInsert.Lookup() & ~existingLookup.Lookup()));
+                } 
+            }
+            if (toInsert.Lookup() != ScopeLookup.none)
+            {
+                functionLookups.Add(toInsert);
+            }
+        }
+        public void Clear()
+        {
+            functionLookups.Clear();
+        }
+        private List<FunctionLookup> functionLookups;
+    }
+    
     public class PersistentFunctionData
     {
         public ulong bodyPos;
@@ -640,6 +711,34 @@ namespace Cm.Sym
         {
             return persistentFunctionData->constraint.GetPtr();
         }
+        public FileScope* GetFileScope(ContainerScope* containerScope)
+        {
+            #assert (!persistentFunctionData.IsNull());
+            if (persistentFunctionData->functionFileScope.IsNull())
+            {
+                persistentFunctionData->functionFileScope.Reset(new FileScope());
+                for (const UniquePtr<Cm.Ast.Node>& usingNode : persistentFunctionData->usingNodes)
+                {
+                    Cm.Ast.NodeType nodeType = usingNode->GetNodeType();
+                    switch (nodeType)
+                    {
+                        case Cm.Ast.NodeType.aliasNode:
+                        {
+                            Cm.Ast.AliasNode* aliasNode = cast<Cm.Ast.AliasNode*>(usingNode.GetPtr());
+                            persistentFunctionData->functionFileScope->InstallAlias(containerScope, aliasNode);
+                            break;
+                        }
+                        case Cm.Ast.NodeType.namespaceImportNode:
+                        {
+                            Cm.Ast.NamespaceImportNode* namespaceImportNode = cast<Cm.Ast.NamespaceImportNode*>(usingNode.GetPtr());
+                            persistentFunctionData->functionFileScope->InstallNamespaceImport(containerScope, namespaceImportNode);
+                            break;
+                        }
+                    }
+                }            
+            }
+            return persistentFunctionData->functionFileScope.GetPtr();
+        }
         public nothrow inline ulong BodyPos() const
         {
             return persistentFunctionData->bodyPos;
@@ -863,6 +962,22 @@ namespace Cm.Sym
         {
             return typeArguments;
         }
+        public nothrow inline void SetFunctionTemplate(FunctionSymbol* functionTemplate_)
+        {
+            functionTemplate = functionTemplate_;
+        }
+        public nothrow inline FunctionSymbol* FunctionTemplate() const
+        {
+            return functionTemplate;
+        }
+        public void SetTypeArguments(const List<TypeSymbol*>& typeArguments_)
+        {
+            typeArguments = typeArguments_;
+        }
+        public nothrow inline void SetGlobalNs(Cm.Ast.NamespaceNode* globalNs_)
+        {
+            globalNs.Reset(globalNs_);
+        }
         private FunctionSymbolFlags flags;
         private string groupName;
         private TypeSymbol* returnType;
@@ -879,5 +994,6 @@ namespace Cm.Sym
         private HashSet<FunctionSymbol*> overrideSet;
         private Ir.Intf.Parameter* classObjectResultIrParam;
         private UniquePtr<PersistentFunctionData> persistentFunctionData;
+        private UniquePtr<Cm.Ast.NamespaceNode> globalNs;
     }
 }

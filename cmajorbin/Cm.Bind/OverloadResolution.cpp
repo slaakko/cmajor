@@ -929,7 +929,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 }
                 if (GetFlag(OverloadResolutionFlags::nothrow, flags))
                 {
-                    exception.reset(new Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span));
+                    exception.reset(new Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, span, references));
                     return nullptr;
                 }
                 else

@@ -163,4 +163,29 @@ namespace Cm.Sym
         s.Append('>');
         return s;
     }
+    
+    public TypeId ComputeInstantiatedConceptSymbolTypeId(ConceptSymbol* conceptSymbol, const List<TypeSymbol*>& typeArguments)
+    {
+        TypeId id = conceptSymbol->Id();
+        int n = typeArguments.Count();
+        if (n >= TypeId.count)
+        {
+            throw Error("only " + ToString(TypeId.count - 1) + " type arguments supported", conceptSymbol->GetSpan());
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            TypeSymbol* typeArgument = typeArguments[i];
+            TypeId argumentId = typeArgument->Id();
+            int positionCode = i;
+            RandomAccessIter<byte, byte&, byte*> begin(argumentId.Rep());
+            RandomAccessIter<byte, byte&, byte*> middle(argumentId.Rep() + positionCode);
+            RandomAccessIter<byte, byte&, byte*> end(argumentId.Rep() + TypeId.count);
+            Rotate(begin, middle, end);
+            for (int k = 0; k < TypeId.count; ++k)
+            {
+                id.SetByte(k, id[k] ^ argumentId[k]);
+            }
+        }
+        return id;
+    }
 }

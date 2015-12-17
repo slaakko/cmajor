@@ -26,6 +26,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <sys/resource.h>
 #endif
 #include <pthread.h>
 #if defined(_WIN32)
@@ -598,6 +599,26 @@ void cmemset(void* dest, unsigned char value, unsigned long long size, int align
 void cmemcpy(void* dest, const void* source, unsigned long long size, int align, _Bool isVolatile)
 {
     memcpy(dest, source, (size_t)size);
+}
+
+void set_stack_size(unsigned long long stackSize)
+{
+#if defined(__linux) || defined(__unix) || defined(__posix)
+    int result;
+    struct rlimit rl;
+    if (stackSize != 0)
+    {
+        result = getrlimit(RLIMIT_STACK, &rl);
+        if (result == 0)
+        {
+            if (rl.rlim_cur < stackSize)
+            {
+                rl.rlim_cur = stackSize;
+                result = setrlimit(RLIMIT_STACK, &rl);
+            }
+        }
+    }
+#endif
 }
 
 static int traceLevel = 0;

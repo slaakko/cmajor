@@ -256,7 +256,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeDefaultConstructor(Cm::Sym::TypeSymbol
     constructNode->AddArgument(new Cm::Ast::InvokeNode(Cm::Parsing::Span(), MakeTypeIdNode(elementType, Cm::Parsing::Span())));
     Cm::Ast::SimpleStatementNode* constructStatement = new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), constructNode);
     whileBlockContent->AddStatement(constructStatement);
-    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));
     whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixDecNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"))));
     Cm::Ast::WhileStatementNode* whileStatement = new Cm::Ast::WhileStatementNode(Cm::Parsing::Span(),
         new Cm::Ast::GreaterNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"), new Cm::Ast::IntLiteralNode(Cm::Parsing::Span(), 0)), whileBlockContent);

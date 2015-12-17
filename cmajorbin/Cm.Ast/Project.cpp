@@ -59,6 +59,10 @@ TargetDeclaration::TargetDeclaration(const Span& span_, Target target_) : Projec
 {
 }
 
+StackSizeDeclaration::StackSizeDeclaration(const Span& span_, uint64_t stackSize_) : ProjectDeclaration(span_, Properties()), stackSize(stackSize_)
+{
+}
+
 Properties::Properties()
 {
 }
@@ -79,7 +83,7 @@ std::string Properties::GetProperty(const std::string& name_) const
 }
 
 Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_) :
-    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), target(Target::none)
+    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), target(Target::none), stackSize(0)
 {
     basePath.remove_filename();
     outputBasePath = basePath;
@@ -204,6 +208,11 @@ void Project::ResolveDeclarations()
             {
                 throw std::runtime_error("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + Cm::Util::GetFullPath(FilePath()) + "' line " + std::to_string(declaration->GetSpan().LineNumber()) + ")");
             }
+        }
+        else if (declaration->IsStackSizeDeclaration())
+        {
+            StackSizeDeclaration* s = static_cast<StackSizeDeclaration*>(declaration.get());
+            stackSize = s->StackSize();
         }
         else if (declaration->IsAssemblyFileDeclaration())
         {

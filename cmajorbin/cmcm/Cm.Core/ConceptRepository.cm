@@ -49,6 +49,7 @@ namespace Cm.Core
             intrinsicConcepts.Add(UniquePtr<Cm.Ast.ConceptNode>(new Cm.Ast.ConvertibleConceptNode()));
             intrinsicConcepts.Add(UniquePtr<Cm.Ast.ConceptNode>(new Cm.Ast.ExplicitlyConvertibleConceptNode()));
             intrinsicConcepts.Add(UniquePtr<Cm.Ast.ConceptNode>(new Cm.Ast.CommonConceptNode()));
+            intrinsicConcepts.Add(UniquePtr<Cm.Ast.ConceptNode>(new Cm.Ast.NonReferenceTypeConceptNode()));
             memberFunctionGroups.Insert("operator<<");
             memberFunctionGroups.Insert("operator>>");
             memberFunctionGroups.Insert("operator==");
@@ -86,5 +87,10 @@ namespace Cm.Core
         private static GlobalConceptData* instance;
         private List<UniquePtr<Cm.Ast.ConceptNode>> intrinsicConcepts;
         private HashSet<string> memberFunctionGroups;
+    }
+    
+    public bool IsMemberFunctionGroup(const string& groupName) 
+    {
+        return GlobalConceptData.Instance()->IsMemberFunctionGroup(groupName);
     }
 }

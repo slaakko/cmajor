@@ -92,6 +92,17 @@ std::string GetCmLibraryPath()
     return std::string(cmLibraryPath);
 }
 
+uint64_t StackSizeEnvValue()
+{
+    char* stackSizeEnv = getenv("CM_STACK_SIZE");
+    if (!stackSizeEnv)
+    {
+        return 0;
+    }
+    std::string stackSizeEnvStr = stackSizeEnv;
+    return std::stoi(stackSizeEnv);
+}
+
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories)
 {
     std::string cmLibraryPath = GetCmLibraryPath();
@@ -1180,7 +1191,7 @@ bool Archive(const std::vector<std::string>& objectFilePaths, const std::string&
     return true;
 }
 
-bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath)
+bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<std::string>& cLibs, const std::string& executableFilePath, uint64_t stackSize)
 {
     bool changed = false;
 #ifdef _WIN32
@@ -1212,6 +1223,12 @@ bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
         std::cout << "Linking..." << std::endl;
     }
     std::string ccCommand = "gcc";
+#ifdef _WIN32
+    if (stackSize != 0)
+    {
+        ccCommand.append(" -Wl,--stack," + std::to_string(stackSize));
+    }
+#endif
     ccCommand.append(" -pthread -Xlinker --allow-multiple-definition");
     ccCommand.append(" -Xlinker --start-group");
     for (const std::string& assemblyFilePath : assemblyFilePaths)
@@ -1614,7 +1631,7 @@ void WriteNextSid(Cm::Sym::SymbolTable& symbolTable)
     nextSidFile << nextSid;
 }
 
-void BuildProgram(Cm::Ast::Project* project)
+void BuildProgram(Cm::Ast::Project* project, uint64_t stackSizeOpt)
 {
     std::vector<std::string> assemblyFilePaths;
     std::vector<std::string> afps;
@@ -1736,15 +1753,30 @@ void BuildProgram(Cm::Ast::Project* project)
     }
     GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
     GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath().generic_string(), objectFilePaths, true);
-    GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, 
-        int(classHierarchyTable.size()), true);
+    uint64_t stackSize = 0;
+    uint64_t projectStackSize = project->StackSize();
+    uint64_t stackSizeEnv = StackSizeEnvValue();
+    if (stackSizeOpt != 0)
+    {
+        stackSize = stackSizeOpt;
+    }
+    else if (projectStackSize != 0)
+    {
+        stackSize = projectStackSize;
+    }
+    else if (stackSizeEnv != 0)
+    {
+        stackSize = stackSizeEnv;
+    }
+    GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(), boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths,
+        int(classHierarchyTable.size()), stackSize, true);
     Archive(objectFilePaths, project->AssemblyFilePath());
-    Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
+    Link(assemblyFilePaths, cLibs, project->ExecutableFilePath(), stackSize);
     WriteNextSid(symbolTable);
 }
 
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
-    CompileUnitParserRepository& compileUnitParserRepository)
+    CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
     Cm::Sym::FunctionTable functionTable;
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
@@ -1850,6 +1882,21 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         changed = true;
     }
+    uint64_t stackSize = 0;
+    uint64_t stackSizeEnv = StackSizeEnvValue();
+    uint64_t projectStackSize = project->StackSize();
+    if (stackSizeOpt != 0)
+    {
+        stackSize = stackSizeOpt;
+    }
+    else if (projectStackSize != 0)
+    {
+        stackSize = projectStackSize;
+    }
+    else if (stackSizeEnv != 0)
+    {
+        stackSize = stackSizeEnv;
+    }
     if (project->GetTarget() == Cm::Ast::Target::program && !full)
     {
         bool exceptionTableUnitGenerated = GenerateExceptionTableUnit(symbolTable, project->OutputBasePath().generic_string(), objectFilePaths, changed || rebuild);
@@ -1863,7 +1910,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
             changed = classHierachyUnitGenerated;
         }
         bool mainCompileUnitGenerated = GenerateMainCompileUnit(symbolTable, project->OutputBasePath().generic_string(),
-            boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, int(classHierarchyTable.size()), changed || rebuild);
+            boost::filesystem::path(project->AssemblyFilePath()).replace_extension(".profdata").generic_string(), objectFilePaths, int(classHierarchyTable.size()), stackSize, changed || rebuild);
         if (!changed)
         {
             changed = mainCompileUnitGenerated;
@@ -1879,7 +1926,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     if (project->GetTarget() == Cm::Ast::Target::program && !full)
     {
-        bool linked = Link(assemblyFilePaths, cLibs, project->ExecutableFilePath());
+        bool linked = Link(assemblyFilePaths, cLibs, project->ExecutableFilePath(), stackSize);
         if (!changed)
         {
             changed = linked;
@@ -1923,7 +1970,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     if (project->GetTarget() == Cm::Ast::Target::program && full)
     {
         project->AddReferenceFilePath(boost::filesystem::path(cmlFilePath).filename().generic_string());
-        BuildProgram(project);
+        BuildProgram(project, stackSizeOpt);
     }
     Cm::Core::SetGlobalConceptData(nullptr);
     Cm::Sym::SetExceptionTable(nullptr);
@@ -1953,7 +2000,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
 
 void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
-    CompileUnitParserRepository& compileUnitParserRepository)
+    CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
     if (!boost::filesystem::exists(projectFilePath))
     {
@@ -1973,14 +2020,14 @@ void BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
     }
     else
     {
-        BuildProject(project.get(), rebuild, compileFileNames, defines, compileUnitParserRepository);
+        BuildProject(project.get(), rebuild, compileFileNames, defines, compileUnitParserRepository, stackSizeOpt);
     }
 }
 
 Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
-    CompileUnitParserRepository& compileUnitParserRepository)
+    CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
     int built = 0;
     int uptodate = 0;
@@ -2033,7 +2080,7 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
         }
         else
         {
-            bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, compileUnitParserRepository);
+            bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, compileUnitParserRepository, stackSizeOpt);
             if (projectChanged)
             {
                 rebuild = true;

@@ -17,6 +17,15 @@ namespace Cm.Bind
             base(true, false), boundCompileUnit(boundCompileUnit_)
         {
         }
+        public nothrow void SetCurrentFunction(Cm.BoundTree.BoundFunction* function)
+        {
+            boundFunction.Reset(function);
+        }
+        public nothrow Cm.BoundTree.BoundFunction* ReleaseCurrentFunction()
+        {
+            return boundFunction.Release();
+        }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private UniquePtr<Cm.BoundTree.BoundFunction> boundFunction;
     }
 }

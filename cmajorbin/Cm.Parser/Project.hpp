@@ -1,5 +1,5 @@
-#ifndef Project_hpp_3964
-#define Project_hpp_3964
+#ifndef Project_hpp_6907
+#define Project_hpp_6907
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -30,10 +30,11 @@ private:
     class ExecutableFileDeclarationRule;
     class CLibraryDeclarationRule;
     class TargetDeclarationRule;
+    class StackSizeDeclarationRule;
     class PropertiesRule;
     class FilePathRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Project_hpp_3964
+#endif // Project_hpp_6907

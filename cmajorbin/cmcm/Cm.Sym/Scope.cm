@@ -393,6 +393,17 @@ namespace Cm.Sym
         {
             return new FileScope(*this);
         }
+        public void CollectViableFunctions(const string& groupName, int arity, HashSet<FunctionSymbol*>& viableFunctions, HashSet<ContainerScope*>& processedScopes)
+        {
+            for (ContainerScope* containerScope : containerScopes)
+            {
+                if (processedScopes.CFind(containerScope) == processedScopes.CEnd())
+                {
+                    processedScopes.Insert(containerScope);
+                    containerScope->CollectViableFunctions(Cm.Sym.ScopeLookup.this_, groupName, arity, viableFunctions);
+                }
+            }
+        }
         private List<ContainerScope*> containerScopes;
         private HashMap<string, Symbol*> aliasSymbolMap;
     }

@@ -213,9 +213,12 @@ void ConstraintChecker::Visit(Cm::Ast::ConjunctiveConstraintNode& conjunctiveCon
     {
         constraintCheckStack.Push(false);
     }
-    conjunctiveConstraintNode.Right()->Accept(*this);
-    bool right = constraintCheckStack.Pop();
-    constraintCheckStack.Push(right);
+    else
+    {
+        conjunctiveConstraintNode.Right()->Accept(*this);
+        bool right = constraintCheckStack.Pop();
+        constraintCheckStack.Push(right);
+    }
 }
 
 void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
@@ -353,7 +356,7 @@ void ConstraintChecker::Visit(Cm::Ast::ShortNode& shortNode)
     type = boundCompileUnit->SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
 }
 
-void ConstraintChecker::Visit(Cm::Ast::UShortNode& shortNode)
+void ConstraintChecker::Visit(Cm::Ast::UShortNode& ushortNode)
 {
     type = boundCompileUnit->SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
 }

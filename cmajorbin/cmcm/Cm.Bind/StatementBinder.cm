@@ -1,0 +1,46 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Trim = System.Text.Trim;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    internal class TypeExprGrammarHolder
+    {
+        static TypeExprGrammarHolder() : instance(new TypeExprGrammarHolder())
+        {
+        }
+        private TypeExprGrammarHolder()
+        {
+            typeExprGrammar = Cm.Parser.TypeExprGrammar.Create();
+        }
+        public static TypeExprGrammarHolder& Instance() 
+        {
+            return *instance;
+        }
+        public Cm.Parser.TypeExprGrammar* GetTypeExprGrammar()
+        {
+            return typeExprGrammar;
+        }
+        private static UniquePtr<TypeExprGrammarHolder> instance;
+        private Cm.Parser.TypeExprGrammar* typeExprGrammar;
+    }
+    
+    internal Cm.Ast.Node* MakeTypeIdNode(Cm.Sym.TypeSymbol* typeSymbol, const Span& span)
+    {
+        Cm.Parser.TypeExprGrammar* typeExprGrammar = TypeExprGrammarHolder.Instance().GetTypeExprGrammar();
+        string typeSymbolText = Trim(typeSymbol->FullName());
+        int n = typeSymbolText.Length();
+        Cm.Parser.ParsingContext parsingContext;
+        return typeExprGrammar->Parse(typeSymbolText.Chars(), typeSymbolText.Chars() + n, 0, "", &parsingContext);
+    }
+}

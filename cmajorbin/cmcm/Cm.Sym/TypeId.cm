@@ -46,7 +46,7 @@ namespace Cm.Sym
             hashCodeValid = false;
             rep[index] = b;
         }
-        public nothrow inline ulong GetHashCode() const
+        public nothrow ulong GetHashCode() const
         {
             if (!hashCodeValid)
             {

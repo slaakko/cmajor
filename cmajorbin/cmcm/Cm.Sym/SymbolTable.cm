@@ -641,6 +641,19 @@ namespace Cm.Sym
         {
             globalNs.InitVirtualFunctionTables();
         }
+        public FunctionSymbol* GetOverload(const string& fullOverloadGroupName) const
+        {
+            Symbol* symbol = globalNs.GetContainerScope()->Lookup(fullOverloadGroupName, SymbolTypeSetId.lookupFunctionGroup);
+            if (symbol != null)
+            {
+                if (symbol is FunctionGroupSymbol*)
+                {
+                    FunctionGroupSymbol* functionGroup = cast<FunctionGroupSymbol*>(symbol);
+                    return functionGroup->GetOverload();
+                }
+            }
+            return null;
+        }
         private NamespaceSymbol globalNs;
         private HashMap<Symbol*, Cm.Ast.Node*> symbolNodeMap;
         private HashMap<Cm.Ast.Node*, ContainerScope*> nodeScopeMap;
