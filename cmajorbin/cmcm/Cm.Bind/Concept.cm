@@ -971,6 +971,291 @@ namespace Cm.Bind
             Cm.BoundTree.BoundConstraint* result = constraintStack.Pop();
             return result;   
         }
+        public override void Visit(Cm.Ast.ConceptNode& conceptNode)
+        {
+            conceptNode.Id()->Accept(*this);
+            if (conceptGroup == null)
+            {
+                throw Cm.Core.Error("concept group expected", conceptNode.GetSpan());
+            }
+            int n = conceptNode.TypeParameters().Count();
+            Cm.Sym.ConceptSymbol* conceptSym = conceptGroup->GetConcept(n);
+            if (conceptSym->RefinedConcept() == null && conceptNode.Refinement() != null)
+            {
+                Cm.Sym.ConceptSymbol* refinedConceptSym = null;
+                conceptNode.Refinement()->Accept(*this);
+                refinedConceptSym = conceptSymbol;
+                conceptSym->SetRefinedConcept(refinedConceptSym);
+                Cm.Ast.Node* refinedNode = boundCompileUnit.SymbolTable().GetNode(refinedConceptSym);
+                refinedNode->Accept(*this);
+                UniquePtr<Cm.BoundTree.BoundConstraint> constraint(constraintStack.Pop());
+            }
+            constraintStack.Push(new Cm.BoundTree.BoundConcept(&conceptNode, conceptSym));
+        }
+        public override void Visit(Cm.Ast.ConceptIdNode& conceptIdNode)
+        {
+            conceptIdNode.Id()->Accept(*this);
+            if (conceptGroup != null)
+            {
+                int n = conceptIdNode.TypeParameters().Count();
+                conceptSymbol = conceptGroup->GetConcept(n);
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("concept group exptected", conceptIdNode.GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.DisjunctiveConstraintNode& disjunctiveConstraintNode)
+        {
+            disjunctiveConstraintNode.Left()->Accept(*this);
+            Cm.BoundTree.BoundConstraint* left = constraintStack.Pop();
+            disjunctiveConstraintNode.Right()->Accept(*this);
+            Cm.BoundTree.BoundConstraint* right = constraintStack.Pop();
+            constraintStack.Push(new Cm.BoundTree.BoundDisjunctiveConstraint(&disjunctiveConstraintNode, left, right));
+        }
+        public override void Visit(Cm.Ast.ConjunctiveConstraintNode& conjunctiveConstraintNode)
+        {
+            conjunctiveConstraintNode.Left()->Accept(*this);
+            Cm.BoundTree.BoundConstraint* left = constraintStack.Pop();
+            conjunctiveConstraintNode.Right()->Accept(*this);
+            Cm.BoundTree.BoundConstraint* right = constraintStack.Pop();
+            constraintStack.Push(new Cm.BoundTree.BoundConjunctiveConstraint(&conjunctiveConstraintNode, left, right));
+        }
+        public override void Visit(Cm.Ast.IsConstraintNode& isConstraintNode)
+        {
+            Cm.Ast.Node* typeExpr = isConstraintNode.TypeExpr();
+            typeExpr->Accept(*this);
+            Cm.Sym.TypeSymbol* leftType = type;
+            isConstraintNode.ConceptOrTypeName()->Accept(*this);
+            if (type != null)
+            {
+                Cm.Sym.TypeSymbol* rightType = type;
+                constraintStack.Push(new Cm.BoundTree.BoundTypeIsTypeConstraint(&isConstraintNode, leftType, rightType));
+            }
+            else if (conceptGroup != null)
+            {
+                Cm.Sym.ConceptSymbol* conceptSym = conceptGroup->GetConcept(1);
+                Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(conceptSym);
+                node->Accept(*this);
+                Cm.BoundTree.BoundConstraint* constraint = constraintStack.Pop();
+                if (constraint is Cm.BoundTree.BoundConcept*)
+                {
+                    Cm.BoundTree.BoundConcept* boundConcept = cast<Cm.BoundTree.BoundConcept*>(constraint);
+                    constraintStack.Push(new Cm.BoundTree.BoundTypeSatisfyConceptConstraint(&isConstraintNode, leftType, boundConcept));
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("concept symbol expected", isConstraintNode.GetSpan());
+                }
+            }
+        }
+        public override void Visit(Cm.Ast.MultiParamConstraintNode& multiParamConstraintNode)
+        {
+            multiParamConstraintNode.ConceptId()->Accept(*this);
+            if (conceptGroup != null)
+            {
+                int n = multiParamConstraintNode.TypeExprNodes().Count();
+                Cm.Sym.ConceptSymbol* conceptSym = conceptGroup->GetConcept(n);
+                Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(conceptSym);
+                node->Accept(*this);
+                Cm.BoundTree.BoundConstraint* constraint = constraintStack.Pop();
+                Cm.BoundTree.BoundConcept* boundConcept = null;
+                if (constraint is Cm.BoundTree.BoundConcept*)
+                {
+                    boundConcept = cast<Cm.BoundTree.BoundConcept*>(constraint);
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("concept symbol expected", multiParamConstraintNode.GetSpan());
+                }
+                List<Cm.Sym.TypeSymbol*> typeArguments;
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.Node* typeExprNode = multiParamConstraintNode.TypeExprNodes()[i];
+                    typeExprNode->Accept(*this);
+                    if (type != null)
+                    {
+                        typeArguments.Add(type);
+                    }
+                    else
+                    {
+                        throw Cm.Core.ConceptCheckError("'" + typeExprNode->ToString() + "' is not bound to a type", typeExprNode->GetSpan());
+                    }
+                }
+                constraintStack.Push(new Cm.BoundTree.BoundMultiParamConstraint(&multiParamConstraintNode, typeArguments, boundConcept));
+            }
+            else
+            {
+                throw Cm.Core.ConceptCheckError("'" + multiParamConstraintNode.ConceptId()->Str() + "' does not denote a concept group", multiParamConstraintNode.ConceptId()->GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.TypeNameConstraintNode& typeNameConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&typeNameConstraintNode));
+        }
+        public override void Visit(Cm.Ast.ConstructorConstraintNode& constructorConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&constructorConstraintNode));
+        }
+        public override void Visit(Cm.Ast.DestructorConstraintNode& destructorConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&destructorConstraintNode));
+        }
+        public override void Visit(Cm.Ast.MemberFunctionConstraintNode& memberFunctionConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&memberFunctionConstraintNode));
+        }
+        public override void Visit(Cm.Ast.FunctionConstraintNode& functionConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&functionConstraintNode));
+        }
+        public override void Visit(Cm.Ast.SameConstraintNode& sameConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&sameConstraintNode));
+        }
+        public override void Visit(Cm.Ast.DerivedConstraintNode& derivedConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&derivedConstraintNode));
+        }
+        public override void Visit(Cm.Ast.ConvertibleConstraintNode& convertibleConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&convertibleConstraintNode));
+        }
+        public override void Visit(Cm.Ast.ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&explicitlyConvertibleConstraintNode));
+        }
+        public override void Visit(Cm.Ast.CommonConstraintNode& commonConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&commonConstraintNode));
+        }
+        public override void Visit(Cm.Ast.NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)
+        {
+            constraintStack.Push(new Cm.BoundTree.BoundAtomicConstraint(&nonReferenceTypeConstraintNode));
+        }
+        public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
+        {
+            type = null;
+            conceptGroup = null;
+            Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, Cm.Sym.SymbolTypeSetId.lookupTypeAndConceptSymbols);
+            if (symbol == null)
+            {
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : boundCompileUnit.FileScopes())
+                {
+                    symbol = fileScope->Lookup(identifierNode.Str(), Cm.Sym.SymbolTypeSetId.lookupTypeAndConceptSymbols);
+                    if (symbol != null)
+                    {
+                        break;
+                    }
+                }
+            }
+            if (symbol == null)
+            {
+                symbol = functionFileScope->Lookup(identifierNode.Str(), Cm.Sym.SymbolTypeSetId.lookupTypeAndConceptSymbols);
+            }
+            if (symbol != null)
+            {
+                if (symbol is Cm.Sym.TypeSymbol*)
+                {
+                    type = cast<Cm.Sym.TypeSymbol*>(symbol);
+                }
+                else if (symbol is Cm.Sym.BoundTypeParameterSymbol*)
+                {
+                    Cm.Sym.BoundTypeParameterSymbol* boundTypeParameterSymbol = cast<Cm.Sym.BoundTypeParameterSymbol*>(symbol);
+                    type = boundTypeParameterSymbol->GetType();
+                }
+                else if (symbol is Cm.Sym.ConceptGroupSymbol*)
+                {
+                    conceptGroup = cast<Cm.Sym.ConceptGroupSymbol*>(symbol);
+                }
+                else
+                {
+                    throw Cm.Core.ConceptCheckError("symbol '" + symbol->FullName() + "' does not denote a type or concept", symbol->GetSpan());
+                }
+            }
+            else
+            {
+                // todo: generate docs
+                throw Cm.Core.ConceptCheckError("type or concept symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+            }
+        }
+        public override void EndVisit(Cm.Ast.DotNode& dotNode)
+        {
+            Cm.Sym.Symbol* symbol = type->GetContainerScope()->Lookup(dotNode.MemberId()->Str(), Cm.Sym.ScopeLookup.this_and_base, Cm.Sym.SymbolTypeSetId.lookupTypeAndConceptSymbols);
+            if (symbol != null)
+            {
+                if (symbol is Cm.Sym.BoundTypeParameterSymbol*)
+                {
+                    Cm.Sym.BoundTypeParameterSymbol* boundTemplateParam = cast<Cm.Sym.BoundTypeParameterSymbol*>(symbol);
+                    symbol = boundTemplateParam->GetType();
+                }
+                if (symbol is Cm.Sym.TypeSymbol*)
+                {
+                    type = cast<Cm.Sym.TypeSymbol*>(symbol);
+                }
+            }
+            else
+            {
+                // todo: generate docs
+                throw Cm.Core.ConceptCheckError("type or concept symbol '" + dotNode.MemberId()->Str() + "' not found", dotNode.GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.BoolNode& boolNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        }
+        public override void Visit(Cm.Ast.SByteNode& sbyteNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.sbyteId));
+        }
+        public override void Visit(Cm.Ast.ByteNode& byteNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.byteId));
+        }
+        public override void Visit(Cm.Ast.ShortNode& shortNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.shortId));
+        }
+        public override void Visit(Cm.Ast.UShortNode& ushortNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ushortId));
+        }
+        public override void Visit(Cm.Ast.IntNode& intNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        }
+        public override void Visit(Cm.Ast.UIntNode& uintNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.uintId));
+        }
+        public override void Visit(Cm.Ast.LongNode& longNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.longId));
+        }
+        public override void Visit(Cm.Ast.ULongNode& ulongNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+        }
+        public override void Visit(Cm.Ast.FloatNode& floatNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.floatId));
+        }
+        public override void Visit(Cm.Ast.DoubleNode& doubleNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.doubleId));
+        }
+        public override void Visit(Cm.Ast.CharNode& charNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
+        }
+        public override void Visit(Cm.Ast.VoidNode& voidNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+        }
+        public override void Visit(Cm.Ast.DerivedTypeExprNode& derivedTypeExprNode)
+        {
+            type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), &derivedTypeExprNode);
+        }
         private Cm.Sym.ContainerScope* containerScope;
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private Cm.Sym.FileScope* functionFileScope;
