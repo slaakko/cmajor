@@ -1068,6 +1068,7 @@ public:
     void Visit(Cm::Ast::ConvertibleConstraintNode& convertibleConstraintNode) override;
     void Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode) override;
     void Visit(Cm::Ast::CommonConstraintNode& commmonConstraintNode) override;
+    void Visit(Cm::Ast::NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode) override;
 private:
     Cm::Sym::ContainerScope* containerScope;
     Cm::BoundTree::BoundCompileUnit* boundCompileUnit;
@@ -1440,6 +1441,11 @@ void ConstraintBinder::Visit(Cm::Ast::ExplicitlyConvertibleConstraintNode& expli
 void ConstraintBinder::Visit(Cm::Ast::CommonConstraintNode& commmonConstraintNode)
 {
     constraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(&commmonConstraintNode));
+}
+
+void ConstraintBinder::Visit(Cm::Ast::NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)
+{
+    constraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(&nonReferenceTypeConstraintNode));
 }
 
 Cm::BoundTree::BoundConstraint* BindConstraint(const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, 
