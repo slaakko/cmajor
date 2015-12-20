@@ -25,7 +25,7 @@ public:
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
         Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_, bool profile_);
     void BeginVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
-    Ir::Intf::Type* CFunctionEmitter::ReplaceFunctionPtrType(Ir::Intf::Type* localVariableIrType) override;
+    Ir::Intf::Type* ReplaceFunctionPtrType(Ir::Intf::Type* localVariableIrType) override;
     void EndVisit(Cm::BoundTree::BoundFunction& boundFunction) override;
     void SetFunctionMap(std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>* functionMap_) { functionMap = functionMap_; }
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;

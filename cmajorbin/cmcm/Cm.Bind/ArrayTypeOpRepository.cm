@@ -205,10 +205,25 @@ namespace Cm.Bind
         }
         public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
         {
+            if (copyAssignment.IsNull())
+            {
+                if (type->IsPrimitiveSingleDimensionArrayType())
+                {
+                    copyAssignment.Reset(new PrimitiveArrayTypeCopyAssignment(boundCompileUnit.SymbolTable().GetTypeRepository(), type));
+                }
+                else
+                {
+                    copyAssignment.Reset(GenerateArrayTypeCopyAssignment(type, containerScope, boundCompileUnit));
+                }
+            }
             return copyAssignment.GetPtr();
         }
         public Cm.Sym.FunctionSymbol* GetIndexing(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
         {
+            if (indexing.IsNull())
+            {
+                indexing.Reset(new ArrayIndexing(boundCompileUnit.SymbolTable().GetTypeRepository(), type));
+            }
             return indexing.GetPtr();
         }
         private UniquePtr<Cm.Sym.FunctionSymbol> defaultConstructor;
@@ -443,5 +458,171 @@ namespace Cm.Bind
         GenerateReceives(containerScope, boundCompileUnit, copyCtor);
         boundCompileUnit.AddBoundNode(copyCtor);
         return copyConstructorSymbol;
+    }
+    
+    public class PrimitiveArrayTypeCopyAssignment : Cm.Core.BasicTypeOp
+    {
+        public PrimitiveArrayTypeCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator=");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeConstReferenceType(Type(), Span()));
+            AddSymbol(thatParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
+        {
+            Ir.Intf.Object* dim = Cm.IrIntf.MakeI64Constant(Type()->GetLastArrayDimension());
+            emitter.Own(dim);
+            Ir.Intf.Object* size = Cm.IrIntf.SizeOf(emitter, Type()->GetBaseType()->IrType());
+            emitter.Own(size);
+            Ir.Intf.Object* len = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
+            emitter.Own(len);
+            emitter.Emit(Cm.IrIntf.Mul(Ir.Intf.Factory.Instance()->GetI64(), len, dim, size));
+            Ir.Intf.Object* arrayObject = result.MainObject();
+            Ir.Intf.Object* arg1 = result.Arg1();
+            Ir.Intf.Type* arrayObjectType = arrayObject->GetType();
+            if (result.MemberVar())
+            {
+                Ir.Intf.Type* arrayType = Cm.IrIntf.Array(Type()->GetBaseType()->IrType(), Type()->GetLastArrayDimension());
+                emitter.Own(arrayType);
+                Ir.Intf.Type* ptrArrayType = Cm.IrIntf.Pointer(arrayType, 1u);
+                emitter.Own(ptrArrayType);
+                arrayObject->SetType(ptrArrayType);
+                arrayObjectType = ptrArrayType;
+                arg1->SetType(ptrArrayType);
+            }
+            if (arrayObject->Name() == "i8*" && arg1->GetType()->Name() == "i8*")
+            {
+                emitter.Emit(Cm.IrIntf.MemCopy(arrayObject, arg1, len, 1, false));
+            }
+            else
+            {
+                Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
+                emitter.Own(i8Ptr);
+                Ir.Intf.Object* dest = arrayObject;
+                if (arrayObjectType->Name() == "i8*")
+                {
+                    dest = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+                    emitter.Own(dest);
+                    emitter.Emit(Cm.IrIntf.Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
+                }
+                Ir.Intf.Object* source = arg1;
+                if (arg1->GetType()->Name() == "i8*")
+                {
+                    source = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+                    emitter.Own(source);
+                    emitter.Emit(Cm.IrIntf.Bitcast(arg1->GetType(), source, arg1, i8Ptr));
+                }
+                emitter.Emit(Cm.IrIntf.MemCopy(dest, source, len, 1, false));
+            }
+        }
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateArrayTypeCopyAssignment(Cm.Sym.TypeSymbol* arrayType, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        int n = arrayType->GetLastArrayDimension();
+        Cm.Sym.TypeSymbol* elementType = arrayType->GetBaseType();
+        Cm.Sym.FunctionSymbol* assignmentSymbol = new Cm.Sym.FunctionSymbol(Span(), "@array_assignment");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(assignmentSymbol);
+        assignmentSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        assignmentSymbol->SetGroupName("@array_assignment_" + ToString(n));
+        assignmentSymbol->SetParent(containerScope->Ns());
+        assignmentSymbol->GetContainerScope()->SetParent(containerScope->Ns()->GetContainerScope());
+        assignmentSymbol->SetConstructorOrDestructorSymbol();
+        assignmentSymbol->SetMemberFunctionSymbol();
+        assignmentSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        assignmentSymbol->SetReplicated();
+        assignmentSymbol->SetArrayAssignment();
+        assignmentSymbol->SetReturnType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)));
+        UniquePtr<Cm.BoundTree.BoundFunction> assignment(new Cm.BoundTree.BoundFunction(null, assignmentSymbol));
+        Cm.Ast.CompoundStatementNode* body = new Cm.Ast.CompoundStatementNode(Span());
+        assignment->Own(body);
+        Cm.Ast.ConstructionStatementNode* constructLoopVarStatement = new Cm.Ast.ConstructionStatementNode(Span(), new Cm.Ast.IntNode(Span()), new Cm.Ast.IdentifierNode(Span(), "i"));
+        constructLoopVarStatement->AddArgument(new Cm.Ast.IntLiteralNode(Span(), n));
+        body->AddStatement(constructLoopVarStatement);
+        Cm.Ast.CompoundStatementNode* whileBlockContent = new Cm.Ast.CompoundStatementNode(Span());
+        Cm.Ast.AssignmentStatementNode* assignmentStatement = new Cm.Ast.AssignmentStatementNode(Span(), 
+            new Cm.Ast.DerefNode(Span(), new Cm.Ast.IdentifierNode(Span(), "this")),
+            new Cm.Ast.DerefNode(Span(), new Cm.Ast.IdentifierNode(Span(), "that")));
+        whileBlockContent->AddStatement(assignmentStatement);
+        whileBlockContent->AddStatement(new Cm.Ast.SimpleStatementNode(Span(), new Cm.Ast.PrefixIncNode(Span(), new Cm.Ast.ThisNode(Span()))));
+        whileBlockContent->AddStatement(new Cm.Ast.SimpleStatementNode(Span(), new Cm.Ast.PrefixIncNode(Span(), new Cm.Ast.IdentifierNode(Span(), "that"))));
+        whileBlockContent->AddStatement(new Cm.Ast.SimpleStatementNode(Span(), new Cm.Ast.PrefixDecNode(Span(), new Cm.Ast.IdentifierNode(Span(), "i"))));
+        Cm.Ast.WhileStatementNode* whileStatement = new Cm.Ast.WhileStatementNode(Span(),
+            new Cm.Ast.GreaterNode(Span(), new Cm.Ast.IdentifierNode(Span(), "i"), new Cm.Ast.IntLiteralNode(Span(), 0)), whileBlockContent);
+        body->AddStatement(whileStatement);
+        Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+        boundCompileUnit.SymbolTable().BeginContainer(assignmentSymbol);
+        Cm.Ast.ParameterNode* thisParamNode = new Cm.Ast.ParameterNode(Span(), MakeTypeIdNode(boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Span()),
+            Span()), new Cm.Ast.IdentifierNode(Span(), "this"));
+        assignment->Own(thisParamNode);
+        thisParamNode->Accept(declarationVisitor);
+        Cm.Ast.ParameterNode* thatParamNode = new Cm.Ast.ParameterNode(Span(), MakeTypeIdNode(boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(elementType, Span()),
+            Span()), new Cm.Ast.IdentifierNode(Span(), "that"));
+        assignment->Own(thatParamNode);
+        thatParamNode->Accept(declarationVisitor);
+        body->Accept(declarationVisitor);
+        boundCompileUnit.SymbolTable().EndContainer();
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+        prebinder.BeginContainerScope(assignmentSymbol->GetContainerScope());
+        thisParamNode->Accept(prebinder);
+        thatParamNode->Accept(prebinder);
+        prebinder.EndContainerScope();
+        Binder binder(boundCompileUnit);
+        binder.SetCurrentFunction(assignment.Release());
+        body->Accept(binder);
+        Cm.BoundTree.BoundFunction* copyAssignment = binder.ReleaseCurrentFunction();
+        assignmentSymbol->ComputeName();
+        GenerateReceives(containerScope, boundCompileUnit, copyAssignment);
+        boundCompileUnit.AddBoundNode(copyAssignment);
+        return assignmentSymbol;
+    }
+    
+    public class ArrayIndexing : Cm.Core.BasicTypeOp
+    {
+        public ArrayIndexing(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* type_) : base(type_)
+        {
+            SetGroupName("operator[]");
+            SetReturnType(typeRepository.MakeReferenceType(Type()->GetBaseType(), Span()));
+            Cm.Sym.ParameterSymbol* arrayParam = new Cm.Sym.ParameterSymbol(Span(), "array");
+            arrayParam->SetType(Type());
+            AddSymbol(arrayParam);
+            Cm.Sym.ParameterSymbol* indexParam = new Cm.Sym.ParameterSymbol(Span(), "index");
+            indexParam->SetType(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId)));
+            AddSymbol(indexParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                Ir.Intf.Object* zero = Cm.IrIntf.MakeI32Constant(0);
+                emitter.Own(zero);
+                if (result.Arg1() is Ir.Intf.StackVar*)
+                {
+                    Ir.Intf.Type* arrayPtrType = Cm.IrIntf.Pointer(Type()->GetBaseType()->IrType(), 1u);
+                    emitter.Own(arrayPtrType);
+                    emitter.Emit(Cm.IrIntf.GetElementPtr(arrayPtrType, result.MainObject(), result.Arg1(), result.Arg2()));
+                }
+                else
+                {
+                    Ir.Intf.Type* arrayPtrType = Cm.IrIntf.Pointer(Type()->IrType(), 1u);
+                    emitter.Own(arrayPtrType);
+                    emitter.Emit(Cm.IrIntf.GetElementPtr(arrayPtrType, result.MainObject(), result.Arg1(), zero, result.Arg2()));
+                }
+            }
+            else
+            {
+                emitter.Emit(Cm.IrIntf.Index(result.MainObject(), result.Arg1(), result.Arg2()));
+            }    
+        }
     }
 }

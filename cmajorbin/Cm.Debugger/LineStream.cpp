@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Debugger/LineStream.hpp>
+#include <stdexcept>
 
 namespace Cm { namespace Debugger {
 
