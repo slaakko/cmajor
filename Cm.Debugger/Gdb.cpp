@@ -21,7 +21,7 @@
 #else
 #include <unistd.h>
 #include <fcntl.h>
-#endif;
+#endif
 
 namespace Cm { namespace Debugger {
 

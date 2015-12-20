@@ -11,6 +11,7 @@
 #define SOCKETS_SOCKET_UTIL_INCLUDED
 #include <stdexcept>
 #include <string>
+#include <stdint.h>
 
 namespace Sockets {
 
@@ -27,7 +28,7 @@ public:
     int Size() const { return size; }
 private:
     int size;
-    void* mem;
+    uint8_t* mem;
 };
 
 class SocketError : public std::runtime_error

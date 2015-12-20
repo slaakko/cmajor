@@ -10,7 +10,6 @@
 #include <Sockets/SocketUtil.hpp>
 #include <Sockets/SocketApi.hpp>
 #include <algorithm>
-#include <stdint.h>
 
 namespace Sockets {
 
