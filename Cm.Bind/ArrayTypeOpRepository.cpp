@@ -363,7 +363,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyAssignment(Cm::Sym::TypeSymbol* ar
         new Cm::Ast::DerefNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "this")),
         new Cm::Ast::DerefNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that")));
     whileBlockContent->AddStatement(assignmentStatement);
-    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));;
+    whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::ThisNode(Cm::Parsing::Span()))));
     whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixIncNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "that"))));
     whileBlockContent->AddStatement(new Cm::Ast::SimpleStatementNode(Cm::Parsing::Span(), new Cm::Ast::PrefixDecNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "i"))));
     Cm::Ast::WhileStatementNode* whileStatement = new Cm::Ast::WhileStatementNode(Cm::Parsing::Span(),
