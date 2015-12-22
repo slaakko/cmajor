@@ -143,7 +143,7 @@ namespace Cm.Sym
         {
             return false;
         }
-        public nothrow virtual bool IsPointerTypeClassType() const
+        public nothrow virtual bool IsPointerToClassType() const
         {
             return false;
         }

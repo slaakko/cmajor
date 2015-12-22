@@ -24,6 +24,7 @@ source <Delegate.cm>;
 source <DelegateTypeOpRepository.cm>;
 source <Enumeration.cm>;
 source <Evaluator.cm>;
+source <ExpressionBinder.cm>;
 source <Function.cm>;
 source <InlineFunctionRepository.cm>;
 source <LocalVariable.cm>;
