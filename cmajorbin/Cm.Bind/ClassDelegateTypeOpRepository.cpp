@@ -134,7 +134,7 @@ void ClassDelegateEqualOp::CreateBoundNode(Cm::Sym::ContainerScope* containerSco
     Cm::Sym::FunctionLookupSet boolCopyCtorLookups;
     boolCopyCtorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, boundCompileUnit.SymbolTable().GlobalScope()));
     std::vector<Cm::Sym::FunctionSymbol*> boolCopyCtorConversions;
-    Cm::Sym::FunctionSymbol* boolCopyCtor = Cm::Bind::ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "@constructor", boolCopyCtorArgs, boolCopyCtorLookups,
+    Cm::Sym::FunctionSymbol* boolCopyCtor = ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "@constructor", boolCopyCtorArgs, boolCopyCtorLookups,
         classDelegateType->GetSpan(), boolCopyCtorConversions);
     for (Cm::Sym::MemberVariableSymbol* memberVariableSymbol : classDelegateType->MemberVariables())
     {
@@ -159,8 +159,7 @@ void ClassDelegateEqualOp::CreateBoundNode(Cm::Sym::ContainerScope* containerSco
         Cm::Sym::FunctionLookupSet functionLookups;
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        Cm::Sym::FunctionSymbol* memberVarOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, classDelegateType->GetSpan(), 
-            conversions);
+        Cm::Sym::FunctionSymbol* memberVarOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, classDelegateType->GetSpan(), conversions);
         Cm::BoundTree::BoundExpressionList arguments;
         arguments.Add(boundLeftMemberVar);
         arguments.Add(boundRightMemberVar);
@@ -178,7 +177,7 @@ void ClassDelegateEqualOp::CreateBoundNode(Cm::Sym::ContainerScope* containerSco
         Cm::Sym::FunctionLookupSet notBoolLookups;
         notBoolLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, boundCompileUnit.SymbolTable().GlobalScope()));
         std::vector<Cm::Sym::FunctionSymbol*> notBoolConversions;
-        Cm::Sym::FunctionSymbol* notBool = Cm::Bind::ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "operator!", notBoolArgs, notBoolLookups, 
+        Cm::Sym::FunctionSymbol* notBool = ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "operator!", notBoolArgs, notBoolLookups, 
             classDelegateType->GetSpan(), notBoolConversions);
         notEq->SetFunction(notBool);
         notEq->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);

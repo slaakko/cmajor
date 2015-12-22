@@ -354,6 +354,9 @@ namespace Cm.BoundTree
         public nothrow BoundMemberVariable() : base(null), symbol(null)
         {
         }
+        public nothrow BoundMemberVariable(Cm.Ast.Node* syntaxNode_, Cm.Sym.MemberVariableSymbol* symbol_) : base(syntaxNode_), symbol(symbol_)
+        {
+        }
         public nothrow override Cm.Core.ArgumentCategory ArgumentCategory() const
         {
             return Cm.Core.ArgumentCategory.lvalue;
@@ -467,7 +470,7 @@ namespace Cm.BoundTree
         {
             return boundTemporary.GetPtr();
         }
-        public nothrow inline void SetboundTemporary(BoundExpression* boundTemporary_)
+        public nothrow inline void SetBoundTemporary(BoundExpression* boundTemporary_)
         {
             boundTemporary.Reset(boundTemporary_);
         }
