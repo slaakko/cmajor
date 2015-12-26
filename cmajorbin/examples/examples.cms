@@ -1,5 +1,5 @@
 solution examples;
-project <BigInt/BigInt.cmp>;
+project <bigint/bigint.cmp>;
 project <calculator/calculator.cmp>;
 project <cmxmlsergen/CmXmlSerGen.cmp>;
 project <cp/cp.cmp>;

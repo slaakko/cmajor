@@ -1,0 +1,5 @@
+project BigInt;
+target=program;
+assembly <bigint.cma>;
+reference <ext/System.Numerics.Multiprecision/System.Numerics.Multiprecision.cml>;
+source <bigint.cm>;
