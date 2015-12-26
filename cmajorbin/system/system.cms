@@ -25,4 +25,4 @@ dependency System.Text.Json(System.Text.Parsing, System.Text.Parsing.CmObjectMod
 dependency System.Xml(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Xml.Serialization(System.Xml, System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Numerics.GmpIntf();
-dependency System.Numerics.Multiprecision();
+dependency System.Numerics.Multiprecision(System.Numerics.GmpIntf);
