@@ -1,0 +1,13 @@
+using System;
+using System.Numerics.Multiprecision;
+
+int main()
+{
+    BigInt result = 1;
+    for (int i = 2; i < 100; ++i)
+    {
+        result = result * i;
+    }
+    Console.Out() << result.ToString() << endl();
+    return 0;
+}
