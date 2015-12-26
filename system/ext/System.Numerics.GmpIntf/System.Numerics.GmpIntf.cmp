@@ -1,7 +1,7 @@
 project System.Numerics.GmpIntf;
 target=library;
 assembly <System.Numerics.GmpIntf.cma>;
-cppsource <gmpintf.cpp>;
+csource <gmpintf.c>;
 source <mpz.cm>;
 clib <gmp>;
 addlibrarypath <gmp>;
