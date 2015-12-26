@@ -1,0 +1,5 @@
+project System.Numerics.Multiprecision;
+target=library;
+assembly <System.Numerics.Multiprecision.cma>;
+reference <../System.Numerics.GmpIntf/System.Numerics.GmpIntf.cml>;
+source <BigInt.cm>;

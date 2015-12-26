@@ -252,6 +252,8 @@ public:
         a9ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A9Action));
         Cm::Parsing::ActionParser* a10ActionParser = GetAction("A10");
         a10ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A10Action));
+        Cm::Parsing::ActionParser* a11ActionParser = GetAction("A11");
+        a11ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<DeclarationRule>(this, &DeclarationRule::A11Action));
         Cm::Parsing::NonterminalParser* sourceFileDeclarationNonterminalParser = GetNonterminal("SourceFileDeclaration");
         sourceFileDeclarationNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DeclarationRule>(this, &DeclarationRule::PreSourceFileDeclaration));
         sourceFileDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostSourceFileDeclaration));
@@ -282,6 +284,9 @@ public:
         Cm::Parsing::NonterminalParser* executableFileDeclarationNonterminalParser = GetNonterminal("ExecutableFileDeclaration");
         executableFileDeclarationNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DeclarationRule>(this, &DeclarationRule::PreExecutableFileDeclaration));
         executableFileDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostExecutableFileDeclaration));
+        Cm::Parsing::NonterminalParser* addLibraryPathDeclarationNonterminalParser = GetNonterminal("AddLibraryPathDeclaration");
+        addLibraryPathDeclarationNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<DeclarationRule>(this, &DeclarationRule::PreAddLibraryPathDeclaration));
+        addLibraryPathDeclarationNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<DeclarationRule>(this, &DeclarationRule::PostAddLibraryPathDeclaration));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -326,6 +331,10 @@ public:
     void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = context.fromExecutableFileDeclaration;
+    }
+    void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromAddLibraryPathDeclaration;
     }
     void PreSourceFileDeclaration(Cm::Parsing::ObjectStack& stack)
     {
@@ -458,10 +467,23 @@ public:
             stack.pop();
         }
     }
+    void PreAddLibraryPathDeclaration(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Project*>(context.project)));
+    }
+    void PostAddLibraryPathDeclaration(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromAddLibraryPathDeclaration_value = std::move(stack.top());
+            context.fromAddLibraryPathDeclaration = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ProjectDeclaration*>*>(fromAddLibraryPathDeclaration_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): project(), value(), fromSourceFileDeclaration(), fromAsmSourceFileDeclaration(), fromCSourceFileDeclaration(), fromCppSourceFileDeclaration(), fromTextFileDeclaration(), fromReferenceFileDeclaration(), fromCLibraryDeclaration(), fromTargetDeclaration(), fromStackSizeDeclaration(), fromAssemblyFileDeclaration(), fromExecutableFileDeclaration() {}
+        Context(): project(), value(), fromSourceFileDeclaration(), fromAsmSourceFileDeclaration(), fromCSourceFileDeclaration(), fromCppSourceFileDeclaration(), fromTextFileDeclaration(), fromReferenceFileDeclaration(), fromCLibraryDeclaration(), fromTargetDeclaration(), fromStackSizeDeclaration(), fromAssemblyFileDeclaration(), fromExecutableFileDeclaration(), fromAddLibraryPathDeclaration() {}
         Cm::Ast::Project* project;
         Cm::Ast::ProjectDeclaration* value;
         Cm::Ast::ProjectDeclaration* fromSourceFileDeclaration;
@@ -475,6 +497,7 @@ private:
         Cm::Ast::ProjectDeclaration* fromStackSizeDeclaration;
         Cm::Ast::ProjectDeclaration* fromAssemblyFileDeclaration;
         Cm::Ast::ProjectDeclaration* fromExecutableFileDeclaration;
+        Cm::Ast::ProjectDeclaration* fromAddLibraryPathDeclaration;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -1028,6 +1051,76 @@ private:
     Context context;
 };
 
+class ProjectGrammar::AddLibraryPathDeclarationRule : public Cm::Parsing::Rule
+{
+public:
+    AddLibraryPathDeclarationRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::Project*", "project"));
+        SetValueTypeName("Cm::Ast::ProjectDeclaration*");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> project_value = std::move(stack.top());
+        context.project = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Project*>*>(project_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ProjectDeclaration*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<AddLibraryPathDeclarationRule>(this, &AddLibraryPathDeclarationRule::A0Action));
+        Cm::Parsing::NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+        filePathNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AddLibraryPathDeclarationRule>(this, &AddLibraryPathDeclarationRule::PostFilePath));
+        Cm::Parsing::NonterminalParser* propertiesNonterminalParser = GetNonterminal("Properties");
+        propertiesNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<AddLibraryPathDeclarationRule>(this, &AddLibraryPathDeclarationRule::PostProperties));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new AddLibraryPathDeclaration(span, context.fromFilePath, context.project->BasePath(), context.fromProperties);
+    }
+    void PostFilePath(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromFilePath_value = std::move(stack.top());
+            context.fromFilePath = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromFilePath_value.get());
+            stack.pop();
+        }
+    }
+    void PostProperties(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromProperties_value = std::move(stack.top());
+            context.fromProperties = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Properties>*>(fromProperties_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): project(), value(), fromFilePath(), fromProperties() {}
+        Cm::Ast::Project* project;
+        Cm::Ast::ProjectDeclaration* value;
+        std::string fromFilePath;
+        Cm::Ast::Properties fromProperties;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 class ProjectGrammar::CLibraryDeclarationRule : public Cm::Parsing::Rule
 {
 public:
@@ -1312,9 +1405,9 @@ void ProjectGrammar::GetReferencedGrammars()
 
 void ProjectGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
     AddRule(new ProjectRule("Project", GetScope(),
         new Cm::Parsing::SequenceParser(
@@ -1341,28 +1434,31 @@ void ProjectGrammar::CreateRules()
                                     new Cm::Parsing::AlternativeParser(
                                         new Cm::Parsing::AlternativeParser(
                                             new Cm::Parsing::AlternativeParser(
-                                                new Cm::Parsing::ActionParser("A0",
-                                                    new Cm::Parsing::NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
-                                                new Cm::Parsing::ActionParser("A1",
-                                                    new Cm::Parsing::NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
-                                            new Cm::Parsing::ActionParser("A2",
-                                                new Cm::Parsing::NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
-                                        new Cm::Parsing::ActionParser("A3",
-                                            new Cm::Parsing::NonterminalParser("CppSourceFileDeclaration", "CppSourceFileDeclaration", 1))),
-                                    new Cm::Parsing::ActionParser("A4",
-                                        new Cm::Parsing::NonterminalParser("TextFileDeclaration", "TextFileDeclaration", 1))),
-                                new Cm::Parsing::ActionParser("A5",
-                                    new Cm::Parsing::NonterminalParser("ReferenceFileDeclaration", "ReferenceFileDeclaration", 1))),
-                            new Cm::Parsing::ActionParser("A6",
-                                new Cm::Parsing::NonterminalParser("CLibraryDeclaration", "CLibraryDeclaration", 0))),
-                        new Cm::Parsing::ActionParser("A7",
-                            new Cm::Parsing::NonterminalParser("TargetDeclaration", "TargetDeclaration", 0))),
-                    new Cm::Parsing::ActionParser("A8",
-                        new Cm::Parsing::NonterminalParser("StackSizeDeclaration", "StackSizeDeclaration", 0))),
-                new Cm::Parsing::ActionParser("A9",
-                    new Cm::Parsing::NonterminalParser("AssemblyFileDeclaration", "AssemblyFileDeclaration", 1))),
-            new Cm::Parsing::ActionParser("A10",
-                new Cm::Parsing::NonterminalParser("ExecutableFileDeclaration", "ExecutableFileDeclaration", 1)))));
+                                                new Cm::Parsing::AlternativeParser(
+                                                    new Cm::Parsing::ActionParser("A0",
+                                                        new Cm::Parsing::NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
+                                                    new Cm::Parsing::ActionParser("A1",
+                                                        new Cm::Parsing::NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
+                                                new Cm::Parsing::ActionParser("A2",
+                                                    new Cm::Parsing::NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
+                                            new Cm::Parsing::ActionParser("A3",
+                                                new Cm::Parsing::NonterminalParser("CppSourceFileDeclaration", "CppSourceFileDeclaration", 1))),
+                                        new Cm::Parsing::ActionParser("A4",
+                                            new Cm::Parsing::NonterminalParser("TextFileDeclaration", "TextFileDeclaration", 1))),
+                                    new Cm::Parsing::ActionParser("A5",
+                                        new Cm::Parsing::NonterminalParser("ReferenceFileDeclaration", "ReferenceFileDeclaration", 1))),
+                                new Cm::Parsing::ActionParser("A6",
+                                    new Cm::Parsing::NonterminalParser("CLibraryDeclaration", "CLibraryDeclaration", 0))),
+                            new Cm::Parsing::ActionParser("A7",
+                                new Cm::Parsing::NonterminalParser("TargetDeclaration", "TargetDeclaration", 0))),
+                        new Cm::Parsing::ActionParser("A8",
+                            new Cm::Parsing::NonterminalParser("StackSizeDeclaration", "StackSizeDeclaration", 0))),
+                    new Cm::Parsing::ActionParser("A9",
+                        new Cm::Parsing::NonterminalParser("AssemblyFileDeclaration", "AssemblyFileDeclaration", 1))),
+                new Cm::Parsing::ActionParser("A10",
+                    new Cm::Parsing::NonterminalParser("ExecutableFileDeclaration", "ExecutableFileDeclaration", 1))),
+            new Cm::Parsing::ActionParser("A11",
+                new Cm::Parsing::NonterminalParser("AddLibraryPathDeclaration", "AddLibraryPathDeclaration", 1)))));
     AddRule(new SourceFileDeclarationRule("SourceFileDeclaration", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -1454,6 +1550,18 @@ void ProjectGrammar::CreateRules()
                     new Cm::Parsing::KeywordParser("executable"),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("FilePath", "FilePath", 0))),
+                new Cm::Parsing::ExpectationParser(
+                    new Cm::Parsing::CharParser(';'))))));
+    AddRule(new AddLibraryPathDeclarationRule("AddLibraryPathDeclaration", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::KeywordParser("addlibrarypath"),
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::NonterminalParser("FilePath", "FilePath", 0))),
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::NonterminalParser("Properties", "Properties", 0))),
                 new Cm::Parsing::ExpectationParser(
                     new Cm::Parsing::CharParser(';'))))));
     AddRule(new CLibraryDeclarationRule("CLibraryDeclaration", GetScope(),

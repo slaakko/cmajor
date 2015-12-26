@@ -171,6 +171,7 @@ namespace Cm.Parser
         ReferenceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         AssemblyFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
+        AddLibraryPathDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         CLibraryDeclaration: Cm::Ast::ProjectDeclaration*;
         TargetDeclaration: Cm::Ast::ProjectDeclaration*;
         StackSizeDeclaration: Cm::Ast::ProjectDeclaration*;

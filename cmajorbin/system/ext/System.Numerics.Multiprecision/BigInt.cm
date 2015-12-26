@@ -1,0 +1,149 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+using System;
+
+namespace System.Numerics.Multiprecision
+{
+    public class BigInt
+    {
+        public nothrow BigInt() : mpz(create_mpz())
+        {
+        }
+        public nothrow BigInt(int that) : mpz(create_mpz())
+        {
+            assign_mpz_si(mpz, that);
+        }
+        public nothrow BigInt(uint that) : mpz(create_mpz())
+        {
+            assign_mpz_ui(mpz, that);
+        }
+        public nothrow BigInt(const string& str) : this(str, 10)
+        {
+        }
+        public nothrow BigInt(const string& str, int base_) : mpz(create_mpz())
+        {
+            assign_mpz_str(mpz, str.Chars(), base_);
+        }
+        public nothrow ~BigInt()
+        {
+            if (mpz != -1)
+            {
+                destroy_mpz(mpz);
+            }        
+        }
+        public nothrow BigInt(const BigInt& that) : mpz(create_mpz())
+        {
+            assign_mpz(mpz, that.mpz);
+        }
+        public nothrow BigInt(BigInt&& that) : mpz(that.mpz)
+        {
+            that.mpz = -1;
+        }
+        public nothrow void operator=(const BigInt& that)
+        {
+            if (mpz != -1)
+            {
+                destroy_mpz(mpz);
+            }            
+            mpz = create_mpz();
+            assign_mpz(mpz, that.mpz);
+        }
+        public default nothrow void operator=(BigInt&& that);
+        public nothrow void operator=(int that)
+        {
+            if (mpz != -1)
+            {
+                destroy_mpz(mpz);
+            }            
+            mpz = create_mpz();
+            assign_mpz_si(mpz, that);
+        }
+        public nothrow void operator=(uint that)
+        {
+            if (mpz != -1)
+            {
+                destroy_mpz(mpz);
+            }            
+            mpz = create_mpz();
+            assign_mpz_ui(mpz, that);
+        }
+        public nothrow string ToString() const
+        {
+            char* str = get_mpz_str(mpz, 10);
+            string s(str);
+            free(str);
+            return s;
+        }
+        public nothrow inline int Handle() const
+        {
+            return mpz;
+        }    
+        private int mpz;
+    }
+    
+    public nothrow BigInt operator-(const BigInt& x)
+    {
+        BigInt result;
+        neg_mpz(result.Handle(), x.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt Abs(const BigInt& x)
+    {
+        BigInt result;
+        abs_mpz(result.Handle(), x.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt operator+(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        add_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt operator-(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        sub_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt operator*(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        mul_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt operator/(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        div_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigInt operator%(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        rem_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow bool operator==(const BigInt& left, const BigInt& right)
+    {
+        return cmp_mpz(left.Handle(), right.Handle()) == 0;
+    }
+
+    public nothrow bool operator<(const BigInt& left, const BigInt& right)
+    {
+        return cmp_mpz(left.Handle(), right.Handle()) < 0;
+    }
+}
