@@ -4,6 +4,8 @@ project <support.cmp>;
 project <system.cmp>;
 project <ext/System.Net.Http/System.Net.Http.cmp>;
 project <ext/System.Net.Sockets/System.Net.Sockets.cmp>;
+project <ext/System.Numerics.GmpIntf/System.Numerics.GmpIntf.cmp>;
+project <ext/System.Numerics.Multiprecision/System.Numerics.Multiprecision.cmp>;
 project <ext/System.Text.Json/System.Text.Json.cmp>;
 project <ext/System.Text.Parsing/System.Text.Parsing.cmp>;
 project <ext/System.Text.Parsing.CmObjectModel/System.Text.Parsing.CmObjectModel.cmp>;
@@ -22,3 +24,5 @@ dependency System.Net.Http(System.Text.Parsing, System.Text.Parsing.CmObjectMode
 dependency System.Text.Json(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Xml(System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Xml.Serialization(System.Xml, System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
+dependency System.Numerics.GmpIntf();
+dependency System.Numerics.Multiprecision();

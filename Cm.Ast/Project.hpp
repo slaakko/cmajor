@@ -49,6 +49,7 @@ public:
     virtual bool IsStackSizeDeclaration() const { return false; }
     virtual bool IsAssemblyFileDeclaration() const { return false; }
     virtual bool IsExecutableFileDeclaration() const { return false; }
+    virtual bool IsAddLibraryPathDeclaration() const { return false; }
     virtual bool IsReferenceFileDeclaration() const { return false; }
     virtual bool IsCLibraryDeclaration() const { return false; }
     const Span& GetSpan() const { return span; }
@@ -64,7 +65,7 @@ public:
     SourceFileDeclaration(const Span& span_, SourceFileType fileType_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_);
     SourceFileType FileType() const { return fileType; }
     const std::string& FilePath() const { return filePath; }
-    virtual bool IsSourceFileDeclaration() const { return true; }
+    bool IsSourceFileDeclaration() const override { return true; }
 private:
     SourceFileType fileType;
     std::string filePath;
@@ -75,7 +76,7 @@ class ReferenceFileDeclaration : public ProjectDeclaration
 public:
     ReferenceFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_);
     const std::string& FilePath() const { return filePath; }
-    virtual bool IsReferenceFileDeclaration() const { return true; }
+    bool IsReferenceFileDeclaration() const override { return true; }
 private:
     std::string filePath;
 };
@@ -85,7 +86,7 @@ class AssemblyFileDeclaration : public ProjectDeclaration
 public:
     AssemblyFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_, const Properties& properties_);
     const std::string& FilePath() const { return filePath; }
-    virtual bool IsAssemblyFileDeclaration() const { return true; }
+    bool IsAssemblyFileDeclaration() const override { return true; }
 private:
     std::string filePath;
 };
@@ -95,7 +96,17 @@ class ExecutableFileDeclaration : public ProjectDeclaration
 public:
     ExecutableFileDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& outputBasePath_);
     const std::string& FilePath() const { return filePath; }
-    virtual bool IsExecutableFileDeclaration() const { return true; }
+    bool IsExecutableFileDeclaration() const override { return true; }
+private:
+    std::string filePath;
+};
+
+class AddLibraryPathDeclaration : public ProjectDeclaration
+{
+public:
+    AddLibraryPathDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_);
+    const std::string& FilePath() const { return filePath; }
+    bool IsAddLibraryPathDeclaration() const override { return true; }
 private:
     std::string filePath;
 };
@@ -147,6 +158,7 @@ public:
     const std::vector<std::string>& CppSourceFilePaths() const { return cppSourceFilePaths; }
     const std::vector<std::string>& TextFilePaths() const { return textFilePaths; }
     const std::vector<std::string>& ReferenceFilePaths() const { return referenceFilePaths; }
+    const std::vector<std::string>& LibrarySearchPaths() const { return librarySearchPaths; }
     void AddReferenceFilePath(const std::string& referenceFilePath) { referenceFilePaths.push_back(referenceFilePath); }
     const std::vector<std::string>& CLibraryFilePaths() const { return cLibraryFilePaths; }
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
@@ -171,6 +183,7 @@ private:
     std::vector<std::string> textFilePaths;
     std::vector<std::string> referenceFilePaths;
     std::vector<std::string> cLibraryFilePaths;
+    std::vector<std::string> librarySearchPaths;
     std::string assemblyFilePath;
     std::string libraryFilePath;
     std::string executableFilePath;

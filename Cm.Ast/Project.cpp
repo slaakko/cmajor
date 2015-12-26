@@ -51,6 +51,11 @@ ExecutableFileDeclaration::ExecutableFileDeclaration(const Span& span_, const st
 {
 }
 
+AddLibraryPathDeclaration::AddLibraryPathDeclaration(const Span& span_, const std::string& filePath_, const boost::filesystem::path& basePath_, const Properties& properties_) :
+    ProjectDeclaration(span_, Properties()), filePath(boost::filesystem::absolute(filePath_, basePath_).generic_string())
+{
+}
+
 CLibraryDeclaration::CLibraryDeclaration(const Span& span_, const std::string& filePath_, const Properties& properties_) : ProjectDeclaration(span_, properties_), filePath(filePath_)
 {
 }
@@ -184,6 +189,11 @@ void Project::ResolveDeclarations()
                 }
             }
             referenceFilePaths.push_back(rfd->FilePath());
+        }
+        else if (declaration->IsAddLibraryPathDeclaration())
+        {
+            AddLibraryPathDeclaration* lsp = static_cast<AddLibraryPathDeclaration*>(declaration.get());
+            librarySearchPaths.push_back(lsp->FilePath());
         }
         else if (declaration->IsCLibraryDeclaration())
         {

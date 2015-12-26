@@ -42,6 +42,7 @@ namespace Cm.Parser
             |   StackSizeDeclaration{ value = StackSizeDeclaration; }
             |   AssemblyFileDeclaration(project){ value = AssemblyFileDeclaration; }
             |   ExecutableFileDeclaration(project){ value = ExecutableFileDeclaration; }
+            |   AddLibraryPathDeclaration(project){ value = AddLibraryPathDeclaration; }
             ;
 
         SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
@@ -74,6 +75,10 @@ namespace Cm.Parser
 
         ExecutableFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
             ::= (keyword("executable") FilePath! ';'!){ value = new ExecutableFileDeclaration(span, FilePath, project->OutputBasePath()); }
+            ;
+
+        AddLibraryPathDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*
+            ::= (keyword("addlibrarypath") FilePath! Properties? ';'!){ value = new AddLibraryPathDeclaration(span, FilePath, project->BasePath(), Properties); }
             ;
 
         CLibraryDeclaration: Cm::Ast::ProjectDeclaration*
