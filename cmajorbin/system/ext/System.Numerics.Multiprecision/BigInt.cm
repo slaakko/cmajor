@@ -24,16 +24,20 @@ namespace System.Numerics.Multiprecision
         {
             assign_mpz_ui(mpz, that);
         }
-        public nothrow BigInt(const string& str) : this(str, 10)
+        public BigInt(const string& str) : this(str, 10)
         {
         }
-        public nothrow BigInt(const string& str, int base_) : mpz(create_mpz())
+        public BigInt(const string& str, int base_) : mpz(create_mpz())
         {
-            assign_mpz_str(mpz, str.Chars(), base_);
+            int result = assign_mpz_str(mpz, str.Chars(), base_);
+            if (result != 0)
+            {
+                throw ConversionException("invalid digit string for initializing BigInt");
+            }
         }
         public nothrow ~BigInt()
         {
-            if (mpz != -1)
+            if (mpz != null)
             {
                 destroy_mpz(mpz);
             }        
@@ -44,11 +48,11 @@ namespace System.Numerics.Multiprecision
         }
         public nothrow BigInt(BigInt&& that) : mpz(that.mpz)
         {
-            that.mpz = -1;
+            that.mpz = null;
         }
         public nothrow void operator=(const BigInt& that)
         {
-            if (mpz != -1)
+            if (mpz != null)
             {
                 destroy_mpz(mpz);
             }            
@@ -58,7 +62,7 @@ namespace System.Numerics.Multiprecision
         public default nothrow void operator=(BigInt&& that);
         public nothrow void operator=(int that)
         {
-            if (mpz != -1)
+            if (mpz != null)
             {
                 destroy_mpz(mpz);
             }            
@@ -67,7 +71,7 @@ namespace System.Numerics.Multiprecision
         }
         public nothrow void operator=(uint that)
         {
-            if (mpz != -1)
+            if (mpz != null)
             {
                 destroy_mpz(mpz);
             }            
@@ -81,11 +85,11 @@ namespace System.Numerics.Multiprecision
             free(str);
             return s;
         }
-        public nothrow inline int Handle() const
+        public nothrow inline void* Handle() const
         {
             return mpz;
         }    
-        private int mpz;
+        private void* mpz;
     }
     
     public nothrow BigInt operator-(const BigInt& x)
