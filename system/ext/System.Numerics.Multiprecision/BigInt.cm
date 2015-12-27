@@ -80,7 +80,11 @@ namespace System.Numerics.Multiprecision
         }
         public nothrow string ToString() const
         {
-            char* str = get_mpz_str(mpz, 10);
+            return ToString(10);
+        }
+        public nothrow string ToString(int base_) const
+        {
+            char* str = get_mpz_str(mpz, base_);
             string s(str);
             free(str);
             return s;
@@ -149,5 +153,53 @@ namespace System.Numerics.Multiprecision
     public nothrow bool operator<(const BigInt& left, const BigInt& right)
     {
         return cmp_mpz(left.Handle(), right.Handle()) < 0;
+    }
+    
+    public nothrow BigInt operator&(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        and_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+
+    public nothrow BigInt operator|(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        or_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+
+    public nothrow BigInt operator^(const BigInt& left, const BigInt& right)
+    {
+        BigInt result;
+        xor_mpz(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+
+    public nothrow BigInt operator~(const BigInt& x)
+    {
+        BigInt result;
+        cpl_mpz(result.Handle(), x.Handle());
+        return result;
+    }
+
+    public nothrow void SetBit(BigInt& x, uint bitIndex)
+    {
+        setbit_mpz(x.Handle(), bitIndex);
+    }
+
+    public nothrow void ClearBit(BigInt& x, uint bitIndex)
+    {
+        clrbit_mpz(x.Handle(), bitIndex);
+    }
+
+    public nothrow void ToggleBit(BigInt& x, uint bitIndex)
+    {
+        cplbit_mpz(x.Handle(), bitIndex);
+    }
+    
+    public nothrow bool TestBit(BigInt& x, uint bitIndex)
+    {
+        return tstbit_mpz(x.Handle(), bitIndex) == 1;
     }
 }

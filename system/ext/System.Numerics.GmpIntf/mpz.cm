@@ -14,3 +14,11 @@ public extern cdecl void mul_mpz(void* mpz_target, void* mpz_left, void* mpz_rig
 public extern cdecl void div_mpz(void* mpz_target, void* mpz_left, void* mpz_right);
 public extern cdecl void rem_mpz(void* mpz_target, void* mpz_left, void* mpz_right);
 public extern cdecl int cmp_mpz(void* mpz_left, void* mpz_right);
+public extern cdecl void and_mpz(void* mpz_target, void* mpz_left, void* mpz_right);
+public extern cdecl void or_mpz(void* mpz_target, void* mpz_left, void* mpz_right);
+public extern cdecl void xor_mpz(void* mpz_target, void* mpz_left, void* mpz_right);
+public extern cdecl void cpl_mpz(void* mpz_left, void* mpz_right);
+public extern cdecl void setbit_mpz(void* mpz_handle, uint bit_index);
+public extern cdecl void clrbit_mpz(void* mpz_handle, uint bit_index);
+public extern cdecl void cplbit_mpz(void* mpz_handle, uint bit_index);
+public extern cdecl int tstbit_mpz(void* mpz_handle, uint bit_index);

@@ -119,3 +119,58 @@ int cmp_mpz(void* mpz_left, void* mpz_right)
     mpz_t* right = (mpz_t*)mpz_right;
     return mpz_cmp(*left, *right);
 }
+
+void and_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
+{
+    mpz_t* target = (mpz_t*)mpz_target;
+    mpz_t* left = (mpz_t*)mpz_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpz_and(*target, *left, *right);
+}
+
+void or_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
+{
+    mpz_t* target = (mpz_t*)mpz_target;
+    mpz_t* left = (mpz_t*)mpz_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpz_ior(*target, *left, *right);
+}
+
+void xor_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
+{
+    mpz_t* target = (mpz_t*)mpz_target;
+    mpz_t* left = (mpz_t*)mpz_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpz_xor(*target, *left, *right);
+}
+
+void cpl_mpz(void* mpz_left, void* mpz_right)
+{
+    mpz_t* left = (mpz_t*)mpz_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpz_com(*left, *right);
+}
+
+void setbit_mpz(void* mpz_handle, unsigned long bit_index)
+{
+    mpz_t* mpz = (mpz_t*)mpz_handle;
+    mpz_setbit(*mpz, (mp_bitcnt_t)bit_index);
+}
+
+void clrbit_mpz(void* mpz_handle, unsigned long bit_index)
+{
+    mpz_t* mpz = (mpz_t*)mpz_handle;
+    mpz_clrbit(*mpz, (mp_bitcnt_t)bit_index);
+}
+
+void cplbit_mpz(void* mpz_handle, unsigned long bit_index)
+{
+    mpz_t* mpz = (mpz_t*)mpz_handle;
+    mpz_combit(*mpz, (mp_bitcnt_t)bit_index);
+}
+
+int tstbit_mpz(void* mpz_handle, unsigned long bit_index)
+{
+    mpz_t* mpz = (mpz_t*)mpz_handle;
+    return mpz_tstbit(*mpz, (mp_bitcnt_t)bit_index);
+}
