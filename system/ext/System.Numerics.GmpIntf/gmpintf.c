@@ -5,7 +5,11 @@
         #include "gmp/windows/x86/gmp.h"
     #endif
 #elif defined(__linux) || defined(__unix) || defined(__posix)
-    #include "gmp/linux/gmp.h"
+    #if defined(__x86_64__)
+        #include "gmp/linux/x86_64/gmp.h"
+    #else
+        #include "gmp/linux/i686/gmp.h"
+    #endif
 #else
     #error unknown platform
 #endif
