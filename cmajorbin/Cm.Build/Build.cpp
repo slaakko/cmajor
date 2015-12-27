@@ -81,6 +81,26 @@ std::string GetOs()
 #endif
 }
 
+int GetBits()
+{
+#ifdef _WIN32
+    #if defined(_M_X64)
+        return 64;
+    #else
+        return 32;
+    #endif
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    #if defined(__x86_64__)
+        return 64;
+    #else
+        return 32;
+    #endif;
+#else
+    #error unknown platform
+#endif
+    return 64;
+}
+
 std::string GetCmLibraryPath()
 {
     char* cmLibraryPath = getenv("CM_LIBRARY_PATH");
@@ -2021,7 +2041,7 @@ void BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
         projectGrammar = Cm::Parser::ProjectGrammar::Create();
     }
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
-        Cm::IrIntf::GetBackEndStr(), GetOs()));
+        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
     project->ResolveDeclarations();
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
     {
@@ -2076,7 +2096,7 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
         }
         Cm::Util::MappedInputFile projectFile(projectFilePath);
         std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
-            Cm::IrIntf::GetBackEndStr(), GetOs()));
+            Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
         project->ResolveDeclarations();
         solution->AddProject(std::move(project));
     }

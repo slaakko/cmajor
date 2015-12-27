@@ -32,7 +32,7 @@ void ParseSolution(Cm::Parser::SolutionGrammar* solutionGrammar, Cm::Parser::Pro
 int ParseProject(Cm::Parser::ProjectGrammar* projectGrammar, Cm::Parser::CompileUnitGrammar* compileUnitGrammar, const std::string& projectFilePath)
 {
     Cm::Util::MappedInputFile projectFile(projectFilePath);
-    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", "windows"));
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", "windows", 64));
     project->ResolveDeclarations();
     std::cout << projectFilePath << ": " << project->Name() << std::endl;
     std::cout << "=========================================================" << std::endl;

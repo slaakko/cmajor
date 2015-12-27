@@ -34,7 +34,7 @@ ProjectGrammar::ProjectGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     SetOwner(0);
 }
 
-Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend, std::string os)
+Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend, std::string os, int bits)
 {
     Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
@@ -48,6 +48,7 @@ Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int 
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(config)));
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(backend)));
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(os)));
+    stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<int>(bits)));
     Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
     Cm::Parsing::Span stop = scanner.GetSpan();
     if (Log())
@@ -80,12 +81,16 @@ public:
         AddInheritedAttribute(AttrOrVariable("std::string", "config"));
         AddInheritedAttribute(AttrOrVariable("std::string", "backend"));
         AddInheritedAttribute(AttrOrVariable("std::string", "os"));
+        AddInheritedAttribute(AttrOrVariable("int", "bits"));
         SetValueTypeName("Cm::Ast::Project*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> bits_value = std::move(stack.top());
+        context.bits = *static_cast<Cm::Parsing::ValueObject<int>*>(bits_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> os_value = std::move(stack.top());
         context.os = *static_cast<Cm::Parsing::ValueObject<std::string>*>(os_value.get());
         stack.pop();
@@ -116,7 +121,7 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os);
+        context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os, context.bits);
     }
     void Postqualified_id(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -134,10 +139,11 @@ public:
 private:
     struct Context
     {
-        Context(): config(), backend(), os(), value(), fromqualified_id() {}
+        Context(): config(), backend(), os(), bits(), value(), fromqualified_id() {}
         std::string config;
         std::string backend;
         std::string os;
+        int bits;
         Cm::Ast::Project* value;
         std::string fromqualified_id;
     };

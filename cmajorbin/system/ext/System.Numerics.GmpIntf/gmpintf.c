@@ -1,5 +1,9 @@
 #ifdef _WIN32
-    #include "gmp/windows/gmp.h"
+    #if defined(_M_X64)
+        #include "gmp/windows/x64/gmp.h"
+    #else
+        #include "gmp/windows/x86/gmp.h"
+    #endif
 #elif defined(__linux) || defined(__unix) || defined(__posix)
     #include "gmp/linux/gmp.h"
 #else

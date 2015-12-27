@@ -144,7 +144,7 @@ private:
 class Project
 {
 public:
-    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_);
+    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
     const std::string& Name() const { return name; }
@@ -173,6 +173,7 @@ private:
     std::string config;
     std::string backend;
     std::string os;
+    int bits;
     Target target;
     uint64_t stackSize;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;

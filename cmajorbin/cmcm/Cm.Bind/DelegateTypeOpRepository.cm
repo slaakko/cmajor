@@ -15,14 +15,432 @@ namespace Cm.Bind
 {
     public class DelegateTypeOpRepository : Cm.Core.DelegateTypeOpRepository
     {
-        public nothrow DelegateTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
+        public DelegateTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
         {
+            delegateTypeOpGroupMap["@constructor"] = &delegateConstructorOpGroup;
+            delegateTypeOpGroupMap["operator="] = &delegateAssignmentOpGroup;
+            delegateTypeOpGroupMap["operator=="] = &delegateEqualOpGroup;
+            delegateTypeOpGroupMap["operator<"] = &delegateLessOpGroup;
         }
         public override void CollectViableFunctions(Cm.Sym.ContainerScope* containerScope, const string& groupName, int arity, List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, 
             const Span& span, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
         {
-            // todo
+            if (arguments.Count() != arity)
+            {
+                throw Exception("wrong number of arguments");
+            }
+            if (arity < 1 || arity > 2) return;
+            HashMap<string, DelegateTypeOpGroup*>.ConstIterator i = delegateTypeOpGroupMap.CFind(groupName);
+            if (i != delegateTypeOpGroupMap.CEnd())
+            {
+                DelegateTypeOpGroup* group = i->second;
+                group->CollectViableFunctions(boundCompileUnit, containerScope, span, arity, arguments, conversionTable, boundCompileUnit.SymbolTable().GetTypeRepository(), cacheMap, caches, viableFunctions);
+            }
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private HashMap<string, DelegateTypeOpGroup*> delegateTypeOpGroupMap;
+        private HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*> cacheMap;
+        private List<UniquePtr<DelegateTypeOpCache>> caches;
+        private DelegateConstructorOpGroup delegateConstructorOpGroup;
+        private DelegateAssignmentOpGroup delegateAssignmentOpGroup;
+        private DelegateEqualOpGroup delegateEqualOpGroup;
+        private DelegateLessOpGroup delegateLessOpGroup;
+    }
+    
+    public abstract class DelegateTypeOpGroup
+    {
+        public nothrow virtual ~DelegateTypeOpGroup()
+        {
+        }
+        public abstract void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments, 
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*>& cacheMap, List<UniquePtr<DelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions);
+    }
+    
+    public class DelegateConstructorOpGroup : DelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments, 
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*>& cacheMap, List<UniquePtr<DelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 1)
+            {
+                Cm.Sym.TypeSymbol* type = arguments[0].Type();
+                if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.DelegateTypeSymbol*)) // delegate default constructor
+                {
+                    Cm.Sym.TypeSymbol* delegateType = type->GetBaseType();
+                    DelegateTypeOpCache* cache = cacheMap[delegateType];
+                    if (cache == null)
+                    {
+                        cache = new DelegateTypeOpCache();
+                        cacheMap[delegateType] = cache;
+                        caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                    }
+                    viableFunctions.Insert(cache->GetDefaultCtor(typeRepository, delegateType));
+                }
+            }
+            else if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* type = arguments[0].Type();
+                if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.DelegateTypeSymbol*)) 
+                {
+                    Cm.Sym.DelegateTypeSymbol* delegateType = cast<Cm.Sym.DelegateTypeSymbol*>(type->GetBaseType());
+                    Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                    if (Cm.Sym.TypesEqual(delegateType, rightType)) // delegate copy constructor
+                    {
+                        DelegateTypeOpCache* cache = cacheMap[delegateType];
+                        if (cache == null)
+                        {
+                            cache = new DelegateTypeOpCache();
+                            cacheMap[delegateType] = cache;
+                            caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                        }
+                        viableFunctions.Insert(cache->GetCopyCtor(typeRepository, delegateType));
+                    }
+                    else 
+                    {
+                        Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(delegateType, span);
+                        if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // delegate copy constructor
+                        {
+                            DelegateTypeOpCache* cache = cacheMap[delegateType];
+                            if (cache == null)
+                            {
+                                cache = new DelegateTypeOpCache();
+                                cacheMap[delegateType] = cache;
+                                caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                            }
+                            viableFunctions.Insert(cache->GetCopyCtor(typeRepository, delegateType));
+                        }
+                        else 
+                        {
+                            Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(delegateType, span);
+                            if (Cm.Sym.TypesEqual(rvalueRefType, rightType)) // delegate move constructor
+                            {
+                                DelegateTypeOpCache* cache = cacheMap[delegateType];
+                                if (cache == null)
+                                {
+                                    cache = new DelegateTypeOpCache();
+                                    cacheMap[delegateType] = cache;
+                                    caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                                }
+                                viableFunctions.Insert(cache->GetMoveCtor(typeRepository, delegateType));
+                            }
+                            else if (rightType is Cm.Sym.FunctionGroupTypeSymbol*) // delegate from function constructor
+                            {
+                                Cm.Sym.FunctionGroupTypeSymbol* functionGroupTypeSymbol = cast<Cm.Sym.FunctionGroupTypeSymbol*>(rightType);
+                                Cm.Sym.FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
+                                Cm.Sym.FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), 
+                                    functionGroupSymbol->BoundTemplateArguments(), span);
+                                DelegateTypeOpCache* cache = cacheMap[delegateType];
+                                if (cache == null)
+                                {
+                                    cache = new DelegateTypeOpCache();
+                                    cacheMap[delegateType] = cache;
+                                    caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                                }
+                                Cm.Sym.TypeSymbol* delegatePtrType = typeRepository.MakePointerType(delegateType, span);
+                                viableFunctions.Insert(cache->GetDelegateFromFunCtor(typeRepository, delegatePtrType, delegateType, functionSymbol));
+                                arguments[1] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, delegatePtrType);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public class DelegateAssignmentOpGroup : DelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments, 
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*>& cacheMap, List<UniquePtr<DelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* type = arguments[0].Type();
+            if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.DelegateTypeSymbol*))
+            {
+                Cm.Sym.DelegateTypeSymbol* delegateType = cast<Cm.Sym.DelegateTypeSymbol*>(type->GetBaseType());
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                if (Cm.Sym.TypesEqual(delegateType, rightType)) // delegate copy assignment
+                {
+                    DelegateTypeOpCache* cache = cacheMap[delegateType];
+                    if (cache == null)
+                    {
+                        cache = new DelegateTypeOpCache();
+                        cacheMap[delegateType] = cache;
+                        caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                    }
+                    viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, delegateType));
+                }
+                else
+                {
+                    Cm.Sym.TypeSymbol* alternateRightType = typeRepository.MakeConstReferenceType(delegateType, span);
+                    if (Cm.Sym.TypesEqual(alternateRightType, rightType)) // delegate copy assignment
+                    {
+                        DelegateTypeOpCache* cache = cacheMap[delegateType];
+                        if (cache == null)
+                        {
+                            cache = new DelegateTypeOpCache();
+                            cacheMap[delegateType] = cache;
+                            caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                        }
+                        viableFunctions.Insert(cache->GetCopyAssignment(typeRepository, delegateType));
+                    }
+                    else 
+                    {
+                        Cm.Sym.TypeSymbol* rvalueRefType = typeRepository.MakeRvalueRefType(delegateType, span);
+                        if (Cm.Sym.TypesEqual(rvalueRefType, rightType)) // delegate move assignment
+                        {
+                            DelegateTypeOpCache* cache = cacheMap[delegateType];
+                            if (cache == null)
+                            {
+                                cache = new DelegateTypeOpCache();
+                                cacheMap[delegateType] = cache;
+                                caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                            }
+                            viableFunctions.Insert(cache->GetMoveAssignment(typeRepository, delegateType));
+                        }
+                        else if (rightType is Cm.Sym.FunctionGroupTypeSymbol*) // delegate from fun assignment
+                        {
+                            Cm.Sym.FunctionGroupTypeSymbol* functionGroupTypeSymbol = cast<Cm.Sym.FunctionGroupTypeSymbol*>(rightType);
+                            Cm.Sym.FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
+                            Cm.Sym.FunctionSymbol* functionSymbol = ResolveDelegateOverload(containerScope, boundCompileUnit, delegateType, functionGroupSymbol->Name(), 
+                                functionGroupSymbol->BoundTemplateArguments(), span);
+                            DelegateTypeOpCache* cache = cacheMap[delegateType];
+                            if (cache == null)
+                            {
+                                cache = new DelegateTypeOpCache();
+                                cacheMap[delegateType] = cache;
+                                caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                            }
+                            Cm.Sym.TypeSymbol* delegatePtrType = typeRepository.MakePointerType(delegateType, span);
+                            viableFunctions.Insert(cache->GetDelegateFromFunAssignment(typeRepository, delegatePtrType, delegateType, functionSymbol));
+                            arguments[1] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, delegatePtrType);
+                        }
+                    }
+                }
+            }
+        }
+    }    
+    
+    public class DelegateEqualOpGroup : DelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments, 
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*>& cacheMap, List<UniquePtr<DelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+            if ((leftType is Cm.Sym.DelegateTypeSymbol*) && Cm.Sym.TypesEqual(leftType, rightType))
+            {
+                DelegateTypeOpCache* cache = cacheMap[leftType];
+                if (cache == null)
+                {
+                    cache = new DelegateTypeOpCache();
+                    cacheMap[leftType] = cache;
+                    caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                }
+                viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftType));
+            }
+        }
+    }    
+
+    public class DelegateLessOpGroup : DelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments, 
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, DelegateTypeOpCache*>& cacheMap, List<UniquePtr<DelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
+            Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+            if ((leftType is Cm.Sym.DelegateTypeSymbol*) && Cm.Sym.TypesEqual(leftType, rightType))
+            {
+                DelegateTypeOpCache* cache = cacheMap[leftType];
+                if (cache == null)
+                {
+                    cache = new DelegateTypeOpCache();
+                    cacheMap[leftType] = cache;
+                    caches.Add(UniquePtr<DelegateTypeOpCache>(cache));
+                }
+                viableFunctions.Insert(cache->GetOpLess(typeRepository, leftType));
+            }
+        }
+    }    
+    
+    public class DelegateTypeOpCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (defaultCtor.IsNull())
+            {
+                defaultCtor.Reset(new Cm.Core.DefaultCtor(typeRepository, delegateType));
+            }
+            return defaultCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (copyCtor.IsNull())
+            {
+                copyCtor.Reset(new Cm.Core.CopyCtor(typeRepository, delegateType));
+            }
+            return copyCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (moveCtor.IsNull())
+            {
+                moveCtor.Reset(new Cm.Core.MoveCtor(typeRepository, delegateType));
+            }
+            return moveCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (copyAssignment.IsNull())
+            {
+                copyAssignment.Reset(new Cm.Core.CopyAssignment(typeRepository, delegateType));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (moveAssignment.IsNull())
+            {
+                moveAssignment.Reset(new Cm.Core.MoveAssignment(typeRepository, delegateType));
+            }
+            return moveAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (opEqual.IsNull())
+            {
+                opEqual.Reset(new Cm.Core.OpEqual(typeRepository, delegateType));
+            }
+            return opEqual.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpLess(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegateType)
+        {
+            if (opLess.IsNull())
+            {
+                opLess.Reset(new Cm.Core.OpLess(typeRepository, delegateType));
+            }
+            return opLess.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetDelegateFromFunCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegatePtrType, Cm.Sym.DelegateTypeSymbol* delegateType, Cm.Sym.FunctionSymbol* fun)
+        {
+            Cm.Sym.FunctionSymbol* delegateFromFunCtor = delegateFromFunCtorMap[fun];
+            if (delegateFromFunCtor == null)
+            {
+                delegateFromFunCtor = new DelegateFromFunCtor(typeRepository, delegatePtrType, delegateType, fun);
+                delegateFromFunCtorMap[fun] = delegateFromFunCtor;
+                functionSymbols.Add(UniquePtr<Cm.Sym.FunctionSymbol>(delegateFromFunCtor));
+            }
+            return delegateFromFunCtor;
+        }
+        public Cm.Sym.FunctionSymbol* GetDelegateFromFunAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegatePtrType, Cm.Sym.DelegateTypeSymbol* delegateType, Cm.Sym.FunctionSymbol* fun)
+        {
+            Cm.Sym.FunctionSymbol* delegateFromFunAssignment = delegateFromFunAssignmentMap[fun];
+            if (delegateFromFunAssignment == null)
+            {
+                delegateFromFunAssignment = new DelegateFromFunAssignment(typeRepository, delegatePtrType, delegateType, fun);
+                delegateFromFunAssignmentMap[fun] = delegateFromFunAssignment;
+                functionSymbols.Add(UniquePtr<Cm.Sym.FunctionSymbol>(delegateFromFunAssignment));
+            }
+            return delegateFromFunAssignment;
+        }
+        private UniquePtr<Cm.Sym.FunctionSymbol> defaultCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveCtor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opEqual;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opLess;
+        private List<UniquePtr<Cm.Sym.FunctionSymbol>> functionSymbols;
+        private HashMap<Cm.Sym.FunctionSymbol*, Cm.Sym.FunctionSymbol*> delegateFromFunCtorMap;
+        private HashMap<Cm.Sym.FunctionSymbol*, Cm.Sym.FunctionSymbol*> delegateFromFunAssignmentMap;
+    }
+    
+    public class DelegateFromFunCtor : Cm.Core.BasicTypeOp
+    {
+        public DelegateFromFunCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegatePtrType_, Cm.Sym.DelegateTypeSymbol* delegateType_, Cm.Sym.FunctionSymbol* functionSymbol_) :
+            base(delegateType_), delegatePtrType(delegatePtrType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            typeRepository.GetSymbolTable().SetSidAndAddSymbol(thisParam);
+            thisParam->SetType(delegatePtrType);
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* funParam = new Cm.Sym.ParameterSymbol(Span(), "fun");
+            typeRepository.GetSymbolTable().SetSidAndAddSymbol(funParam);
+            funParam->SetType(delegatePtrType);
+            AddSymbol(funParam);
+            ComputeName();
+        }
+        public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
+        {
+            Cm.IrIntf.Init(emitter, IrType(), result.Arg1(), result.MainObject());
+        }
+        private Cm.Sym.TypeSymbol* delegatePtrType;
+        private Cm.Sym.DelegateTypeSymbol* delegateType;
+        private Cm.Sym.FunctionSymbol* functionSymbol;
+    }
+    
+    public class DelegateFromFunAssignment : Cm.Core.BasicTypeOp
+    {
+        public DelegateFromFunAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* delegatePtrType_, Cm.Sym.DelegateTypeSymbol* delegateType_, Cm.Sym.FunctionSymbol* functionSymbol_) :
+            base(delegateType_), delegatePtrType(delegatePtrType_), delegateType(delegateType_), functionSymbol(functionSymbol_)
+        {
+            SetGroupName("operator=");
+            Cm.Sym.TypeSymbol* voidType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+            SetReturnType(voidType);
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            typeRepository.GetSymbolTable().SetSidAndAddSymbol(thisParam);
+            thisParam->SetType(delegatePtrType);
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* funParam = new Cm.Sym.ParameterSymbol(Span(), "fun");
+            typeRepository.GetSymbolTable().SetSidAndAddSymbol(funParam);
+            funParam->SetType(delegatePtrType);
+            AddSymbol(funParam);
+            ComputeName();
+        }
+        public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
+        {
+            Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), result.MainObject());
+        }
+        private Cm.Sym.TypeSymbol* delegatePtrType;
+        private Cm.Sym.DelegateTypeSymbol* delegateType;
+        private Cm.Sym.FunctionSymbol* functionSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* ResolveDelegateOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.DelegateTypeSymbol* delegateType, const string& groupName,
+        const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments, const Span& span)
+    {
+        List<Cm.Core.Argument> resolutionArguments;
+        for (Cm.Sym.ParameterSymbol* parameter : delegateType->Parameters())
+        {
+            Cm.Sym.TypeSymbol* parameterType = parameter->GetType();
+            Cm.Core.ArgumentCategory category = Cm.Core.ArgumentCategory.rvalue;
+            if (parameterType->IsReferenceType())
+            {
+                category = Cm.Core.ArgumentCategory.lvalue;
+            }
+            resolutionArguments.Add(Cm.Core.Argument(category, parameterType));
+        }
+        Cm.Sym.FunctionLookupSet resolutionLookups;
+        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
+        List<Cm.Sym.FunctionSymbol*> conversions;
+        Cm.Sym.FunctionSymbol* overload = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, resolutionLookups, span, conversions, Cm.Sym.ConversionType.implicit, 
+            boundTemplateArguments, OverloadResolutionFlags.none);
+        if (delegateType->IsNothrow() && overload->CanThrow())
+        {
+            throw Cm.Core.Error("conflicting nothrow specification of delegate and function types", span, overload->GetSpan());
+        }
+        if (!delegateType->IsNothrow() && !overload->CanThrow())
+        {
+            throw Cm.Core.Error("conflicting nothrow specification of delegate and function types", span, overload->GetSpan());
+        }
+        return overload;
     }
 }

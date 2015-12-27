@@ -338,7 +338,7 @@ void ClassDelegateAssignmentOpGroup::CollectViableFunctions(Cm::BoundTree::Bound
                 Cm::Sym::FunctionSymbol* viableFun = cache.GetClassDelegateFromFunAssignment(typeRepository, classDelegateType, functionSymbol);
                 viableFunctions.insert(viableFun);
                 arguments[1] = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classObjectType, span));
-                arguments[2] = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, static_cast<ClassDelegateFromFunCtor*>(viableFun)->DelegateType());
+                arguments[2] = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, static_cast<ClassDelegateFromFunAssignment*>(viableFun)->DelegateType());
             }
         }
         else if (classObjectType->IsPointerToClassType())
@@ -353,7 +353,7 @@ void ClassDelegateAssignmentOpGroup::CollectViableFunctions(Cm::BoundTree::Bound
                 ClassDelegateTypeOpCache& cache = delegateTypeOpCacheMap[classDelegateType];
                 Cm::Sym::FunctionSymbol* viableFun = cache.GetClassDelegateFromFunAssignment(typeRepository, classDelegateType, functionSymbol);
                 viableFunctions.insert(viableFun);
-                arguments[2] = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, static_cast<ClassDelegateFromFunCtor*>(viableFun)->DelegateType());
+                arguments[2] = Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, static_cast<ClassDelegateFromFunAssignment*>(viableFun)->DelegateType());
             }
         }
     }

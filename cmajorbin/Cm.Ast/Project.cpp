@@ -87,8 +87,8 @@ std::string Properties::GetProperty(const std::string& name_) const
     return std::string();
 }
 
-Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_) :
-    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), target(Target::none), stackSize(0)
+Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_) :
+    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), bits(bits_), target(Target::none), stackSize(0)
 {
     basePath.remove_filename();
     outputBasePath = basePath;
@@ -110,6 +110,12 @@ void Project::ResolveDeclarations()
         if (!declOs.empty())
         {
             if (declOs != os) continue;
+        }
+        std::string declBits = properties.GetProperty("bits");
+        if (!declBits.empty())
+        {
+            int db = std::stoi(declBits);
+            if (db != bits) continue;
         }
         if (declaration->IsSourceFileDeclaration())
         {

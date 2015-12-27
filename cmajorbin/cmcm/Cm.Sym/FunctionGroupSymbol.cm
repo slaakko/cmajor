@@ -74,8 +74,17 @@ namespace Cm.Sym
                 }
             }
         }
+        public nothrow inline const List<TypeSymbol*>& BoundTemplateArguments() const
+        {
+            return boundTemplateArguments;
+        }
+        public void SetBoundTemplateArguments(const List<TypeSymbol*>& boundTemplateArguments_)
+        {
+            boundTemplateArguments = boundTemplateArguments_;
+        }
         private HashMap<int, List<FunctionSymbol*>> arityFunctionListMap;
         private ContainerScope* containerScope;
+        private List<TypeSymbol*> boundTemplateArguments;
     }
     
     public class FunctionGroupTypeSymbol : TypeSymbol
