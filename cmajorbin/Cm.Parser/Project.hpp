@@ -1,5 +1,5 @@
-#ifndef Project_hpp_2606
-#define Project_hpp_2606
+#ifndef Project_hpp_8167
+#define Project_hpp_8167
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -33,9 +33,10 @@ private:
     class TargetDeclarationRule;
     class StackSizeDeclarationRule;
     class PropertiesRule;
+    class PropertyValueRule;
     class FilePathRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Project_hpp_2606
+#endif // Project_hpp_8167

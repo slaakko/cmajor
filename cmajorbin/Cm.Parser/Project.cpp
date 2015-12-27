@@ -1357,6 +1357,77 @@ private:
     Context context;
 };
 
+class ProjectGrammar::PropertyValueRule : public Cm::Parsing::Rule
+{
+public:
+    PropertyValueRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("std::string");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<std::string>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyValueRule>(this, &PropertyValueRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyValueRule>(this, &PropertyValueRule::A1Action));
+        Cm::Parsing::NonterminalParser* idNonterminalParser = GetNonterminal("id");
+        idNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyValueRule>(this, &PropertyValueRule::Postid));
+        Cm::Parsing::NonterminalParser* numNonterminalParser = GetNonterminal("num");
+        numNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyValueRule>(this, &PropertyValueRule::Postnum));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.fromid;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = std::to_string(context.fromnum);
+    }
+    void Postid(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromid_value = std::move(stack.top());
+            context.fromid = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromid_value.get());
+            stack.pop();
+        }
+    }
+    void Postnum(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromnum_value = std::move(stack.top());
+            context.fromnum = *static_cast<Cm::Parsing::ValueObject<int64_t>*>(fromnum_value.get());
+            stack.pop();
+        }
+    }
+private:
+    struct Context
+    {
+        Context(): value(), fromid(), fromnum() {}
+        std::string value;
+        std::string fromid;
+        int64_t fromnum;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 class ProjectGrammar::FilePathRule : public Cm::Parsing::Rule
 {
 public:
@@ -1413,6 +1484,7 @@ void ProjectGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
     AddRule(new ProjectRule("Project", GetScope(),
@@ -1619,10 +1691,16 @@ void ProjectGrammar::CreateRules()
                             new Cm::Parsing::SequenceParser(
                                 new Cm::Parsing::NonterminalParser("name", "identifier", 0),
                                 new Cm::Parsing::CharParser('=')),
-                            new Cm::Parsing::NonterminalParser("val", "identifier", 0))),
+                            new Cm::Parsing::NonterminalParser("val", "PropertyValue", 0))),
                     new Cm::Parsing::CharParser(','))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser(']')))));
+    AddRule(new PropertyValueRule("PropertyValue", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::ActionParser("A0",
+                new Cm::Parsing::NonterminalParser("id", "identifier", 0)),
+            new Cm::Parsing::ActionParser("A1",
+                new Cm::Parsing::NonterminalParser("num", "long", 0)))));
     AddRule(new FilePathRule("FilePath", GetScope(),
         new Cm::Parsing::TokenParser(
             new Cm::Parsing::SequenceParser(
