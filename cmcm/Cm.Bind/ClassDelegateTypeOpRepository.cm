@@ -15,15 +15,35 @@ namespace Cm.Bind
 {
     public class ClassDelegateTypeOpRepository : Cm.Core.ClassDelegateTypeOpRepository
     {
-        public nothrow ClassDelegateTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
+        public ClassDelegateTypeOpRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
         {
+            classDelegateTypeOpGroupMap["@constructor"] = &classDelegateConstructorOpGroup;
+            classDelegateTypeOpGroupMap["operator="] = &classDelegateAssignmentOpGroup;
+            classDelegateTypeOpGroupMap["operator=="] = &classDelegateEqualOpGroup;
         }
         public override void CollectViableFunctions(Cm.Sym.ContainerScope* containerScope, const string& groupName, int arity, List<Cm.Core.Argument>& arguments, Cm.Sym.ConversionTable& conversionTable, 
             const Span& span, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
         {
-            // todo
+            if (arity != arguments.Count())
+            {
+                throw Exception("wrong number or arguments");
+            }
+            if (arity < 2 || arity > 3) return;
+            HashMap<string, ClassDelegateTypeOpGroup*>.ConstIterator i = classDelegateTypeOpGroupMap.CFind(groupName);
+            if (i != classDelegateTypeOpGroupMap.CEnd())
+            {
+                ClassDelegateTypeOpGroup* group = i->second;
+                group->CollectViableFunctions(boundCompileUnit, containerScope, span, arity, arguments, conversionTable, boundCompileUnit.SymbolTable().GetTypeRepository(), classDelegateTypeOpCacheMap, 
+                    caches, viableFunctions);
+            }
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private List<UniquePtr<ClassDelegateTypeOpCache>> caches;
+        private HashMap<Cm.Sym.TypeSymbol*, ClassDelegateTypeOpCache*> classDelegateTypeOpCacheMap;
+        private HashMap<string, ClassDelegateTypeOpGroup*> classDelegateTypeOpGroupMap;
+        private ClassDelegateConstructorOpGroup classDelegateConstructorOpGroup;
+        private ClassDelegateAssignmentOpGroup classDelegateAssignmentOpGroup;
+        private ClassDelegateEqualOpGroup classDelegateEqualOpGroup;
     }
     
     public class ClassDelegateTypeOpCache
@@ -128,6 +148,91 @@ namespace Cm.Bind
                         viableFunctions.Insert(viableFun);
                         arguments[2] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, cast<ClassDelegateFromFunCtor*>(viableFun)->DelegateType());
                     }
+                }
+            }
+        }
+    }
+    
+    public class ClassDelegateAssignmentOpGroup : ClassDelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments,
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, ClassDelegateTypeOpCache*>& cacheMap, List<UniquePtr<ClassDelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 3) return;
+            Cm.Sym.TypeSymbol* type = arguments[0].Type();
+            if (type->IsPointerType() && type->GetPointerCount() == 1 && (type->GetBaseType() is Cm.Sym.ClassDelegateTypeSymbol*))
+            {
+                Cm.Sym.ClassDelegateTypeSymbol* classDelegateType = cast<Cm.Sym.ClassDelegateTypeSymbol*>(type->GetBaseType());
+                Cm.Sym.TypeSymbol* classObjectType = arguments[1].Type();
+                if (classObjectType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.TypeSymbol* rightType = arguments[2].Type();
+                    if (rightType is Cm.Sym.FunctionGroupTypeSymbol*) // class delegate from function assignment
+                    {
+                        Cm.Sym.FunctionGroupTypeSymbol* functionGroupTypeSymbol = cast<Cm.Sym.FunctionGroupTypeSymbol*>(rightType);
+                        Cm.Sym.FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
+                        Cm.Sym.FunctionSymbol* functionSymbol = ResolveClassDelegateOverload(containerScope, boundCompileUnit, classDelegateType, classObjectType, functionGroupSymbol->Name(), span);
+                        ClassDelegateTypeOpCache* cache = cacheMap[classDelegateType];
+                        if (cache == null)
+                        {
+                            cache = new ClassDelegateTypeOpCache();
+                            cacheMap[classDelegateType] = cache;
+                            caches.Add(UniquePtr<ClassDelegateTypeOpCache>(cache));
+                        }
+                        Cm.Sym.FunctionSymbol* viableFun = cache->GetClassDelegateFromFunAssignment(typeRepository, classDelegateType, functionSymbol);
+                        viableFunctions.Insert(viableFun);
+                        arguments[1] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classObjectType, span));
+                        arguments[2] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, cast<ClassDelegateFromFunAssignment*>(viableFun)->DelegateType());
+                    }
+                }
+                else if (classObjectType->IsPointerToClassType())
+                {
+                    Cm.Sym.TypeSymbol* rightType = arguments[2].Type();
+                    if (rightType is Cm.Sym.FunctionGroupTypeSymbol*) // class delegate from function assignment
+                    {
+                        Cm.Sym.FunctionGroupTypeSymbol* functionGroupTypeSymbol = cast<Cm.Sym.FunctionGroupTypeSymbol*>(rightType);
+                        Cm.Sym.FunctionGroupSymbol* functionGroupSymbol = functionGroupTypeSymbol->GetFunctionGroupSymbol();
+                        Cm.Sym.FunctionSymbol* functionSymbol = ResolveClassDelegateOverload(containerScope, boundCompileUnit, classDelegateType, classObjectType->GetBaseType(), functionGroupSymbol->Name(), span);
+                        ClassDelegateTypeOpCache* cache = cacheMap[classDelegateType];
+                        if (cache == null)
+                        {
+                            cache = new ClassDelegateTypeOpCache();
+                            cacheMap[classDelegateType] = cache;
+                            caches.Add(UniquePtr<ClassDelegateTypeOpCache>(cache));
+                        }
+                        Cm.Sym.FunctionSymbol* viableFun = cache->GetClassDelegateFromFunAssignment(typeRepository, classDelegateType, functionSymbol);
+                        viableFunctions.Insert(viableFun);
+                        arguments[2] = Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, cast<ClassDelegateFromFunAssignment*>(viableFun)->DelegateType());
+                    }
+                }
+            }
+        }
+    }
+    
+    public class ClassDelegateEqualOpGroup : ClassDelegateTypeOpGroup
+    {
+        public override void CollectViableFunctions(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const Span& span, int arity, List<Cm.Core.Argument>& arguments,
+            Cm.Sym.ConversionTable& conversionTable, Cm.Sym.TypeRepository& typeRepository, HashMap<Cm.Sym.TypeSymbol*, ClassDelegateTypeOpCache*>& cacheMap, List<UniquePtr<ClassDelegateTypeOpCache>>& caches,
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* type = arguments[0].Type();
+            if (type is Cm.Sym.ClassDelegateTypeSymbol*)
+            {
+                Cm.Sym.ClassDelegateTypeSymbol* classDelegateType = cast<Cm.Sym.ClassDelegateTypeSymbol*>(type);
+                Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
+                if ((rightType is Cm.Sym.ClassDelegateTypeSymbol*) && Cm.Sym.TypesEqual(classDelegateType, rightType))
+                {
+                    ClassDelegateTypeOpCache* cache = cacheMap[classDelegateType];
+                    if (cache == null)
+                    {
+                        cache = new ClassDelegateTypeOpCache();
+                        cacheMap[classDelegateType] = cache;
+                        caches.Add(UniquePtr<ClassDelegateTypeOpCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* viableFun = cache->GetClassDelegateEqualOp(containerScope, boundCompileUnit, classDelegateType);
+                    viableFunctions.Insert(viableFun);
                 }
             }
         }

@@ -59,6 +59,26 @@ std::string GetOs()
 #endif
 }
 
+int GetBits()
+{
+#ifdef _WIN32
+    #if defined(_M_X64)
+        return 64;
+    #else
+        return 32;
+    #endif
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    #if defined(__x86_64__)
+        return 64;
+    #else
+        return 32;
+    #endif;
+#else
+    #error unknown platform
+#endif
+    return 64;
+}
+
 Cm::Ast::FunctionNode* CreateDriverFunction(const std::string& unitTestName)
 {
     Cm::Ast::FunctionNode* driverFunction = new Cm::Ast::FunctionNode(Cm::Parsing::Span(), Cm::Ast::Specifiers::public_ | Cm::Ast::Specifiers::nothrow_,
@@ -531,7 +551,7 @@ bool TestProject(const std::string& projectFilePath, const std::string& fileName
         projectGrammar = Cm::Parser::ProjectGrammar::Create();
     }
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(),
-        Cm::IrIntf::GetBackEndStr(), GetOs()));
+        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
     project->ResolveDeclarations();
     return TestProject(project.get(), fileName, testName, defines);
 }

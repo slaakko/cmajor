@@ -21,8 +21,8 @@ namespace Cm.Parser
         using stdlib.ulong;
         skip spaces_and_comments;
 
-        Project(std::string config, std::string backend, std::string os): Cm::Ast::Project*
-            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os); }
+        Project(std::string config, std::string backend, std::string os, int bits): Cm::Ast::Project*
+            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os, bits); }
                 Declarations(value)
             ;
 

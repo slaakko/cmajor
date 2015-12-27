@@ -4,5 +4,6 @@ assembly <System.Numerics.GmpIntf.cma>;
 csource <gmpintf.c>;
 source <mpz.cm>;
 clib <gmp>;
-addlibrarypath <gmp/windows>[os=windows];
+addlibrarypath <gmp/windows/x86>[os=windows,bits=32];
+addlibrarypath <gmp/windows/x64>[os=windows,bits=64];
 addlibrarypath <gmp/linux>[os=linux];
