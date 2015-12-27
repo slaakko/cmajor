@@ -1,4 +1,10 @@
-#include "gmp/gmp.h"
+#ifdef _WIN32
+    #include "gmp/windows/gmp.h"
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    #include "gmp/linux/gmp.h"
+#else
+    #error unknown platform
+#endif
 #include <stdlib.h>
 
 void* create_mpz()
