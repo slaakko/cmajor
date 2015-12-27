@@ -8,6 +8,7 @@
  ========================================================================*/
 
 using System;
+using System.IO;
 
 namespace System.Numerics.Multiprecision
 {
@@ -80,7 +81,7 @@ namespace System.Numerics.Multiprecision
         }
         public nothrow string ToString() const
         {
-            return ToString(10);
+            return this->ToString(10);
         }
         public nothrow string ToString(int base_) const
         {
@@ -201,5 +202,11 @@ namespace System.Numerics.Multiprecision
     public nothrow bool TestBit(BigInt& x, uint bitIndex)
     {
         return tstbit_mpz(x.Handle(), bitIndex) == 1;
+    }
+    
+    public OutputStream& operator<<(OutputStream& s, const BigInt& x)
+    {
+        s << x.ToString();
+        return s;
     }
 }

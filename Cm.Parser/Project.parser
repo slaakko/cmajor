@@ -19,6 +19,7 @@ namespace Cm.Parser
         using stdlib.qualified_id;
         using stdlib.spaces_and_comments;
         using stdlib.ulong;
+        using stdlib.long;
         skip spaces_and_comments;
 
         Project(std::string config, std::string backend, std::string os, int bits): Cm::Ast::Project*
@@ -94,7 +95,12 @@ namespace Cm.Parser
             ;
 
         Properties: Cm::Ast::Properties
-            ::= '[' ((identifier:name '=' identifier:val){ value.AddProperty(name, val); } % ',') ']'!
+            ::= '[' ((identifier:name '=' PropertyValue:val){ value.AddProperty(name, val); } % ',') ']'!
+            ;
+
+        PropertyValue: std::string
+            ::= identifier:id{ value = id; }
+            |   long:num{ value = std::to_string(num); }
             ;
 
         FilePath: std::string

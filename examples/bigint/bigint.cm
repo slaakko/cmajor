@@ -8,6 +8,6 @@ int main()
     {
         result = result * i;
     }
-    Console.Out() << result.ToString() << endl();
+    Console.Out() << result << endl();
     return 0;
 }

@@ -1,5 +1,5 @@
 #ifdef _WIN32
-    #if defined(_M_X64)
+    #if defined(__MINGW64__)
         #include "gmp/windows/x64/gmp.h"
     #else
         #include "gmp/windows/x86/gmp.h"

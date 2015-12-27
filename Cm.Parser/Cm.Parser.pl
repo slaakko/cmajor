@@ -176,6 +176,7 @@ namespace Cm.Parser
         TargetDeclaration: Cm::Ast::ProjectDeclaration*;
         StackSizeDeclaration: Cm::Ast::ProjectDeclaration*;
         Properties: Cm::Ast::Properties;
+        PropertyValue: std::string;
         FilePath: std::string;
     }
     grammar SpecifierGrammar
