@@ -1,0 +1,318 @@
+/*========================================================================
+    Copyright (c) 2012-2015 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    internal void PrepareArguments(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.TypeSymbol* returnType,
+        const List<Cm.Sym.ParameterSymbol*>& parameters, Cm.BoundTree.BoundExpressionList& arguments, bool firstArgByRef, Cm.Core.IrClassTypeRepository& irClassTypeRepository, bool isBasicTypeOp)
+    {
+        if (parameters.Count() != arguments.Count())
+        {
+            throw Exception("wrong number of arguments");
+        }
+        if (!boundCompileUnit.IsPrebindCompileUnit())
+        {
+            if (returnType != null && (returnType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
+            {
+                Cm.Sym.ClassTypeSymbol* returnClassType = cast<Cm.Sym.ClassTypeSymbol*>(returnType->GetBaseType());
+                AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
+            }
+        }
+        int n = arguments.Count();
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.ParameterSymbol* parameter = parameters[i];
+            Cm.Sym.TypeSymbol* paramType = parameter->GetType();
+            Cm.Sym.TypeSymbol* paramBaseType = paramType->GetBaseType();
+            if (!boundCompileUnit.IsPrebindCompileUnit())
+            {
+                if (paramBaseType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* paramClassType = cast<Cm.Sym.ClassTypeSymbol*>(paramBaseType);
+                    AddClassTypeToIrClassTypeRepository(paramClassType, boundCompileUnit, containerScope);
+                }
+            }
+            Cm.BoundTree.BoundExpression* argument = arguments[i].GetPtr();
+            Cm.Sym.TypeSymbol* argumentBaseType = argument->Type()->GetBaseType();
+            if (!boundCompileUnit.IsPrebindCompileUnit())
+            {
+                if (argumentBaseType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* argumentClassType = cast<Cm.Sym.ClassTypeSymbol*>(argumentBaseType);
+                    AddClassTypeToIrClassTypeRepository(argumentClassType, boundCompileUnit, containerScope);
+                }
+            }
+            if (!isBasicTypeOp)
+            {
+                if (paramType->IsNonConstReferenceType())
+                {
+                    if (!argument->Type()->IsReferenceType())
+                    {
+                        argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                    }
+                }
+                else if (paramType->IsConstReferenceType())
+                {
+                    if (argument->Type()->IsValueTypeSymbol() &&
+                        ((argument is Cm.BoundTree.BoundLiteral*) || (argument is Cm.BoundTree.BoundConstant*) || (argument is Cm.BoundTree.BoundEnumConstant*) || (argument is Cm.BoundTree.BoundUnaryOp*) || 
+                         (argument is Cm.BoundTree.BoundBinaryOp*) || (argument is Cm.BoundTree.BoundFunctionCall*) || (argument is Cm.BoundTree.BoundConversion*) || (argument is Cm.BoundTree.BoundCast*)))
+                    {
+                        if (currentFunction == null)
+                        {
+                            throw Exception("current function not set in prepare arguments");
+                        }
+                        argument = arguments[i].Release();
+                        List<Cm.Core.Argument> resolutionArguments;
+                        resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->Type(), 
+                            argument->SyntaxNode()->GetSpan())));
+                        resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, argument->Type()));
+                        Cm.Sym.FunctionLookupSet resolutionLookups;
+                        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+                        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
+                        List<Cm.Sym.FunctionSymbol*> conversions;
+                        Cm.Sym.FunctionSymbol* basicTypeCopyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups, argument->SyntaxNode()->GetSpan(), 
+                            conversions);
+                        Cm.Sym.LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(argument->Type());
+                        temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+                        Cm.BoundTree.BoundExpression* boundTemporary = new Cm.BoundTree.BoundLocalVariable(argument->SyntaxNode(), temporary);
+                        boundTemporary->SetType(argument->Type());
+                        Cm.BoundTree.BoundConversion* conversion = new Cm.BoundTree.BoundConversion(argument->SyntaxNode(), argument, basicTypeCopyCtor);
+                        boundTemporary->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                        conversion->SetBoundTemporary(boundTemporary);
+                        conversion->SetType(paramType);
+                        arguments[i].Reset(conversion);
+                    }
+                    else
+                    {
+                        if (!argument->Type()->IsReferenceType())
+                        {
+                            argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                        }
+                    }
+                }
+                else if (paramType->IsRvalueRefType())
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                }
+                else if (firstArgByRef && i == 0)
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                }
+                else if ((paramType is Cm.Sym.ClassTypeSymbol*) || paramType->IsArrayType() || argument->Type()->IsArrayType())
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                }
+                else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonConstReferenceType())
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
+                }
+            }
+            else if (firstArgByRef && i == 0)
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else
+            {
+                if ((paramType is Cm.Sym.ClassTypeSymbol*) || paramType->IsArrayType() || argument->Type()->IsArrayType() || 
+                    (argument->GetFlag(Cm.BoundTree.BoundNodeFlags.indexArray) && argument->GetFlag(Cm.BoundTree.BoundNodeFlags.argByRef)))
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                }
+                else 
+                {
+                    if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
+                    {
+                        argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
+                    }
+                }
+            }
+        }
+    }
+    
+    internal Cm.BoundTree.BoundConversion* CreateBoundConversion(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.Node* node, Cm.BoundTree.BoundExpression* operand,
+        Cm.Sym.FunctionSymbol* conversionFun, Cm.BoundTree.BoundFunction* currentFunction)
+    {
+        Cm.BoundTree.BoundConversion* conversion = new Cm.BoundTree.BoundConversion(node, operand, conversionFun);
+        Cm.Sym.TypeSymbol* paramType = conversionFun->GetSourceType();
+        Cm.BoundTree.BoundExpression* argument = operand;
+        if (!(conversionFun is Cm.Core.BasicTypeOp*))
+        {
+            if (paramType->IsNonConstReferenceType())
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else if (paramType->IsConstReferenceType())
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else if (paramType->IsRvalueRefType())
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else if (paramType is Cm.Sym.ClassTypeSymbol*)
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
+            }
+        }
+        else 
+        {
+            if (paramType is Cm.Sym.ClassTypeSymbol*)
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else
+            {
+                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
+                {
+                    argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
+                }
+            }
+        }
+        if (conversionFun->GetTargetType() is Cm.Sym.ClassTypeSymbol*)
+        {
+            Cm.Sym.LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(conversionFun->GetTargetType());
+            temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+            Cm.BoundTree.BoundExpression* boundTemporary = new Cm.BoundTree.BoundLocalVariable(node, temporary);
+            boundTemporary->SetType(conversionFun->GetTargetType());
+            boundTemporary->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            conversion->SetBoundTemporary(boundTemporary);
+            conversion->SetType(boundTemporary->Type());
+        }
+        else if (conversionFun->GetTargetType()->IsConstReferenceType())
+        {
+            argument = conversion->ReleaseOperand();
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.TypeSymbol* pointerType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(argument->Type(), argument->SyntaxNode()->GetSpan());
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, pointerType));
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, argument->Type()));
+            Cm.Sym.FunctionLookupSet resolutionLookups;
+            resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+            resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* copyCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, resolutionLookups, argument->SyntaxNode()->GetSpan(), conversions);
+            Cm.Sym.LocalVariableSymbol* temporary = currentFunction->CreateTempLocalVariable(argument->Type());
+            temporary->SetSid(boundCompileUnit.SymbolTable().GetSid());
+            Cm.BoundTree.BoundExpression* boundTemporary = new Cm.BoundTree.BoundLocalVariable(argument->SyntaxNode(), temporary);
+            boundTemporary->SetType(argument->Type());
+            Cm.BoundTree.BoundConversion* constRefConversion = new Cm.BoundTree.BoundConversion(argument->SyntaxNode(), argument, copyCtor);
+            constRefConversion->SetType(pointerType);
+            conversion->ResetOperand(constRefConversion);
+            constRefConversion->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            conversion->SetType(conversionFun->GetTargetType());
+        }
+        else
+        {
+            conversion->SetType(conversionFun->GetTargetType());
+        }
+        return conversion;
+    }
+    
+    internal Cm.BoundTree.TraceCallInfo* CreateTraceCallInfo(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FunctionSymbol* fun, const Span& span)
+    {
+        if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.no_call_stacks)) return null;
+        if (Cm.Core.GetConfig() == "release" && !fun->CanThrow()) return null;
+        if (fun->FullName() == "main()" && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.unit_test)) return null;
+        string funFullName = fun->FullName();
+        Cm.Sym.TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
+        int funId = boundCompileUnit.StringRepository().Install(funFullName);
+        Cm.BoundTree.BoundStringLiteral* funLiteral = new Cm.BoundTree.BoundStringLiteral(null, funId);
+        funLiteral->SetType(constCharPtrType);
+        string filePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(span.FileIndex());
+        int fileId = boundCompileUnit.StringRepository().Install(filePath);
+        Cm.BoundTree.BoundStringLiteral* fileLiteral = new Cm.BoundTree.BoundStringLiteral(null, fileId);
+        fileLiteral->SetType(constCharPtrType);
+        Cm.Sym.TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        Cm.Sym.Value* value = new Cm.Sym.IntValue(span.LineNumber());
+        Cm.BoundTree.BoundLiteral* lineLiteral = new Cm.BoundTree.BoundLiteral(null);
+        lineLiteral->SetValue(value);
+        lineLiteral->SetType(intType);
+        Cm.BoundTree.TraceCallInfo* traceCallInfo = new Cm.BoundTree.TraceCallInfo(funLiteral, fileLiteral, lineLiteral);
+        return traceCallInfo;
+    }
+    
+    public class BoundExpressionStack
+    {
+        public void Push(Cm.BoundTree.BoundExpression* expression) 
+        {
+            expressions.Add(expression);
+        }
+        public Cm.BoundTree.BoundExpression* Pop() 
+        {
+            if (expressions.IsEmpty())
+            {
+                throw Exception("bound expression stack is empty");
+            }
+            return expressions.ReleaseLast();
+        }
+        public Cm.BoundTree.BoundExpressionList Pop(int count)
+        {
+            Cm.BoundTree.BoundExpressionList exprs;
+            for (int i = 0; i < count; ++i)
+            {
+                exprs.Add(Pop());
+            }
+            exprs.Reverse();
+            return exprs;
+        }
+        public Cm.BoundTree.BoundExpressionList GetExpressions()
+        {
+            return Rvalue(expressions);
+        }
+        public nothrow inline int Count() const
+        {
+            return expressions.Count();
+        }
+        private Cm.BoundTree.BoundExpressionList expressions;
+    }
+    
+    public class ExpressionBinder : Cm.Ast.Visitor
+    {
+        public nothrow ExpressionBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_), fileScopes(fileScopes_), currentFunction(currentFunction_)
+        {
+        }
+        public nothrow inline Cm.BoundTree.BoundCompileUnit& BoundCompileUnit() 
+        {
+            return boundCompileUnit;
+        }
+        public nothrow inline Cm.Sym.ContainerScope* ContainerScope() const
+        {
+            return containerScope;
+        }
+        public nothrow inline const List<UniquePtr<Cm.Sym.FileScope>>& FileScopes() const
+        {
+            return fileScopes;
+        }
+        public nothrow inline Cm.BoundTree.BoundFunction* CurrentFunction() const
+        {
+            return currentFunction;
+        }
+        public BoundExpressionStack& Stack() 
+        {
+            return stack;
+        }
+        public Cm.BoundTree.BoundExpressionList GetExpressions()
+        {
+            return stack.GetExpressions();
+        }
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private Cm.Sym.ContainerScope* containerScope;
+        private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private Cm.BoundTree.BoundFunction* currentFunction;
+        private BoundExpressionStack stack;
+    }
+}

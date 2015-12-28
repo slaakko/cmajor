@@ -17,6 +17,7 @@ source <Binder.cm>;
 source <BooleanEvaluator.cm>;
 source <Class.cm>;
 source <ClassDelegateTypeOpRepository.cm>;
+source <ClassObjectLayout.cm>;
 source <ClassTemplateRepository.cm>;
 source <Concept.cm>;
 source <Constant.cm>;

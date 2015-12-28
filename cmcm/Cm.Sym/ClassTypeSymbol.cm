@@ -487,6 +487,14 @@ namespace Cm.Sym
             if (baseClass == cls) return true;
             return baseClass->HasBaseClass(cls, distance);
         }
+        public nothrow inline MemberVariableSymbol* InitializedVar() const
+        {
+            return initializedVar.GetPtr();
+        }
+        public nothrow inline void SetInitializedVar(MemberVariableSymbol* initializedVar_)
+        {
+            initializedVar.Reset(initializedVar_);
+        }
         public nothrow inline short VPtrIndex() const
         {
             return vptrIndex;
@@ -686,6 +694,10 @@ namespace Cm.Sym
         {
             return memberVariables;
         }
+        public nothrow inline const List<MemberVariableSymbol*>& StaticMemberVariables() const
+        {
+            return staticMemberVariables;
+        }
         public nothrow inline const List<FunctionSymbol*>& Vtbl() const
         {
             return vtbl;
@@ -693,6 +705,10 @@ namespace Cm.Sym
         public nothrow inline FunctionSymbol* Destructor() const
         {
             return destructor;
+        }
+        public nothrow inline FunctionSymbol* StaticConstructor() const
+        {
+            return staticConstructor;
         }
         public nothrow inline const List<TypeParameterSymbol*>& TypeParameters() const
         {

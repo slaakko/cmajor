@@ -590,7 +590,7 @@ namespace Cm.BoundTree
         {
             return arguments;
         }
-        public nothrow inline void SetArguments(BoundExpressionList& arguments_)
+        public nothrow inline void SetArguments(BoundExpressionList&& arguments_)
         {
             arguments = Rvalue(arguments_);
         }
