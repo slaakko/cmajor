@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2015 Seppo Laakko
+    Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
     Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -13,17 +13,1103 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
+    internal void GenerateSynthesizedFunctionImplementation(Cm.Sym.FunctionSymbol* function, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, bool unique)
+    {
+        UniquePtr<Cm.Core.Error> exception;
+        if (classTypeSymbol->GenerateDefaultConstructor() && function->IsDefaultConstructor())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateDefaultConstructor(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
+        else if (classTypeSymbol->GenerateCopyConstructor() && function->IsCopyConstructor())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateCopyConstructor(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
+        else if (classTypeSymbol->GenerateMoveConstructor() && function->IsMoveConstructor())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateMoveConstructor(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
+        else if (classTypeSymbol->GenerateCopyAssignment() && function->IsCopyAssignment())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateCopyAssignment(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
+        else if (classTypeSymbol->GenerateMoveAssignment() && function->IsMoveAssignment())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateMoveAssignment(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
+        if (!exception.IsNull())
+        {
+            Cm.Core.Error copyOfEx = *exception;
+            throw copyOfEx;
+        }
+    }
+    
     public class SynthesizedClassFunRepository : Cm.Core.SynthesizedClassFunRepository
     {
-        public nothrow SynthesizedClassFunRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
+        public SynthesizedClassFunRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), constructorGroup(boundCompileUnit), assignmentGroup(boundCompileUnit)
         {
+            groupMap["@constructor"] = &constructorGroup;
+            groupMap["operator="] = &assignmentGroup;
         }
         public override void CollectViableFunctions(const string& groupName, int arity, const List<Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, 
             HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Error>& error)
         {
-            // todo
+            if (arguments.Count() != arity)
+            {
+                throw Exception("wrong number of arguments");
+            }
+            if (arity < 1 || arity > 2) return;
+            Cm.Sym.TypeSymbol* leftArgType = arguments[0].Type();
+            if (leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerToClassType()) return;
+            Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(leftArgType->GetBaseType());
+            HashMap<string, SynthesizedClassFunGroup*>.ConstIterator i = groupMap.CFind(groupName);
+            if (i != groupMap.CEnd())
+            {
+                SynthesizedClassFunGroup* group = i->second;
+                group->CollectViableFunctions(cacheMap, caches, classType, arity, arguments, span, containerScope, viableFunctions, error);
+            }
+        }
+        public override void AddDefaultFunctionSymbol(Cm.Sym.FunctionSymbol* defaultFunctionSymbol)
+        {
+            defaultFunctionSymbols.Add(defaultFunctionSymbol);
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private HashMap<Cm.Sym.ClassTypeSymbol*, SynthesizedClassFunCache*> cacheMap;
+        private List<UniquePtr<SynthesizedClassFunCache>> caches;
+        private HashMap<string, SynthesizedClassFunGroup*> groupMap;
+        private SynthesizedConstructorGroup constructorGroup;
+        private SynthesizedAssignmentGroup assignmentGroup;
+        private List<Cm.Sym.FunctionSymbol*> defaultFunctionSymbols;
+    }
+    
+    public abstract class SynthesizedClassFunGroup
+    {
+        public nothrow SynthesizedClassFunGroup(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
+        {
+        }
+        public virtual nothrow ~SynthesizedClassFunGroup()
+        {
+        }
+        public Cm.BoundTree.BoundCompileUnit& BoundCompileUnit() 
+        {
+            return boundCompileUnit;
+        }
+        public abstract void CollectViableFunctions(HashMap<Cm.Sym.ClassTypeSymbol*, SynthesizedClassFunCache*>& cacheMap, List<UniquePtr<SynthesizedClassFunCache>>& caches, Cm.Sym.ClassTypeSymbol* classType, 
+            int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Cm.Core.Error>& exception);
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+    }
+
+    public class SynthesizedConstructorGroup : SynthesizedClassFunGroup
+    {
+        public nothrow SynthesizedConstructorGroup(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : base(boundCompileUnit_)
+        {
+        }
+        public override void CollectViableFunctions(HashMap<Cm.Sym.ClassTypeSymbol*, SynthesizedClassFunCache*>& cacheMap, List<UniquePtr<SynthesizedClassFunCache>>& caches, Cm.Sym.ClassTypeSymbol* classType, 
+            int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Cm.Core.Error>& exception)
+        {
+            bool generated = false;
+            if (arity == 1)
+            {
+                if (classType->IsStatic())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate default constructor for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+                }
+                else if (classType->HasSuppressedDefaultConstructor())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate default constructor for class '" + classType->FullName() + "' because default constructor is suppressed", span, classType->GetSpan()));
+                }
+                else if (classType->HasUserDefinedConstructor())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate default constructor for class '" + classType->FullName() + "' because class has user defined constructor", span, classType->GetSpan()));
+                }
+                else
+                {
+                    SynthesizedClassFunCache* cache = cacheMap[classType];
+                    if (cache == null)
+                    {
+                        cache = new SynthesizedClassFunCache();
+                        cacheMap[classType] = cache;
+                        caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* defaultConstructor = cache->GetDefaultConstructor(span, classType, containerScope, BoundCompileUnit(), exception);
+                    if (defaultConstructor != null)
+                    {
+                        viableFunctions.Insert(defaultConstructor);
+                        generated = true;
+                    }
+                }
+            }
+            else if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* secondArgumentType = arguments[1].Type();
+                if (secondArgumentType->IsPointerType()) return;
+                Cm.Sym.TypeSymbol* secondArgumentBaseType = secondArgumentType->GetBaseType();
+                if (!secondArgumentBaseType->IsRvalueRefType() && !arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+                {
+                    if (classType->IsStatic())
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate copy constructor for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+                    }
+                    else if (classType->HasSuppressedCopyConstructor())
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate copy constructor for class '" + classType->FullName() + "' because copy constructor is suppressed", span, classType->GetSpan()));
+                    }
+                    else
+                    {
+                        bool hasUserDefinedCopyOrMoveOperOrDestructor = classType->HasUserDefinedCopyConstructor() || classType->HasUserDefinedMoveConstructor() || classType->HasUserDefinedCopyAssignment() ||
+                            classType->HasUserDefinedMoveAssignment() || classType->HasUserDefinedDestructor();
+                        if (hasUserDefinedCopyOrMoveOperOrDestructor)
+                        {
+                            exception.Reset(new Cm.Core.Error("cannot generate copy constructor for class '" + classType->FullName() + "' because class has user defined copy or move operation or destructor", 
+                                span, classType->GetSpan()));
+                        }
+                        else
+                        {
+                            SynthesizedClassFunCache* cache = cacheMap[classType];
+                            if (cache == null)
+                            {
+                                cache = new SynthesizedClassFunCache();
+                                cacheMap[classType] = cache;
+                                caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                            }
+                            Cm.Sym.FunctionSymbol* copyConstructor = cache->GetCopyConstructor(span, classType, containerScope, BoundCompileUnit(), exception);
+                            if (copyConstructor != null)
+                            {
+                                viableFunctions.Insert(copyConstructor);
+                                generated = true;
+                            }
+                        }
+                    }
+                }
+                else if (secondArgumentType->IsRvalueRefType() && arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+                {
+                    if (classType->IsStatic())
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate move constructor for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+                    }
+                    else if (classType->HasSuppressedMoveConstructor())
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate move constructor for class '" + classType->FullName() + "' because move constructor is suppressed", span, classType->GetSpan()));
+                    }
+                    else
+                    {
+                        bool hasUserDefinedCopyOrMoveOperOrDestructor = classType->HasUserDefinedCopyConstructor() || classType->HasUserDefinedMoveConstructor() || classType->HasUserDefinedCopyAssignment() ||
+                            classType->HasUserDefinedMoveAssignment() || classType->HasUserDefinedDestructor();
+                        if (hasUserDefinedCopyOrMoveOperOrDestructor)
+                        {
+                            exception.Reset(new Cm.Core.Error("cannot generate move constructor for class '" + classType->FullName() + "' because class has user defined copy or move operation or destructor", 
+                                span, classType->GetSpan()));
+                        }
+                        else
+                        {
+                            SynthesizedClassFunCache* cache = cacheMap[classType];
+                            if (cache == null)
+                            {
+                                cache = new SynthesizedClassFunCache();
+                                cacheMap[classType] = cache;
+                                caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                            }
+                            Cm.Sym.FunctionSymbol* moveConstructor = cache->GetMoveConstructor(span, classType, containerScope, BoundCompileUnit(), exception);
+                            if (moveConstructor != null)
+                            {
+                                viableFunctions.Insert(moveConstructor);
+                                generated = true;
+                            }
+                        }
+                    }
+                }
+            }
+            if (generated && (classType is Cm.Sym.TemplateTypeSymbol*))
+            {
+                BoundCompileUnit().ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, classType);
+            }
+        }
+    }
+
+    public class SynthesizedAssignmentGroup : SynthesizedClassFunGroup
+    {
+        public nothrow SynthesizedAssignmentGroup(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : base(boundCompileUnit_)
+        {
+        }
+        public override void CollectViableFunctions(HashMap<Cm.Sym.ClassTypeSymbol*, SynthesizedClassFunCache*>& cacheMap, List<UniquePtr<SynthesizedClassFunCache>>& caches, Cm.Sym.ClassTypeSymbol* classType, 
+            int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* secondArgumentType = arguments[1].Type();
+            if (secondArgumentType->IsPointerType()) return;
+            bool generated = false;
+            Cm.Sym.TypeSymbol* secondArgumentBaseType = secondArgumentType->GetBaseType();
+            if (!secondArgumentType->IsRvalueRefType() && !arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+            {
+                if (classType->IsStatic())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate copy assignment for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+                }
+                else if (classType->HasSuppressedCopyAssignment())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate copy assignment for class '" + classType->FullName() + "' because copy assignment is suppressed", span, classType->GetSpan()));
+                }
+                else
+                {
+                    bool hasUserDefinedCopyOrMoveOperOrDestructor = classType->HasUserDefinedCopyConstructor() || classType->HasUserDefinedMoveConstructor() || classType->HasUserDefinedCopyAssignment() ||
+                        classType->HasUserDefinedMoveAssignment() || classType->HasUserDefinedDestructor();
+                    if (hasUserDefinedCopyOrMoveOperOrDestructor)
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate copy assignment for class '" + classType->FullName() + "' because class has user defined copy or move operation or destructor", 
+                            span, classType->GetSpan()));
+                    }
+                    else
+                    {
+                        SynthesizedClassFunCache* cache = cacheMap[classType];
+                        if (cache == null)
+                        {
+                            cache = new SynthesizedClassFunCache();
+                            cacheMap[classType] = cache;
+                            caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                        }
+                        Cm.Sym.FunctionSymbol* copyAssignment = cache->GetCopyAssignment(span, classType, containerScope, BoundCompileUnit(), exception);
+                        if (copyAssignment != null)
+                        {
+                            viableFunctions.Insert(copyAssignment);
+                            generated = true;
+                        }
+                    }
+                }
+            }
+            else if (secondArgumentType->IsRvalueRefType() && arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+            {
+                if (classType->IsStatic())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate move assignment for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+                }
+                else if (classType->HasSuppressedMoveAssignment())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate move assignment for class '" + classType->FullName() + "' because move assignment is suppressed", span, classType->GetSpan()));
+                }
+                else
+                {
+                    bool hasUserDefinedCopyOrMoveOperOrDestructor = classType->HasUserDefinedCopyConstructor() || classType->HasUserDefinedMoveConstructor() || classType->HasUserDefinedCopyAssignment() ||
+                        classType->HasUserDefinedMoveAssignment() || classType->HasUserDefinedDestructor();
+                    if (hasUserDefinedCopyOrMoveOperOrDestructor)
+                    {
+                        exception.Reset(new Cm.Core.Error("cannot generate move assignment for class '" + classType->FullName() + "' because class has user defined copy or move operation or destructor", 
+                            span, classType->GetSpan()));
+                    }
+                    else
+                    {
+                        SynthesizedClassFunCache* cache = cacheMap[classType];
+                        if (cache == null)
+                        {
+                            cache = new SynthesizedClassFunCache();
+                            cacheMap[classType] = cache;
+                            caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                        }
+                        Cm.Sym.FunctionSymbol* moveAssignment = cache->GetMoveAssignment(span, classType, containerScope, BoundCompileUnit(), exception);
+                        if (moveAssignment != null)
+                        {
+                            viableFunctions.Insert(moveAssignment);
+                            generated = true;
+                        }
+                    }
+                }
+            }
+            if (generated && (classType is Cm.Sym.TemplateTypeSymbol*))
+            {
+                BoundCompileUnit().ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, classType);
+            }
+        }
+    }
+        
+    public class SynthesizedClassFunCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultConstructor(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (defaultConstructor.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateDefaultConstructor(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                defaultConstructor.Reset(GenerateDefaultConstructor(generateImplementation, classTypeSymbol->GenerateDefaultConstructor(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return defaultConstructor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyConstructor(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (copyConstructor.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateCopyConstructor(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                copyConstructor.Reset(GenerateCopyConstructor(generateImplementation, classTypeSymbol->GenerateCopyConstructor(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return copyConstructor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveConstructor(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (moveConstructor.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateMoveConstructor(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                moveConstructor.Reset(GenerateMoveConstructor(generateImplementation, classTypeSymbol->GenerateMoveConstructor(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return moveConstructor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (copyAssignment.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateCopyAssignment(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                copyAssignment.Reset(GenerateCopyAssignment(generateImplementation, classTypeSymbol->GenerateCopyAssignment(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetMoveAssignment(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (moveAssignment.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateMoveAssignment(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                moveAssignment.Reset(GenerateMoveAssignment(generateImplementation, classTypeSymbol->GenerateMoveAssignment(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return moveAssignment.GetPtr();
+        }
+        private UniquePtr<Cm.Sym.FunctionSymbol> defaultConstructor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyConstructor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveConstructor;
+        private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> moveAssignment;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.FunctionSymbol* defaultConstructorSymbol = new Cm.Sym.FunctionSymbol(span, "@default_ctor");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(defaultConstructorSymbol);
+        defaultConstructorSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        defaultConstructorSymbol->SetGroupName("@constructor");
+        defaultConstructorSymbol->SetParent(classTypeSymbol);
+        defaultConstructorSymbol->SetConstructorOrDestructorSymbol();
+        defaultConstructorSymbol->SetMemberFunctionSymbol();
+        defaultConstructorSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        if (!unique)
+        {
+            defaultConstructorSymbol->SetReplicated();
+        }
+        defaultConstructorSymbol->AddSymbol(thisParam);
+        defaultConstructorSymbol->ComputeName();
+        defaultConstructorSymbol->SetNothrow();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        defaultConstructorSymbol->AddSymbol(entry);
+        if (!generateImplementation) return defaultConstructorSymbol;
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> defaultConstructor(new Cm.BoundTree.BoundFunction(null, defaultConstructorSymbol));
+        defaultConstructor->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, defaultConstructor.GetPtr());
+        if (classTypeSymbol->StaticConstructor() != null)
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundFunctionCallStatement* staticConstructorCallStatement = new Cm.BoundTree.BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), Rvalue(arguments));
+            if (classTypeSymbol->StaticConstructor()->CanThrow())
+            {
+                defaultConstructorSymbol->ResetNothrow();
+            }
+            defaultConstructor->Body()->AddStatement(staticConstructorCallStatement);
+        }
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundInitClassObjectStatement* initBaseClassObjectStatement = GenerateBaseConstructorCall(span, containerScope, boundCompileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+                "cannot generate default constructor", exception);
+            if (initBaseClassObjectStatement != null)
+            {
+                defaultConstructor->Body()->AddStatement(initBaseClassObjectStatement);
+                if (initBaseClassObjectStatement->FunctionCall()->Fun()->CanThrow())
+                {
+                    defaultConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        if (classTypeSymbol->IsVirtual())
+        {
+            defaultConstructor->Body()->AddStatement(new Cm.BoundTree.BoundInitVPtrStatement(classTypeSymbol));
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, containerScope, boundCompileUnit, classTypeSymbol, thisParam, 
+                memberVariableSymbol, arguments, "cannot generate default constructor", exception);
+            if (initMemberVariableStatement != null)
+            {
+                if (initMemberVariableStatement->Constructor()->CanThrow())
+                {
+                    defaultConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        boundCompileUnit.AddBoundNode(defaultConstructor.Release());
+        return defaultConstructorSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateCopyConstructor(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.TypeSymbol* constRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(span, "that");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
+        thatParam->SetType(constRefType);
+        Cm.Sym.FunctionSymbol* copyConstructorSymbol = new Cm.Sym.FunctionSymbol(span, "@copy_ctor");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(copyConstructorSymbol);
+        copyConstructorSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        copyConstructorSymbol->SetGroupName("@constructor");
+        copyConstructorSymbol->SetParent(classTypeSymbol);
+        copyConstructorSymbol->SetConstructorOrDestructorSymbol();
+        copyConstructorSymbol->SetMemberFunctionSymbol();
+        copyConstructorSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        copyConstructorSymbol->SetNothrow();
+        if (!unique)
+        {
+            copyConstructorSymbol->SetReplicated();
+        }
+        copyConstructorSymbol->AddSymbol(thisParam);
+        copyConstructorSymbol->AddSymbol(thatParam);
+        copyConstructorSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        copyConstructorSymbol->AddSymbol(entry);
+        if (!generateImplementation)
+        {
+            return copyConstructorSymbol;
+        }
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> copyConstructor(new Cm.BoundTree.BoundFunction(null, copyConstructorSymbol));
+        copyConstructor->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, copyConstructor.GetPtr());
+        if (classTypeSymbol->StaticConstructor() != null)
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundFunctionCallStatement* staticConstructorCallStatement = new Cm.BoundTree.BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), Rvalue(arguments));
+            copyConstructor->Body()->AddStatement(staticConstructorCallStatement);
+            if (classTypeSymbol->StaticConstructor()->CanThrow())
+            {
+                copyConstructorSymbol->ResetNothrow();
+            }
+        }
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm.Sym.TypeSymbol* baseClassConstRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(baseClassType, span);
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassConstRefType, thatParam->GetType(), 1, span);
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            Cm.BoundTree.BoundConversion* thatAsBase = new Cm.BoundTree.BoundConversion(null, boundThatParam, conversionFun);
+            thatAsBase->SetType(baseClassConstRefType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(thatAsBase);
+            Cm.BoundTree.BoundInitClassObjectStatement* initBaseClassObjectStatement = GenerateBaseConstructorCall(span, containerScope, boundCompileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+                "cannot generate copy constructor", exception);
+            if (initBaseClassObjectStatement != null)
+            {
+                copyConstructor->Body()->AddStatement(initBaseClassObjectStatement);
+                if (initBaseClassObjectStatement->FunctionCall()->Fun()->CanThrow())
+                {
+                    copyConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        if (classTypeSymbol->IsVirtual())
+        {
+            copyConstructor->Body()->AddStatement(new Cm.BoundTree.BoundInitVPtrStatement(classTypeSymbol));
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundMemberVariable* thatMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thatMemberVarArg->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            thatMemberVarArg->SetClassObject(boundThatParam);
+            arguments.Add(thatMemberVarArg);
+            Cm.BoundTree.BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, containerScope, boundCompileUnit, classTypeSymbol, thisParam, 
+                memberVariableSymbol, arguments, "cannot generate copy constructor", exception);
+            if (initMemberVariableStatement != null)
+            {
+                copyConstructor->Body()->AddStatement(initMemberVariableStatement);
+                if (initMemberVariableStatement->Constructor()->CanThrow())
+                {
+                    copyConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        boundCompileUnit.AddBoundNode(copyConstructor.Release());
+        return copyConstructorSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateMoveConstructor(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope,
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.TypeSymbol* rvalueRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(span, "that");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
+        thatParam->SetType(rvalueRefType);
+        Cm.Sym.FunctionSymbol* moveConstructorSymbol = new Cm.Sym.FunctionSymbol(span, "@move_ctor");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(moveConstructorSymbol);
+        moveConstructorSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        moveConstructorSymbol->SetGroupName("@constructor");
+        moveConstructorSymbol->SetParent(classTypeSymbol);
+        moveConstructorSymbol->SetConstructorOrDestructorSymbol();
+        moveConstructorSymbol->SetMemberFunctionSymbol();
+        moveConstructorSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        moveConstructorSymbol->SetNothrow();
+        if (!unique)
+        {
+            moveConstructorSymbol->SetReplicated();
+        }
+        moveConstructorSymbol->AddSymbol(thisParam);
+        moveConstructorSymbol->AddSymbol(thatParam);
+        moveConstructorSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        moveConstructorSymbol->AddSymbol(entry);
+        if (!generateImplementation)
+        {
+            return moveConstructorSymbol;
+        }
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> moveConstructor(new Cm.BoundTree.BoundFunction(null, moveConstructorSymbol));
+        moveConstructor->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, moveConstructor.GetPtr());
+        if (classTypeSymbol->StaticConstructor() != null)
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundFunctionCallStatement* staticConstructorCallStatement = new Cm.BoundTree.BoundFunctionCallStatement(classTypeSymbol->StaticConstructor(), Rvalue(arguments));
+            moveConstructor->Body()->AddStatement(staticConstructorCallStatement);
+            if (classTypeSymbol->StaticConstructor()->CanThrow())
+            {
+                moveConstructorSymbol->ResetNothrow();
+            }
+        }
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm.Sym.TypeSymbol* baseClassRvalueRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(baseClassType, span);
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassRvalueRefType, thatParam->GetType(), 1, span);
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            Cm.BoundTree.BoundConversion* thatAsBase = new Cm.BoundTree.BoundConversion(null, boundThatParam, conversionFun);
+            thatAsBase->SetType(baseClassRvalueRefType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(thatAsBase);
+            Cm.BoundTree.BoundInitClassObjectStatement* initBaseClassObjectStatement = GenerateBaseConstructorCall(span, containerScope, boundCompileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+                "cannot generate move constructor", exception);
+            if (initBaseClassObjectStatement != null)
+            {
+                moveConstructor->Body()->AddStatement(initBaseClassObjectStatement);
+                if (initBaseClassObjectStatement->FunctionCall()->Fun()->CanThrow())
+                {
+                    moveConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        if (classTypeSymbol->IsVirtual())
+        {
+            moveConstructor->Body()->AddStatement(new Cm.BoundTree.BoundInitVPtrStatement(classTypeSymbol));
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundMemberVariable* thatMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thatMemberVarArg->SetType(memberVariableSymbol->GetType());
+            thatMemberVarArg->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            thatMemberVarArg->SetClassObject(boundThatParam);
+            List<Cm.Core.Argument> rvalueThatResolutionArguments;
+            rvalueThatResolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, memberVariableSymbol->GetType()));
+            Cm.Sym.FunctionLookupSet rvalueThatFunctionLookups;
+            rvalueThatFunctionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_parent, containerScope));
+            List<Cm.Sym.FunctionSymbol*> rvalueThatConversions;
+            Cm.Sym.FunctionSymbol* rvalueFun = ResolveOverload(containerScope, boundCompileUnit, "System.Rvalue", rvalueThatResolutionArguments, rvalueThatFunctionLookups, span, rvalueThatConversions);
+            Cm.BoundTree.BoundExpressionList rvalueThatArguments;
+            rvalueThatArguments.Add(thatMemberVarArg);
+            Cm.BoundTree.BoundFunctionCall* rvalueThat = new Cm.BoundTree.BoundFunctionCall(null, Rvalue(rvalueThatArguments));
+            rvalueThat->SetFun(rvalueFun);
+            rvalueThat->SetType(rvalueFun->GetReturnType());
+            arguments.Add(rvalueThat);
+            Cm.BoundTree.BoundInitMemberVariableStatement* initMemberVariableStatement = GenerateInitMemberVariableStatement(span, containerScope, boundCompileUnit, classTypeSymbol, thisParam, 
+                memberVariableSymbol, arguments, "cannot generate move constructor", exception);
+            if (initMemberVariableStatement != null)
+            {
+                moveConstructor->Body()->AddStatement(initMemberVariableStatement);
+                if (initMemberVariableStatement->Constructor()->CanThrow())
+                {
+                    moveConstructorSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        boundCompileUnit.AddBoundNode(moveConstructor.Release());
+        return moveConstructorSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateCopyAssignment(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope,
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.TypeSymbol* constRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(span, "that");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
+        thatParam->SetType(constRefType);
+        Cm.Sym.FunctionSymbol* copyAssignmentSymbol = new Cm.Sym.FunctionSymbol(span, "@copy_assignment");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(copyAssignmentSymbol);
+        copyAssignmentSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        copyAssignmentSymbol->SetGroupName("operator=");
+        copyAssignmentSymbol->SetParent(classTypeSymbol);
+        copyAssignmentSymbol->SetMemberFunctionSymbol();
+        copyAssignmentSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        copyAssignmentSymbol->SetNothrow();
+        if (!unique)
+        {
+           copyAssignmentSymbol->SetReplicated();
+        }
+        copyAssignmentSymbol->AddSymbol(thisParam);
+        copyAssignmentSymbol->AddSymbol(thatParam);
+        Cm.Sym.TypeSymbol* voidType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+        copyAssignmentSymbol->SetReturnType(voidType);
+        copyAssignmentSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        copyAssignmentSymbol->AddSymbol(entry);
+        if (!generateImplementation)
+        {
+            return copyAssignmentSymbol;
+        }
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> copyAssignment(new Cm.BoundTree.BoundFunction(null, copyAssignmentSymbol));
+        copyAssignment->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, copyAssignment.GetPtr());
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm.Sym.TypeSymbol* baseClassConstRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(baseClassType, span);
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassConstRefType, thatParam->GetType(), 1, span);
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            Cm.BoundTree.BoundConversion* thatAsBase = new Cm.BoundTree.BoundConversion(null, boundThatParam, conversionFun);
+            thatAsBase->SetType(baseClassConstRefType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(thatAsBase);
+            Cm.BoundTree.BoundFunctionCallStatement* assignBaseClassObjectStatement = GenerateBaseAssignmentCall(span, containerScope, boundCompileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+                "cannot generate copy assignment", exception);
+            if (assignBaseClassObjectStatement != null)
+            {
+                copyAssignment->Body()->AddStatement(assignBaseClassObjectStatement);
+                if (assignBaseClassObjectStatement->Function()->CanThrow())
+                {
+                    copyAssignmentSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundMemberVariable* thatMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thatMemberVarArg->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            thatMemberVarArg->SetClassObject(boundThatParam);
+            arguments.Add(thatMemberVarArg);
+            Cm.BoundTree.BoundFunctionCallStatement* assignMemberVariableStatement = GenerateAssignMemberVariableStatement(span, containerScope, boundCompileUnit, classTypeSymbol, thisParam, memberVariableSymbol,
+                arguments, "cannot generate copy assignment", exception);
+            if (assignMemberVariableStatement != null)
+            {
+                copyAssignment->Body()->AddStatement(assignMemberVariableStatement);
+                if (assignMemberVariableStatement->Function()->CanThrow())
+                {
+                    copyAssignmentSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        boundCompileUnit.AddBoundNode(copyAssignment.Release());
+        return copyAssignmentSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateMoveAssignment(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(span, "this");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thisParam);
+        thisParam->SetType(classTypePointer);
+        Cm.Sym.TypeSymbol* rvalueRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(span, "that");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(thatParam);
+        thatParam->SetType(rvalueRefType);
+        Cm.Sym.FunctionSymbol* moveAssignmentSymbol = new Cm.Sym.FunctionSymbol(span, "@move_assignment");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(moveAssignmentSymbol);
+        moveAssignmentSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        moveAssignmentSymbol->SetGroupName("operator=");
+        Cm.Sym.TypeSymbol* voidType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+        moveAssignmentSymbol->SetReturnType(voidType);
+        moveAssignmentSymbol->SetParent(classTypeSymbol);
+        moveAssignmentSymbol->SetMemberFunctionSymbol();
+        moveAssignmentSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        moveAssignmentSymbol->SetNothrow();
+        if (!unique)
+        {
+            moveAssignmentSymbol->SetReplicated();
+        }
+        moveAssignmentSymbol->AddSymbol(thisParam);
+        moveAssignmentSymbol->AddSymbol(thatParam);
+        moveAssignmentSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        moveAssignmentSymbol->AddSymbol(entry);
+        if (!generateImplementation)
+        {
+            return moveAssignmentSymbol;
+        }
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> moveAssignment(new Cm.BoundTree.BoundFunction(null, moveAssignmentSymbol));
+        moveAssignment->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, moveAssignment.GetPtr());
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm.Sym.TypeSymbol* baseClassRvalueRefType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeRvalueRefType(baseClassType, span);
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassRvalueRefType, thatParam->GetType(), 1, span);
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            Cm.BoundTree.BoundConversion* thatAsBase = new Cm.BoundTree.BoundConversion(null, boundThatParam, conversionFun);
+            thatAsBase->SetType(baseClassRvalueRefType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(thatAsBase);
+            Cm.BoundTree.BoundFunctionCallStatement* assignBaseClasObjectStatement = GenerateBaseAssignmentCall(span, containerScope, boundCompileUnit, classTypeSymbol, baseClassType, thisParam, arguments,
+                "cannot generate move assignment", exception);
+            if (assignBaseClasObjectStatement != null)
+            {
+                moveAssignment->Body()->AddStatement(assignBaseClasObjectStatement);
+                if (assignBaseClasObjectStatement->Function()->CanThrow())
+                {
+                    moveAssignmentSymbol->ResetNothrow();
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundMemberVariable* thisMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thisMemberVarArg->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+            boundThisParam->SetType(thisParam->GetType());
+            thisMemberVarArg->SetClassObject(boundThisParam);
+            thisMemberVarArg->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            arguments.Add(thisMemberVarArg);
+            Cm.BoundTree.BoundMemberVariable* thatMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thatMemberVarArg->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundParameter* boundThatParam = new Cm.BoundTree.BoundParameter(null, thatParam);
+            boundThatParam->SetType(thatParam->GetType());
+            thatMemberVarArg->SetClassObject(boundThatParam);
+            thatMemberVarArg->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            arguments.Add(thatMemberVarArg);
+            List<Cm.Core.Argument> resolutionArguments;
+            for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+            {
+                resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+            }
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_parent, containerScope));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* swapFun = ResolveOverload(containerScope, boundCompileUnit, "System.Swap", resolutionArguments, functionLookups, span, conversions);
+            Cm.BoundTree.BoundFunctionCallStatement* swapStatement = new Cm.BoundTree.BoundFunctionCallStatement(swapFun, Rvalue(arguments));
+            moveAssignment->Body()->AddStatement(swapStatement);
+        }
+        boundCompileUnit.AddBoundNode(moveAssignment.Release());
+        return moveAssignmentSymbol;
+    }
+    
+    internal Cm.BoundTree.BoundInitClassObjectStatement* GenerateBaseConstructorCall(const Span& span, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+        Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ClassTypeSymbol* baseClassType, Cm.Sym.ParameterSymbol* thisParam, Cm.BoundTree.BoundExpressionList& arguments, const string& errorMessageHeader, 
+        UniquePtr<Cm.Core.Error>& exception)
+    {
+        AddClassTypeToIrClassTypeRepository(baseClassType, boundCompileUnit, containerScope);
+        List<Cm.Core.Argument> resolutionArguments;
+        Cm.Sym.TypeSymbol* baseClassPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
+        Cm.Core.Argument baseClassArg(Cm.Core.ArgumentCategory.lvalue, baseClassPtrType);
+        resolutionArguments.Add(baseClassArg);
+        for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+        {
+            resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+        }
+        Cm.Sym.FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+        List<Cm.Sym.FunctionSymbol*> conversions;
+        Cm.Sym.FunctionSymbol* baseClassCtor = null;
+        try
+        {
+            baseClassCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+        }
+        catch (const Cm.Core.Error& ex)
+        {
+            exception.Reset(new Cm.Core.Error(errorMessageHeader + " for class '" + classTypeSymbol->FullName() + "' because base class constructor not found: " + ex.Message(), ex.Defined(), ex.References()));
+            return null;
+        }
+        Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
+        Cm.BoundTree.BoundConversion* thisAsBase = new Cm.BoundTree.BoundConversion(null, boundThisParam, conversionFun);
+        thisAsBase->SetType(baseClassPtrType);
+        arguments.InsertFront(thisAsBase); // insert 'this' to front
+        PrepareArguments(containerScope, boundCompileUnit, null, null, baseClassCtor->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), baseClassCtor is Cm.Core.BasicTypeOp*);
+        int n = conversions.Count();
+        if (n != arguments.Count())
+        {
+            throw Exception("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+            if (conversionFun != null)
+            {
+                Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                arguments[i]->SetType(conversionFun->GetTargetType());
+            }
+        }
+        Cm.BoundTree.BoundFunctionCall* functionCall = new Cm.BoundTree.BoundFunctionCall(null, Rvalue(arguments));
+        functionCall->SetFun(baseClassCtor);
+        Cm.BoundTree.BoundInitClassObjectStatement* initBaseClassObjectStatement = new Cm.BoundTree.BoundInitClassObjectStatement(functionCall);
+        return initBaseClassObjectStatement;
+    }
+    
+    internal Cm.BoundTree.BoundInitMemberVariableStatement* GenerateInitMemberVariableStatement(const Span& span, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit,
+        Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ParameterSymbol* thisParam, Cm.Sym.MemberVariableSymbol* memberVariableSymbol, Cm.BoundTree.BoundExpressionList& arguments, 
+        const string& errorMessageHeader, UniquePtr<Cm.Core.Error>& exception)
+    {
+        List<Cm.Core.Argument> resolutionArguments;
+        Cm.Sym.TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+        Cm.Core.Argument variableArgument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, span));
+        resolutionArguments.Add(variableArgument);
+        for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+        {
+            resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+        }
+        Cm.Sym.FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+        if (memberVariableType is Cm.Sym.ClassTypeSymbol*)
+        {
+            Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);
+            AddClassTypeToIrClassTypeRepository(memberVarClassType, boundCompileUnit, containerScope);
+        }
+        List<Cm.Sym.FunctionSymbol*> conversions;
+        Cm.Sym.FunctionSymbol* memberCtor = null;
+        try
+        {
+            memberCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+        }
+        catch (const Cm.Core.Error& ex)
+        {
+            exception.Reset(new Cm.Core.Error(errorMessageHeader + " for class '" + classTypeSymbol->FullName() + "' because member variable constructor for member variable '" + memberVariableSymbol->Name() + 
+                "' not found: " + ex.Message(), ex.Defined(), ex.References()));
+            return null;
+        }
+        Cm.BoundTree.BoundMemberVariable* boundMemberVariable = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+        boundMemberVariable->SetType(memberVariableSymbol->GetType());
+        Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        boundMemberVariable->SetClassObject(boundThisParam);
+        arguments.InsertFront(boundMemberVariable);
+        PrepareArguments(containerScope, boundCompileUnit, null, null, memberCtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), memberCtor is Cm.Core.BasicTypeOp*);
+        int n = conversions.Count();
+        if (n != arguments.Count())
+        {
+            throw Exception("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+            if (conversionFun != null)
+            {
+                Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                arguments[i]->SetType(conversionFun->GetTargetType());
+            }
+        }
+        Cm.BoundTree.BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm.BoundTree.BoundInitMemberVariableStatement(memberCtor, Rvalue(arguments));
+        initMemberVariableStatement->SetMemberVarSymbol(memberVariableSymbol);
+        return initMemberVariableStatement;
+    }
+    
+    internal Cm.BoundTree.BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Span& span, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+        Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ClassTypeSymbol* baseClassType, Cm.Sym.ParameterSymbol* thisParam, Cm.BoundTree.BoundExpressionList& arguments, const string& errorMessageHeader,
+        UniquePtr<Cm.Core.Error>& exception)
+    {
+        AddClassTypeToIrClassTypeRepository(baseClassType, boundCompileUnit, containerScope);
+        List<Cm.Core.Argument> resolutionArguments;
+        Cm.Sym.TypeSymbol* baseClassPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
+        Cm.Core.Argument baseClassArg(Cm.Core.ArgumentCategory.lvalue, baseClassPtrType);
+        resolutionArguments.Add(baseClassArg);
+        for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+        {
+            resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+        }
+        Cm.Sym.FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+        List<Cm.Sym.FunctionSymbol*> conversions;
+        Cm.Sym.FunctionSymbol* baseClassAssignment = null;
+        try
+        {
+            baseClassAssignment = ResolveOverload(containerScope, boundCompileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
+        }
+        catch (const Cm.Core.Error& ex)
+        {
+            exception.Reset(new Cm.Core.Error(errorMessageHeader + " for class '" + classTypeSymbol->FullName() + "' because base class copy assignment not found: " + ex.Message(), ex.Defined(), ex.References()));
+            return null;
+        }
+        Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
+        Cm.BoundTree.BoundConversion* thisAsBase = new Cm.BoundTree.BoundConversion(null, boundThisParam, conversionFun);
+        thisAsBase->SetType(baseClassPtrType);
+        arguments.InsertFront(thisAsBase); // insert 'this' to front
+        PrepareArguments(containerScope, boundCompileUnit, null, baseClassAssignment->GetReturnType(), baseClassAssignment->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(), 
+            baseClassAssignment is Cm.Core.BasicTypeOp*);
+        int n = conversions.Count();
+        if (n != arguments.Count())
+        {
+            throw Exception("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+            if (conversionFun != null)
+            {
+                Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                arguments[i]->SetType(conversionFun->GetTargetType());
+            }
+        }
+        Cm.BoundTree.BoundFunctionCallStatement* assignBaseClassObjectStatement = new Cm.BoundTree.BoundFunctionCallStatement(baseClassAssignment, Rvalue(arguments));
+        return assignBaseClassObjectStatement;
+    }
+    
+    internal Cm.BoundTree.BoundFunctionCallStatement* GenerateAssignMemberVariableStatement(const Span& span, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+        Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ParameterSymbol* thisParam, Cm.Sym.MemberVariableSymbol* memberVariableSymbol, Cm.BoundTree.BoundExpressionList& arguments, const string& errorMessageHeader,
+        UniquePtr<Cm.Core.Error>& exception)
+    {
+        List<Cm.Core.Argument> resolutionArguments;
+        Cm.Sym.TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+        Cm.Core.Argument variableArgument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, span));
+        resolutionArguments.Add(variableArgument);
+        for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+        {
+            resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+        }
+        Cm.Sym.FunctionLookupSet functionLookups;
+        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+        if (memberVariableType is Cm.Sym.ClassTypeSymbol*)
+        {
+            Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);
+            AddClassTypeToIrClassTypeRepository(memberVarClassType, boundCompileUnit, containerScope);
+        }
+        List<Cm.Sym.FunctionSymbol*> conversions;
+        Cm.Sym.FunctionSymbol* memberAssignment = null;
+        try
+        {
+            memberAssignment = ResolveOverload(containerScope, boundCompileUnit, "operator=", resolutionArguments, functionLookups, span, conversions);
+        }
+        catch (const Cm.Core.Error& ex)
+        {
+            exception.Reset(new Cm.Core.Error(errorMessageHeader + " for class '" + classTypeSymbol->FullName() + "' because member variable copy assignment for member variable '" + memberVariableSymbol->Name() + 
+                "' not found: " + ex.Message(), ex.Defined(), ex.References()));
+            return null;
+        }
+        Cm.BoundTree.BoundMemberVariable* boundMemberVariable = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+        boundMemberVariable->SetType(memberVariableSymbol->GetType());
+        boundMemberVariable->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+        Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+        boundThisParam->SetType(thisParam->GetType());
+        boundMemberVariable->SetClassObject(boundThisParam);
+        arguments.InsertFront(boundMemberVariable);
+        PrepareArguments(containerScope, boundCompileUnit, null, memberAssignment->GetReturnType(), memberAssignment->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), 
+            memberAssignment is Cm.Core.BasicTypeOp*);
+        int n = conversions.Count();
+        if (n != arguments.Count())
+        {
+            throw Exception("wrong number of arguments");
+        }
+        for (int i = 0; i < n; ++i)
+        {
+            Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+            if (conversionFun != null)
+            {
+                Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                arguments[i]->SetType(conversionFun->GetTargetType());
+            }
+        }
+        Cm.BoundTree.BoundFunctionCallStatement* assignMemberVariableStatement = new Cm.BoundTree.BoundFunctionCallStatement(memberAssignment, Rvalue(arguments));
+        return assignMemberVariableStatement;
     }
     
     internal Cm.Sym.FunctionSymbol* GenerateDestructorSymbol(Cm.Sym.SymbolTable& symbolTable, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Ast.CompileUnitNode* compileUnit)
@@ -61,6 +1147,75 @@ namespace Cm.Bind
         return destructorSymbol;
     }
     
+    internal void GenerateDestructorImplementation(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.Sym.FunctionSymbol* destructorSymbol = classTypeSymbol->Destructor();
+        if (boundCompileUnit.Instantiated(destructorSymbol)) return;
+        boundCompileUnit.AddToInstantiated(destructorSymbol);
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        Cm.Sym.ParameterSymbol* thisParam = destructorSymbol->Parameters()[0];
+        Cm.Sym.TypeSymbol* classTypePointer = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(classTypeSymbol, span);
+        UniquePtr<Cm.BoundTree.BoundFunction> destructor(new Cm.BoundTree.BoundFunction(null, destructorSymbol));
+        destructor->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, destructor.GetPtr());
+        if (classTypeSymbol->IsVirtual())
+        {
+            destructor->Body()->AddStatement(new Cm.BoundTree.BoundInitVPtrStatement(classTypeSymbol));
+        }
+        int n = classTypeSymbol->MemberVariables().Count();
+        for (int i = n - 1; i >= 0; --i)
+        {
+            Cm.Sym.MemberVariableSymbol* memberVariableSymbol = classTypeSymbol->MemberVariables()[i];
+            Cm.Sym.TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+            if (!(memberVariableType is Cm.Sym.ClassTypeSymbol*)) continue;
+            Cm.Sym.ClassTypeSymbol* memberVariableClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);
+            if ((memberVariableClassType is Cm.Sym.TemplateTypeSymbol*) && !memberVariableClassType->IsBound())
+            {
+                Cm.Sym.TemplateTypeSymbol* memberVariableTemplateType = cast<Cm.Sym.TemplateTypeSymbol*>(memberVariableClassType);
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(memberVariableTemplateType, containerScope, boundCompileUnit.FileScopes());
+            }
+            if (memberVariableClassType->Destructor() == null) continue;
+            Cm.Sym.FunctionSymbol* memberDtor = memberVariableClassType->Destructor();
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundMemberVariable* thisMemberVarArg = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            thisMemberVarArg->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+            boundThisParam->SetType(thisParam->GetType());
+            thisMemberVarArg->SetClassObject(boundThisParam);
+            arguments.Add(thisMemberVarArg);
+            PrepareArguments(containerScope, boundCompileUnit, null, null, memberDtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), memberDtor is Cm.Core.BasicTypeOp*);
+            Cm.BoundTree.BoundFunctionCallStatement* destroyMemberVariableStatement = new Cm.BoundTree.BoundFunctionCallStatement(memberDtor, Rvalue(arguments));
+            destructor->Body()->AddStatement(destroyMemberVariableStatement);
+        }
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
+            if ((baseClass is Cm.Sym.TemplateTypeSymbol*) && !baseClass->IsBound())
+            {
+                Cm.Sym.TemplateTypeSymbol* baseClassTemplateType = cast<Cm.Sym.TemplateTypeSymbol*>(baseClass);
+                boundCompileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(baseClassTemplateType, containerScope, boundCompileUnit.FileScopes());
+            }
+            Cm.Sym.FunctionSymbol* baseClassDtor = baseClass->Destructor();
+            if (baseClassDtor == null)
+            {
+                throw Exception("could not generate destructor because base class has no destructor");
+            }
+            Cm.Sym.ClassTypeSymbol* baseClassType = baseClass;
+            Cm.Sym.TypeSymbol* baseClassPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
+            Cm.BoundTree.BoundParameter* boundThisParam = new Cm.BoundTree.BoundParameter(null, thisParam);
+            boundThisParam->SetType(thisParam->GetType());
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
+            Cm.BoundTree.BoundConversion* thisAsBase = new Cm.BoundTree.BoundConversion(null, boundThisParam, conversionFun);
+            thisAsBase->SetType(baseClassPtrType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(thisAsBase);
+            PrepareArguments(containerScope, boundCompileUnit, null, null, baseClassDtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), baseClassDtor is Cm.Core.BasicTypeOp*);
+            Cm.BoundTree.BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm.BoundTree.BoundFunctionCallStatement(baseClassDtor, Rvalue(arguments));
+            destructor->Body()->AddStatement(destroyBaseClassObjectStatement);
+        }
+        boundCompileUnit.AddBoundNode(destructor.Release());
+    }
+    
     internal Cm.Sym.FunctionSymbol* GenerateStaticConstructorSymbol(Cm.Sym.SymbolTable& symbolTable, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Ast.CompileUnitNode* compileUnit)
     {
         Cm.Sym.FunctionSymbol* staticConstructorSymbol = new Cm.Sym.FunctionSymbol(span, "@static_ctor");
@@ -78,5 +1233,141 @@ namespace Cm.Bind
         Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(span);
         staticConstructorSymbol->AddSymbol(entry);
         return staticConstructorSymbol;
+    }
+    
+    internal void GenerateStaticConstructorImplementation(Cm.BoundTree.BoundClass* boundClass, Cm.Sym.ContainerScope* containerScope, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.Sym.FunctionSymbol* staticConstructorSymbol = classTypeSymbol->StaticConstructor();
+        if (boundCompileUnit.Instantiated(staticConstructorSymbol)) return;
+        boundCompileUnit.AddToInstantiated(staticConstructorSymbol);
+        boundCompileUnit.IrClassTypeRepository().AddClassType(classTypeSymbol);
+        UniquePtr<Cm.BoundTree.BoundFunction> staticConstructor(new Cm.BoundTree.BoundFunction(null, staticConstructorSymbol));
+        staticConstructor->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        Cm.Sym.TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        Cm.Sym.Symbol* mutexGuardSymbol = boundCompileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MtxGuard");
+        if (mutexGuardSymbol == null)
+        {
+            throw Exception("System.Support.MtxGuard class not found");
+        }
+        if (!(mutexGuardSymbol is Cm.Sym.ClassTypeSymbol*))
+        {
+            throw Exception("System.Support.MtxGuard is not of class type");
+        }
+        Cm.Sym.ClassTypeSymbol* mutexGuardClassType = cast<Cm.Sym.ClassTypeSymbol*>(mutexGuardSymbol);
+        AddClassTypeToIrClassTypeRepository(mutexGuardClassType, boundCompileUnit, containerScope);
+        List<Cm.Core.Argument> mutexGuardResolutionArguments;
+        Cm.Sym.TypeSymbol* mutexGuardPointerType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(mutexGuardClassType, span);
+        mutexGuardResolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, mutexGuardPointerType));
+        mutexGuardResolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
+        Cm.Sym.FunctionLookupSet mutexGuardFunctionLookups;
+        mutexGuardFunctionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, mutexGuardClassType->ClassOrNs()->GetContainerScope()));
+        List<Cm.Sym.FunctionSymbol*> mutexGuardConversions;
+        Cm.Sym.FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups, span, mutexGuardConversions);
+        Cm.BoundTree.BoundConstructionStatement* constructMutexGuardStatement = new Cm.BoundTree.BoundConstructionStatement(null);
+        int mutexId = staticConstructorSymbol->MutexId();
+        if (mutexId == -1)
+        {
+            throw Exception("invalid mutex id");
+        }
+        Cm.BoundTree.BoundLiteral* mutexIdLiteral = new Cm.BoundTree.BoundLiteral(null);
+        mutexIdLiteral->SetValue(new Cm.Sym.IntValue(mutexId));
+        mutexIdLiteral->SetType(intType);
+        Cm.BoundTree.BoundExpressionList constructMutexGuardArguments;
+        constructMutexGuardArguments.Add(mutexIdLiteral);
+        Cm.Sym.LocalVariableSymbol* mutexGuardVar = new Cm.Sym.LocalVariableSymbol(span, "mtxGuard");
+        mutexGuardVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        staticConstructor->AddLocalVariable(mutexGuardVar);
+        mutexGuardVar->SetType(mutexGuardClassType);
+        constructMutexGuardStatement->SetLocalVariable(mutexGuardVar);
+        constructMutexGuardStatement->SetArguments(Rvalue(constructMutexGuardArguments));
+        constructMutexGuardStatement->SetConstructor(mutexGuardConstructor);
+        constructMutexGuardStatement->InsertLocalVariableToArguments();
+        constructMutexGuardStatement->Arguments()[0]->SetFlag(Cm.BoundTree.BoundNodeFlags.constructVariable);
+        staticConstructor->Body()->AddStatement(constructMutexGuardStatement);
+        Cm.Sym.MemberVariableSymbol* initializedVar = new Cm.Sym.MemberVariableSymbol(span, Cm.IrIntf.GetPrivateSeparator() + "initialized");
+        initializedVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        initializedVar->SetParent(classTypeSymbol);
+        Cm.Sym.TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        initializedVar->SetType(boolType);
+        initializedVar->SetStatic();
+        classTypeSymbol->SetInitializedVar(initializedVar);
+        Cm.BoundTree.BoundConditionalStatement* checkInitializedStatement = new Cm.BoundTree.BoundConditionalStatement(null);
+        Cm.BoundTree.BoundMemberVariable* boundInitializedVar = new Cm.BoundTree.BoundMemberVariable(null, initializedVar);
+        boundInitializedVar->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+        checkInitializedStatement->SetCondition(boundInitializedVar);
+        Cm.BoundTree.BoundReturnStatement* returnStatement = new Cm.BoundTree.BoundReturnStatement(null);
+        checkInitializedStatement->AddStatement(returnStatement);
+        staticConstructor->Body()->AddStatement(checkInitializedStatement);
+        Cm.BoundTree.BoundMemberVariable* boundInitializedVarLeft = new Cm.BoundTree.BoundMemberVariable(null, initializedVar);
+        boundInitializedVarLeft->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+        Cm.BoundTree.BoundLiteral* boundTrue = new Cm.BoundTree.BoundLiteral(null);
+        boundTrue->SetValue(new Cm.Sym.BoolValue(true));
+        boundTrue->SetType(boolType);
+        List<Cm.Sym.FunctionSymbol*> boolAssignConversions;
+        List<Cm.Core.Argument> boolAssignArgs;
+        boolAssignArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(boolType, span)));
+        boolAssignArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+        Cm.Sym.FunctionLookupSet boolAssignLookups;
+        boolAssignLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_parent, containerScope));
+        Cm.Sym.FunctionSymbol* boolAssignment = ResolveOverload(containerScope, boundCompileUnit, "operator=", boolAssignArgs, boolAssignLookups, span, boolAssignConversions);
+        Cm.BoundTree.BoundAssignmentStatement* setInitializedStatement = new Cm.BoundTree.BoundAssignmentStatement(null, boundInitializedVarLeft, boundTrue, boolAssignment);
+        staticConstructor->Body()->AddStatement(setInitializedStatement);
+        if (classTypeSymbol->BaseClass() != null && classTypeSymbol->BaseClass()->StaticConstructor() != null)
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.BoundTree.BoundFunctionCall* functionCall = new Cm.BoundTree.BoundFunctionCall(null, Rvalue(arguments));
+            functionCall->SetFun(classTypeSymbol->BaseClass()->StaticConstructor());
+            Cm.BoundTree.BoundInitClassObjectStatement* initBaseClassObjectStatement = new Cm.BoundTree.BoundInitClassObjectStatement(functionCall);
+            staticConstructor->Body()->AddStatement(initBaseClassObjectStatement);
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->StaticMemberVariables())
+        {
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+            Cm.Core.Argument variableArgument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, span));
+            resolutionArguments.Add(variableArgument);
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+            if (memberVariableType is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);
+                AddClassTypeToIrClassTypeRepository(memberVarClassType, boundCompileUnit, containerScope);
+            }
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* memberCtor = null;
+            try
+            {
+                memberCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, span, conversions);
+            }
+            catch (const Cm.Core.Error& ex)
+            {
+                throw Cm.Core.Error("constructor for member variable '" + memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.References());
+            }
+            Cm.BoundTree.BoundMemberVariable* boundMemberVariable = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            boundMemberVariable->SetType(memberVariableSymbol->GetType());
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(boundMemberVariable);
+            PrepareArguments(containerScope, boundCompileUnit, null, null, memberCtor->Parameters(), arguments, true, boundCompileUnit.IrClassTypeRepository(), memberCtor is Cm.Core.BasicTypeOp*);
+            int n = conversions.Count();
+            if (n != arguments.Count())
+            {
+                throw Exception("wrong number of arguments");
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+                if (conversionFun != null)
+                {
+                    Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                    arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                    arguments[i]->SetType(conversionFun->GetTargetType());
+                }
+            }
+            Cm.BoundTree.BoundInitMemberVariableStatement* initMemberVariableStatement = new Cm.BoundTree.BoundInitMemberVariableStatement(memberCtor, Rvalue(arguments));
+            initMemberVariableStatement->SetMemberVarSymbol(memberVariableSymbol);
+            staticConstructor->Body()->AddStatement(initMemberVariableStatement);
+        }
+        boundClass->AddMember(staticConstructor.Release());
     }
 }

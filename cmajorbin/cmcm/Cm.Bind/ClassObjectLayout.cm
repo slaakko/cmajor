@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2015 Seppo Laakko
+    Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
     Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -427,14 +427,14 @@ namespace Cm.Bind
             throw Exception("static constructor symbol expected");
         }
         Cm.Sym.TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
-        Cm.Sym.Symbol* mutexGuardSymbol = boundCompileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MutexGuard");
+        Cm.Sym.Symbol* mutexGuardSymbol = boundCompileUnit.SymbolTable().GlobalScope()->Lookup("System.Support.MtxGuard");
         if (mutexGuardSymbol == null)
         {
-            throw Exception("System.Support.MutexGuard class not found");
+            throw Exception("System.Support.MtxGuard class not found");
         }
         if (!(mutexGuardSymbol is Cm.Sym.ClassTypeSymbol*))
         {
-            throw Exception("System.Support.MutexGuard is not of class type");
+            throw Exception("System.Support.MtxGuard is not of class type");
         }
         Cm.Sym.ClassTypeSymbol* mutexGuardClassType = cast<Cm.Sym.ClassTypeSymbol*>(mutexGuardSymbol);
         List<Cm.Core.Argument> mutexGuardResolutionArguments;
