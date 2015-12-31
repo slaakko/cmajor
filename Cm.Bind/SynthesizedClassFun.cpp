@@ -1,5 +1,5 @@
 /*========================================================================
-    Copyright (c) 2012-2015 Seppo Laakko
+    Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
     Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -1223,6 +1223,7 @@ void SynthesizedAssignmentGroup::CollectViableFunctions(SynthesizedClassTypeCach
     Cm::Sym::TypeSymbol* secondArgumentType = arguments[1].Type();
     if (secondArgumentType->IsPointerType()) return;
     Cm::Sym::TypeSymbol* secondArgumentBaseType = secondArgumentType->GetBaseType();
+    bool generated = false;
     if (!secondArgumentType->IsRvalueRefType() && !arguments[1].BindToRvalueRef() && TypesEqual(classType, secondArgumentBaseType))
     {
         if (classType->IsStatic())
@@ -1282,6 +1283,10 @@ void SynthesizedAssignmentGroup::CollectViableFunctions(SynthesizedClassTypeCach
                 }
             }
         }
+    }
+    if (generated && classType->IsTemplateTypeSymbol())
+    {
+        CompileUnit().ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, classType);
     }
 }
 
