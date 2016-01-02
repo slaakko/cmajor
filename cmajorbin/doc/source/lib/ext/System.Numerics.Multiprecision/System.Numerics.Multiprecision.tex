@@ -1,0 +1,1458 @@
+\documentclass[a4paper,oneside,11.000000pt]{book}
+
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{pifont}
+\usepackage{a4wide}
+\usepackage{url}
+\usepackage{float}
+\usepackage{layouts}
+\usepackage{supertabular}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{syntax}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{4}
+
+\titleformat{\chapter}[hang]{\bf\Huge}{\arabic{chapter}}{1em}{}{}
+\titleclass{\subchapter}{straight}[\chapter]
+\newcounter{subchapter}
+\renewcommand{\thesubchapter}{\thechapter.\arabic{subchapter}}
+\titleformat{\subchapter}[hang]{\bf\huge}{\thesubchapter}{0.5em}{}{}
+\titlespacing{\subchapter}{0pt}{0pt}{0pt}
+\renewcommand\thesection{\thesubchapter.\arabic{section}}
+\makeatletter
+\newcommand*\l@subchapter{\@dottedtocline{1}{1.5em}{2.3em}}
+\renewcommand\l@section{\@dottedtocline{2}{3.8em}{3.2em}}
+\renewcommand\l@subsection{\@dottedtocline{3}{7em}{4.1em}}
+\renewcommand\l@subsubsection{\@dottedtocline{4}{11.1em}{5em}}
+\makeatother
+
+\makeatletter
+\renewcommand\subparagraph{\@startsection{subparagraph}{5}{0mm}{-\baselineskip}{0.5\baselineskip}{\normalfont\normalsize\scshape}}
+\makeatother
+
+\lstdefinelanguage{Cmajor}{morekeywords={bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong, float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow, public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else, switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base, construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]",morestring=[b]',}\lstloadlanguages{Cmajor}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small}
+\makeatletter\def\toclevel@chapter{0}\def\toclevel@subchapter{1}\def\toclevel@section{2}\def\toclevel@subsection{3}\def\toclevel@subsubsection{4}\makeatother\begin{document}
+\clearpage
+
+\frontmatter
+\title{\textsc{System.Numerics.Multiprecision Library Reference}
+}
+\date{\today}
+\maketitle
+\tableofcontents
+
+\clearpage
+\chapter{Description}
+\begin{flushleft}
+Multiple precision arithmetic library implemented in terms of GNU Multiple Precision Arithmetic Library.
+
+\end{flushleft}
+\chapter{Namespaces}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.44777cm}!{\raggedright}p{7.70223cm}}
+\textbf{Namespace}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision}{System.Numerics.Multiprecision}
+& Contains arbitrary precision signed integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\mainmatter
+
+\chapter{Usage}
+
+\section{Referencing the System.Numerics.Multiprecision library}
+
+Right-click a project node in IDE \verb.|. Project References... \verb.|.
+Add System Extension Library Reference... \verb.|.
+enable \emph{System.Numerics.Multiprecision} check box
+
+\begin{flushleft}
+or add following line to your project's .cmp file:
+\begin{verbatim}
+reference <ext/System.Numerics.Multiprecision/System.Numerics.Multiprecision.cml>;
+\end{verbatim}
+\end{flushleft}
+
+\chapter{Installation}
+
+The System.Numerics.Multiprecision library uses the GNU MP library
+that is precompiled for the following platforms:
+
+\begin{itemize}
+\item 32-bit Windows (x86)
+\item 64-bit Windows (x64)
+\item 32-bit PC Linux (i686)
+\item 64-bit PC Linux (x86\_64)
+\end{itemize}
+
+Current version of GNU MP library at the time of writing is 6.1.0.
+
+If you want to install newer version of the GNU MP library or
+if you have different platform, you can compile the GNU MP library from sources
+by using the following instructions.
+
+\section{Compiling the GNU MP library from sources in Windows}
+
+\begin{itemize}
+
+\item
+Install MinGW-w64 GCC to a path that does not contain spaces.
+I have mine installed in \verb|C:\mingw-w64|.
+
+Installer can be obtained from\\
+\url{http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download}
+
+\item
+Install MSYS2.
+Installation instructions can be found in\\
+\url{http://sourceforge.net/p/msys2/wiki/MSYS2%20installation/}
+
+I have mine installed in \verb|C:\msys64|.
+
+\item
+Start MSYS2 shell.
+
+\item
+In the MSYS2 shell obtain \textbf{tar} by executing
+\begin{verbatim}
+pacman -S tar
+\end{verbatim}
+
+\item
+Obtain \textbf{make} by executing
+\begin{verbatim}
+pacman -S make
+\end{verbatim}
+
+\item
+Mount your MinGW-directory (mine is in \verb|C:/mingw-w64|) by executing
+\begin{verbatim}
+mkdir /mingw
+mount C:/mingw-w64 /mingw
+\end{verbatim}
+
+\item
+Insert your MinGW bin-directory in front of the PATH by executing
+\begin{verbatim}
+export PATH=/mingw/mingw64/bin:$PATH
+\end{verbatim}
+
+\item
+Now if you ask which GCC is used by executing
+\begin{verbatim}
+which gcc
+\end{verbatim}
+you should get \textbf{/mingw/mingw64/bin/gcc}.
+
+\item
+Download the GNU MP library from \url{http://gmplib.org/#DOWNLOAD} in bz2 format
+and place it to your MSYS2 home directory (mine is in \verb|C:\msys64\home\Seppo|).
+
+\item
+Extract the GNU MP library by executing
+\begin{verbatim}
+tar xjf gmp-6.1.0.tar.bz2
+\end{verbatim}
+
+\item
+Change to gmp-directory by executing
+\begin{verbatim}
+cd gmp-6.1.0
+\end{verbatim}
+
+\item
+Configure the library for 64-bit Windows by executing
+\begin{verbatim}
+./configure --enable-static --disable-shared --host=x86_64-w64-mingw32
+\end{verbatim}
+
+For 32-bit Windows the command is
+\begin{verbatim}
+./configure --enable-static --disable-shared --host=i686-w64-mingw32
+\end{verbatim}
+
+Shared libraries are not used in Cmajor so we are disabling them.
+
+\item
+Make the library by executing
+\begin{verbatim}
+make
+\end{verbatim}
+
+\item
+Install the library by executing
+\begin{verbatim}
+make install
+\end{verbatim}
+
+\item
+Optionally test the library by executing
+\begin{verbatim}
+make check
+\end{verbatim}
+
+\item
+Now the header file \textbf{gmp.h} should be in \verb|C:\msys64\usr\local\include| directory
+and the library file \textbf{libgmp.a} should be in \verb|C:\msys64\usr\local\lib| directory.
+Copy gmp.h and libgmp.a under the Cmajor System.Numerics.GmpIntf extension library to directory
+
+\begin{verbatim}
+%APPDATA%\Cmajor\system\ext\System.Numerics.GmpIntf\gmp\windows\x64
+\end{verbatim}
+for 64-bit Windows, or to
+\begin{verbatim}
+%APPDATA%\Cmajor\system\ext\System.Numerics.GmpIntf\gmp\windows\x86
+\end{verbatim}
+for 32-bit Windows.
+
+\item
+That's all.
+
+\end{itemize}
+
+\section{Compiling the GNU MP library from sources in Linux}
+
+\begin{itemize}
+
+\item
+Download the GNU MP library from \url{http://gmplib.org/#DOWNLOAD} in bz2 format
+and place it to your home directory.
+
+\item
+Extract the GNU MP library by executing
+\begin{verbatim}
+tar xjf gmp-6.1.0.tar.bz2
+\end{verbatim}
+
+\item
+Change to gmp-directory by executing
+\begin{verbatim}
+cd gmp-6.1.0
+\end{verbatim}
+
+\item
+Configure the library by executing
+\begin{verbatim}
+./configure --enable-static --disable-shared
+\end{verbatim}
+
+Shared libraries are not used in Cmajor so we are disabling them.
+
+\item
+Make the library by executing
+\begin{verbatim}
+make
+\end{verbatim}
+
+\item
+Install the library by executing
+\begin{verbatim}
+make install
+\end{verbatim}
+
+\item
+Optionally test the library by executing
+\begin{verbatim}
+make check
+\end{verbatim}
+
+\item
+Now the header file \textbf{gmp.h} should be in \verb|/usr/local/include| directory
+and the library file \textbf{libgmp.a} should be in \verb|/usr/local/lib| directory.
+Copy gmp.h and libgmp.a under the Cmajor System.Numerics.GmpIntf extension library to 
+\begin{verbatim}
+<your cmajor directory>/system/ext/System.Numerics.GmpIntf/gmp/linux/x86_64
+\end{verbatim}
+directory for 64-bit Linux or to 
+\begin{verbatim}
+<your cmajor directory>/system/ext/System.Numerics.GmpIntf/gmp/linux/i686
+\end{verbatim}
+directory for 32-bit Linux.
+
+\item
+That's all.
+
+\end{itemize}
+
+
+\hypertarget{System.Numerics.Multiprecision}{\chapter{System.Numerics.Multiprecision Namespace}}
+\begin{flushleft}
+Contains arbitrary precision signed integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\clearpage
+\subchapter{Classes}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Class}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}
+& An arbitrary precision signed integer type.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt}{\section{BigInt Class}}\begin{flushleft}
+An arbitrary precision signed integer type.
+
+\end{flushleft}
+
+\subsection*{Syntax}\texttt{public class BigInt;}
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt}{BigInt()}
+& Default constructor. Creates an instance of arbitrary precision signed integer and initializes it to zero.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{BigInt(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator=(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt}{BigInt(System.\-Numerics.\-Multiprecision.\-BigInt\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt}{operator=(System.\-Numerics.\-Multiprecision.\-BigInt\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String}{BigInt(const System.\-String\&\-)}
+& Creates an instance of arbitrary precision signed integer and initializes it from provided decimal digit string.
+Digit string may be prefixed by a sign character.
+Throws \textbf{System.ConversionException} if a character other than sign or 0-9 is encountered in digit string.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int}{BigInt(const System.\-String\&\-, int)}
+& Creates an instance of arbitrary precision signed integer and initializes it from provided digit string.
+Digit string may be prefixed by a sign character.
+Digits must be in given base.
+Throws \textbf{System.ConversionException} if a character other than sign or valid digit character is encountered.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.int}{BigInt(int)}
+& Creates an instance of arbitrary precision signed integer and initializes it to given signed integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.uint}{BigInt(uint)}
+& Creates an instance of arbitrary precision signed integer and initializes it to given unsigned integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.Handle.C.P.System.Numerics.Multiprecision.BigInt}{Handle() const}
+& Returns a handle to the GNU MP library arbitrary precision integer representation.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt}{ToString() const}
+& Returns the value of the \textbf{BigInt}
+ as a string of decimal digits prefixed by minus sign if the value is negative.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.int}{ToString(int) const}
+& Returns the value of the \textbf{BigInt}
+ as a string of digits in given base prefixed by minus sign if the value is negative.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.int}{operator=(int)}
+& Assigns the value of the \textbf{BigInt}
+ to given signed integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.uint}{operator=(uint)}
+& Assigns the value of the \textbf{BigInt}
+ to given unsigned integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigInt.destructor.P.System.Numerics.Multiprecision.BigInt}{$\sim$BigInt()}
+& Frees memory occupied by the \textbf{BigInt}
+ instance.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt}{\subsubsection*{BigInt() Member Function}}
+\begin{flushleft}
+Default constructor. Creates an instance of arbitrary precision signed integer and initializes it to zero.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigInt();}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{BigInt(const System.Numerics.Multiprecision.BigInt\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigInt(const System.Numerics.Multiprecision.BigInt\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to copy from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator=(const System.Numerics.Multiprecision.BigInt\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.BigInt\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.6205cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt}{\subsubsection*{BigInt(System.Numerics.Multiprecision.BigInt\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigInt(System.Numerics.Multiprecision.BigInt\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator=(System.Numerics.Multiprecision.BigInt\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Numerics.Multiprecision.BigInt\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.6205cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String}{\subsubsection*{BigInt(const System.String\&) Member Function}}
+\begin{flushleft}
+Creates an instance of arbitrary precision signed integer and initializes it from provided decimal digit string.
+Digit string may be prefixed by a sign character.
+Throws \textbf{System.ConversionException} if a character other than sign or 0-9 is encountered in digit string.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigInt(const System.String\& str);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String\&\-
+& A string of decimal digits.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int}{\subsubsection*{BigInt(const System.String\&, int) Member Function}}
+\begin{flushleft}
+Creates an instance of arbitrary precision signed integer and initializes it from provided digit string.
+Digit string may be prefixed by a sign character.
+Digits must be in given base.
+Throws \textbf{System.ConversionException} if a character other than sign or valid digit character is encountered.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigInt(const System.String\& str, int base\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{4.63128cm}!{\raggedright}p{5.23538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String\&\-
+& A string of digits of base \hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int.base\_}{base\_\-}.
+
+\\
+base\_
+& int
+& Base of digits. Base may vary from 2 to 62.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+For bases up to 36, case is ignored; upper-case and lower-case letters have the same value. 
+For bases 37 to 62, upper-case letter represent the usual 10..35 while lower-case letter represent 36..61.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.int}{\subsubsection*{BigInt(int) Member Function}}
+\begin{flushleft}
+Creates an instance of arbitrary precision signed integer and initializes it to given signed integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigInt(int that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& int
+& A signed integer value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{BigInt(uint) Member Function}}
+\begin{flushleft}
+Creates an instance of arbitrary precision signed integer and initializes it to given unsigned integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigInt(uint that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& uint
+& An unsigned integer value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.Handle.C.P.System.Numerics.Multiprecision.BigInt}{\subsubsection*{Handle() const Member Function}}
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision integer representation.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void* Handle() const;}
+
+\subsubsection*{Returns}void*
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision integer representation.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt}{\subsubsection*{ToString() const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of decimal digits prefixed by minus sign if the value is negative.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public System.String ToString() const;}
+
+\subsubsection*{Returns}System.\-String
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of decimal digits prefixed by minus sign if the value is negative.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.int}{\subsubsection*{ToString(int) const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of digits in given base prefixed by minus sign if the value is negative.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String ToString(int base\_) const;}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+base\_
+& int
+& Base of digits. Base may vary from 2 to 62.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-String
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of digits in given base prefixed by minus sign if the value is negative.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.int}{\subsubsection*{operator=(int) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to given signed integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void operator=(int that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& int
+& A signed integer value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{operator=(uint) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to given unsigned integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void operator=(uint that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& uint
+& An unsigned integer value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigInt.destructor.P.System.Numerics.Multiprecision.BigInt}{\subsubsection*{$\sim$BigInt() Member Function}}
+\begin{flushleft}
+Frees memory occupied by the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} instance.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$BigInt();}
+
+\subsection{Nonmember Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigInt}{Abs(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns absolute value of given \textbf{BigInt}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.ClearBit.R.System.Numerics.Multiprecision.BigInt.uint}{ClearBit(System.\-Numerics.\-Multiprecision.\-BigInt\&\-, uint)}
+& Clear given bit of given \textbf{BigInt}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.SetBit.R.System.Numerics.Multiprecision.BigInt.uint}{SetBit(System.\-Numerics.\-Multiprecision.\-BigInt\&\-, uint)}
+& Set given bit of given \textbf{BigInt}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint}{TestBit(System.\-Numerics.\-Multiprecision.\-BigInt\&\-, uint)}
+& Returns true if given bit of given \textbf{BigInt}
+ is set, false otherwise.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.ToggleBit.R.System.Numerics.Multiprecision.BigInt.uint}{ToggleBit(System.\-Numerics.\-Multiprecision.\-BigInt\&\-, uint)}
+& Toggle given bit of given \textbf{BigInt}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator\%(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the remainder when given \textbf{BigInt}
+ is divided by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator\&\-(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns bitwise AND of two \textbf{BigInt}
+ values.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator*(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the product of given \textbf{BigInt}
+ value multiplied by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator+(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the sum of given \textbf{BigInt}
+ value added to another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt}{operator-(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the negation of \textbf{BigInt}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator-(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the difference of given \textbf{BigInt}
+ value subtracted from another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator/(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns the quotient when given \textbf{BigInt}
+ is divided by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator$<$\-(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns true if the first \textbf{BigInt}
+ is less than the second \textbf{BigInt}
+, false otherwise.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt}{operator$<$\-$<$\-(System.\-IO.\-OutputStream\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Puts the value of the given \textbf{BigInt}
+ to the given output stream as string of decimal digits prefixed by minus sign if the value is negative.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator==(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns true if the first \textbf{BigInt}
+ is equal to the second \textbf{BigInt}
+, false otherwise.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator\^{}(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns bitwise XOR of two \textbf{BigInt}
+ values.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{operator|(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-, const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns bitwise inclusive OR of two \textbf{BigInt}
+ values.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.complement.C.R.System.Numerics.Multiprecision.BigInt}{operator$\sim$(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Returns bitwise complement of \textbf{BigInt}
+ value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{Abs(const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns absolute value of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt Abs(const System.Numerics.Multiprecision.BigInt\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns absolute value of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.ClearBit.R.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{ClearBit(System.Numerics.Multiprecision.BigInt\&, uint) Function}}
+\begin{flushleft}
+Clear given bit of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void ClearBit(System.Numerics.Multiprecision.BigInt\& x, uint bitIndex);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.94573cm}!{\raggedright}p{7.92093cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A reference to a \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+bitIndex
+& uint
+& Index of bit to clear.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.SetBit.R.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{SetBit(System.Numerics.Multiprecision.BigInt\&, uint) Function}}
+\begin{flushleft}
+Set given bit of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void SetBit(System.Numerics.Multiprecision.BigInt\& x, uint bitIndex);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.94573cm}!{\raggedright}p{7.92093cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A reference to a \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+bitIndex
+& uint
+& Index of bit to set.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{TestBit(System.Numerics.Multiprecision.BigInt\&, uint) Function}}
+\begin{flushleft}
+Returns true if given bit of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is set, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool TestBit(System.Numerics.Multiprecision.BigInt\& x, uint bitIndex);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.94573cm}!{\raggedright}p{7.92093cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A reference to a \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+bitIndex
+& uint
+& Index of bit to test.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if given bit of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is set, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.ToggleBit.R.System.Numerics.Multiprecision.BigInt.uint}{\subsubsection*{ToggleBit(System.Numerics.Multiprecision.BigInt\&, uint) Function}}
+\begin{flushleft}
+Toggle given bit of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void ToggleBit(System.Numerics.Multiprecision.BigInt\& x, uint bitIndex);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.94573cm}!{\raggedright}p{7.92093cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A reference to a \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\\
+bitIndex
+& uint
+& Index of bit to toggle.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator\%(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the remainder when given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is divided by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator\%(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Divisor.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Dividend.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the remainder when \hyperlink{System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left}{left} is divided by 
+\hyperlink{System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right}{right}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator\&(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns bitwise AND of two \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator\&(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns bitwise AND of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator*(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value multiplied by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator*(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value multiplied by another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator+(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value added to another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator+(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value added to another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator-(const System.Numerics.Multiprecision.BigInt\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value subtracted from another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator-(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value subtracted from another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator/(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is divided by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator/(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Divisor.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Dividend.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is divided by another.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Quotient is rounded towards zero.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator$<$(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is less than the second \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator$<$(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is less than the second \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator$<$$<$(System.IO.OutputStream\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Puts the value of the given \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} to the given output stream as string of decimal digits prefixed by minus sign if the value is negative.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.IO.OutputStream\& operator$<$$<$(System.IO.OutputStream\& s, const System.Numerics.Multiprecision.BigInt\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.49442cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+s
+& System.\-IO.\-OutputStream\&\-
+& An output stream.
+
+\\
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-IO.\-OutputStream\&\-
+\begin{flushleft}
+Returns a reference to the output stream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator==(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator==(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator\^{}(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns bitwise XOR of two \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator\^{}(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns bitwise XOR of two \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator$|$(const System.Numerics.Multiprecision.BigInt\&, const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns bitwise inclusive OR of two \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator$|$(const System.Numerics.Multiprecision.BigInt\& left, const System.Numerics.Multiprecision.BigInt\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns bitwise inclusive OR of two \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} values.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.complement.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator$\sim$(const System.Numerics.Multiprecision.BigInt\&) Function}}
+\begin{flushleft}
+Returns bitwise complement of \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt operator$\sim$(const System.Numerics.Multiprecision.BigInt\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& Operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns bitwise complement of \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value.
+
+\end{flushleft}
+\clearpage
+\end{document}
+
+

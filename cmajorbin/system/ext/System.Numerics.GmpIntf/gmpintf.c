@@ -110,7 +110,7 @@ void div_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
     mpz_t* target = (mpz_t*)mpz_target;
     mpz_t* left = (mpz_t*)mpz_left;
     mpz_t* right = (mpz_t*)mpz_right;
-    mpz_fdiv_q(*target, *left, *right);
+    mpz_tdiv_q(*target, *left, *right);
 }
 
 void rem_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
@@ -118,7 +118,7 @@ void rem_mpz(void* mpz_target, void* mpz_left, void* mpz_right)
     mpz_t* target = (mpz_t*)mpz_target;
     mpz_t* left = (mpz_t*)mpz_left;
     mpz_t* right = (mpz_t*)mpz_right;
-    mpz_fdiv_r(*target, *left, *right);
+    mpz_tdiv_r(*target, *left, *right);
 }
 
 int cmp_mpz(void* mpz_left, void* mpz_right)

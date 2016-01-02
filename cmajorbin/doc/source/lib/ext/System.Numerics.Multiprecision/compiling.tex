@@ -1,0 +1,201 @@
+\chapter{Installation}
+
+The System.Numerics.Multiprecision library uses the GNU MP library
+that is precompiled for the following platforms:
+
+\begin{itemize}
+\item 32-bit Windows (x86)
+\item 64-bit Windows (x64)
+\item 32-bit PC Linux (i686)
+\item 64-bit PC Linux (x86\_64)
+\end{itemize}
+
+Current version of GNU MP library at the time of writing is 6.1.0.
+
+If you want to install newer version of the GNU MP library or
+if you have different platform, you can compile the GNU MP library from sources
+by using the following instructions.
+
+\section{Compiling the GNU MP library from sources in Windows}
+
+\begin{itemize}
+
+\item
+Install MinGW-w64 GCC to a path that does not contain spaces.
+I have mine installed in \verb|C:\mingw-w64|.
+
+Installer can be obtained from\\
+\url{http://sourceforge.net/projects/mingw-w64/files/Toolchains%20targetting%20Win32/Personal%20Builds/mingw-builds/installer/mingw-w64-install.exe/download}
+
+\item
+Install MSYS2.
+Installation instructions can be found in\\
+\url{http://sourceforge.net/p/msys2/wiki/MSYS2%20installation/}
+
+I have mine installed in \verb|C:\msys64|.
+
+\item
+Start MSYS2 shell.
+
+\item
+In the MSYS2 shell obtain \textbf{tar} by executing
+\begin{verbatim}
+pacman -S tar
+\end{verbatim}
+
+\item
+Obtain \textbf{make} by executing
+\begin{verbatim}
+pacman -S make
+\end{verbatim}
+
+\item
+Mount your MinGW-directory (mine is in \verb|C:/mingw-w64|) by executing
+\begin{verbatim}
+mkdir /mingw
+mount C:/mingw-w64 /mingw
+\end{verbatim}
+
+\item
+Insert your MinGW bin-directory in front of the PATH by executing
+\begin{verbatim}
+export PATH=/mingw/mingw64/bin:$PATH
+\end{verbatim}
+
+\item
+Now if you ask which GCC is used by executing
+\begin{verbatim}
+which gcc
+\end{verbatim}
+you should get \textbf{/mingw/mingw64/bin/gcc}.
+
+\item
+Download the GNU MP library from \url{http://gmplib.org/#DOWNLOAD} in bz2 format
+and place it to your MSYS2 home directory (mine is in \verb|C:\msys64\home\Seppo|).
+
+\item
+Extract the GNU MP library by executing
+\begin{verbatim}
+tar xjf gmp-6.1.0.tar.bz2
+\end{verbatim}
+
+\item
+Change to gmp-directory by executing
+\begin{verbatim}
+cd gmp-6.1.0
+\end{verbatim}
+
+\item
+Configure the library for 64-bit Windows by executing
+\begin{verbatim}
+./configure --enable-static --disable-shared --host=x86_64-w64-mingw32
+\end{verbatim}
+
+For 32-bit Windows the command is
+\begin{verbatim}
+./configure --enable-static --disable-shared --host=i686-w64-mingw32
+\end{verbatim}
+
+Shared libraries are not used in Cmajor so we are disabling them.
+
+\item
+Make the library by executing
+\begin{verbatim}
+make
+\end{verbatim}
+
+\item
+Install the library by executing
+\begin{verbatim}
+make install
+\end{verbatim}
+
+\item
+Optionally test the library by executing
+\begin{verbatim}
+make check
+\end{verbatim}
+
+\item
+Now the header file \textbf{gmp.h} should be in \verb|C:\msys64\usr\local\include| directory
+and the library file \textbf{libgmp.a} should be in \verb|C:\msys64\usr\local\lib| directory.
+Copy gmp.h and libgmp.a under the Cmajor System.Numerics.GmpIntf extension library to directory
+
+\begin{verbatim}
+%APPDATA%\Cmajor\system\ext\System.Numerics.GmpIntf\gmp\windows\x64
+\end{verbatim}
+for 64-bit Windows, or to
+\begin{verbatim}
+%APPDATA%\Cmajor\system\ext\System.Numerics.GmpIntf\gmp\windows\x86
+\end{verbatim}
+for 32-bit Windows.
+
+\item
+That's all.
+
+\end{itemize}
+
+\section{Compiling the GNU MP library from sources in Linux}
+
+\begin{itemize}
+
+\item
+Download the GNU MP library from \url{http://gmplib.org/#DOWNLOAD} in bz2 format
+and place it to your home directory.
+
+\item
+Extract the GNU MP library by executing
+\begin{verbatim}
+tar xjf gmp-6.1.0.tar.bz2
+\end{verbatim}
+
+\item
+Change to gmp-directory by executing
+\begin{verbatim}
+cd gmp-6.1.0
+\end{verbatim}
+
+\item
+Configure the library by executing
+\begin{verbatim}
+./configure --enable-static --disable-shared
+\end{verbatim}
+
+Shared libraries are not used in Cmajor so we are disabling them.
+
+\item
+Make the library by executing
+\begin{verbatim}
+make
+\end{verbatim}
+
+\item
+Install the library by executing
+\begin{verbatim}
+make install
+\end{verbatim}
+
+\item
+Optionally test the library by executing
+\begin{verbatim}
+make check
+\end{verbatim}
+
+\item
+Now the header file \textbf{gmp.h} should be in \verb|/usr/local/include| directory
+and the library file \textbf{libgmp.a} should be in \verb|/usr/local/lib| directory.
+Copy gmp.h and libgmp.a under the Cmajor System.Numerics.GmpIntf extension library to 
+\begin{verbatim}
+<your cmajor directory>/system/ext/System.Numerics.GmpIntf/gmp/linux/x86_64
+\end{verbatim}
+directory for 64-bit Linux or to 
+\begin{verbatim}
+<your cmajor directory>/system/ext/System.Numerics.GmpIntf/gmp/linux/i686
+\end{verbatim}
+directory for 32-bit Linux.
+
+\item
+That's all.
+
+\end{itemize}
+
