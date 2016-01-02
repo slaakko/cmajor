@@ -310,6 +310,8 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     std::vector<std::string>& allReferenceFilePaths, std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, 
     std::vector<uint64_t>& classHierarchyTable, std::vector<std::string>& allLibrarySearchPaths)
 {
+    static int recursionCount = 0;
+    ++recursionCount;
     boost::filesystem::path afp = filePath;
     afp.replace_extension(".cma");
     assemblyFilePaths.push_back(Cm::Util::GetFullPath(afp.generic_string()));
@@ -354,6 +356,38 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
         }
     }
     reader.MarkSymbolsBound();
+    if (recursionCount == 1 && GetGlobalFlag(GlobalFlags::generate_docs))
+    {
+        reader.MarkSymbolsProject();
+        symbolTable.Import(reader, false);
+        int32_t nt = reader.GetBinaryReader().ReadInt();
+        for (int32_t i = 0; i < nt; ++i)
+        {
+            Symbol* symbol = reader.ReadSymbol();
+            if (symbol->IsTemplateTypeSymbol())
+            {
+                TemplateTypeSymbol* templateTypeSymbol = static_cast<TemplateTypeSymbol*>(symbol);
+            }
+            else
+            {
+                throw std::runtime_error("template type symbol expected");
+            }
+        }
+        int32_t n = reader.GetBinaryReader().ReadInt();
+        for (int32_t i = 0; i < n; ++i)
+        {
+            Symbol* symbol = reader.ReadSymbol();
+            if (symbol->IsTypeSymbol())
+            {
+                TypeSymbol* typeSymbol = static_cast<TypeSymbol*>(symbol);
+            }
+            else
+            {
+                throw std::runtime_error("type symbol expected");
+            }
+        }
+        return;
+    }
     symbolTable.Import(reader);
     ImportExceptionTable(symbolTable, reader);
 	int numLibraryMutexes = reader.GetBinaryReader().ReadInt();
@@ -368,6 +402,7 @@ void Module::Import(SymbolTable& symbolTable, std::unordered_set<std::string>& i
     {
         std::cout << "> " << filePath << std::endl;
     }
+    --recursionCount;
 }
 
 void Module::ExportExceptionTable(Writer& writer)

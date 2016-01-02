@@ -5,6 +5,7 @@ reference <support.cml>;
 reference <os.cml>;
 source <algorithm.cm>;
 source <bitset.cm>;
+source <bytestream.cm>;
 source <charclass.cm>;
 source <codeformatter.cm>;
 source <concept.cm>;

@@ -1,0 +1,1609 @@
+library System.Numerics.Multiprecision
+{
+    description
+    {
+        Multiple precision arithmetic library implemented in terms of GNU Multiple Precision Arithmetic Library.
+    }
+    chapter <usage.tex>;
+    chapter <compiling.tex>;
+    namespace 
+    {
+        description
+        {
+        }
+        concept Common.T.U
+        {
+            description
+            {
+            }
+        }
+        concept Convertible.T.U
+        {
+            description
+            {
+            }
+        }
+        concept Derived.T.U
+        {
+            description
+            {
+            }
+        }
+        concept ExplicitlyConvertible.T.U
+        {
+            description
+            {
+            }
+        }
+        concept NonReferenceType.T
+        {
+            description
+            {
+            }
+        }
+        concept Same.T.U
+        {
+            description
+            {
+            }
+        }
+    }
+    namespace System
+    {
+        description
+        {
+        }
+        class System.Pair.System.uhuge.System.uhuge
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Pair.System.uhuge.uint
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.R.char.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.C.R.char.C.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.C.R.int.C.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.R.int.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.UniquePtr.System.IO.InputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.UniquePtr.System.IO.OutputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+    }
+    namespace System.Collections
+    {
+        description
+        {
+        }
+        class System.Collections.List.System.CharClass
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.System.String
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.int
+        {
+            description
+            {
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.ulong
+        {
+            description
+            {
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+    }
+    namespace System.Concepts
+    {
+        description
+        {
+        }
+    }
+    namespace System.IO
+    {
+        description
+        {
+        }
+    }
+    namespace System.Numerics
+    {
+        description
+        {
+        }
+    }
+    namespace System.Numerics.Multiprecision
+    {
+        description
+        {
+            Contains arbitrary precision signed integer type System.Numerics.Multiprecision.BigInt.
+        }
+        class System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                An arbitrary precision signed integer type.
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Default constructor. Creates an instance of arbitrary precision signed integer and initializes it to zero.
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.that
+                {
+                    description
+                    {
+                        A System.Numerics.Multiprecision.BigInt to copy from.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.that
+                {
+                    description
+                    {
+                        A System.Numerics.Multiprecision.BigInt to assign.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt.that
+                {
+                    description
+                    {
+                        A System.Numerics.Multiprecision.BigInt to move from.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.RR.System.Numerics.Multiprecision.BigInt.that
+                {
+                    description
+                    {
+                        A System.Numerics.Multiprecision.BigInt to assign.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String
+            {
+                description
+                {
+                    Creates an instance of arbitrary precision signed integer and initializes it from provided decimal digit string.
+                    Digit string may be prefixed by a sign character.
+                    Throws "\textbf{System.ConversionException}" if a character other than sign or 0-9 is encountered in digit string.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.str
+                {
+                    description
+                    {
+                        A string of decimal digits.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int
+            {
+                description
+                {
+                    Creates an instance of arbitrary precision signed integer and initializes it from provided digit string.
+                    Digit string may be prefixed by a sign character.
+                    Digits must be in given base.
+                    Throws "\textbf{System.ConversionException}" if a character other than sign or valid digit character is encountered.
+                }
+                remarks
+                {
+                    For bases up to 36, case is ignored; upper-case and lower-case letters have the same value. 
+                    For bases 37 to 62, upper-case letter represent the usual 10..35 while lower-case letter represent 36..61.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int.base_
+                {
+                    description
+                    {
+                        Base of digits. Base may vary from 2 to 62.
+                    }
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int.str
+                {
+                    description
+                    {
+                        A string of digits of base System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int.base_.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.int
+            {
+                description
+                {
+                    Creates an instance of arbitrary precision signed integer and initializes it to given signed integer value.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.int.that
+                {
+                    description
+                    {
+                        A signed integer value.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.uint
+            {
+                description
+                {
+                    Creates an instance of arbitrary precision signed integer and initializes it to given unsigned integer value.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.uint.that
+                {
+                    description
+                    {
+                        An unsigned integer value.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.Handle.C.P.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Returns a handle to the GNU MP library arbitrary precision integer representation.
+                }
+                returns System.Numerics.Multiprecision.BigInt.Handle.C.P.System.Numerics.Multiprecision.BigInt.returnValue
+                {
+                    description
+                    {
+                        Returns a handle to the GNU MP library arbitrary precision integer representation.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Returns the value of the System.Numerics.Multiprecision.BigInt as a string of decimal digits prefixed by minus sign if the value is negative.
+                }
+                returns System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.returnValue
+                {
+                    description
+                    {
+                        Returns the value of the System.Numerics.Multiprecision.BigInt as a string of decimal digits prefixed by minus sign if the value is negative.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.int
+            {
+                description
+                {
+                    Returns the value of the System.Numerics.Multiprecision.BigInt as a string of digits in given base prefixed by minus sign if the value is negative.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.int.base_
+                {
+                    description
+                    {
+                        Base of digits. Base may vary from 2 to 62.
+                    }
+                }
+                returns System.Numerics.Multiprecision.BigInt.ToString.C.P.System.Numerics.Multiprecision.BigInt.int.returnValue
+                {
+                    description
+                    {
+                        Returns the value of the System.Numerics.Multiprecision.BigInt as a string of digits in given base prefixed by minus sign if the value is negative.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.int
+            {
+                description
+                {
+                    Assigns the value of the System.Numerics.Multiprecision.BigInt to given signed integer value.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.int.that
+                {
+                    description
+                    {
+                        A signed integer value.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.uint
+            {
+                description
+                {
+                    Assigns the value of the System.Numerics.Multiprecision.BigInt to given unsigned integer value.
+                }
+                parameter System.Numerics.Multiprecision.BigInt.operator.assign.P.System.Numerics.Multiprecision.BigInt.uint.that
+                {
+                    description
+                    {
+                        An unsigned integer value.
+                    }
+                }
+            }
+            function System.Numerics.Multiprecision.BigInt.destructor.P.System.Numerics.Multiprecision.BigInt
+            {
+                description
+                {
+                    Frees memory occupied by the System.Numerics.Multiprecision.BigInt instance.
+                }
+            }
+        }
+        function System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns absolute value of given System.Numerics.Multiprecision.BigInt.
+            }
+            parameter System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigInt.x
+            {
+                description
+                {
+                    A System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            returns System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns absolute value of given System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.ClearBit.R.System.Numerics.Multiprecision.BigInt.uint
+        {
+            description
+            {
+                Clear given bit of given System.Numerics.Multiprecision.BigInt.
+            }
+            parameter System.Numerics.Multiprecision.ClearBit.R.System.Numerics.Multiprecision.BigInt.uint.bitIndex
+            {
+                description
+                {
+                    Index of bit to clear.
+                }
+            }
+            parameter System.Numerics.Multiprecision.ClearBit.R.System.Numerics.Multiprecision.BigInt.uint.x
+            {
+                description
+                {
+                    A reference to a System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.SetBit.R.System.Numerics.Multiprecision.BigInt.uint
+        {
+            description
+            {
+                Set given bit of given System.Numerics.Multiprecision.BigInt.
+            }
+            parameter System.Numerics.Multiprecision.SetBit.R.System.Numerics.Multiprecision.BigInt.uint.bitIndex
+            {
+                description
+                {
+                    Index of bit to set.
+                }
+            }
+            parameter System.Numerics.Multiprecision.SetBit.R.System.Numerics.Multiprecision.BigInt.uint.x
+            {
+                description
+                {
+                    A reference to a System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint
+        {
+            description
+            {
+                Returns true if given bit of given System.Numerics.Multiprecision.BigInt is set, false otherwise.
+            }
+            parameter System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint.bitIndex
+            {
+                description
+                {
+                    Index of bit to test.
+                }
+            }
+            parameter System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint.x
+            {
+                description
+                {
+                    A reference to a System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            returns System.Numerics.Multiprecision.TestBit.R.System.Numerics.Multiprecision.BigInt.uint.returnValue
+            {
+                description
+                {
+                    Returns true if given bit of given System.Numerics.Multiprecision.BigInt is set, false otherwise.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.ToggleBit.R.System.Numerics.Multiprecision.BigInt.uint
+        {
+            description
+            {
+                Toggle given bit of given System.Numerics.Multiprecision.BigInt.
+            }
+            parameter System.Numerics.Multiprecision.ToggleBit.R.System.Numerics.Multiprecision.BigInt.uint.bitIndex
+            {
+                description
+                {
+                    Index of bit to toggle.
+                }
+            }
+            parameter System.Numerics.Multiprecision.ToggleBit.R.System.Numerics.Multiprecision.BigInt.uint.x
+            {
+                description
+                {
+                    A reference to a System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the remainder when given System.Numerics.Multiprecision.BigInt is divided by another.
+            }
+            parameter System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Divisor.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Dividend.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the remainder when System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left is divided by 
+                    System.Numerics.Multiprecision.operator.remainder.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns bitwise AND of two System.Numerics.Multiprecision.BigInt values.
+            }
+            parameter System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.and.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns bitwise AND of given System.Numerics.Multiprecision.BigInt values.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the product of given System.Numerics.Multiprecision.BigInt value multiplied by another.
+            }
+            parameter System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the product of given System.Numerics.Multiprecision.BigInt value multiplied by another.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the sum of given System.Numerics.Multiprecision.BigInt value added to another.
+            }
+            parameter System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the sum of given System.Numerics.Multiprecision.BigInt value added to another.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the negation of System.Numerics.Multiprecision.BigInt.
+            }
+            parameter System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.x
+            {
+                description
+                {
+                    A value.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the negation of System.Numerics.Multiprecision.BigInt.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the difference of given System.Numerics.Multiprecision.BigInt value subtracted from another.
+            }
+            parameter System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the difference of given System.Numerics.Multiprecision.BigInt value subtracted from another.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns the quotient when given System.Numerics.Multiprecision.BigInt is divided by another.
+            }
+            remarks
+            {
+                Quotient is rounded towards zero.
+            }
+            parameter System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Divisor.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Dividend.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns the quotient when given System.Numerics.Multiprecision.BigInt is divided by another.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns true if the first System.Numerics.Multiprecision.BigInt is less than the second System.Numerics.Multiprecision.BigInt, false otherwise.
+            }
+            parameter System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns true if the first System.Numerics.Multiprecision.BigInt is less than the second System.Numerics.Multiprecision.BigInt, false otherwise.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Puts the value of the given System.Numerics.Multiprecision.BigInt to the given output stream as string of decimal digits prefixed by minus sign if the value is negative.
+            }
+            parameter System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt.s
+            {
+                description
+                {
+                    An output stream.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt.x
+            {
+                description
+                {
+                    A System.Numerics.Multiprecision.BigInt value.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns a reference to the output stream.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns true if the first System.Numerics.Multiprecision.BigInt is equal to the second System.Numerics.Multiprecision.BigInt, false otherwise.
+            }
+            parameter System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns true if the first System.Numerics.Multiprecision.BigInt is equal to the second System.Numerics.Multiprecision.BigInt, false otherwise.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns bitwise XOR of two System.Numerics.Multiprecision.BigInt values.
+            }
+            parameter System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.xor.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns bitwise XOR of two System.Numerics.Multiprecision.BigInt values.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns bitwise inclusive OR of two System.Numerics.Multiprecision.BigInt values.
+            }
+            parameter System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.left
+            {
+                description
+                {
+                    Left operand.
+                }
+            }
+            parameter System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.right
+            {
+                description
+                {
+                    Right operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.or.C.R.System.Numerics.Multiprecision.BigInt.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns bitwise inclusive OR of two System.Numerics.Multiprecision.BigInt values.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+        function System.Numerics.Multiprecision.operator.complement.C.R.System.Numerics.Multiprecision.BigInt
+        {
+            description
+            {
+                Returns bitwise complement of System.Numerics.Multiprecision.BigInt value.
+            }
+            parameter System.Numerics.Multiprecision.operator.complement.C.R.System.Numerics.Multiprecision.BigInt.x
+            {
+                description
+                {
+                    Operand.
+                }
+            }
+            returns System.Numerics.Multiprecision.operator.complement.C.R.System.Numerics.Multiprecision.BigInt.returnValue
+            {
+                description
+                {
+                    Returns bitwise complement of System.Numerics.Multiprecision.BigInt value.
+                }
+            }
+            owner System.Numerics.Multiprecision.BigInt;
+        }
+    }
+    namespace System.Security
+    {
+        description
+        {
+        }
+    }
+    namespace System.Support
+    {
+        description
+        {
+        }
+        class System.Support.ExDeleter.System.Exception
+        {
+            description
+            {
+            }
+            function System.Support.ExDeleter.System.Exception.constructor.P.System.Support.ExDeleter.System.Exception
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+        }
+    }
+    namespace System.Text
+    {
+        description
+        {
+        }
+    }
+    namespace System.Threading
+    {
+        description
+        {
+        }
+    }
+}

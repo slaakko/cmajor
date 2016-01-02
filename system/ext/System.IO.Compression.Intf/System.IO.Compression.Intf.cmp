@@ -1,0 +1,10 @@
+project System.IO.Compression.Intf;
+target=library;
+assembly <System.IO.Compression.Intf.cma>;
+source <zlib.cm>;
+csource <zlib_intf.c>;
+clib <z>;
+addlibrarypath <zlib/windows/x86>[os=windows,bits=32];
+addlibrarypath <zlib/windows/x64>[os=windows,bits=64];
+addlibrarypath <zlib/linux/i686>[os=linux,bits=32];
+addlibrarypath <zlib/linux/x86_64>[os=linux,bits=64];

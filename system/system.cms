@@ -2,6 +2,8 @@ solution system;
 project <os.cmp>;
 project <support.cmp>;
 project <system.cmp>;
+project <ext/System.IO.Compression/System.IO.Compression.cmp>;
+project <ext/System.IO.Compression.Intf/System.IO.Compression.Intf.cmp>;
 project <ext/System.Net.Http/System.Net.Http.cmp>;
 project <ext/System.Net.Sockets/System.Net.Sockets.cmp>;
 project <ext/System.Numerics.GmpIntf/System.Numerics.GmpIntf.cmp>;
@@ -26,3 +28,5 @@ dependency System.Xml(System.Text.Parsing, System.Text.Parsing.CmObjectModel, sy
 dependency System.Xml.Serialization(System.Xml, System.Text.Parsing, System.Text.Parsing.CmObjectModel, system, support, os);
 dependency System.Numerics.GmpIntf();
 dependency System.Numerics.Multiprecision(System.Numerics.GmpIntf);
+dependency System.IO.Compression.Intf();
+dependency System.IO.Compression(System.IO.Compression.Intf);

@@ -54,6 +54,7 @@ public:
     void Dump();
     void CheckUpToDate();
     void CheckFileVersion();
+    const std::string& FilePath() const { return filePath; }
 private:
     std::string name;
     std::string filePath;

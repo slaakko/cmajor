@@ -1,0 +1,185 @@
+using System;
+using System.Collections;
+
+namespace System.IO
+{
+    public abstract class ByteStream
+    {
+        public virtual ~ByteStream()
+        {
+        }
+        suppress ByteStream(const ByteStream&);
+        suppress void operator=(const ByteStream&);
+        public abstract int ReadByte();
+        public abstract int Read(byte* buf, int count);
+        public abstract void Write(byte x);
+        public abstract void Write(byte* buf, int count);
+        public void CopyTo(ByteStream& destination)
+        {
+            this->CopyTo(destination, 16384);
+        }
+        public void CopyTo(ByteStream& destination, int bufferSize)
+        {
+            #assert(bufferSize > 0);
+            IOBuffer buffer(cast<ulong>(bufferSize));
+            int bytesRead = Read(cast<byte*>(buffer.Mem()), bufferSize);
+            while (bytesRead > 0)
+            {
+                destination.Write(cast<byte*>(buffer.Mem()), bytesRead);
+                bytesRead = Read(cast<byte*>(buffer.Mem()), bufferSize);
+            }
+        }
+    }
+    
+    public class MemoryByteStream : ByteStream
+    {
+        public MemoryByteStream() : content(), readPos(0)
+        {
+        }
+        public MemoryByteStream(byte* data, int count) : content(), readPos(0)
+        {
+            this->Write(data, count);
+        }
+        suppress MemoryByteStream(const MemoryByteStream&);
+        suppress void operator=(const MemoryByteStream&);
+        public inline const byte* Data() const
+        {
+            return content.CBegin().GetPtr();
+        }
+        public inline int Size() const
+        {
+            return content.Count();
+        }
+        public inline int ReadPos() const
+        {
+            return readPos;
+        }
+        public override int ReadByte()
+        {
+            if (readPos < content.Count())
+            {
+                return content[readPos++];
+            }
+            return -1;
+        }
+        public override int Read(byte* buf, int count)
+        {
+            int bytesRead = 0;
+            int n = content.Count();
+            while (count > 0 && readPos < n)
+            {
+                *buf++ = content[readPos++];
+                ++bytesRead;
+                --count;
+            }
+            return bytesRead;
+        }
+        public override void Write(byte x)
+        {
+            content.Add(x);
+        }
+        public override void Write(byte* buf, int count)
+        {
+            while (count > 0)
+            {
+                content.Add(*buf++);
+                --count;
+            }        
+        }
+        private List<byte> content;
+        private int readPos;
+    }
+    
+    public enum FileMode
+    {
+        append, create, open
+    }
+    
+    public class FileByteStream : ByteStream
+    {
+        public FileByteStream(const string& fileName_, FileMode mode) : fileName(fileName_), handle(-1)
+        {
+            switch (mode)
+            {
+                case FileMode.append:
+                {
+                    handle = open_file(fileName.Chars(), cast<OpenFlags>(OpenFlags.binary | OpenFlags.writeOnly | OpenFlags.append), get_default_pmode());
+                    break;
+                }
+                case FileMode.create:
+                {
+                    handle = open_file(fileName.Chars(), cast<OpenFlags>(OpenFlags.binary | OpenFlags.writeOnly | OpenFlags.create | OpenFlags.truncate), get_default_pmode());
+                    break;
+                }
+                case FileMode.open:
+                {
+                    handle = open_file(fileName.Chars(), cast<OpenFlags>(OpenFlags.binary | OpenFlags.readOnly), get_default_pmode());
+                    break;
+                }
+            }        
+            if (handle == -1)
+            {
+                string reason = strerror(get_errno());
+                throw OpenFileException("could not open file '" + fileName + "': " + reason);
+            }
+        }
+        suppress FileByteStream(const FileByteStream&);
+        suppress void operator=(const FileByteStream&);
+        public ~FileByteStream()
+        {
+            if (handle != -1)
+            {
+                close(handle);
+            }
+        }
+        public override int ReadByte()
+        {
+            byte x;
+            int result = read_64(handle, &x, sizeof(x));
+            if (result == -1)
+            {
+                string reason = strerror(get_errno());
+                throw IOException("could not read from file '" + fileName + "': " + reason);
+            }
+            if (result == 0)
+            {
+                return -1;
+            }
+            else
+            {
+                return x;
+            }
+        }
+        public override int Read(byte* buf, int count)
+        {
+            #assert(count >= 0);
+            int result = read_64(handle, buf, cast<ulong>(count));
+            if (result == -1)
+            {
+                string reason = strerror(get_errno());
+                throw IOException("could not read from file '" + fileName + "': " + reason);
+            }
+            return result;
+        }
+        public override void Write(byte x)
+        {
+            int result = write_64(handle, &x, sizeof(x));
+            if (result != sizeof(x))
+            {
+                string reason = strerror(get_errno());
+                throw IOException("could not write to file '" + fileName + "': " + reason);
+            }
+        }
+        public override void Write(byte* buf, int count)
+        {
+            int result = write_64(handle, buf, cast<ulong>(count));
+            if (result != count)
+            {
+                string reason = strerror(get_errno());
+                throw IOException("could not write to file '" + fileName + "': " + reason);
+            }
+        }
+        private string fileName;
+        private int handle;
+    }
+}

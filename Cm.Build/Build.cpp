@@ -362,7 +362,10 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
             module.CheckUpToDate();
         }
     }
-    symbolTable.ProcessImportedTemplateTypes();
+    if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
+    {
+        symbolTable.ProcessImportedTemplateTypes();
+    }
 }
 
 void ReadNextSid(Cm::Sym::SymbolTable& symbolTable);
