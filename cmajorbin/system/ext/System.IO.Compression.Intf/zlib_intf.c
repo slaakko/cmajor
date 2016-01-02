@@ -4,6 +4,14 @@
     #else
         #include "zlib/windows/x86/zlib.h"
     #endif
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    #if defined(__x86_64__)
+        #include "zlib/linux/x86_64/zlib.h"
+    #else
+        #include "zlib/linux/i686/zlib.h"
+    #endif
+#else
+    #error unknown platform
 #endif
 #include <stdlib.h>
 
