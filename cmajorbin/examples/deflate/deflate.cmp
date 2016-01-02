@@ -1,0 +1,5 @@
+project Deflate;
+target=program;
+assembly <deflate.cma>;
+reference <ext/System.IO.Compression/System.IO.Compression.cml>;
+source <main.cm>;

@@ -1,0 +1,28 @@
+using System;
+using System.IO;
+using System.IO.Compression;
+
+int main()
+{
+    try
+    {
+        {
+            FileByteStream in("deflate/test.file", FileMode.open);
+            FileByteStream out("deflate/test.compressed", FileMode.create);
+            DeflateStream compressStream(out, CompressionMode.compress);
+            in.CopyTo(compressStream);
+        }    
+        {
+            FileByteStream in("deflate/test.compressed", FileMode.open);
+            DeflateStream decompressStream(in, CompressionMode.decompress);
+            FileByteStream out("deflate/test.decompressed", FileMode.create);
+            decompressStream.CopyTo(out);
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+        return 1;
+    }
+    return 0;
+}
