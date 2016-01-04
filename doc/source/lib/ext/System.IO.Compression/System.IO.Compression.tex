@@ -1,0 +1,1585 @@
+\documentclass[a4paper,oneside,11.000000pt]{book}
+
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{pifont}
+\usepackage{a4wide}
+\usepackage{url}
+\usepackage{float}
+\usepackage{layouts}
+\usepackage{supertabular}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{syntax}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{4}
+
+\titleformat{\chapter}[hang]{\bf\Huge}{\arabic{chapter}}{1em}{}{}
+\titleclass{\subchapter}{straight}[\chapter]
+\newcounter{subchapter}
+\renewcommand{\thesubchapter}{\thechapter.\arabic{subchapter}}
+\titleformat{\subchapter}[hang]{\bf\huge}{\thesubchapter}{0.5em}{}{}
+\titlespacing{\subchapter}{0pt}{0pt}{0pt}
+\renewcommand\thesection{\thesubchapter.\arabic{section}}
+\makeatletter
+\newcommand*\l@subchapter{\@dottedtocline{1}{1.5em}{2.3em}}
+\renewcommand\l@section{\@dottedtocline{2}{3.8em}{3.2em}}
+\renewcommand\l@subsection{\@dottedtocline{3}{7em}{4.1em}}
+\renewcommand\l@subsubsection{\@dottedtocline{4}{11.1em}{5em}}
+\makeatother
+
+\makeatletter
+\renewcommand\subparagraph{\@startsection{subparagraph}{5}{0mm}{-\baselineskip}{0.5\baselineskip}{\normalfont\normalsize\scshape}}
+\makeatother
+
+\lstdefinelanguage{Cmajor}{morekeywords={bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong, float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow, public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else, switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base, construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]",morestring=[b]',}\lstloadlanguages{Cmajor}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small}
+\makeatletter\def\toclevel@chapter{0}\def\toclevel@subchapter{1}\def\toclevel@section{2}\def\toclevel@subsection{3}\def\toclevel@subsubsection{4}\makeatother\begin{document}
+\clearpage
+
+\frontmatter
+\title{\textsc{System.IO.Compression Library Reference}
+}
+\date{\today}
+\maketitle
+\tableofcontents
+
+\clearpage
+\chapter{Description}
+\begin{flushleft}
+The \hyperlink{System.IO.Compression}{Compression} library contains streams that provide compression and decompression services.
+The library is implemented using \textbf{zlib} (\url{http://wwww.zlib.net}) and 
+\textbf{bzip2} (\url{http://www.bzip.org/}) libraries.
+
+\end{flushleft}
+\chapter{Namespaces}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{5.49396cm}!{\raggedright}p{9.65604cm}}
+\textbf{Namespace}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression}{System.IO.Compression}
+& The \hyperlink{System.IO.Compression}{Compression} namespace contains stream classes that provide data compression and decompression.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\mainmatter
+
+\chapter{Usage}
+
+\section{Referencing the System.IO.Compression library}
+
+Right-click a project node in IDE \verb.|. Project References... \verb.|.
+Add System Extension Library Reference... \verb.|.
+enable \emph{System.IO.Compression} check box
+
+\begin{flushleft}
+or add following line to your project's .cmp file:
+\begin{verbatim}
+reference <ext/System.IO.Compression/System.IO.Compression.cml>;
+\end{verbatim}
+\end{flushleft}
+\hypertarget{System.IO.Compression}{\chapter{System.IO.Compression Namespace}}
+\begin{flushleft}
+The \textbf{Compression}
+ namespace contains stream classes that provide data compression and decompression.
+
+\end{flushleft}
+\clearpage
+\subchapter{Classes}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{3.97714cm}!{\raggedright}p{11.1729cm}}
+\textbf{Class}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception}
+& Exception class thrown when \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} cannot compress or decompress data.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream}
+& A stream class that writes data to the underlying byte stream in bzip2 compression format, or reads data compressed in bzip2 format from the underlying byte stream and decompresses it.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException}{DeflateException}
+& Exception class thrown when \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} cannot compress or decompress data.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream}{DeflateStream}
+& A stream class that writes data to the underlying byte stream in ZLIB compression format, or reads data compressed in ZLIB format from the underlying byte stream and decompresses it.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception}{\section{BZip2Exception Class}}
+\begin{flushleft}
+Exception class thrown when \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} cannot compress or decompress data.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class BZip2Exception;}
+
+\subsection*{Base Class}System.Exception\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception}{BZip2Exception()}
+& Default constructor.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception}{BZip2Exception(const System.\-IO.\-Compression.\-BZip2Exception\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception}{operator=(const System.\-IO.\-Compression.\-BZip2Exception\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception}{BZip2Exception(System.\-IO.\-Compression.\-BZip2Exception\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception}{operator=(System.\-IO.\-Compression.\-BZip2Exception\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.String.int}{BZip2Exception(const System.\-String\&\-, int)}
+& Constructor. Initializes the \textbf{BZip2Exception}
+ with the given error message and error code.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.ErrorCode.C.P.System.IO.Compression.BZip2Exception}{ErrorCode() const}
+& Returns the error code returned by the bzip2 library.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Exception.destructor.P.System.IO.Compression.BZip2Exception}{$\sim$BZip2Exception()}
+& Destructor.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception}{\subsubsection*{BZip2Exception() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Exception();}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception}{\subsubsection*{BZip2Exception(const System.IO.Compression.BZip2Exception\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Exception(const System.IO.Compression.BZip2Exception\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.55908cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.BZip2Exception}{const System.\-IO.\-Compression.\-BZip2Exception\&\-}
+& Argument to copy.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception}{\subsubsection*{operator=(const System.IO.Compression.BZip2Exception\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.IO.Compression.BZip2Exception\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.89046cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.BZip2Exception}{const System.\-IO.\-Compression.\-BZip2Exception\&\-}
+& Argument to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception}{\subsubsection*{BZip2Exception(System.IO.Compression.BZip2Exception\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Exception(System.IO.Compression.BZip2Exception\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.BZip2Exception}{System.\-IO.\-Compression.\-BZip2Exception\&\-\&\-}
+& Argument to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception}{\subsubsection*{operator=(System.IO.Compression.BZip2Exception\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.IO.Compression.BZip2Exception\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.BZip2Exception}{System.\-IO.\-Compression.\-BZip2Exception\&\-\&\-}
+& Argument to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.String.int}{\subsubsection*{BZip2Exception(const System.String\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} with the given error message and error code.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Exception(const System.String\& message\_, int errorCode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+message\_
+& const System.\-String\&\-
+& Error message.
+
+\\
+errorCode\_
+& int
+& Error code returned by bzip2 library.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.ErrorCode.C.P.System.IO.Compression.BZip2Exception}{\subsubsection*{ErrorCode() const Member Function}}
+\begin{flushleft}
+Returns the error code returned by the bzip2 library.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int ErrorCode() const;}
+
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the error code returned by the bzip2 library.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Exception.destructor.P.System.IO.Compression.BZip2Exception}{\subsubsection*{$\sim$BZip2Exception() Member Function}}\begin{flushleft}
+Destructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public $\sim$BZip2Exception();}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream}{\section{BZip2Stream Class}}
+\begin{flushleft}
+A stream class that writes data to the underlying byte stream in bzip2 compression format, or reads data compressed in bzip2 format from the underlying byte stream and decompresses it.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class BZip2Stream;}
+\subsection*{Base Class}
+System.IO.ByteStream
+\subsection{Example}
+\lstset{frameround=fttt}\begin{lstlisting}[frame=trBL]
+using System;
+using System.IO;
+using System.IO.Compression;
+
+int main()
+{
+    try
+    {
+        {
+            FileByteStream in("bzip2/test.file", FileMode.open);
+            FileByteStream out("bzip2/test.bz2", FileMode.create);
+            BZip2Stream compressStream(out, CompressionMode.compress);
+            in.CopyTo(compressStream);
+        }    
+        {
+            FileByteStream in("bzip2/test.bz2", FileMode.open);
+            BZip2Stream decompressStream(in, CompressionMode.decompress);
+            FileByteStream out("bzip2/test.decompressed", FileMode.create);
+            decompressStream.CopyTo(out);
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+        return 1;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream}{BZip2Stream()}
+& Default constructor.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode}{BZip2Stream(System.\-IO.\-ByteStream\&\-, System.\-IO.\-Compression.\-CompressionMode)}
+& Constructor. Initializes the \textbf{BZip2Stream}
+ class with the given compression mode and underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, System.\-IO.\-Compression.\-CompressionMode, int)}
+& Constructor. Initializes the \textbf{BZip2Stream}
+ class with the given compression mode, buffer size and underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, int)}
+& Constructor. Initializes the \textbf{BZip2Stream}
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} and given compression level.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, int, int)}
+& Constructor. Initializes the \textbf{BZip2Stream}
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+given compression level and given compression work factor.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, int, int, int)}
+& Constructor. Initializes the \textbf{BZip2Stream}
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+given compression level, given compression work factor and given buffer size.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.Mode.C.P.System.IO.Compression.BZip2Stream}{Mode() const}
+& Returns the compression mode.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int}{Read(byte*, int)}
+& Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream}{ReadByte()}
+& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+and returns one byte of decompressed data.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.byte}{Write(byte)}
+& Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+to the underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int}{Write(byte*, int)}
+& Writes given number of bytes from the given buffer to an internal buffer, 
+compresses it and writes the compressed data to the underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.BZip2Stream.destructor.P.System.IO.Compression.BZip2Stream}{$\sim$BZip2Stream()}
+& Destructor. If the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} compresses the rest of the data
+and writes it to the underlying byte stream. Releases occupied memory.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream}{\subsubsection*{BZip2Stream() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream();}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, System.IO.Compression.CompressionMode) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class with the given compression mode and underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream(System.IO.ByteStream\& underlyingStream\_, System.IO.Compression.CompressionMode mode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write to or read from.
+
+\\
+mode\_
+& \hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}
+& Compression mode. Can be \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} or \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress}.
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} the stream supports writing,
+when the compression mode is \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress} the stream supports reading.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel}, 
+default work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor} and default buffer size 16K for internal input and output buffers.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, System.IO.Compression.CompressionMode, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class with the given compression mode, buffer size and underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream(System.IO.ByteStream\& underlyingStream\_, System.IO.Compression.CompressionMode mode\_, int bufferSize\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write to or read from.
+
+\\
+mode\_
+& \hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}
+& Compression mode. Can be \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} or \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress}.
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} the stream supports writing,
+when the compression mode is \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress} the stream supports reading.
+
+\\
+bufferSize\_
+& int
+& Buffer size for internal input and output buffers.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel} and 
+default work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} and given compression level.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream(System.IO.ByteStream\& underlyingStream\_, int compressionLevel\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write the compressed data to.
+
+\\
+compressionLevel\_
+& int
+& Compression level. Can be in range 1..9. Compression level N sets bzip2 block size to N * 100K. Compression level 1 gives least compression and uses minimum memory.
+Compression level 9 gives the best compression but takes most memory.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Sets the work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor} and uses the default buffer size 16K for internal input and output buffers.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, int, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+given compression level and given compression work factor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream(System.IO.ByteStream\& underlyingStream\_, int compressionLevel\_, int compressionWorkFactor\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.93333cm}!{\raggedright}p{4.93333cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write the compressed data to.
+
+\\
+compressionLevel\_
+& int
+& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+Compression level 1 gives least compression and uses minimal memory.
+Compression level 9 gives the best compression but takes most memory.
+
+\\
+compressionWorkFactor\_
+& int
+& Compression work factor. Can be in range 0 to 250 inclusive. Setting the work factor to 0 uses the default work factor 30.
+See \url{http://www.bzip.org/1.0.5/bzip2-manual-1.0.5.html} for details.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Uses the default buffer size 16K for internal input and output buffers.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, int, int, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+given compression level, given compression work factor and given buffer size.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BZip2Stream(System.IO.ByteStream\& underlyingStream\_, int compressionLevel\_, int compressionWorkFactor\_, int bufferSize\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.93333cm}!{\raggedright}p{4.93333cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write the compressed data to.
+
+\\
+compressionLevel\_
+& int
+& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+Compression level 1 gives least compression and uses minimal memory.
+Compression level 9 gives the best compression but takes most memory.
+
+\\
+compressionWorkFactor\_
+& int
+& Compression work factor. Can be in range 0 to 250 inclusive. Setting the work factor to 0 uses the default work factor 30.
+See \url{http://www.bzip.org/1.0.5/bzip2-manual-1.0.5.html} for details.
+
+\\
+bufferSize\_
+& int
+& Size of internal input and output buffers.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.Mode.C.P.System.IO.Compression.BZip2Stream}{\subsubsection*{Mode() const Member Function}}\begin{flushleft}
+Returns the compression mode.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public System.IO.Compression.CompressionMode Mode() const;}
+
+\subsubsection*{Returns}
+\hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}\begin{flushleft}
+Returns the compression mode.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int}{\subsubsection*{Read(byte*, int) Member Function}}
+\begin{flushleft}
+Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int Read(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer to decompress the data to.
+
+\\
+count
+& int
+& Maximum number of bytes to read.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the number of bytes read. Can be less than the size requested but is always non-negative.
+The return value of 0 indicates end of stream.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in decompression process is encountered.
+If an error reading from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream}{\subsubsection*{ReadByte() Member Function}}
+\begin{flushleft}
+Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+and returns one byte of decompressed data.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int ReadByte();}
+\subsubsection*{Returns}
+int
+\begin{flushleft}
+Returns one byte of decompressed data, or -1 if end of stream is encountered.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in decompression process is encountered.
+If an error reading from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.byte}{\subsubsection*{Write(byte) Member Function}}
+\begin{flushleft}
+Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+to the underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Write(byte x);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& byte
+& Byte to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
+If an error writing from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int}{\subsubsection*{Write(byte*, int) Member Function}}
+\begin{flushleft}
+Writes given number of bytes from the given buffer to an internal buffer, 
+compresses it and writes the compressed data to the underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Write(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer of data to write.
+
+\\
+count
+& int
+& Number of bytes to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
+If an error writing from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.BZip2Stream.destructor.P.System.IO.Compression.BZip2Stream}{\subsubsection*{$\sim$BZip2Stream() Member Function}}
+\begin{flushleft}
+Destructor. If the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} compresses the rest of the data
+and writes it to the underlying byte stream. Releases occupied memory.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$BZip2Stream();}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException}{\section{DeflateException Class}}
+\begin{flushleft}
+Exception class thrown when \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} cannot compress or decompress data.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class DeflateException;}
+
+\subsection*{Base Class}System.Exception\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException}{DeflateException()}
+& Default constructor.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException}{DeflateException(const System.\-IO.\-Compression.\-DeflateException\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException}{operator=(const System.\-IO.\-Compression.\-DeflateException\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException}{DeflateException(System.\-IO.\-Compression.\-DeflateException\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException}{operator=(System.\-IO.\-Compression.\-DeflateException\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.String.int}{DeflateException(const System.\-String\&\-, int)}
+& Constructor. Initializes the \textbf{DeflateException}
+ with the given error message and error code.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.ErrorCode.C.P.System.IO.Compression.DeflateException}{ErrorCode() const}
+& Returns the error code.
+
+\\
+\hyperlink{System.IO.Compression.DeflateException.destructor.P.System.IO.Compression.DeflateException}{$\sim$DeflateException()}
+& Destructor.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException}{\subsubsection*{DeflateException() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateException();}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException}{\subsubsection*{DeflateException(const System.IO.Compression.DeflateException\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateException(const System.IO.Compression.DeflateException\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.55908cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.DeflateException}{const System.\-IO.\-Compression.\-DeflateException\&\-}
+& Argument to copy.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException}{\subsubsection*{operator=(const System.IO.Compression.DeflateException\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.IO.Compression.DeflateException\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.89046cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.DeflateException}{const System.\-IO.\-Compression.\-DeflateException\&\-}
+& Argument to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException}{\subsubsection*{DeflateException(System.IO.Compression.DeflateException\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateException(System.IO.Compression.DeflateException\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.DeflateException}{System.\-IO.\-Compression.\-DeflateException\&\-\&\-}
+& Argument to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException}{\subsubsection*{operator=(System.IO.Compression.DeflateException\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.IO.Compression.DeflateException\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.IO.Compression.DeflateException}{System.\-IO.\-Compression.\-DeflateException\&\-\&\-}
+& Argument to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.String.int}{\subsubsection*{DeflateException(const System.String\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.DeflateException}{DeflateException} with the given error message and error code.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateException(const System.String\& message\_, int errorCode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+message\_
+& const System.\-String\&\-
+& Error message.
+
+\\
+errorCode\_
+& int
+& Error code returned by the zlib library.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.ErrorCode.C.P.System.IO.Compression.DeflateException}{\subsubsection*{ErrorCode() const Member Function}}\begin{flushleft}
+Returns the error code.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public int ErrorCode() const;}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the error code.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateException.destructor.P.System.IO.Compression.DeflateException}{\subsubsection*{$\sim$DeflateException() Member Function}}\begin{flushleft}
+Destructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public $\sim$DeflateException();}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream}{\section{DeflateStream Class}}
+\begin{flushleft}
+A stream class that writes data to the underlying byte stream in ZLIB compression format, or reads data compressed in ZLIB format from the underlying byte stream and decompresses it.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class DeflateStream;}
+
+\subsection*{Base Class}System.IO.ByteStream
+\subsection{Example}
+\lstset{frameround=fttt}\begin{lstlisting}[frame=trBL]
+using System;
+using System.IO;
+using System.IO.Compression;
+
+int main()
+{
+    try
+    {
+        {
+            FileByteStream in("deflate/test.file", FileMode.open);
+            FileByteStream out("deflate/test.compressed", FileMode.create);
+            DeflateStream compressStream(out, CompressionMode.compress);
+            in.CopyTo(compressStream);
+        }    
+        {
+            FileByteStream in("deflate/test.compressed", FileMode.open);
+            DeflateStream decompressStream(in, CompressionMode.decompress);
+            FileByteStream out("deflate/test.decompressed", FileMode.create);
+            decompressStream.CopyTo(out);
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+        return 1;
+    }
+    return 0;
+}
+\end{lstlisting}
+
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream}{DeflateStream()}
+& Default constructor.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode}{DeflateStream(System.\-IO.\-ByteStream\&\-, System.\-IO.\-Compression.\-CompressionMode)}
+& Constructor. Initializes the System.\-IO.\-Compression.\-DeflatStream class with the given compression mode and underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int}{DeflateStream(System.\-IO.\-ByteStream\&\-, System.\-IO.\-Compression.\-CompressionMode, int)}
+& Constructor. Initializes the \textbf{DeflateStream}
+ class with the given compression mode, buffer size and underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int}{DeflateStream(System.\-IO.\-ByteStream\&\-, int)}
+& Constructor. Initializes the \textbf{DeflateStream}
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} and given compression level.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int}{DeflateStream(System.\-IO.\-ByteStream\&\-, int, int)}
+& Constructor. Initializes the \textbf{DeflateStream}
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, given compression level and
+given buffer size.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.Mode.C.P.System.IO.Compression.DeflateStream}{Mode() const}
+& Returns the compression mode.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int}{Read(byte*, int)}
+& Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream}{ReadByte()}
+& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+and returns one byte of decompressed data.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.byte}{Write(byte)}
+& Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+to the underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int}{Write(byte*, int)}
+& Writes given number of bytes from the given buffer to an internal buffer, 
+compresses it and writes the compressed data to the underlying byte stream.
+
+\\
+\hyperlink{System.IO.Compression.DeflateStream.destructor.P.System.IO.Compression.DeflateStream}{$\sim$DeflateStream()}
+& Destructor. If the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} compresses the rest of the data
+and writes it to the underlying byte stream. Releases occupied memory.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream}{\subsubsection*{DeflateStream() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateStream();}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode}{\subsubsection*{DeflateStream(System.IO.ByteStream\&, System.IO.Compression.CompressionMode) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the System.\-IO.\-Compression.\-DeflatStream class with the given compression mode and underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateStream(System.IO.ByteStream\& underlyingStream\_, System.IO.Compression.CompressionMode mode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write to or read from.
+
+\\
+mode\_
+& \hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}
+& Compression mode. Can be \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} or \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress}.
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} the stream supports writing,
+when the compression mode is \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress} the stream supports reading.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultDeflateCompressionLevel}{defaultDeflateCompressionLevel}
+and default buffer size 16K for internal input and output buffers.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int}{\subsubsection*{DeflateStream(System.IO.ByteStream\&, System.IO.Compression.CompressionMode, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} class with the given compression mode, buffer size and underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateStream(System.IO.ByteStream\& underlyingStream\_, System.IO.Compression.CompressionMode mode\_, int bufferSize\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write to or read from.
+
+\\
+mode\_
+& \hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}
+& Compression mode. Can be \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} or \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress}.
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} the stream supports writing,
+when the compression mode is \hyperlink{System.IO.Compression.CompressionMode.decompress}{decompress} the stream supports reading.
+
+\\
+bufferSize\_
+& int
+& Buffer size for internal input and output buffers.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultDeflateCompressionLevel}{defaultDeflateCompressionLevel}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int}{\subsubsection*{DeflateStream(System.IO.ByteStream\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} and given compression level.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateStream(System.IO.ByteStream\& underlyingStream\_, int compressionLevel\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write the compressed data to.
+
+\\
+compressionLevel\_
+& int
+& Compression level. Can be in range -1 to 9.
+Compression level \hyperlink{System.IO.Compression.defaultDeflateCompressionLevel}{defaultDeflateCompressionLevel} (-1) equals compression level 6.
+Compression level \hyperlink{System.IO.Compression.noDeflateCompression}{noDeflateCompression} (0) uses no compression.
+Compression level \hyperlink{System.IO.Compression.fastestDeflateCompression}{fastestDeflateCompression} (1) gives fastest operation but least compression.
+Compression level \hyperlink{System.IO.Compression.optimalDeflateCompression}{optimalDeflateCompression} (9) gives slowest operation but best compression.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Uses the default buffer size 16K for internal input and output buffers.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int}{\subsubsection*{DeflateStream(System.IO.ByteStream\&, int, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, given compression level and
+given buffer size.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public DeflateStream(System.IO.ByteStream\& underlyingStream\_, int compressionLevel\_, int bufferSize\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.10323cm}!{\raggedright}p{5.76344cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+underlyingStream\_
+& System.\-IO.\-ByteStream\&\-
+& Underlying byte stream to write the compressed data to.
+
+\\
+compressionLevel\_
+& int
+& Compression level. Can be in range -1 to 9.
+Compression level \hyperlink{System.IO.Compression.defaultDeflateCompressionLevel}{defaultDeflateCompressionLevel} (-1) equals compression level 6.
+Compression level \hyperlink{System.IO.Compression.noDeflateCompression}{noDeflateCompression} (0) uses no compression.
+Compression level \hyperlink{System.IO.Compression.fastestDeflateCompression}{fastestDeflateCompression} (1) gives fastest operation but least compression.
+Compression level \hyperlink{System.IO.Compression.optimalDeflateCompression}{optimalDeflateCompression} (9) gives slowest operation but best compression.
+
+\\
+bufferSize\_
+& int
+& Buffer size for internal input and output buffers.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.Mode.C.P.System.IO.Compression.DeflateStream}{\subsubsection*{Mode() const Member Function}}\begin{flushleft}
+Returns the compression mode.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public System.IO.Compression.CompressionMode Mode() const;}
+
+\subsubsection*{Returns}
+\hyperlink{System.IO.Compression.CompressionMode}{System.\-IO.\-Compression.\-CompressionMode}\begin{flushleft}
+Returns the compression mode.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int}{\subsubsection*{Read(byte*, int) Member Function}}
+\begin{flushleft}
+Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int Read(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer to decompress the data to.
+
+\\
+count
+& int
+& Maximum bumber of bytes to read.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the number of bytes read. Can be less than the size requested but is always non-negative.
+The return value of 0 indicates end of stream.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in decompression process is encountered.
+If an error reading from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream}{\subsubsection*{ReadByte() Member Function}}
+\begin{flushleft}
+Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+and returns one byte of decompressed data.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int ReadByte();}
+\subsubsection*{Returns}
+int
+\begin{flushleft}
+Returns one byte of decompressed data, or -1 if end of stream is encountered.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in decompression process is encountered.
+If an error reading from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.byte}{\subsubsection*{Write(byte) Member Function}}
+\begin{flushleft}
+Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+to the underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Write(byte x);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& byte
+& Byte to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in compression process is encountered.
+If an error writing from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int}{\subsubsection*{Write(byte*, int) Member Function}}
+\begin{flushleft}
+Writes given number of bytes from the given buffer to an internal buffer, 
+compresses it and writes the compressed data to the underlying byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Write(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer of data to write.
+
+\\
+count
+& int
+& Number of bytes to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
+If an error writing from the underlying byte stream is encountered, 
+can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
+System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.DeflateStream.destructor.P.System.IO.Compression.DeflateStream}{\subsubsection*{$\sim$DeflateStream() Member Function}}
+\begin{flushleft}
+Destructor. If the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress} compresses the rest of the data
+and writes it to the underlying byte stream. Releases occupied memory.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$DeflateStream();}
+\clearpage
+
+\subchapter{Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\clearpage
+\subchapter{Enumerations}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.18998cm}!{\raggedright}p{10.96cm}}
+\textbf{Enumeration}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.IO.Compression.CompressionMode}{CompressionMode}
+& Compression mode for \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} and \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} classes.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.IO.Compression.CompressionMode}{\subsection{CompressionMode Enumeration}}
+\begin{flushleft}
+Compression mode for \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} and \hyperlink{System.IO.Compression.DeflateStream}{DeflateStream} classes.
+
+\end{flushleft}
+\subsubsection*{Enumeration Constants}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61874cm}!{\raggedright}p{1.32877cm}!{\raggedright}p{8.5379cm}}
+\textbf{Constant}
+& \textbf{Value}
+& \textbf{Description}
+\\
+\hline
+\hypertarget{System.IO.Compression.CompressionMode.compress}{compress}
+& 0
+& Writes compressed data to the underlying byte stream.
+
+\\
+\hypertarget{System.IO.Compression.CompressionMode.decompress}{decompress}
+& 1
+& Reads compressed data from the underlying byte stream and decompresses it.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\subchapter{Constants}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{3.6125cm}!{\raggedright}p{1.17735cm}!{\raggedright}p{1.32877cm}!{\raggedright}p{5.89623cm}}
+\textbf{Constant}
+& \textbf{Type}
+& \textbf{Value}
+& \textbf{Description}
+\\
+\hline
+\hypertarget{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel}
+& int
+& 9
+& Default bzip2 compression level.
+
+\\
+\hypertarget{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor}
+& int
+& 0
+& Default bzip2 work factor.
+
+\\
+\hypertarget{System.IO.Compression.defaultDeflateCompressionLevel}{defaultDeflateCompressionLevel}
+& int
+& -1
+& Default deflate compression level.
+
+\\
+\hypertarget{System.IO.Compression.fastestDeflateCompression}{fastestDeflateCompression}
+& int
+& 1
+& Fastest deflate compression levvel.
+
+\\
+\hypertarget{System.IO.Compression.maximumBZip2WorkFactor}{maximumBZip2WorkFactor}
+& int
+& 250
+& Maximum bzip2 work factor.
+
+\\
+\hypertarget{System.IO.Compression.minimumBZip2CompressionLevel}{minimumBZip2CompressionLevel}
+& int
+& 1
+& Minumum bzip2 compression level.
+
+\\
+\hypertarget{System.IO.Compression.noDeflateCompression}{noDeflateCompression}
+& int
+& 0
+& No deflate compression.
+
+\\
+\hypertarget{System.IO.Compression.optimalBZip2CompressionLevel}{optimalBZip2CompressionLevel}
+& int
+& 9
+& Best bzip2 compression.
+
+\\
+\hypertarget{System.IO.Compression.optimalDeflateCompression}{optimalDeflateCompression}
+& int
+& 9
+& Best defalt compression.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\end{document}
+
+

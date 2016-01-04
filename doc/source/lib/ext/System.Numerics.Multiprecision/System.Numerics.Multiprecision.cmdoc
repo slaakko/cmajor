@@ -2,7 +2,9 @@ library System.Numerics.Multiprecision
 {
     description
     {
-        Multiple precision arithmetic library implemented in terms of GNU Multiple Precision Arithmetic Library.
+        System.Numerics.Multiprecision is a multiple precision arithmetic library.
+        The library is implemented using GNU Multiple Precision Arithmetic Library 
+        ("\url{http://gmplib.org/}").
     }
     chapter <usage.tex>;
     chapter <compiling.tex>;
@@ -183,6 +185,75 @@ library System.Numerics.Multiprecision
                     Move assignment.
                 }
                 parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.byte.C.R.byte.C.P.byte
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
                 {
                     description
                     {
@@ -685,6 +756,75 @@ library System.Numerics.Multiprecision
                     Move assignment.
                 }
                 parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.byte
+        {
+            description
+            {
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
                 {
                     description
                     {

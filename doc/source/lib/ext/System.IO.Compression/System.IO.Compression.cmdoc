@@ -1,0 +1,1966 @@
+library System.IO.Compression
+{
+    description
+    {
+        The System.IO.Compression library contains streams that provide compression and decompression services.
+        The library is implemented using "\textbf{zlib}" ("\url{http://wwww.zlib.net}") and 
+        "\textbf{bzip2}" ("\url{http://www.bzip.org/}") libraries.
+    }
+    chapter <usage.tex>;
+    namespace 
+    {
+        description
+        {
+        }
+        concept Common.T.U
+        {
+            description
+            {
+            }
+        }
+        concept Convertible.T.U
+        {
+            description
+            {
+            }
+        }
+        concept Derived.T.U
+        {
+            description
+            {
+            }
+        }
+        concept ExplicitlyConvertible.T.U
+        {
+            description
+            {
+            }
+        }
+        concept NonReferenceType.T
+        {
+            description
+            {
+            }
+        }
+        concept Same.T.U
+        {
+            description
+            {
+            }
+        }
+    }
+    namespace System
+    {
+        description
+        {
+        }
+        class System.Pair.System.uhuge.System.uhuge
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Pair.System.uhuge.uint
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.byte.C.R.byte.C.P.byte
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.R.char.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.C.R.char.C.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.C.R.int.C.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.R.int.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.UniquePtr.System.IO.InputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.UniquePtr.System.IO.OutputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+    }
+    namespace System.Collections
+    {
+        description
+        {
+        }
+        class System.Collections.List.System.CharClass
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.System.String
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.byte
+        {
+            description
+            {
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.int
+        {
+            description
+            {
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.ulong
+        {
+            description
+            {
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+    }
+    namespace System.Concepts
+    {
+        description
+        {
+        }
+    }
+    namespace System.IO
+    {
+        description
+        {
+        }
+    }
+    namespace System.IO.Compression
+    {
+        description
+        {
+            The System.IO.Compression namespace contains stream classes that provide data compression and decompression.
+        }
+        class System.IO.Compression.BZip2Exception
+        {
+            description
+            {
+                Exception class thrown when System.IO.Compression.BZip2Stream cannot compress or decompress data.
+            }
+            function System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.C.R.System.IO.Compression.BZip2Exception.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.Compression.BZip2Exception.operator.assign.P.System.IO.Compression.BZip2Exception.RR.System.IO.Compression.BZip2Exception.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.String.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Exception with the given error message and error code.
+                }
+                parameter System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.String.int.errorCode_
+                {
+                    description
+                    {
+                        Error code returned by bzip2 library.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Exception.constructor.P.System.IO.Compression.BZip2Exception.C.R.System.String.int.message_
+                {
+                    description
+                    {
+                        Error message.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.ErrorCode.C.P.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Returns the error code returned by the bzip2 library.
+                }
+                returns System.IO.Compression.BZip2Exception.ErrorCode.C.P.System.IO.Compression.BZip2Exception.returnValue
+                {
+                    description
+                    {
+                        Returns the error code returned by the bzip2 library.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Exception.destructor.P.System.IO.Compression.BZip2Exception
+            {
+                description
+                {
+                    Destructor.
+                }
+            }
+        }
+        class System.IO.Compression.BZip2Stream
+        {
+            description
+            {
+                A stream class that writes data to the underlying byte stream in bzip2 compression format, or reads data compressed in bzip2 format from the underlying byte stream and decompresses it.
+            }
+            example <examples/BZip2Stream.cm>;
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class with the given compression mode and underlying byte stream.
+                }
+                remarks
+                {
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel, 
+                    default work factor System.IO.Compression.defaultBZip2WorkFactor and default buffer size 16K for internal input and output buffers.
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.mode_
+                {
+                    description
+                    {
+                        Compression mode. Can be System.IO.Compression.CompressionMode.compress or System.IO.Compression.CompressionMode.decompress.
+                        When the compression mode is System.IO.Compression.CompressionMode.compress the stream supports writing,
+                        when the compression mode is System.IO.Compression.CompressionMode.decompress the stream supports reading.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write to or read from.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class with the given compression mode, buffer size and underlying byte stream.
+                }
+                remarks
+                {
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel and 
+                    default work factor System.IO.Compression.defaultBZip2WorkFactor.
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.bufferSize_
+                {
+                    description
+                    {
+                        Buffer size for internal input and output buffers.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.mode_
+                {
+                    description
+                    {
+                        Compression mode. Can be System.IO.Compression.CompressionMode.compress or System.IO.Compression.CompressionMode.decompress.
+                        When the compression mode is System.IO.Compression.CompressionMode.compress the stream supports writing,
+                        when the compression mode is System.IO.Compression.CompressionMode.decompress the stream supports reading.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write to or read from.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress and given compression level.
+                }
+                remarks
+                {
+                    Sets the work factor System.IO.Compression.defaultBZip2WorkFactor and uses the default buffer size 16K for internal input and output buffers.
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.compressionLevel_
+                {
+                    description
+                    {
+                        Compression level. Can be in range 1..9. Compression level N sets bzip2 block size to N * 100K. Compression level 1 gives least compression and uses minimum memory.
+                        Compression level 9 gives the best compression but takes most memory.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write the compressed data to.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress, 
+                    given compression level and given compression work factor.
+                }
+                remarks
+                {
+                    Uses the default buffer size 16K for internal input and output buffers.
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.compressionLevel_
+                {
+                    description
+                    {
+                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+                        Compression level 1 gives least compression and uses minimal memory.
+                        Compression level 9 gives the best compression but takes most memory.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.compressionWorkFactor_
+                {
+                    description
+                    {
+                        Compression work factor. Can be in range 0 to 250 inclusive. Setting the work factor to 0 uses the default work factor 30.
+                        See "\url{http://www.bzip.org/1.0.5/bzip2-manual-1.0.5.html}" for details.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write the compressed data to.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress, 
+                    given compression level, given compression work factor and given buffer size.
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int.bufferSize_
+                {
+                    description
+                    {
+                        Size of internal input and output buffers.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int.compressionLevel_
+                {
+                    description
+                    {
+                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+                        Compression level 1 gives least compression and uses minimal memory.
+                        Compression level 9 gives the best compression but takes most memory.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int.compressionWorkFactor_
+                {
+                    description
+                    {
+                        Compression work factor. Can be in range 0 to 250 inclusive. Setting the work factor to 0 uses the default work factor 30.
+                        See "\url{http://www.bzip.org/1.0.5/bzip2-manual-1.0.5.html}" for details.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write the compressed data to.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.Mode.C.P.System.IO.Compression.BZip2Stream
+            {
+                description
+                {
+                    Returns the compression mode.
+                }
+                returns System.IO.Compression.BZip2Stream.Mode.C.P.System.IO.Compression.BZip2Stream.returnValue
+                {
+                    description
+                    {
+                        Returns the compression mode.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int
+            {
+                description
+                {
+                    Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.BZip2Exception if an error in decompression process is encountered.
+                    If an error reading from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer to decompress the data to.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int.count
+                {
+                    description
+                    {
+                        Maximum number of bytes to read.
+                    }
+                }
+                returns System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int.returnValue
+                {
+                    description
+                    {
+                        Returns the number of bytes read. Can be less than the size requested but is always non-negative.
+                        The return value of 0 indicates end of stream.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream
+            {
+                description
+                {
+                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+                    and returns one byte of decompressed data.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.BZip2Exception if an error in decompression process is encountered.
+                    If an error reading from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                returns System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream.returnValue
+                {
+                    description
+                    {
+                        Returns one byte of decompressed data, or -1 if end of stream is encountered.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.byte
+            {
+                description
+                {
+                    Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+                    to the underlying byte stream.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
+                    If an error writing from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.byte.x
+                {
+                    description
+                    {
+                        Byte to write.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int
+            {
+                description
+                {
+                    Writes given number of bytes from the given buffer to an internal buffer, 
+                    compresses it and writes the compressed data to the underlying byte stream.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
+                    If an error writing from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer of data to write.
+                    }
+                }
+                parameter System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int.count
+                {
+                    description
+                    {
+                        Number of bytes to write.
+                    }
+                }
+            }
+            function System.IO.Compression.BZip2Stream.destructor.P.System.IO.Compression.BZip2Stream
+            {
+                description
+                {
+                    Destructor. If the compression mode is System.IO.Compression.CompressionMode.compress compresses the rest of the data
+                    and writes it to the underlying byte stream. Releases occupied memory.
+                }
+            }
+        }
+        class System.IO.Compression.DeflateException
+        {
+            description
+            {
+                Exception class thrown when System.IO.Compression.DeflateStream cannot compress or decompress data.
+            }
+            function System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.C.R.System.IO.Compression.DeflateException.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.Compression.DeflateException.operator.assign.P.System.IO.Compression.DeflateException.RR.System.IO.Compression.DeflateException.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.String.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.DeflateException with the given error message and error code.
+                }
+                parameter System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.String.int.errorCode_
+                {
+                    description
+                    {
+                        Error code returned by the zlib library.
+                    }
+                }
+                parameter System.IO.Compression.DeflateException.constructor.P.System.IO.Compression.DeflateException.C.R.System.String.int.message_
+                {
+                    description
+                    {
+                        Error message.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.ErrorCode.C.P.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Returns the error code.
+                }
+                returns System.IO.Compression.DeflateException.ErrorCode.C.P.System.IO.Compression.DeflateException.returnValue
+                {
+                    description
+                    {
+                        Returns the error code.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateException.destructor.P.System.IO.Compression.DeflateException
+            {
+                description
+                {
+                    Destructor.
+                }
+            }
+        }
+        class System.IO.Compression.DeflateStream
+        {
+            description
+            {
+                A stream class that writes data to the underlying byte stream in ZLIB compression format, or reads data compressed in ZLIB format from the underlying byte stream and decompresses it.
+            }
+            example <examples/DeflateStream.cm>;
+            function System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.DeflatStream class with the given compression mode and underlying byte stream.
+                }
+                remarks
+                {
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultDeflateCompressionLevel
+                    and default buffer size 16K for internal input and output buffers.
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.mode_
+                {
+                    description
+                    {
+                        Compression mode. Can be System.IO.Compression.CompressionMode.compress or System.IO.Compression.CompressionMode.decompress.
+                        When the compression mode is System.IO.Compression.CompressionMode.compress the stream supports writing,
+                        when the compression mode is System.IO.Compression.CompressionMode.decompress the stream supports reading.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write to or read from.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.DeflateStream class with the given compression mode, buffer size and underlying byte stream.
+                }
+                remarks
+                {
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultDeflateCompressionLevel.
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.bufferSize_
+                {
+                    description
+                    {
+                        Buffer size for internal input and output buffers.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.mode_
+                {
+                    description
+                    {
+                        Compression mode. Can be System.IO.Compression.CompressionMode.compress or System.IO.Compression.CompressionMode.decompress.
+                        When the compression mode is System.IO.Compression.CompressionMode.compress the stream supports writing,
+                        when the compression mode is System.IO.Compression.CompressionMode.decompress the stream supports reading.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write to or read from.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.DeflateStream class using compression mode System.IO.Compression.CompressionMode.compress and given compression level.
+                }
+                remarks
+                {
+                    Uses the default buffer size 16K for internal input and output buffers.
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.compressionLevel_
+                {
+                    description
+                    {
+                        Compression level. Can be in range -1 to 9.
+                        Compression level System.IO.Compression.defaultDeflateCompressionLevel (-1) equals compression level 6.
+                        Compression level System.IO.Compression.noDeflateCompression (0) uses no compression.
+                        Compression level System.IO.Compression.fastestDeflateCompression (1) gives fastest operation but least compression.
+                        Compression level System.IO.Compression.optimalDeflateCompression (9) gives slowest operation but best compression.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write the compressed data to.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int
+            {
+                description
+                {
+                    Constructor. Initializes the System.IO.Compression.DeflateStream class using compression mode System.IO.Compression.CompressionMode.compress, given compression level and
+                    given buffer size.
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int.bufferSize_
+                {
+                    description
+                    {
+                        Buffer size for internal input and output buffers.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int.compressionLevel_
+                {
+                    description
+                    {
+                        Compression level. Can be in range -1 to 9.
+                        Compression level System.IO.Compression.defaultDeflateCompressionLevel (-1) equals compression level 6.
+                        Compression level System.IO.Compression.noDeflateCompression (0) uses no compression.
+                        Compression level System.IO.Compression.fastestDeflateCompression (1) gives fastest operation but least compression.
+                        Compression level System.IO.Compression.optimalDeflateCompression (9) gives slowest operation but best compression.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.constructor.P.System.IO.Compression.DeflateStream.R.System.IO.ByteStream.int.int.underlyingStream_
+                {
+                    description
+                    {
+                        Underlying byte stream to write the compressed data to.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.Mode.C.P.System.IO.Compression.DeflateStream
+            {
+                description
+                {
+                    Returns the compression mode.
+                }
+                returns System.IO.Compression.DeflateStream.Mode.C.P.System.IO.Compression.DeflateStream.returnValue
+                {
+                    description
+                    {
+                        Returns the compression mode.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int
+            {
+                description
+                {
+                    Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.DeflateException if an error in decompression process is encountered.
+                    If an error reading from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer to decompress the data to.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Maximum bumber of bytes to read.
+                    }
+                }
+                returns System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int.returnValue
+                {
+                    description
+                    {
+                        Returns the number of bytes read. Can be less than the size requested but is always non-negative.
+                        The return value of 0 indicates end of stream.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream
+            {
+                description
+                {
+                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+                    and returns one byte of decompressed data.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.DeflateException if an error in decompression process is encountered.
+                    If an error reading from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                returns System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream.returnValue
+                {
+                    description
+                    {
+                        Returns one byte of decompressed data, or -1 if end of stream is encountered.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.byte
+            {
+                description
+                {
+                    Writes one byte of data to an internal buffer, compresses it and writes the compressed data
+                    to the underlying byte stream.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.DeflateException if an error in compression process is encountered.
+                    If an error writing from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.byte.x
+                {
+                    description
+                    {
+                        Byte to write.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int
+            {
+                description
+                {
+                    Writes given number of bytes from the given buffer to an internal buffer, 
+                    compresses it and writes the compressed data to the underlying byte stream.
+                }
+                remarks
+                {
+                    Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
+                    If an error writing from the underlying byte stream is encountered, 
+                    can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
+                    System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
+                }
+                parameter System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer of data to write.
+                    }
+                }
+                parameter System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Number of bytes to write.
+                    }
+                }
+            }
+            function System.IO.Compression.DeflateStream.destructor.P.System.IO.Compression.DeflateStream
+            {
+                description
+                {
+                    Destructor. If the compression mode is System.IO.Compression.CompressionMode.compress compresses the rest of the data
+                    and writes it to the underlying byte stream. Releases occupied memory.
+                }
+            }
+        }
+        function System.IO.Compression.ExpandBZip2Error.C.R.System.String.int
+        {
+            description
+            {
+            }
+            parameter System.IO.Compression.ExpandBZip2Error.C.R.System.String.int.errorCode
+            {
+                description
+                {
+                }
+            }
+            parameter System.IO.Compression.ExpandBZip2Error.C.R.System.String.int.message
+            {
+                description
+                {
+                }
+            }
+            returns System.IO.Compression.ExpandBZip2Error.C.R.System.String.int.returnValue
+            {
+                description
+                {
+                }
+            }
+        }
+        function System.IO.Compression.ExpandDeflateError.C.R.System.String.int
+        {
+            description
+            {
+            }
+            parameter System.IO.Compression.ExpandDeflateError.C.R.System.String.int.errorCode
+            {
+                description
+                {
+                }
+            }
+            parameter System.IO.Compression.ExpandDeflateError.C.R.System.String.int.message
+            {
+                description
+                {
+                }
+            }
+            returns System.IO.Compression.ExpandDeflateError.C.R.System.String.int.returnValue
+            {
+                description
+                {
+                }
+            }
+        }
+        enumType System.IO.Compression.CompressionMode
+        {
+            description
+            {
+                Compression mode for System.IO.Compression.BZip2Stream and System.IO.Compression.DeflateStream classes.
+            }
+            enumConstant System.IO.Compression.CompressionMode.compress
+            {
+                description
+                {
+                    Writes compressed data to the underlying byte stream.
+                }
+            }
+            enumConstant System.IO.Compression.CompressionMode.decompress
+            {
+                description
+                {
+                    Reads compressed data from the underlying byte stream and decompresses it.
+                }
+            }
+        }
+        constant System.IO.Compression.defaultBZip2CompressionLevel
+        {
+            description
+            {
+                Default bzip2 compression level.
+            }
+        }
+        constant System.IO.Compression.defaultBZip2WorkFactor
+        {
+            description
+            {
+                Default bzip2 work factor.
+            }
+        }
+        constant System.IO.Compression.defaultDeflateCompressionLevel
+        {
+            description
+            {
+                Default deflate compression level.
+            }
+        }
+        constant System.IO.Compression.fastestDeflateCompression
+        {
+            description
+            {
+                Fastest deflate compression levvel.
+            }
+        }
+        constant System.IO.Compression.maximumBZip2WorkFactor
+        {
+            description
+            {
+                Maximum bzip2 work factor.
+            }
+        }
+        constant System.IO.Compression.minimumBZip2CompressionLevel
+        {
+            description
+            {
+                Minumum bzip2 compression level.
+            }
+        }
+        constant System.IO.Compression.noDeflateCompression
+        {
+            description
+            {
+                No deflate compression.
+            }
+        }
+        constant System.IO.Compression.optimalBZip2CompressionLevel
+        {
+            description
+            {
+                Best bzip2 compression.
+            }
+        }
+        constant System.IO.Compression.optimalDeflateCompression
+        {
+            description
+            {
+                Best defalt compression.
+            }
+        }
+    }
+    namespace System.Security
+    {
+        description
+        {
+        }
+    }
+    namespace System.Support
+    {
+        description
+        {
+        }
+        class System.Support.ExDeleter.System.Exception
+        {
+            description
+            {
+            }
+            function System.Support.ExDeleter.System.Exception.constructor.P.System.Support.ExDeleter.System.Exception
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+        }
+    }
+    namespace System.Text
+    {
+        description
+        {
+        }
+    }
+    namespace System.Threading
+    {
+        description
+        {
+        }
+    }
+}
