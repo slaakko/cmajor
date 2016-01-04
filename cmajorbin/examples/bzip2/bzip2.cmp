@@ -1,0 +1,5 @@
+project BZip2;
+target=program;
+assembly <bzip2.cma>;
+reference <ext/System.IO.Compression/System.IO.Compression.cml>;
+source <main.cm>;

@@ -268,7 +268,7 @@ namespace Cm.Bind
             exprs.Reverse();
             return exprs;
         }
-        public Cm.BoundTree.BoundExpressionList GetExpressions()
+        public nothrow Cm.BoundTree.BoundExpressionList GetExpressions()
         {
             return Rvalue(expressions);
         }
@@ -301,11 +301,11 @@ namespace Cm.Bind
         {
             return currentFunction;
         }
-        public BoundExpressionStack& Stack() 
+        public nothrow inline BoundExpressionStack& Stack() 
         {
             return stack;
         }
-        public Cm.BoundTree.BoundExpressionList GetExpressions()
+        public nothrow Cm.BoundTree.BoundExpressionList GetExpressions()
         {
             return stack.GetExpressions();
         }

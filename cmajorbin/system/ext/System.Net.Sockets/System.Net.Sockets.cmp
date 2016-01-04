@@ -3,6 +3,7 @@ target=library;
 assembly <System.Net.Sockets.cma>;
 reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
 csource <socketapi.c>;
+source <socketbytestream.cm>;
 source <socketlib.cm>;
 source <sockets.cm>;
 source <socketutil.cm>;

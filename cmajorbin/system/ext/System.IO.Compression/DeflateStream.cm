@@ -17,29 +17,12 @@ namespace System.IO.Compression
         compress = 0u, decompress = 1u
     }
     
-    public enum CompressionLevel : sbyte
-    {
-        defaultCompression = -1, // equal to level 6 according to zlib documentation
-        noCompression = 0,
-        fastests = 1,
-        optimal = 9
-    }
+    public const int defaultDeflateCompressionLevel = -1; // equal to level 6 according to zlib documentation
+    public const int noDeflateCompression = 0;
+    public const int fastestDeflateCompression = 1;
+    public const int optimalDeflateCompression = 9;
     
-    public const int Z_OK = 0;
-    public const int Z_STREAM_END = 1;
-    public const int Z_NEED_DICT = 2;
-    public const int Z_ERRNO = -1;
-    public const int Z_STREAM_ERROR = -2;
-    public const int Z_DATA_ERROR = -3;
-    public const int Z_MEM_ERROR = -4;
-    public const int Z_BUF_ERROR = -5;
-    public const int Z_VERSION_ERROR = -6;
-    
-    public const int Z_NO_FLUSH = 0;
-    public const int Z_FINISH = 4;
-    
-    
-    public nothrow string ExpandError(const string& message, int errorCode)
+    public nothrow string ExpandDeflateError(const string& message, int errorCode)
     {
         string expandedMessage = message;
         if (errorCode == Z_ERRNO)
@@ -47,13 +30,13 @@ namespace System.IO.Compression
             string reason = strerror(get_errno());
             expandedMessage.Append(": ").Append(reason);
         }
-        expandedMessage.Append(" error code ").Append(ToString(errorCode));
+        expandedMessage.Append(" error ").Append(zlib_retval_str(errorCode)).Append(" code ").Append(ToString(errorCode));
         return expandedMessage;
     }
     
-    public class CompressionException : Exception
+    public class DeflateException : Exception
     {
-        public nothrow CompressionException(const string& message_, int errorCode_) : base(ExpandError(message_, errorCode_)), errorCode(errorCode_)
+        public nothrow DeflateException(const string& message_, int errorCode_) : base(ExpandDeflateError(message_, errorCode_)), errorCode(errorCode_)
         {
         }
         public nothrow inline int ErrorCode() const
@@ -65,46 +48,57 @@ namespace System.IO.Compression
     
     public class DeflateStream : ByteStream
     {
-        public DeflateStream(ByteStream& underlyingStream_, CompressionLevel level_) : this(underlyingStream_, level_, 16384)
+        public DeflateStream(ByteStream& underlyingStream_, int compressionLevel_) : this(underlyingStream_, compressionLevel_, 16384)
         {
         }
-        public DeflateStream(ByteStream& underlyingStream_, CompressionLevel level_, int bufferSize_) : 
-            underlyingStream(underlyingStream_), level(level_), mode(CompressionMode.compress), handle(null), inAvail(0), bufferSize(bufferSize_),
+        public DeflateStream(ByteStream& underlyingStream_, int compressionLevel_, int bufferSize_) : 
+            underlyingStream(underlyingStream_), mode(CompressionMode.compress), handle(null), inAvail(0), bufferSize(bufferSize_),
             in(cast<ulong>(bufferSize)), outAvail(0), outPos(0), outHave(0), endOfInput(false), endOfStream(false), out(cast<ulong>(bufferSize))
         {
-            int ret = zlib_init(cast<int>(mode), cast<int>(level), &handle);
+            int ret = zlib_init(cast<int>(mode), compressionLevel_, &handle);
             if (ret < 0)
             {
-                throw CompressionException("Could not create DeflateStream", ret);
+                throw DeflateException("Could not create DeflateStream", ret);
             }
         }
         public DeflateStream(ByteStream& underlyingStream_, CompressionMode mode_) : this(underlyingStream_, mode_, 16384)
         {
         }
         public DeflateStream(ByteStream& underlyingStream_, CompressionMode mode_, int bufferSize_) : 
-            underlyingStream(underlyingStream_), level(CompressionLevel.defaultCompression), mode(mode_), handle(null), inAvail(0), bufferSize(bufferSize_),
+            underlyingStream(underlyingStream_), mode(mode_), handle(null), inAvail(0), bufferSize(bufferSize_),
             in(cast<ulong>(bufferSize)), outAvail(0), outPos(0), outHave(0), endOfInput(false), endOfStream(false), out(cast<ulong>(bufferSize))
         {
-            int ret = zlib_init(cast<int>(mode), cast<int>(level), &handle);
+            int ret = zlib_init(cast<int>(mode), defaultDeflateCompressionLevel, &handle);
             if (ret < 0)
             {
-                throw CompressionException("Could not create DeflateStream", ret);
+                throw DeflateException("Could not create DeflateStream", ret);
             }
         }
-        public ~DeflateStream()
+        suppress DeflateStream(DeflateStream&&);
+        suppress void operator=(DeflateStream&&);
+        suppress DeflateStream(const DeflateStream&);
+        suppress void operator=(const DeflateStream&);
+        public inline nothrow CompressionMode Mode() const 
         {
-            try
+            return mode;
+        }
+        public nothrow ~DeflateStream()
+        {
+            if (handle != null)
             {
-                if (mode == CompressionMode.compress)
+                try
                 {
-                    Flush();
+                    if (mode == CompressionMode.compress)
+                    {
+                        Finish();
+                    }
+                }        
+                catch (const Exception& ex)
+                {
+                    // destructor should not throw
                 }
-            }        
-            catch (const Exception& ex)
-            {
-                // destructor should not throw
+                zlib_done(cast<int>(mode), handle);
             }
-            zlib_done(cast<int>(mode), handle);
         }
         public override int ReadByte()
         {
@@ -120,7 +114,7 @@ namespace System.IO.Compression
         {
             if (mode != CompressionMode.decompress)
             {
-                throw CompressionException("Cannot read from DeflateStream in CompressMode.compress", Z_STREAM_ERROR);
+                throw DeflateException("Cannot read from DeflateStream in CompressionMode.compress", Z_STREAM_ERROR);
             }
             int bytesRead = 0;
             do
@@ -141,7 +135,7 @@ namespace System.IO.Compression
                         int ret = zlib_inflate(out.Mem(), bufferSize, &outHave, &outAvail, &inAvail, handle);
                         if (ret < 0)
                         {
-                            throw CompressionException("DeflateStream could not decompress", ret);
+                            throw DeflateException("DeflateStream could not decompress", ret);
                         }
                         if (ret == Z_STREAM_END)
                         {
@@ -162,7 +156,7 @@ namespace System.IO.Compression
             while (count > 0 && !endOfStream && !endOfInput);
             if (endOfInput && !endOfStream)
             {
-                throw CompressionException("DeflateStream could not decompress", Z_STREAM_ERROR);
+                throw DeflateException("DeflateStream unexpected end of input", Z_STREAM_ERROR);
             }
             return bytesRead;
         }
@@ -174,7 +168,7 @@ namespace System.IO.Compression
         {
             if (mode != CompressionMode.compress)
             {
-                throw CompressionException("Cannot write to DeflateStream in CompressMode.decompress", Z_STREAM_ERROR);
+                throw DeflateException("Cannot write to DeflateStream in CompressionMode.decompress", Z_STREAM_ERROR);
             }
             while (count > 0)
             {
@@ -193,14 +187,14 @@ namespace System.IO.Compression
                     int ret = zlib_deflate(out.Mem(), bufferSize, &have, &outAvail, handle, Z_NO_FLUSH);
                     if (ret < 0)
                     {
-                        throw CompressionException("DeflateStream could not compress", ret);
+                        throw DeflateException("DeflateStream could not compress", ret);
                     }
                     underlyingStream.Write(cast<byte*>(out.Mem()), have);
                 }
                 while (outAvail == 0);
             }
         }
-        private void Flush()
+        private void Finish()
         {
             do
             {
@@ -208,14 +202,13 @@ namespace System.IO.Compression
                 int ret = zlib_deflate(out.Mem(), bufferSize, &have, &outAvail, handle, Z_FINISH);
                 if (ret < 0)
                 {
-                    throw CompressionException("DeflateStream could not compress", ret);
+                    throw DeflateException("DeflateStream could not compress", ret);
                 }
                 underlyingStream.Write(cast<byte*>(out.Mem()), have);
             }
             while (outAvail == 0);
         }
         private ByteStream& underlyingStream;
-        private CompressionLevel level;
         private CompressionMode mode;
         private int bufferSize;
         private int inAvail;

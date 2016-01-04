@@ -1,0 +1,62 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System;
+using System.IO;
+
+namespace System.Net.Sockets
+{
+    public class SocketByteStream : ByteStream
+    {
+        public SocketByteStream(TcpSocket&& socket_) : socket(socket_)
+        {
+        }
+        public SocketByteStream(const string& node, const string& service) : socket(node, service)
+        {
+        }
+        public default nothrow SocketByteStream(SocketByteStream&&);
+        public default nothrow void operator=(SocketByteStream&&);
+        suppress SocketByteStream(const SocketByteStream&);
+        suppress void operator=(SocketByteStream&);
+        public override int ReadByte()
+        {
+            byte x = 0u;
+            int bytesRead = this->Read(&x, 1);
+            if (bytesRead == 0) return -1;
+            return x;
+        }
+        public override int Read(byte* buf, int count)
+        {
+            #assert(count >= 0);
+            return socket.Receive(buf, count);
+        }
+        public override void Write(byte x)
+        {
+            this->Write(&x, 1);
+        }
+        public override void Write(byte* buf, int count)
+        {
+            #assert(count >= 0);
+            int bytesLeft = count;
+            while (bytesLeft > 0)
+            {
+                int bytesSent = socket.Send(buf, bytesLeft);
+                count = count - bytesSent;
+                buf = buf + bytesSent;
+            }            
+        }
+        private TcpSocket socket;
+    }
+}

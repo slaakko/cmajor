@@ -8,6 +8,8 @@ namespace System.IO
         public virtual ~ByteStream()
         {
         }
+        public default nothrow ByteStream(ByteStream&&);
+        public default nothrow void operator=(ByteStream&&);
         suppress ByteStream(const ByteStream&);
         suppress void operator=(const ByteStream&);
         public abstract int ReadByte();
@@ -40,6 +42,8 @@ namespace System.IO
         {
             this->Write(data, count);
         }
+        public default nothrow MemoryByteStream(MemoryByteStream&&);
+        public default nothrow void operator=(MemoryByteStream&&);
         suppress MemoryByteStream(const MemoryByteStream&);
         suppress void operator=(const MemoryByteStream&);
         public inline const byte* Data() const
@@ -123,6 +127,11 @@ namespace System.IO
                 throw OpenFileException("could not open file '" + fileName + "': " + reason);
             }
         }
+        public nothrow FileByteStream(FileByteStream&& that) : fileName(Rvalue(that.fileName)), handle(that.handle)
+        {
+            that.handle = -1;
+        }
+        public default nothrow void operator=(FileByteStream&&);
         suppress FileByteStream(const FileByteStream&);
         suppress void operator=(const FileByteStream&);
         public ~FileByteStream()
