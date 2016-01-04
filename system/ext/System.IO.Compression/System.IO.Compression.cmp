@@ -2,4 +2,5 @@ project System.IO.Compression;
 target=library;
 assembly <System.IO.Compression.cma>;
 reference <../System.IO.Compression.Intf/System.IO.Compression.Intf.cml>;
+source <BZip2Stream.cm>;
 source <DeflateStream.cm>;

@@ -1,10 +1,17 @@
 project System.IO.Compression.Intf;
 target=library;
 assembly <System.IO.Compression.Intf.cma>;
+source <bz2.cm>;
+csource <bz2_intf.c>;
 source <zlib.cm>;
 csource <zlib_intf.c>;
 clib <z>;
+clib <bz2>;
 addlibrarypath <zlib/windows/x86>[os=windows,bits=32];
 addlibrarypath <zlib/windows/x64>[os=windows,bits=64];
 addlibrarypath <zlib/linux/i686>[os=linux,bits=32];
 addlibrarypath <zlib/linux/x86_64>[os=linux,bits=64];
+addlibrarypath <bzip2/windows/x86>[os=windows,bits=32];
+addlibrarypath <bzip2/windows/x64>[os=windows,bits=64];
+addlibrarypath <bzip2/linux/i686>[os=linux,bits=32];
+addlibrarypath <bzip2/linux/x86_64>[os=linux,bits=64];

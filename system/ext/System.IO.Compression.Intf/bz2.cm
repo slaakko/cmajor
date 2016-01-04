@@ -1,0 +1,22 @@
+public extern cdecl int bz2_init(int mode, int compressionLevel, int compressionWorkFactor, void** handle);
+public extern cdecl void bz2_done(int mode, void* handle);
+public extern cdecl void bz2_set_input(void* inChunk, int inAvail, void* handle);
+public extern cdecl int bz2_compress(void* outChunk, int outChunkSize, int* have, int* outAvail, void* handle, int action);
+public extern cdecl int bz2_decompress(void* outChunk, int outChunkSize, int* have, int* outAvail, int* inAvail, void* handle);
+public extern cdecl const char* bz2_retval_str(int retVal);
+
+public const int BZ_OK = 0;
+public const int BZ_SEQUENCE_ERROR = -1;
+public const int BZ_PARAM_ERROR = -2;
+public const int BZ_MEM_ERROR = -3;
+public const int BZ_DATA_ERROR = -4;
+public const int BZ_DATA_ERROR_MAGIC = -5;
+public const int BZ_IO_ERROR = -6;
+public const int BZ_UNEXPECTED_EOF = -7;
+public const int BZ_OUTBUFF_FULL = -8;
+public const int BZ_CONFIG_ERROR = -9;
+
+public const int BZ_RUN = 0;
+public const int BZ_FLUSH = 1;
+public const int BZ_FINISH = 2;
+public const int BZ_STREAM_END = 4;
