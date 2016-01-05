@@ -26,7 +26,7 @@ library System
     copyright
     {
         ========================================================================
-        Copyright (c) 2012-2015 Seppo Laakko
+        Copyright (c) 2012-2016 Seppo Laakko
         http://sourceforge.net/projects/cmajor/
         
         Distributed under the GNU General Public License, version 3 (GPLv3).
@@ -125,6 +125,13 @@ library System
             {
                 For example "\textbf{double}" is explicitly convertible to "\textbf{int}".
                 Explicit conversions need a "\textbf{cast}".
+            }
+        }
+        concept NonReferenceType.T
+        {
+            description
+            {
+                Sets a requirement that type T is not a reference type.
             }
         }
         concept Same.T.U
@@ -557,6 +564,405 @@ library System
                 }
             }
             modelof System.Concepts.BinaryPredicate.T;
+        }
+        class System.BitAnd.T
+        {
+            description
+            {
+                Bitwise AND binary function object.
+            }
+            function System.BitAnd.T.constructor.P.System.BitAnd.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.BitAnd.T.constructor.P.System.BitAnd.T.C.R.System.BitAnd.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.BitAnd.T.constructor.P.System.BitAnd.T.C.R.System.BitAnd.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.BitAnd.T.operator.assign.P.System.BitAnd.T.C.R.System.BitAnd.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.BitAnd.T.operator.assign.P.System.BitAnd.T.C.R.System.BitAnd.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.BitAnd.T.constructor.P.System.BitAnd.T.RR.System.BitAnd.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.BitAnd.T.constructor.P.System.BitAnd.T.RR.System.BitAnd.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.BitAnd.T.operator.assign.P.System.BitAnd.T.RR.System.BitAnd.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.BitAnd.T.operator.assign.P.System.BitAnd.T.RR.System.BitAnd.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T
+            {
+                description
+                {
+                    Returns bitwise AND of 
+                    System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.left and
+                    System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.right.
+                }
+                parameter System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns bitwise AND of 
+                        System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.left and
+                        System.BitAnd.T.operator.apply.C.P.System.BitAnd.T.C.R.T.C.R.T.right.
+                    }
+                }
+            }
+        }
+        class System.BitNot.T
+        {
+            description
+            {
+                Bitwise complement unary function object.
+            }
+            function System.BitNot.T.constructor.P.System.BitNot.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.BitNot.T.constructor.P.System.BitNot.T.C.R.System.BitNot.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.BitNot.T.constructor.P.System.BitNot.T.C.R.System.BitNot.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.BitNot.T.operator.assign.P.System.BitNot.T.C.R.System.BitNot.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.BitNot.T.operator.assign.P.System.BitNot.T.C.R.System.BitNot.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.BitNot.T.constructor.P.System.BitNot.T.RR.System.BitNot.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.BitNot.T.constructor.P.System.BitNot.T.RR.System.BitNot.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.BitNot.T.operator.assign.P.System.BitNot.T.RR.System.BitNot.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.BitNot.T.operator.assign.P.System.BitNot.T.RR.System.BitNot.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.BitNot.T.operator.apply.C.P.System.BitNot.T.C.R.T
+            {
+                description
+                {
+                    Returns bitwise complement of 
+                    System.BitNot.T.operator.apply.C.P.System.BitNot.T.C.R.T.operand.
+                }
+                parameter System.BitNot.T.operator.apply.C.P.System.BitNot.T.C.R.T.operand
+                {
+                    description
+                    {
+                        Argument.
+                    }
+                }
+                returns System.BitNot.T.operator.apply.C.P.System.BitNot.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns bitwise complement of 
+                        System.BitNot.T.operator.apply.C.P.System.BitNot.T.C.R.T.operand.
+                    }
+                }
+            }
+        }
+        class System.BitOr.T
+        {
+            description
+            {
+                Bitwise inclusive OR binary function object.
+            }
+            function System.BitOr.T.constructor.P.System.BitOr.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.BitOr.T.constructor.P.System.BitOr.T.C.R.System.BitOr.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.BitOr.T.constructor.P.System.BitOr.T.C.R.System.BitOr.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.BitOr.T.operator.assign.P.System.BitOr.T.C.R.System.BitOr.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.BitOr.T.operator.assign.P.System.BitOr.T.C.R.System.BitOr.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.BitOr.T.constructor.P.System.BitOr.T.RR.System.BitOr.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.BitOr.T.constructor.P.System.BitOr.T.RR.System.BitOr.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.BitOr.T.operator.assign.P.System.BitOr.T.RR.System.BitOr.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.BitOr.T.operator.assign.P.System.BitOr.T.RR.System.BitOr.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T
+            {
+                description
+                {
+                    Returns bitwise inclusive OR of 
+                    System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.left and
+                    System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.right.
+                }
+                parameter System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns bitwise inclusive OR of 
+                        System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.left and
+                        System.BitOr.T.operator.apply.C.P.System.BitOr.T.C.R.T.C.R.T.right.
+                    }
+                }
+            }
+        }
+        class System.BitXor.T
+        {
+            description
+            {
+                Bitwise exclusive OR binary function object.
+            }
+            function System.BitXor.T.constructor.P.System.BitXor.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.BitXor.T.constructor.P.System.BitXor.T.C.R.System.BitXor.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.BitXor.T.constructor.P.System.BitXor.T.C.R.System.BitXor.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.BitXor.T.operator.assign.P.System.BitXor.T.C.R.System.BitXor.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.BitXor.T.operator.assign.P.System.BitXor.T.C.R.System.BitXor.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.BitXor.T.constructor.P.System.BitXor.T.RR.System.BitXor.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.BitXor.T.constructor.P.System.BitXor.T.RR.System.BitXor.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.BitXor.T.operator.assign.P.System.BitXor.T.RR.System.BitXor.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.BitXor.T.operator.assign.P.System.BitXor.T.RR.System.BitXor.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T
+            {
+                description
+                {
+                    Returns bitwise exclusive OR of 
+                    System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.left and
+                    System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.right.
+                }
+                parameter System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns bitwise exclusive OR of 
+                        System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.left and
+                        System.BitXor.T.operator.apply.C.P.System.BitXor.T.C.R.T.C.R.T.right.
+                    }
+                }
+            }
         }
         class System.CharClassTable
         {
@@ -2392,6 +2798,123 @@ library System
                 }
             }
         }
+        class System.ExceptionPtr
+        {
+            description
+            {
+                The System.ExceptionPtr class can be used to hold an exception with full type information.
+            }
+            remarks
+            {
+                The System.ExceptionPtr is used with functions System.CaptureCurrentException and System.RethrowException.R.System.ExceptionPtr.
+            }
+            example <examples/System.ExceptionPtr.cm>;
+            function System.ExceptionPtr.constructor.P.System.ExceptionPtr
+            {
+                description
+                {
+                    Default constructor. Initializes the System.ExceptionPtr empty.
+                }
+            }
+            function System.ExceptionPtr.constructor.P.System.ExceptionPtr.RR.System.ExceptionPtr
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.ExceptionPtr.constructor.P.System.ExceptionPtr.RR.System.ExceptionPtr.that
+                {
+                    description
+                    {
+                        A System.ExceptionPtr to move from.
+                    }
+                }
+            }
+            function System.ExceptionPtr.operator.assign.P.System.ExceptionPtr.RR.System.ExceptionPtr
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.ExceptionPtr.operator.assign.P.System.ExceptionPtr.RR.System.ExceptionPtr.that
+                {
+                    description
+                    {
+                        A System.ExceptionPtr to assign.
+                    }
+                }
+            }
+            function System.ExceptionPtr.ExceptionId.C.P.System.ExceptionPtr
+            {
+                description
+                {
+                    Returns identifier of the captured exception, or 0 if the System.ExceptionPtr does not hold an exception.
+                }
+                returns System.ExceptionPtr.ExceptionId.C.P.System.ExceptionPtr.returnValue
+                {
+                    description
+                    {
+                        Returns identifier of the captured exception, or 0 if the System.ExceptionPtr does not hold an exception.
+                    }
+                }
+            }
+            function System.ExceptionPtr.constructor.P.System.ExceptionPtr.int.P.System.Exception
+            {
+                description
+                {
+                    Constructor. Initializes the System.ExceptionPtr to hold an exception with the given identifier and exception.
+                }
+                parameter System.ExceptionPtr.constructor.P.System.ExceptionPtr.int.P.System.Exception.exceptionId_
+                {
+                    description
+                    {
+                        Identifier of the captured exception.
+                    }
+                }
+                parameter System.ExceptionPtr.constructor.P.System.ExceptionPtr.int.P.System.Exception.exception_
+                {
+                    description
+                    {
+                        Captured exception.
+                    }
+                }
+            }
+            function System.ExceptionPtr.HasException.C.P.System.ExceptionPtr
+            {
+                description
+                {
+                    Returns true if the System.ExceptionPtr holds an exception, false otherwise.
+                }
+                returns System.ExceptionPtr.HasException.C.P.System.ExceptionPtr.returnValue
+                {
+                    description
+                    {
+                        Returns true if the System.ExceptionPtr holds an exception, false otherwise.
+                    }
+                }
+            }
+            function System.ExceptionPtr.Release.C.P.System.ExceptionPtr
+            {
+                description
+                {
+                    Releases the captured exception and sets the System.ExceptionPtr empty.
+                }
+                returns System.ExceptionPtr.Release.C.P.System.ExceptionPtr.returnValue
+                {
+                    description
+                    {
+                        Returns captured exception.
+                    }
+                }
+            }
+            function System.ExceptionPtr.destructor.P.System.ExceptionPtr
+            {
+                description
+                {
+                    Destroyes the exception if the System.ExceptionPtr has one.
+                }
+            }
+        }
         class System.FrontInsertIterator.C
         {
             description
@@ -3798,6 +4321,303 @@ library System
             }
             modelof System.Concepts.Relation.T;
         }
+        class System.LogicalAnd.T
+        {
+            description
+            {
+                A "\emph{logical AND}" binary predicate.
+            }
+            function System.LogicalAnd.T.constructor.P.System.LogicalAnd.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.LogicalAnd.T.constructor.P.System.LogicalAnd.T.C.R.System.LogicalAnd.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.LogicalAnd.T.constructor.P.System.LogicalAnd.T.C.R.System.LogicalAnd.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.LogicalAnd.T.operator.assign.P.System.LogicalAnd.T.C.R.System.LogicalAnd.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.LogicalAnd.T.operator.assign.P.System.LogicalAnd.T.C.R.System.LogicalAnd.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.LogicalAnd.T.constructor.P.System.LogicalAnd.T.RR.System.LogicalAnd.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.LogicalAnd.T.constructor.P.System.LogicalAnd.T.RR.System.LogicalAnd.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.LogicalAnd.T.operator.assign.P.System.LogicalAnd.T.RR.System.LogicalAnd.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.LogicalAnd.T.operator.assign.P.System.LogicalAnd.T.RR.System.LogicalAnd.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool
+            {
+                description
+                {
+                    Returns true if both System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.left and 
+                    System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.right arguments are true,
+                    false otherwise.
+                }
+                parameter System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.returnValue
+                {
+                    description
+                    {
+                        Returns true if both System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.left and 
+                        System.LogicalAnd.T.operator.apply.C.P.System.LogicalAnd.T.bool.bool.right arguments are true,
+                        false otherwise.
+                    }
+                }
+            }
+        }
+        class System.LogicalNot.T
+        {
+            description
+            {
+                A "\emph{logical NOT} unary predicate".
+            }
+            function System.LogicalNot.T.constructor.P.System.LogicalNot.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.LogicalNot.T.constructor.P.System.LogicalNot.T.C.R.System.LogicalNot.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.LogicalNot.T.constructor.P.System.LogicalNot.T.C.R.System.LogicalNot.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.LogicalNot.T.operator.assign.P.System.LogicalNot.T.C.R.System.LogicalNot.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.LogicalNot.T.operator.assign.P.System.LogicalNot.T.C.R.System.LogicalNot.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.LogicalNot.T.constructor.P.System.LogicalNot.T.RR.System.LogicalNot.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.LogicalNot.T.constructor.P.System.LogicalNot.T.RR.System.LogicalNot.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.LogicalNot.T.operator.assign.P.System.LogicalNot.T.RR.System.LogicalNot.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.LogicalNot.T.operator.assign.P.System.LogicalNot.T.RR.System.LogicalNot.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.LogicalNot.T.operator.apply.C.P.System.LogicalNot.T.bool
+            {
+                description
+                {
+                    Returns true if System.LogicalNot.T.operator.apply.C.P.System.LogicalNot.T.bool.operand is false,
+                    false otherwise.
+                }
+                parameter System.LogicalNot.T.operator.apply.C.P.System.LogicalNot.T.bool.operand
+                {
+                    description
+                    {
+                        Operand.
+                    }
+                }
+                returns System.LogicalNot.T.operator.apply.C.P.System.LogicalNot.T.bool.returnValue
+                {
+                    description
+                    {
+                        Returns true if System.LogicalNot.T.operator.apply.C.P.System.LogicalNot.T.bool.operand is false,
+                        false otherwise.
+                    }
+                }
+            }
+        }
+        class System.LogicalOr.T
+        {
+            description
+            {
+                A "\emph{logical OR}" binary predicate.
+            }
+            function System.LogicalOr.T.constructor.P.System.LogicalOr.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.LogicalOr.T.constructor.P.System.LogicalOr.T.C.R.System.LogicalOr.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.LogicalOr.T.constructor.P.System.LogicalOr.T.C.R.System.LogicalOr.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.LogicalOr.T.operator.assign.P.System.LogicalOr.T.C.R.System.LogicalOr.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.LogicalOr.T.operator.assign.P.System.LogicalOr.T.C.R.System.LogicalOr.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.LogicalOr.T.constructor.P.System.LogicalOr.T.RR.System.LogicalOr.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.LogicalOr.T.constructor.P.System.LogicalOr.T.RR.System.LogicalOr.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.LogicalOr.T.operator.assign.P.System.LogicalOr.T.RR.System.LogicalOr.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.LogicalOr.T.operator.assign.P.System.LogicalOr.T.RR.System.LogicalOr.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool
+            {
+                description
+                {
+                    Returns true if System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.left is true,
+                    or System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.right is true, or
+                    both are true, false otherwise.
+                }
+                parameter System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.returnValue
+                {
+                    description
+                    {
+                        Returns true if System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.left is true,
+                        or System.LogicalOr.T.operator.apply.C.P.System.LogicalOr.T.bool.bool.right is true, or
+                        both are true, false otherwise.
+                    }
+                }
+            }
+        }
         class System.MT
         {
             description
@@ -4342,6 +5162,144 @@ library System
             }
             modelof System.Concepts.Relation.T;
         }
+        class System.Pair.System.uhuge.System.uhuge
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.C.R.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.constructor.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.System.uhuge.operator.assign.P.System.Pair.System.uhuge.System.uhuge.RR.System.Pair.System.uhuge.System.uhuge.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Pair.System.uhuge.uint
+        {
+            description
+            {
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.C.R.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Pair.System.uhuge.uint.constructor.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Pair.System.uhuge.uint.operator.assign.P.System.Pair.System.uhuge.uint.RR.System.Pair.System.uhuge.uint.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
         class System.Pair.T.U
         {
             description
@@ -4741,6 +5699,351 @@ library System
                 }
             }
             modelof System.Concepts.RandomAccessIterator.T;
+        }
+        class System.RandomAccessIter.byte.C.R.byte.C.P.byte
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.C.R.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.constructor.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.byte.C.R.byte.C.P.byte.operator.assign.P.System.RandomAccessIter.byte.C.R.byte.C.P.byte.RR.System.RandomAccessIter.byte.C.R.byte.C.P.byte.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.R.char.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.C.R.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.constructor.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.R.char.P.char.operator.assign.P.System.RandomAccessIter.char.R.char.P.char.RR.System.RandomAccessIter.char.R.char.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.char.C.R.char.C.P.char
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.C.R.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.constructor.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.char.C.R.char.C.P.char.operator.assign.P.System.RandomAccessIter.char.C.R.char.C.P.char.RR.System.RandomAccessIter.char.C.R.char.C.P.char.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.C.R.int.C.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.C.R.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.constructor.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.C.R.int.C.P.int.operator.assign.P.System.RandomAccessIter.int.C.R.int.C.P.int.RR.System.RandomAccessIter.int.C.R.int.C.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.RandomAccessIter.int.R.int.P.int
+        {
+            description
+            {
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.C.R.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.constructor.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.RandomAccessIter.int.R.int.P.int.operator.assign.P.System.RandomAccessIter.int.R.int.P.int.RR.System.RandomAccessIter.int.R.int.P.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
         }
         class System.Rel.Argument
         {
@@ -5640,18 +6943,209 @@ library System
                     }
                 }
             }
-            function System.SharedPtr.T.destructor.P.System.SharedPtr.T
+            modelof System.Concepts.TotallyOrdered.T;
+        }
+        class System.ShiftLeft.T
+        {
+            description
+            {
+                Shift left binary function.
+            }
+            function System.ShiftLeft.T.constructor.P.System.ShiftLeft.T
             {
                 description
                 {
-                    Destructor. Decrements the use count.
-                }
-                remarks
-                {
-                    If the use count has gone to zero, destroyes the counted object.
+                    Default constructor.
                 }
             }
-            modelof System.Concepts.TotallyOrdered.T;
+            function System.ShiftLeft.T.constructor.P.System.ShiftLeft.T.C.R.System.ShiftLeft.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.ShiftLeft.T.constructor.P.System.ShiftLeft.T.C.R.System.ShiftLeft.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.ShiftLeft.T.operator.assign.P.System.ShiftLeft.T.C.R.System.ShiftLeft.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.ShiftLeft.T.operator.assign.P.System.ShiftLeft.T.C.R.System.ShiftLeft.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.ShiftLeft.T.constructor.P.System.ShiftLeft.T.RR.System.ShiftLeft.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.ShiftLeft.T.constructor.P.System.ShiftLeft.T.RR.System.ShiftLeft.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.ShiftLeft.T.operator.assign.P.System.ShiftLeft.T.RR.System.ShiftLeft.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.ShiftLeft.T.operator.assign.P.System.ShiftLeft.T.RR.System.ShiftLeft.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T
+            {
+                description
+                {
+                    Returns System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.left shifted left
+                    by System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.right bit positions.
+                }
+                parameter System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.left shifted left
+                        by System.ShiftLeft.T.operator.apply.C.P.System.ShiftLeft.T.C.R.T.C.R.T.right bit positions.
+                    }
+                }
+            }
+        }
+        class System.ShiftRight.T
+        {
+            description
+            {
+                Shift right binary function.
+            }
+            function System.ShiftRight.T.constructor.P.System.ShiftRight.T
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.ShiftRight.T.constructor.P.System.ShiftRight.T.C.R.System.ShiftRight.T
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.ShiftRight.T.constructor.P.System.ShiftRight.T.C.R.System.ShiftRight.T.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.ShiftRight.T.operator.assign.P.System.ShiftRight.T.C.R.System.ShiftRight.T
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.ShiftRight.T.operator.assign.P.System.ShiftRight.T.C.R.System.ShiftRight.T.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.ShiftRight.T.constructor.P.System.ShiftRight.T.RR.System.ShiftRight.T
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.ShiftRight.T.constructor.P.System.ShiftRight.T.RR.System.ShiftRight.T.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.ShiftRight.T.operator.assign.P.System.ShiftRight.T.RR.System.ShiftRight.T
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.ShiftRight.T.operator.assign.P.System.ShiftRight.T.RR.System.ShiftRight.T.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T
+            {
+                description
+                {
+                    Returns System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.left 
+                    shifted right by System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.right
+                    bit positions.
+                }
+                parameter System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.left
+                {
+                    description
+                    {
+                        Left argument.
+                    }
+                }
+                parameter System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.right
+                {
+                    description
+                    {
+                        Right argument.
+                    }
+                }
+                returns System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.returnValue
+                {
+                    description
+                    {
+                        Returns System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.left 
+                        shifted right by System.ShiftRight.T.operator.apply.C.P.System.ShiftRight.T.C.R.T.C.R.T.right
+                        bit positions.
+                    }
+                }
+            }
         }
         class System.String
         {
@@ -5754,7 +7248,35 @@ library System
                 {
                     description
                     {
-                        Returns a reference to the this string.
+                        Returns a reference to this string.
+                    }
+                }
+            }
+            function System.String.Append.P.System.String.char.int
+            {
+                description
+                {
+                    Appends given number of occurrences of given chacter to the end of this string.
+                }
+                parameter System.String.Append.P.System.String.char.int.c
+                {
+                    description
+                    {
+                        A character to append.
+                    }
+                }
+                parameter System.String.Append.P.System.String.char.int.count
+                {
+                    description
+                    {
+                        Number of times to append.
+                    }
+                }
+                returns System.String.Append.P.System.String.char.int.returnValue
+                {
+                    description
+                    {
+                        Returns a references to this string.
                     }
                 }
             }
@@ -6356,6 +7878,29 @@ library System
                     description
                     {
                         A C-style string.
+                    }
+                }
+            }
+            function System.String.constructor.P.System.String.C.P.char.C.P.char
+            {
+                description
+                {
+                    Constructor. Constructs a string of characters included in range
+                    System.String.constructor.P.System.String.C.P.char.C.P.char.begin and
+                    System.String.constructor.P.System.String.C.P.char.C.P.char.end.
+                }
+                parameter System.String.constructor.P.System.String.C.P.char.C.P.char.begin
+                {
+                    description
+                    {
+                        Start of the character range.
+                    }
+                }
+                parameter System.String.constructor.P.System.String.C.P.char.C.P.char.end
+                {
+                    description
+                    {
+                        One past the end of the character range.
                     }
                 }
             }
@@ -6983,6 +8528,88 @@ library System
                 }
             }
             modelof System.Concepts.UnaryPredicate.T;
+        }
+        class System.UniquePtr.System.IO.InputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.constructor.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.InputStream.operator.assign.P.System.UniquePtr.System.IO.InputStream.RR.System.UniquePtr.System.IO.InputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.UniquePtr.System.IO.OutputStream
+        {
+            description
+            {
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.constructor.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.UniquePtr.System.IO.OutputStream.operator.assign.P.System.UniquePtr.System.IO.OutputStream.RR.System.UniquePtr.System.IO.OutputStream.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
         }
         class System.UniquePtr.T
         {
@@ -7805,6 +9432,23 @@ library System
                 }
             }
         }
+        function System.CaptureCurrentException
+        {
+            description
+            {
+                This function can be used in exception handlers (catch clauses) to capture the current exception with full type information to an System.ExceptionPtr.
+                This is useful for example in multithreaded programs where exception thrown inside a thread function can be transferred to the main thread
+                and rethrown using System.RethrowException.R.System.ExceptionPtr function from there.
+            }
+            example <examples/System.ExceptionPtr.cm>;
+            returns System.CaptureCurrentException.returnValue
+            {
+                description
+                {
+                    Returns System.ExceptionPtr
+                }
+            }
+        }
         function System.Copy.I.O.I.I.O.where.I.is.InputIterator.and.O.is.OutputIterator.and.CopyAssignable.O.ValueType.I.ValueType
         {
             description
@@ -8312,6 +9956,34 @@ library System
                 }
             }
             source <../src/algorithm.pdf>(15, 15);
+        }
+        function System.Fill.I.T.I.I.C.R.T.where.T.is.Semiregular.and.I.is.ForwardIterator.and.I.ValueType.is.T
+        {
+            description
+            {
+                Fills a sequence with the given value.
+            }
+            parameter System.Fill.I.T.I.I.C.R.T.where.T.is.Semiregular.and.I.is.ForwardIterator.and.I.ValueType.is.T.begin
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a sequence.
+                }
+            }
+            parameter System.Fill.I.T.I.I.C.R.T.where.T.is.Semiregular.and.I.is.ForwardIterator.and.I.ValueType.is.T.end
+            {
+                description
+                {
+                    A iterator pointing one past the end of a sequence.
+                }
+            }
+            parameter System.Fill.I.T.I.I.C.R.T.where.T.is.Semiregular.and.I.is.ForwardIterator.and.I.ValueType.is.T.value
+            {
+                description
+                {
+                    A value.
+                }
+            }
         }
         function System.Find.I.P.I.I.P.where.I.is.InputIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType
         {
@@ -10628,27 +12300,182 @@ library System
                 }
             }
         }
-        function System.Reverse.I.I.I.where.I.is.BidirectionalIterator
+        function System.Remove.I.P.I.I.P.where.I.is.ForwardIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType
         {
             description
             {
-                Reverses a sequence.
+                Removes values satisfying a given predicate from a sequence by moving them to the end of the sequence.
+                Returns an iterator pointing to the beginning of removed values.
             }
-            parameter System.Reverse.I.I.I.where.I.is.BidirectionalIterator.begin
+            parameter System.Remove.I.P.I.I.P.where.I.is.ForwardIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.begin
             {
                 description
                 {
-                    A bidirectional iterator pointing to the beginning of a sequence.
+                    An iterator pointing to the beginning of a sequence.
                 }
             }
-            parameter System.Reverse.I.I.I.where.I.is.BidirectionalIterator.end
+            parameter System.Remove.I.P.I.I.P.where.I.is.ForwardIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.end
             {
                 description
                 {
-                    A bidirectional iterator pointing one past the end of a sequence.
+                    An iterator pointing to one past the end of a sequence.
                 }
             }
-            source <../src/algorithm.pdf>(2, 2);
+            parameter System.Remove.I.P.I.I.P.where.I.is.ForwardIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.p
+            {
+                description
+                {
+                    A unary predicate.
+                }
+            }
+            returns System.Remove.I.P.I.I.P.where.I.is.ForwardIterator.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.returnValue
+            {
+                description
+                {
+                    Returns an iterator pointing to the beginning of removed values.
+                }
+            }
+        }
+        function System.Remove.I.T.I.I.C.R.T.where.I.is.ForwardIterator.and.T.is.Semiregular.and.EqualityComparable.T.I.ValueType
+        {
+            description
+            {
+                Removes the values equal to the given value from the given sequence of values by moving them to the end of the sequence.
+                Returns an iterator pointing to the beginning of removed values.
+            }
+            parameter System.Remove.I.T.I.I.C.R.T.where.I.is.ForwardIterator.and.T.is.Semiregular.and.EqualityComparable.T.I.ValueType.begin
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a sequence.
+                }
+            }
+            parameter System.Remove.I.T.I.I.C.R.T.where.I.is.ForwardIterator.and.T.is.Semiregular.and.EqualityComparable.T.I.ValueType.end
+            {
+                description
+                {
+                    An iterator pointing one past the end of a sequence.
+                }
+            }
+            parameter System.Remove.I.T.I.I.C.R.T.where.I.is.ForwardIterator.and.T.is.Semiregular.and.EqualityComparable.T.I.ValueType.value
+            {
+                description
+                {
+                    A value to remove.
+                }
+            }
+            returns System.Remove.I.T.I.I.C.R.T.where.I.is.ForwardIterator.and.T.is.Semiregular.and.EqualityComparable.T.I.ValueType.returnValue
+            {
+                description
+                {
+                    Returns an iterator pointing to the beginning of removed values.
+                }
+            }
+        }
+        function System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType
+        {
+            description
+            {
+                Copies elements from given range to a destination range excluding elements satisfying a given predicate.
+                Returns an iterator pointing one past the end of the destination range.
+            }
+            parameter System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.begin
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a sequence to copy.
+                }
+            }
+            parameter System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.end
+            {
+                description
+                {
+                    An iterator pointing one past the end of a sequence to copy.
+                }
+            }
+            parameter System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.p
+            {
+                description
+                {
+                    A unary predicate.
+                }
+            }
+            parameter System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.result
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a destination range.
+                }
+            }
+            returns System.RemoveCopy.I.O.P.I.I.O.P.where.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.P.is.UnaryPredicate.and.P.ArgumentType.is.I.ValueType.returnValue
+            {
+                description
+                {
+                    Returns an iterator pointing one past the end of the destination range.
+                }
+            }
+        }
+        function System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType
+        {
+            description
+            {
+                Copies elements from given range to a destination range excluding elements that are equal to given value.
+                Returns an iterator pointing one past the end of the destination range.
+            }
+            parameter System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType.begin
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a sequence to copy.
+                }
+            }
+            parameter System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType.end
+            {
+                description
+                {
+                    An iterator pointing one past the end of a sequence to copy.
+                }
+            }
+            parameter System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType.result
+            {
+                description
+                {
+                    An iterator pointing to the beginning of a destination range.
+                }
+            }
+            parameter System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType.value
+            {
+                description
+                {
+                    A value.
+                }
+            }
+            returns System.RemoveCopy.I.O.T.I.I.O.C.R.T.where.T.is.Semiregular.and.I.is.InputIterator.and.O.is.OutputIterator.and.O.ValueType.is.I.ValueType.and.EqualityComparable.T.I.ValueType.returnValue
+            {
+                description
+                {
+                    Returns an iterator pointing one past the end of the destination range.
+                }
+            }
+        }
+        function System.RethrowException.R.System.ExceptionPtr
+        {
+            description
+            {
+                Rethrows an exception captured to an System.ExceptionPtr.
+            }
+            remarks
+            {
+                Used with function System.CaptureCurrentException.
+            }
+            example <examples/System.ExceptionPtr.cm>;
+            parameter System.RethrowException.R.System.ExceptionPtr.capturedException
+            {
+                description
+                {
+                    Exception captured to an System.ExceptionPtr.
+                }
+            }
         }
         function System.Reverse.I.I.I.where.I.is.RandomAccessIterator
         {
@@ -10672,6 +12499,28 @@ library System
                 }
             }
             source <../src/algorithm.pdf>(1, 1);
+        }
+        function System.Reverse.I.I.I.where.I.is.BidirectionalIterator
+        {
+            description
+            {
+                Reverses a sequence.
+            }
+            parameter System.Reverse.I.I.I.where.I.is.BidirectionalIterator.begin
+            {
+                description
+                {
+                    A bidirectional iterator pointing to the beginning of a sequence.
+                }
+            }
+            parameter System.Reverse.I.I.I.where.I.is.BidirectionalIterator.end
+            {
+                description
+                {
+                    A bidirectional iterator pointing one past the end of a sequence.
+                }
+            }
+            source <../src/algorithm.pdf>(2, 2);
         }
         function System.ReverseUntil.I.I.I.I.where.I.is.BidirectionalIterator
         {
@@ -11037,6 +12886,22 @@ library System
                 }
             }
         }
+        function System.Sort.C.R.C.where.C.is.RandomAccessContainer.and.C.Iterator.ValueType.is.TotallyOrdered
+        {
+            description
+            {
+                Sorts the elements of a random access container to increasing order.
+            }
+            example <examples/System.Sort.C.C.is.RandomAccessContainer.C.Iterator.ValueType.is.TotallyOrdered.C.ref.cm>;
+            parameter System.Sort.C.R.C.where.C.is.RandomAccessContainer.and.C.Iterator.ValueType.is.TotallyOrdered.c
+            {
+                description
+                {
+                    A random access container.
+                }
+            }
+            source <../src/algorithm.pdf>(12, 12);
+        }
         function System.Sort.C.R.C.where.C.is.ForwardContainer.and.C.Iterator.ValueType.is.TotallyOrdered
         {
             description
@@ -11058,21 +12923,28 @@ library System
             }
             source <../src/algorithm.pdf>(12, 12);
         }
-        function System.Sort.C.R.C.where.C.is.RandomAccessContainer.and.C.Iterator.ValueType.is.TotallyOrdered
+        function System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType
         {
             description
             {
-                Sorts the elements of a random access container to increasing order.
+                Sorts the elements of a random access container to order according to the given ordering relation.
             }
-            example <examples/System.Sort.C.C.is.RandomAccessContainer.C.Iterator.ValueType.is.TotallyOrdered.C.ref.cm>;
-            parameter System.Sort.C.R.C.where.C.is.RandomAccessContainer.and.C.Iterator.ValueType.is.TotallyOrdered.c
+            example <examples/System.Sort.C.R.C.is.RandomAccessContainer.R.is.Relation.R.Domain.is.C.Iterator.ValueType.C.ref.R.cm>;
+            parameter System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType.c
             {
                 description
                 {
                     A random access container.
                 }
             }
-            source <../src/algorithm.pdf>(12, 12);
+            parameter System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType.r
+            {
+                description
+                {
+                    An ordering relation.
+                }
+            }
+            source <../src/algorithm.pdf>(11, 11);
         }
         function System.Sort.C.R.R.C.R.where.C.is.ForwardContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType
         {
@@ -11100,29 +12972,6 @@ library System
                     An ordering relation.
                 }
             }
-        }
-        function System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType
-        {
-            description
-            {
-                Sorts the elements of a random access container to order according to the given ordering relation.
-            }
-            example <examples/System.Sort.C.R.C.is.RandomAccessContainer.R.is.Relation.R.Domain.is.C.Iterator.ValueType.C.ref.R.cm>;
-            parameter System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType.c
-            {
-                description
-                {
-                    A random access container.
-                }
-            }
-            parameter System.Sort.C.R.R.C.R.where.C.is.RandomAccessContainer.and.R.is.Relation.and.R.Domain.is.C.Iterator.ValueType.r
-            {
-                description
-                {
-                    An ordering relation.
-                }
-            }
-            source <../src/algorithm.pdf>(11, 11);
         }
         function System.Sort.I.I.I.where.I.is.RandomAccessIterator.and.I.ValueType.is.TotallyOrdered
         {
@@ -14082,6 +15931,18 @@ library System
                     }
                 }
             }
+            function System.Collections.Bucket.T.Value.P.System.Collections.Bucket.T
+            {
+                description
+                {
+                }
+                returns System.Collections.Bucket.T.Value.P.System.Collections.Bucket.T.returnValue
+                {
+                    description
+                    {
+                    }
+                }
+            }
             function System.Collections.Bucket.T.Value.C.P.System.Collections.Bucket.T
             {
                 description
@@ -16306,17 +18167,15 @@ library System
                     }
                 }
             }
-            function System.Collections.HashtableIterator.T.R.P.operator.times.C.P.System.Collections.HashtableIterator.T.R.P
+            function System.Collections.HashtableIterator.T.R.P.operator.times.P.System.Collections.HashtableIterator.T.R.P
             {
                 description
                 {
-                    Returns a reference to hash table element the iterator points to.
                 }
-                returns System.Collections.HashtableIterator.T.R.P.operator.times.C.P.System.Collections.HashtableIterator.T.R.P.returnValue
+                returns System.Collections.HashtableIterator.T.R.P.operator.times.P.System.Collections.HashtableIterator.T.R.P.returnValue
                 {
                     description
                     {
-                        Returns a reference to hash table element the iterator points to.
                     }
                 }
             }
@@ -17233,6 +19092,144 @@ library System
             }
             modelof System.Concepts.BidirectionalIterator.T;
         }
+        class System.Collections.List.System.CharClass
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.C.R.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.CharClass.constructor.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.CharClass.operator.assign.P.System.Collections.List.System.CharClass.RR.System.Collections.List.System.CharClass.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.System.String
+        {
+            description
+            {
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.C.R.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.System.String.constructor.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.System.String.operator.assign.P.System.Collections.List.System.String.RR.System.Collections.List.System.String.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
         class System.Collections.List.T
         {
             description
@@ -17811,6 +19808,213 @@ library System
             modelof System.Concepts.InsertionSequence.T;
             modelof System.Concepts.FrontInsertionSequence.T;
             modelof System.Concepts.RandomAccessContainer.T;
+        }
+        class System.Collections.List.byte
+        {
+            description
+            {
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.C.R.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.byte.constructor.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.byte.operator.assign.P.System.Collections.List.byte.RR.System.Collections.List.byte.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.int
+        {
+            description
+            {
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.C.R.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.int.constructor.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.int.operator.assign.P.System.Collections.List.int.RR.System.Collections.List.int.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+        }
+        class System.Collections.List.ulong
+        {
+            description
+            {
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.C.R.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.Collections.List.ulong.constructor.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.Collections.List.ulong.operator.assign.P.System.Collections.List.ulong.RR.System.Collections.List.ulong.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
         }
         class System.Collections.Map.Key.Value.KeyCompare
         {
@@ -18428,11 +20632,13 @@ library System
             {
                 description
                 {
+                    Copy constructor.
                 }
                 parameter System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.constructor.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.C.R.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.that
                 {
                     description
                     {
+                        A red-black tree to copy.
                     }
                 }
             }
@@ -18440,11 +20646,13 @@ library System
             {
                 description
                 {
+                    Copy assignment.
                 }
                 parameter System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.operator.assign.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.C.R.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.that
                 {
                     description
                     {
+                        A red-black tree to assign.
                     }
                 }
             }
@@ -18452,11 +20660,13 @@ library System
             {
                 description
                 {
+                    Move constructor.
                 }
                 parameter System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.constructor.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.RR.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.that
                 {
                     description
                     {
+                        A red-black tree to move from.
                     }
                 }
             }
@@ -18464,11 +20674,13 @@ library System
             {
                 description
                 {
+                    Move assignment.
                 }
                 parameter System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.operator.assign.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.RR.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.that
                 {
                     description
                     {
+                        A red-black tree to assign.
                     }
                 }
             }
@@ -18536,17 +20748,20 @@ library System
             {
                 description
                 {
+                    Finds an element with the given key in the red-black tree and returns a constant iterator pointing to it if found, or System.Collections.RedBlackTree.CEnd iterator otherwise.
                 }
                 parameter System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.CFind.C.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.C.R.KeyType.key
                 {
                     description
                     {
+                        A key to search.
                     }
                 }
                 returns System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.CFind.C.P.System.Collections.RedBlackTree.KeyType.ValueType.KeyOfValue.Compare.C.R.KeyType.returnValue
                 {
                     description
                     {
+                        Returns a constant iterator pointing to it if found, or System.Collections.RedBlackTree.CEnd iterator otherwise.
                     }
                 }
             }
@@ -19589,11 +21804,13 @@ library System
             {
                 description
                 {
+                    Returns a constant iterator pointing one past the end of the set.
                 }
                 returns System.Collections.Set.T.C.End.C.P.System.Collections.Set.T.C.returnValue
                 {
                     description
                     {
+                        Returns a constant iterator pointing one past the end of the set.
                     }
                 }
             }
@@ -20747,6 +22964,18 @@ library System
                 System.Collections.ForwardList.T are containers.
             }
         }
+        concept System.Concepts.ConversionFromByte.T
+        {
+            description
+            {
+            }
+        }
+        concept System.Concepts.ConversionFromSByte.T
+        {
+            description
+            {
+            }
+        }
         concept System.Concepts.CopyAssignable.T.U
         {
             description
@@ -21866,6 +24095,185 @@ library System
                 }
             }
         }
+        class System.IO.ByteStream
+        {
+            description
+            {
+                Abstract base class for byte stream classes.
+                Represents a stream of bytes. Byte stream can be read from or written to.
+            }
+            function System.IO.ByteStream.constructor.P.System.IO.ByteStream
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.ByteStream.constructor.P.System.IO.ByteStream.RR.System.IO.ByteStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.ByteStream.constructor.P.System.IO.ByteStream.RR.System.IO.ByteStream.__parameter0
+                {
+                    description
+                    {
+                    }
+                }
+            }
+            function System.IO.ByteStream.operator.assign.P.System.IO.ByteStream.RR.System.IO.ByteStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.ByteStream.operator.assign.P.System.IO.ByteStream.RR.System.IO.ByteStream.__parameter0
+                {
+                    description
+                    {
+                    }
+                }
+            }
+            function System.IO.ByteStream.CopyTo.P.System.IO.ByteStream.R.System.IO.ByteStream
+            {
+                description
+                {
+                    Copies this byte stream to another. Uses default buffer size 16K for copying. 
+                }
+                parameter System.IO.ByteStream.CopyTo.P.System.IO.ByteStream.R.System.IO.ByteStream.destination
+                {
+                    description
+                    {
+                        A byte stream to copy to.
+                    }
+                }
+            }
+            function System.IO.ByteStream.CopyTo.P.System.IO.ByteStream.R.System.IO.ByteStream.int
+            {
+                description
+                {
+                    Copies this byte stream to another using given buffer size.
+                }
+                parameter System.IO.ByteStream.CopyTo.P.System.IO.ByteStream.R.System.IO.ByteStream.int.bufferSize
+                {
+                    description
+                    {
+                        Buffer size.
+                    }
+                }
+                parameter System.IO.ByteStream.CopyTo.P.System.IO.ByteStream.R.System.IO.ByteStream.int.destination
+                {
+                    description
+                    {
+                        A byte stream to copy to.
+                    }
+                }
+            }
+            function System.IO.ByteStream.Read.P.System.IO.ByteStream.P.byte.int
+            {
+                description
+                {
+                    Abstract member function that derived byte stream class overrides.
+                    Reads at most given number of bytes from the byte stream to the given buffer.
+                    Returns number of bytes read that might be less than the number of bytes requested.
+                }
+                remarks
+                {
+                    Throws an exception if reading fails.
+                }
+                parameter System.IO.ByteStream.Read.P.System.IO.ByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer to read data to.
+                    }
+                }
+                parameter System.IO.ByteStream.Read.P.System.IO.ByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Maximum number of bytes to read.
+                    }
+                }
+                returns System.IO.ByteStream.Read.P.System.IO.ByteStream.P.byte.int.returnValue
+                {
+                    description
+                    {
+                        Returns number of bytes read.
+                        Might be less than the number of bytes requested but always non-negative.
+                        Return value 0 indicates end of stream.
+                    }
+                }
+            }
+            function System.IO.ByteStream.ReadByte.P.System.IO.ByteStream
+            {
+                description
+                {
+                    Abstract member function that derived byte stream class overrides.
+                    Reads one byte from the byte stream.
+                    Returns the byte read or -1 if end of stream is encountered.
+                }
+                remarks
+                {
+                    Throws an exception if reading fails.
+                }
+                returns System.IO.ByteStream.ReadByte.P.System.IO.ByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns the byte read or -1 if end of stream is encountered.
+                    }
+                }
+            }
+            function System.IO.ByteStream.Write.P.System.IO.ByteStream.byte
+            {
+                description
+                {
+                    Abstract member function that derived byte stream class overrides.
+                    Writes one byte of data to the byte stream.
+                }
+                remarks
+                {
+                    Throws an exception if writing fails.
+                }
+                parameter System.IO.ByteStream.Write.P.System.IO.ByteStream.byte.x
+                {
+                    description
+                    {
+                        A byte to write.
+                    }
+                }
+            }
+            function System.IO.ByteStream.Write.P.System.IO.ByteStream.P.byte.int
+            {
+                description
+                {
+                    Abstract member function that derived byte stream class overrides.
+                    Writes given number of bytes from the given buffer to the byte stream.
+                }
+                parameter System.IO.ByteStream.Write.P.System.IO.ByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer of data to write.
+                    }
+                }
+                parameter System.IO.ByteStream.Write.P.System.IO.ByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Number of bytes to write.
+                    }
+                }
+            }
+            function System.IO.ByteStream.destructor.P.System.IO.ByteStream
+            {
+                description
+                {
+                }
+            }
+        }
         class System.IO.CloseFileException
         {
             description
@@ -21954,6 +24362,358 @@ library System
                 description
                 {
                     Destructor.
+                }
+            }
+        }
+        class System.IO.FileByteStream
+        {
+            description
+            {
+                Represents a stream of bytes connected to a file.
+                The stream can be read from or written to but not both.
+            }
+            function System.IO.FileByteStream.constructor.P.System.IO.FileByteStream.RR.System.IO.FileByteStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.FileByteStream.constructor.P.System.IO.FileByteStream.RR.System.IO.FileByteStream.that
+                {
+                    description
+                    {
+                        A file byte stream to move from.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.operator.assign.P.System.IO.FileByteStream.RR.System.IO.FileByteStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.FileByteStream.operator.assign.P.System.IO.FileByteStream.RR.System.IO.FileByteStream.__parameter0
+                {
+                    description
+                    {
+                        A file byte stream to assign from.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.constructor.P.System.IO.FileByteStream.C.R.System.String.System.IO.FileMode
+            {
+                description
+                {
+                    Constructor. Initializes the byte stream with the given file name and open mode.
+                }
+                parameter System.IO.FileByteStream.constructor.P.System.IO.FileByteStream.C.R.System.String.System.IO.FileMode.fileName_
+                {
+                    description
+                    {
+                        Name of the file to open or create.
+                    }
+                }
+                parameter System.IO.FileByteStream.constructor.P.System.IO.FileByteStream.C.R.System.String.System.IO.FileMode.mode
+                {
+                    description
+                    {
+                        Open mode.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.Read.P.System.IO.FileByteStream.P.byte.int
+            {
+                description
+                {
+                    Reads at most given number of bytes from the file to the given buffer.
+                    Returns number of bytes 
+                }
+                remarks
+                {
+                    Throws System.IO.IOException if reading fails.
+                }
+                parameter System.IO.FileByteStream.Read.P.System.IO.FileByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer to read to.
+                    }
+                }
+                parameter System.IO.FileByteStream.Read.P.System.IO.FileByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Maximum number of bytes to read.
+                    }
+                }
+                returns System.IO.FileByteStream.Read.P.System.IO.FileByteStream.P.byte.int.returnValue
+                {
+                    description
+                    {
+                        Returns the number of bytes read.
+                        Return value of 0 indicates end of file.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.ReadByte.P.System.IO.FileByteStream
+            {
+                description
+                {
+                    Reads a byte from the file.
+                    Returns the byte read, or -1 if end of file is encountered.
+                }
+                remarks
+                {
+                    Throws System.IO.IOException if reading fails.
+                }
+                returns System.IO.FileByteStream.ReadByte.P.System.IO.FileByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns the byte read, or -1 if end of file is encountered.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.Write.P.System.IO.FileByteStream.byte
+            {
+                description
+                {
+                    Writes a byte of data to the file.
+                }
+                remarks
+                {
+                    Throws System.IO.IOException if writing fails.
+                }
+                parameter System.IO.FileByteStream.Write.P.System.IO.FileByteStream.byte.x
+                {
+                    description
+                    {
+                        A byte to write.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.Write.P.System.IO.FileByteStream.P.byte.int
+            {
+                description
+                {
+                    Writes given number of bytes from the given buffer to the file.
+                }
+                remarks
+                {
+                    Throws System.IO.IOException if writing fails.
+                }
+                parameter System.IO.FileByteStream.Write.P.System.IO.FileByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer of data to write.
+                    }
+                }
+                parameter System.IO.FileByteStream.Write.P.System.IO.FileByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        The number of bytes to write.
+                    }
+                }
+            }
+            function System.IO.FileByteStream.destructor.P.System.IO.FileByteStream
+            {
+                description
+                {
+                    Destructor. Closes the file.
+                }
+            }
+        }
+        class System.IO.FileMapping
+        {
+            description
+            {
+                Represents memory mapped input file.
+            }
+            function System.IO.FileMapping.constructor.P.System.IO.FileMapping.RR.System.IO.FileMapping
+            {
+                description
+                {
+                    Move construcor.
+                }
+                parameter System.IO.FileMapping.constructor.P.System.IO.FileMapping.RR.System.IO.FileMapping.that
+                {
+                    description
+                    {
+                        A file mapping to move from.
+                    }
+                }
+            }
+            function System.IO.FileMapping.operator.assign.P.System.IO.FileMapping.RR.System.IO.FileMapping
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.FileMapping.operator.assign.P.System.IO.FileMapping.RR.System.IO.FileMapping.__parameter0
+                {
+                    description
+                    {
+                        A file mapping to assign.
+                    }
+                }
+            }
+            function System.IO.FileMapping.Begin.C.P.System.IO.FileMapping
+            {
+                description
+                {
+                    Returns a pointer to the beginning of the file's data in memory.
+                }
+                returns System.IO.FileMapping.Begin.C.P.System.IO.FileMapping.returnValue
+                {
+                    description
+                    {
+                        Returns a pointer to the beginning of the file's data in memory.
+                    }
+                }
+            }
+            function System.IO.FileMapping.End.C.P.System.IO.FileMapping
+            {
+                description
+                {
+                    Returns a pointer one past the end of the file's data in memory.
+                }
+                returns System.IO.FileMapping.End.C.P.System.IO.FileMapping.returnValue
+                {
+                    description
+                    {
+                        Returns a pointer one past the end of the file's data in memory.
+                    }
+                }
+            }
+            function System.IO.FileMapping.constructor.P.System.IO.FileMapping.C.R.System.String
+            {
+                description
+                {
+                    Constructor. Opens the file with the given name and maps it's content to memory.
+                }
+                remarks
+                {
+                    Throws System.IO.FileMappingFailure if opening fails.
+                }
+                parameter System.IO.FileMapping.constructor.P.System.IO.FileMapping.C.R.System.String.filePath_
+                {
+                    description
+                    {
+                        The name of the file to open.
+                    }
+                }
+            }
+            function System.IO.FileMapping.FilePath.C.P.System.IO.FileMapping
+            {
+                description
+                {
+                    Returns the name of the file.
+                }
+                returns System.IO.FileMapping.FilePath.C.P.System.IO.FileMapping.returnValue
+                {
+                    description
+                    {
+                        Returns the name of the file.
+                    }
+                }
+            }
+            function System.IO.FileMapping.destructor.P.System.IO.FileMapping
+            {
+                description
+                {
+                    Destructor. Closes the file and releases memory.
+                }
+            }
+        }
+        class System.IO.FileMappingFailure
+        {
+            description
+            {
+                Exception thrown when opening a memory mapped file fails.
+            }
+            function System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
+            function System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.C.R.System.IO.FileMappingFailure
+            {
+                description
+                {
+                    Copy constructor.
+                }
+                parameter System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.C.R.System.IO.FileMappingFailure.that
+                {
+                    description
+                    {
+                        Argument to copy.
+                    }
+                }
+            }
+            function System.IO.FileMappingFailure.operator.assign.P.System.IO.FileMappingFailure.C.R.System.IO.FileMappingFailure
+            {
+                description
+                {
+                    Copy assignment.
+                }
+                parameter System.IO.FileMappingFailure.operator.assign.P.System.IO.FileMappingFailure.C.R.System.IO.FileMappingFailure.that
+                {
+                    description
+                    {
+                        Argument to assign.
+                    }
+                }
+            }
+            function System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.RR.System.IO.FileMappingFailure
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.RR.System.IO.FileMappingFailure.that
+                {
+                    description
+                    {
+                        Argument to move from.
+                    }
+                }
+            }
+            function System.IO.FileMappingFailure.operator.assign.P.System.IO.FileMappingFailure.RR.System.IO.FileMappingFailure
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.FileMappingFailure.operator.assign.P.System.IO.FileMappingFailure.RR.System.IO.FileMappingFailure.that
+                {
+                    description
+                    {
+                        Argument to assign from.
+                    }
+                }
+            }
+            function System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.C.R.System.String
+            {
+                description
+                {
+                    Constructor. Initializes the file mapping failure class with the given error message.
+                }
+                parameter System.IO.FileMappingFailure.constructor.P.System.IO.FileMappingFailure.C.R.System.String.message_
+                {
+                    description
+                    {
+                        An error message string.
+                    }
+                }
+            }
+            function System.IO.FileMappingFailure.destructor.P.System.IO.FileMappingFailure
+            {
+                description
+                {
                 }
             }
         }
@@ -22644,6 +25404,198 @@ library System
                 description
                 {
                     Destructor.
+                }
+            }
+        }
+        class System.IO.MemoryByteStream
+        {
+            description
+            {
+                Represents a stream of bytes in memory. 
+                Writing to the stream writes data to the end of the stream.
+                Reading from the stream reads data starting from the beginning of the stream.
+            }
+            function System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Default constructor. Constructs an empty memory byte strewam.
+                }
+            }
+            function System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream.RR.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Move constructor.
+                }
+                parameter System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream.RR.System.IO.MemoryByteStream.__parameter0
+                {
+                    description
+                    {
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.operator.assign.P.System.IO.MemoryByteStream.RR.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Move assignment.
+                }
+                parameter System.IO.MemoryByteStream.operator.assign.P.System.IO.MemoryByteStream.RR.System.IO.MemoryByteStream.__parameter0
+                {
+                    description
+                    {
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.Data.C.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Returns a pointer to the beginning of data.
+                }
+                returns System.IO.MemoryByteStream.Data.C.P.System.IO.MemoryByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns a pointer to the beginning of data.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream.P.byte.int
+            {
+                description
+                {
+                    Constructor. Initializes the memory byte stream with given data.
+                }
+                parameter System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Number of bytes in data buffer.
+                    }
+                }
+                parameter System.IO.MemoryByteStream.constructor.P.System.IO.MemoryByteStream.P.byte.int.data
+                {
+                    description
+                    {
+                        Buffer of data.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.Read.P.System.IO.MemoryByteStream.P.byte.int
+            {
+                description
+                {
+                    Reads at most given number of bytes from the memory stream to the given buffer.
+                    Returns the number of bytes read.
+                    Return value of 0 indicates end of stream.
+                }
+                parameter System.IO.MemoryByteStream.Read.P.System.IO.MemoryByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer to read to.
+                    }
+                }
+                parameter System.IO.MemoryByteStream.Read.P.System.IO.MemoryByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Maximum number of bytes to read.
+                    }
+                }
+                returns System.IO.MemoryByteStream.Read.P.System.IO.MemoryByteStream.P.byte.int.returnValue
+                {
+                    description
+                    {
+                        Returns the number of bytes read.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.ReadByte.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Reads one byte of data from the stream.
+                    Returns the byte read, or -1 if end of stream is encountered.
+                }
+                returns System.IO.MemoryByteStream.ReadByte.P.System.IO.MemoryByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns the byte read, or -1 if end of stream is encountered.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.ReadPos.C.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Returns reading position.
+                }
+                returns System.IO.MemoryByteStream.ReadPos.C.P.System.IO.MemoryByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns reading position.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.Size.C.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Returns the number of bytes contained in the stream.
+                }
+                returns System.IO.MemoryByteStream.Size.C.P.System.IO.MemoryByteStream.returnValue
+                {
+                    description
+                    {
+                        Returns the number of bytes contained in the stream.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.Write.P.System.IO.MemoryByteStream.byte
+            {
+                description
+                {
+                    Writes one byte of data to the end of the stream.
+                }
+                parameter System.IO.MemoryByteStream.Write.P.System.IO.MemoryByteStream.byte.x
+                {
+                    description
+                    {
+                        A byte to write.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.Write.P.System.IO.MemoryByteStream.P.byte.int
+            {
+                description
+                {
+                    Writes given number of bytes from the given buffer to the end of the stream.
+                }
+                parameter System.IO.MemoryByteStream.Write.P.System.IO.MemoryByteStream.P.byte.int.buf
+                {
+                    description
+                    {
+                        A buffer of data to write.
+                    }
+                }
+                parameter System.IO.MemoryByteStream.Write.P.System.IO.MemoryByteStream.P.byte.int.count
+                {
+                    description
+                    {
+                        Number of bytes to write.
+                    }
+                }
+            }
+            function System.IO.MemoryByteStream.destructor.P.System.IO.MemoryByteStream
+            {
+                description
+                {
+                    Destructor. Releases memory occupied by the stream.
                 }
             }
         }
@@ -24674,7 +27626,7 @@ library System
                 }
                 remarks
                 {
-                    First replaces each '\verb|\|' character of the path with the '/' character.
+                    First replaces each '|' character of the path with the '/' character.
                     Then, if the path consists of an alphabetical letter followed by the ':' character followed by the '/' character 
                     returns the path.
                     Otherwise, if the path consists of a '/' character, returns the path.
@@ -24823,6 +27775,30 @@ library System
                 }
             }
         }
+        function System.IO.LastWriteTimeLess.C.R.System.String.C.R.System.String
+        {
+            description
+            {
+            }
+            parameter System.IO.LastWriteTimeLess.C.R.System.String.C.R.System.String.filePath1
+            {
+                description
+                {
+                }
+            }
+            parameter System.IO.LastWriteTimeLess.C.R.System.String.C.R.System.String.filePath2
+            {
+                description
+                {
+                }
+            }
+            returns System.IO.LastWriteTimeLess.C.R.System.String.C.R.System.String.returnValue
+            {
+                description
+                {
+                }
+            }
+        }
         function System.IO.PathExists.C.R.System.String
         {
             description
@@ -24862,6 +27838,30 @@ library System
                 description
                 {
                     Returns the contents of the given file.
+                }
+            }
+        }
+        function System.IO.RemoveFile.C.R.System.String
+        {
+            description
+            {
+            }
+            parameter System.IO.RemoveFile.C.R.System.String.filePath
+            {
+                description
+                {
+                }
+            }
+        }
+        function System.IO.ThrowFileMappingFailure.C.R.System.String
+        {
+            description
+            {
+            }
+            parameter System.IO.ThrowFileMappingFailure.C.R.System.String.message
+            {
+                description
+                {
                 }
             }
         }
@@ -25356,6 +28356,35 @@ library System
                 }
             }
             owner System.IO.OutputStream;
+        }
+        enumType System.IO.FileMode
+        {
+            description
+            {
+                Open mode for System.IO.FileByteStream.
+            }
+            enumConstant System.IO.FileMode.append
+            {
+                description
+                {
+                    Opens the file for appending to the end of it.
+                }
+            }
+            enumConstant System.IO.FileMode.create
+            {
+                description
+                {
+                    Creates a file if it does not exists, or truncates it to zero bytes if exists.
+                    The file is opened for writing.
+                }
+            }
+            enumConstant System.IO.FileMode.open
+            {
+                description
+                {
+                    Opens the file for reading.
+                }
+            }
         }
         enumType System.IO.OpenMode
         {
@@ -26052,6 +29081,19 @@ library System
     {
         description
         {
+        }
+        class System.Support.ExDeleter.System.Exception
+        {
+            description
+            {
+            }
+            function System.Support.ExDeleter.System.Exception.constructor.P.System.Support.ExDeleter.System.Exception
+            {
+                description
+                {
+                    Default constructor.
+                }
+            }
         }
     }
     namespace System.Text

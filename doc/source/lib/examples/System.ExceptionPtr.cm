@@ -1,0 +1,66 @@
+using System;
+
+// This program writes the following message to the standard error stream:
+// FooException at 'C:/Temp/exptr/System.ExceptionPtr.cm' line 32:
+// exception from thread
+// call stack:
+// 1> function 'foo()' file C:/Temp/exptr/System.ExceptionPtr.cm line 32
+// 0> function 'ThreadFunction(void*)' file C:/Temp/exptr/System.ExceptionPtr.cm line 40
+
+public class FooException : Exception
+{
+    public FooException(const string& message_) : base(message_)
+    {
+    }
+}
+
+public class ThreadData
+{
+    public void SetException(ExceptionPtr&& exPtr_)
+    {
+        exPtr = exPtr_;
+    }
+    public ExceptionPtr GetException() const
+    {
+        return Rvalue(exPtr);
+    }
+    private ExceptionPtr exPtr;
+}
+
+void foo()
+{
+    throw FooException("exception from thread");
+}
+
+void ThreadFunction(void* data)
+{
+    ThreadData* threadData = cast<ThreadData*>(data);
+    try
+    {
+        foo();
+    }
+    catch (const Exception& ex)
+    {
+        ExceptionPtr exPtr = CaptureCurrentException();
+        threadData->SetException(Rvalue(exPtr));
+    }
+}
+
+void main()
+{
+    try
+    {
+        ThreadData threadData;
+        System.Threading.Thread thread(System.Threading.ThreadFun(ThreadFunction), &threadData);
+        thread.Join();
+        ExceptionPtr exPtr = threadData.GetException();
+        if (exPtr.HasException())
+        {
+            RethrowException(exPtr);
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.ToString() << endl();
+    }
+}

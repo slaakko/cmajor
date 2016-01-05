@@ -52,7 +52,7 @@
 \chapter{Description}
 \begin{flushleft}
 The \hyperlink{System.IO.Compression}{Compression} library contains streams that provide compression and decompression services.
-The library is implemented using \textbf{zlib} (\url{http://wwww.zlib.net}) and 
+The library is implemented using \textbf{zlib} (\url{http://wwww.zlib.net}) and
 \textbf{bzip2} (\url{http://www.bzip.org/}) libraries.
 
 \end{flushleft}
@@ -398,13 +398,13 @@ int main()
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, int, int)}
 & Constructor. Initializes the \textbf{BZip2Stream}
- class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress},
 given compression level and given compression work factor.
 
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int}{BZip2Stream(System.\-IO.\-ByteStream\&\-, int, int, int)}
 & Constructor. Initializes the \textbf{BZip2Stream}
- class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+ class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress},
 given compression level, given compression work factor and given buffer size.
 
 \\
@@ -414,21 +414,29 @@ given compression level, given compression work factor and given buffer size.
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int}{Read(byte*, int)}
 & Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream}{ReadByte()}
-& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
 and returns one byte of decompressed data.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.byte}{Write(byte)}
 & Writes one byte of data to an internal buffer, compresses it and writes the compressed data
 to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int}{Write(byte*, int)}
-& Writes given number of bytes from the given buffer to an internal buffer, 
+& Writes given number of bytes from the given buffer to an internal buffer,
 compresses it and writes the compressed data to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.BZip2Stream.destructor.P.System.IO.Compression.BZip2Stream}{$\sim$BZip2Stream()}
@@ -481,7 +489,7 @@ when the compression mode is \hyperlink{System.IO.Compression.CompressionMode.de
 \end{flushleft}
 \subsubsection*{Remarks}
 \begin{flushleft}
-When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel}, 
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel},
 default work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor} and default buffer size 16K for internal input and output buffers.
 
 \end{flushleft}
@@ -524,7 +532,7 @@ bufferSize\_
 \end{flushleft}
 \subsubsection*{Remarks}
 \begin{flushleft}
-When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel} and 
+When the compression mode is \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, the stream uses default compression level \hyperlink{System.IO.Compression.defaultBZip2CompressionLevel}{defaultBZip2CompressionLevel} and
 default work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{defaultBZip2WorkFactor}.
 
 \end{flushleft}
@@ -568,7 +576,7 @@ Sets the work factor \hyperlink{System.IO.Compression.defaultBZip2WorkFactor}{de
 
 \hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, int, int) Member Function}}
 \begin{flushleft}
-Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress},
 given compression level and given compression work factor.
 
 \end{flushleft}
@@ -589,7 +597,7 @@ underlyingStream\_
 \\
 compressionLevel\_
 & int
-& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K.
 Compression level 1 gives least compression and uses minimal memory.
 Compression level 9 gives the best compression but takes most memory.
 
@@ -612,7 +620,7 @@ Uses the default buffer size 16K for internal input and output buffers.
 
 \hypertarget{System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int}{\subsubsection*{BZip2Stream(System.IO.ByteStream\&, int, int, int) Member Function}}
 \begin{flushleft}
-Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress}, 
+Constructor. Initializes the \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} class using compression mode \hyperlink{System.IO.Compression.CompressionMode.compress}{compress},
 given compression level, given compression work factor and given buffer size.
 
 \end{flushleft}
@@ -633,7 +641,7 @@ underlyingStream\_
 \\
 compressionLevel\_
 & int
-& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+& Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K.
 Compression level 1 gives least compression and uses minimal memory.
 Compression level 9 gives the best compression but takes most memory.
 
@@ -671,6 +679,8 @@ Returns the compression mode.
 \hypertarget{System.IO.Compression.BZip2Stream.Read.P.System.IO.Compression.BZip2Stream.P.byte.int}{\subsubsection*{Read(byte*, int) Member Function}}
 \begin{flushleft}
 Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public int Read(byte* buf, int count);}
@@ -705,7 +715,7 @@ The return value of 0 indicates end of stream.
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in decompression process is encountered.
-If an error reading from the underlying byte stream is encountered, 
+If an error reading from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -714,8 +724,10 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 
 \hypertarget{System.IO.Compression.BZip2Stream.ReadByte.P.System.IO.Compression.BZip2Stream}{\subsubsection*{ReadByte() Member Function}}
 \begin{flushleft}
-Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
 and returns one byte of decompressed data.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public int ReadByte();}
@@ -728,7 +740,7 @@ Returns one byte of decompressed data, or -1 if end of stream is encountered.
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in decompression process is encountered.
-If an error reading from the underlying byte stream is encountered, 
+If an error reading from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -739,6 +751,8 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 \begin{flushleft}
 Writes one byte of data to an internal buffer, compresses it and writes the compressed data
 to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public void Write(byte x);}
@@ -762,7 +776,7 @@ x
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
-If an error writing from the underlying byte stream is encountered, 
+If an error writing from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -771,8 +785,10 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 
 \hypertarget{System.IO.Compression.BZip2Stream.Write.P.System.IO.Compression.BZip2Stream.P.byte.int}{\subsubsection*{Write(byte*, int) Member Function}}
 \begin{flushleft}
-Writes given number of bytes from the given buffer to an internal buffer, 
+Writes given number of bytes from the given buffer to an internal buffer,
 compresses it and writes the compressed data to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public void Write(byte* buf, int count);}
@@ -801,7 +817,7 @@ count
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
-If an error writing from the underlying byte stream is encountered, 
+If an error writing from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -1101,21 +1117,29 @@ given buffer size.
 \\
 \hyperlink{System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int}{Read(byte*, int)}
 & Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream}{ReadByte()}
-& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+& Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
 and returns one byte of decompressed data.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.byte}{Write(byte)}
 & Writes one byte of data to an internal buffer, compresses it and writes the compressed data
 to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int}{Write(byte*, int)}
-& Writes given number of bytes from the given buffer to an internal buffer, 
+& Writes given number of bytes from the given buffer to an internal buffer,
 compresses it and writes the compressed data to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \\
 \hyperlink{System.IO.Compression.DeflateStream.destructor.P.System.IO.Compression.DeflateStream}{$\sim$DeflateStream()}
@@ -1312,6 +1336,8 @@ Returns the compression mode.
 \hypertarget{System.IO.Compression.DeflateStream.Read.P.System.IO.Compression.DeflateStream.P.byte.int}{\subsubsection*{Read(byte*, int) Member Function}}
 \begin{flushleft}
 Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public int Read(byte* buf, int count);}
@@ -1346,7 +1372,7 @@ The return value of 0 indicates end of stream.
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in decompression process is encountered.
-If an error reading from the underlying byte stream is encountered, 
+If an error reading from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -1355,8 +1381,10 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 
 \hypertarget{System.IO.Compression.DeflateStream.ReadByte.P.System.IO.Compression.DeflateStream}{\subsubsection*{ReadByte() Member Function}}
 \begin{flushleft}
-Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
 and returns one byte of decompressed data.
+Actually the decompression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public int ReadByte();}
@@ -1369,7 +1397,7 @@ Returns one byte of decompressed data, or -1 if end of stream is encountered.
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in decompression process is encountered.
-If an error reading from the underlying byte stream is encountered, 
+If an error reading from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -1380,6 +1408,8 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 \begin{flushleft}
 Writes one byte of data to an internal buffer, compresses it and writes the compressed data
 to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public void Write(byte x);}
@@ -1403,7 +1433,7 @@ x
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.DeflateException}{DeflateException} if an error in compression process is encountered.
-If an error writing from the underlying byte stream is encountered, 
+If an error writing from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -1412,8 +1442,10 @@ System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-N
 
 \hypertarget{System.IO.Compression.DeflateStream.Write.P.System.IO.Compression.DeflateStream.P.byte.int}{\subsubsection*{Write(byte*, int) Member Function}}
 \begin{flushleft}
-Writes given number of bytes from the given buffer to an internal buffer, 
+Writes given number of bytes from the given buffer to an internal buffer,
 compresses it and writes the compressed data to the underlying byte stream.
+Actually the compression is not done on per call basis but more efficient means, but
+the result is as described.
 
 \end{flushleft}
 \subsubsection*{Syntax}\texttt{public void Write(byte* buf, int count);}
@@ -1442,7 +1474,7 @@ count
 \subsubsection*{Remarks}
 \begin{flushleft}
 Throws \hyperlink{System.IO.Compression.BZip2Exception}{BZip2Exception} if an error in compression process is encountered.
-If an error writing from the underlying byte stream is encountered, 
+If an error writing from the underlying byte stream is encountered,
 can also throw System.\-IO.\-IOException if the underlying byte stream is System.\-IO.\-FileByteStream, or
 System.\-Net.\-Sockets.\-SocketError if the underlying byte stream is System.\-Net.\-Sockets.\-SocketByteStream.
 
@@ -1573,7 +1605,7 @@ Compression mode for \hyperlink{System.IO.Compression.BZip2Stream}{BZip2Stream} 
 \hypertarget{System.IO.Compression.optimalDeflateCompression}{optimalDeflateCompression}
 & int
 & 9
-& Best defalt compression.
+& Best deflate compression.
 
 \\
 \end{supertabular}
