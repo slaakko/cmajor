@@ -3,7 +3,7 @@ library System.IO.Compression
     description
     {
         The System.IO.Compression library contains streams that provide compression and decompression services.
-        The library is implemented using "\textbf{zlib}" ("\url{http://wwww.zlib.net}") and 
+        The library is implemented using "\textbf{zlib}" ("\url{http://wwww.zlib.net}") and
         "\textbf{bzip2}" ("\url{http://www.bzip.org/}") libraries.
     }
     chapter <usage.tex>;
@@ -1123,7 +1123,7 @@ library System.IO.Compression
                 }
                 remarks
                 {
-                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel, 
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel,
                     default work factor System.IO.Compression.defaultBZip2WorkFactor and default buffer size 16K for internal input and output buffers.
                 }
                 parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.mode_
@@ -1151,7 +1151,7 @@ library System.IO.Compression
                 }
                 remarks
                 {
-                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel and 
+                    When the compression mode is System.IO.Compression.CompressionMode.compress, the stream uses default compression level System.IO.Compression.defaultBZip2CompressionLevel and
                     default work factor System.IO.Compression.defaultBZip2WorkFactor.
                 }
                 parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.System.IO.Compression.CompressionMode.int.bufferSize_
@@ -1208,7 +1208,7 @@ library System.IO.Compression
             {
                 description
                 {
-                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress, 
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress,
                     given compression level and given compression work factor.
                 }
                 remarks
@@ -1219,7 +1219,7 @@ library System.IO.Compression
                 {
                     description
                     {
-                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K.
                         Compression level 1 gives least compression and uses minimal memory.
                         Compression level 9 gives the best compression but takes most memory.
                     }
@@ -1244,7 +1244,7 @@ library System.IO.Compression
             {
                 description
                 {
-                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress, 
+                    Constructor. Initializes the System.IO.Compression.BZip2Stream class using compression mode System.IO.Compression.CompressionMode.compress,
                     given compression level, given compression work factor and given buffer size.
                 }
                 parameter System.IO.Compression.BZip2Stream.constructor.P.System.IO.Compression.BZip2Stream.R.System.IO.ByteStream.int.int.int.bufferSize_
@@ -1258,7 +1258,7 @@ library System.IO.Compression
                 {
                     description
                     {
-                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K. 
+                        Compression level. Can be in range 1 to 9 inclusive. Compression level N sets bzip2 block size to N * 100K.
                         Compression level 1 gives least compression and uses minimal memory.
                         Compression level 9 gives the best compression but takes most memory.
                     }
@@ -1298,11 +1298,13 @@ library System.IO.Compression
                 description
                 {
                     Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+                    Actually the decompression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.BZip2Exception if an error in decompression process is encountered.
-                    If an error reading from the underlying byte stream is encountered, 
+                    If an error reading from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1333,13 +1335,15 @@ library System.IO.Compression
             {
                 description
                 {
-                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
                     and returns one byte of decompressed data.
+                    Actually the decompression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.BZip2Exception if an error in decompression process is encountered.
-                    If an error reading from the underlying byte stream is encountered, 
+                    If an error reading from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1357,11 +1361,13 @@ library System.IO.Compression
                 {
                     Writes one byte of data to an internal buffer, compresses it and writes the compressed data
                     to the underlying byte stream.
+                    Actually the compression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
-                    If an error writing from the underlying byte stream is encountered, 
+                    If an error writing from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1377,13 +1383,15 @@ library System.IO.Compression
             {
                 description
                 {
-                    Writes given number of bytes from the given buffer to an internal buffer, 
+                    Writes given number of bytes from the given buffer to an internal buffer,
                     compresses it and writes the compressed data to the underlying byte stream.
+                    Actually the compression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
-                    If an error writing from the underlying byte stream is encountered, 
+                    If an error writing from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1680,11 +1688,13 @@ library System.IO.Compression
                 description
                 {
                     Reads compressed data from the underlying byte stream and decompresses it to the given buffer.
+                    Actually the decompression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.DeflateException if an error in decompression process is encountered.
-                    If an error reading from the underlying byte stream is encountered, 
+                    If an error reading from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1715,13 +1725,15 @@ library System.IO.Compression
             {
                 description
                 {
-                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer 
+                    Reads compressed data from the underlying byte stream, decompresses it to an internal buffer
                     and returns one byte of decompressed data.
+                    Actually the decompression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.DeflateException if an error in decompression process is encountered.
-                    If an error reading from the underlying byte stream is encountered, 
+                    If an error reading from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1739,11 +1751,13 @@ library System.IO.Compression
                 {
                     Writes one byte of data to an internal buffer, compresses it and writes the compressed data
                     to the underlying byte stream.
+                    Actually the compression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.DeflateException if an error in compression process is encountered.
-                    If an error writing from the underlying byte stream is encountered, 
+                    If an error writing from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1759,13 +1773,15 @@ library System.IO.Compression
             {
                 description
                 {
-                    Writes given number of bytes from the given buffer to an internal buffer, 
+                    Writes given number of bytes from the given buffer to an internal buffer,
                     compresses it and writes the compressed data to the underlying byte stream.
+                    Actually the compression is not done on per call basis but more efficient means, but
+                    the result is as described.
                 }
                 remarks
                 {
                     Throws System.IO.Compression.BZip2Exception if an error in compression process is encountered.
-                    If an error writing from the underlying byte stream is encountered, 
+                    If an error writing from the underlying byte stream is encountered,
                     can also throw System.IO.IOException if the underlying byte stream is System.IO.FileByteStream, or
                     System.Net.Sockets.SocketError if the underlying byte stream is System.Net.Sockets.SocketByteStream.
                 }
@@ -1922,7 +1938,7 @@ library System.IO.Compression
         {
             description
             {
-                Best defalt compression.
+                Best deflate compression.
             }
         }
     }

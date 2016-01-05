@@ -1,0 +1,1614 @@
+\documentclass[a4paper,oneside,11.000000pt]{book}
+
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{pifont}
+\usepackage{a4wide}
+\usepackage{url}
+\usepackage{float}
+\usepackage{layouts}
+\usepackage{supertabular}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage{syntax}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+\setcounter{secnumdepth}{10}
+\setcounter{tocdepth}{4}
+
+\titleformat{\chapter}[hang]{\bf\Huge}{\arabic{chapter}}{1em}{}{}
+\titleclass{\subchapter}{straight}[\chapter]
+\newcounter{subchapter}
+\renewcommand{\thesubchapter}{\thechapter.\arabic{subchapter}}
+\titleformat{\subchapter}[hang]{\bf\huge}{\thesubchapter}{0.5em}{}{}
+\titlespacing{\subchapter}{0pt}{0pt}{0pt}
+\renewcommand\thesection{\thesubchapter.\arabic{section}}
+\makeatletter
+\newcommand*\l@subchapter{\@dottedtocline{1}{1.5em}{2.3em}}
+\renewcommand\l@section{\@dottedtocline{2}{3.8em}{3.2em}}
+\renewcommand\l@subsection{\@dottedtocline{3}{7em}{4.1em}}
+\renewcommand\l@subsubsection{\@dottedtocline{4}{11.1em}{5em}}
+\makeatother
+
+\makeatletter
+\renewcommand\subparagraph{\@startsection{subparagraph}{5}{0mm}{-\baselineskip}{0.5\baselineskip}{\normalfont\normalsize\scshape}}
+\makeatother
+
+\lstdefinelanguage{Cmajor}{morekeywords={bool, true, false, sbyte, byte, short, ushort, int, uint, long, ulong, float, double, char, void, enum, cast, namespace, using, static, extern, is, explicit, delegate, inline, cdecl, nothrow, public, protected, private, internal, virtual, abstract, override, suppress, default, operator, class, return, if, else, switch, case, default, while, do, for, break, continue, goto, typedef, typename, const, null, this, base, construct, destroy, new, delete, sizeof, try, catch, throw, concept, where, axiom, and, or, not},sensitive=true,morecomment=[l]{//},morecomment=[s]{/*}{*/},morestring=[b]",morestring=[b]',}\lstloadlanguages{Cmajor}
+\lstset{language=Cmajor,showstringspaces=false,breaklines=true,basicstyle=\small}
+\makeatletter\def\toclevel@chapter{0}\def\toclevel@subchapter{1}\def\toclevel@section{2}\def\toclevel@subsection{3}\def\toclevel@subsubsection{4}\makeatother\begin{document}
+\clearpage
+
+\frontmatter
+\title{\textsc{System.Net.Sockets Library Reference}
+}
+\date{\today}
+\maketitle
+\tableofcontents
+
+\clearpage
+\chapter{Description}
+\begin{flushleft}
+Provides support for TCP sockets.
+
+\end{flushleft}
+\chapter{Copyrights}
+\begin{verbatim}
+========================================================================
+Copyright (c) 2012-2016 Seppo Laakko
+http://sourceforge.net/projects/cmajor/
+
+Distributed under the GNU General Public License, version 3 (GPLv3).
+(See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================
+
+\end{verbatim}
+\clearpage
+\chapter{Namespaces}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.52406cm}!{\raggedright}p{10.6259cm}}
+\textbf{Namespace}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{global}{Global}
+& Global namespace contains C functions for the implementation.
+
+\\
+\hyperlink{System.Net.Sockets}{System.Net.Sockets}
+& Provides support for TCP sockets.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\mainmatter
+
+\chapter{Usage}
+
+\section{Referencing the System.Net.Sockets library}
+
+Right-click a project node in IDE \verb.|. Project References... \verb.|.
+Add System Extension Library Reference... \verb.|.
+enable \emph{System.Net.Sockets} check box
+
+\begin{flushleft}
+or add following line to your project's .cmp file:
+\begin{verbatim}
+reference <ext/System.Net.Sockets/System.Net.Sockets.cml>;
+\end{verbatim}
+\end{flushleft}
+\hypertarget{global}{\chapter{Global Namespace}}
+\begin{flushleft}
+Global namespace contains C functions for the implementation.
+
+\end{flushleft}
+\clearpage
+\subchapter{Concepts}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Concept}
+& \textbf{Description}
+\\
+\hline
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\clearpage
+\clearpage
+\clearpage
+\clearpage
+\clearpage
+\clearpage
+
+\subchapter{Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\clearpage
+\subchapter{Enumerations}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Enumeration}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{ShutdownMode}{ShutdownMode}
+& Mode for the shut down operation.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\hypertarget{ShutdownMode}{\subsection{ShutdownMode Enumeration}}
+\begin{flushleft}
+Mode for the shut down operation.
+
+\end{flushleft}
+\subsubsection*{Enumeration Constants}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Constant}
+& \textbf{Value}
+& \textbf{Description}
+\\
+\hline
+\hypertarget{ShutdownMode.both}{both}
+& 2
+& Shuts down both receiving and sending.
+
+\\
+\hypertarget{ShutdownMode.receive}{receive}
+& 0
+& Shuts down receiving from a socket.
+
+\\
+\hypertarget{ShutdownMode.send}{send}
+& 1
+& Shuts down sending to a socket.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets}{\chapter{System.Net.Sockets Namespace}}\begin{flushleft}
+Provides support for TCP sockets.
+
+\end{flushleft}
+\clearpage
+
+\subchapter{Classes}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{5.56131cm}!{\raggedright}p{9.58869cm}}
+\textbf{Class}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.NetworkBuffer}{NetworkBuffer}
+& A handle to a dynamically allocated memory.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream}{SocketByteStream}
+& Represent stream of bytes connected to a \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError}{SocketError}
+& An exception class throw when a socket operation fails.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibrary}{SocketLibrary}
+& Represents the socket library initializer implemented as a singleton.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException}{SocketLibraryException}
+& Exception class thrown when the initialization of the socket library fails.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}
+& Represents a TCP socket.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer}{\section{NetworkBuffer Class}}\begin{flushleft}
+A handle to a dynamically allocated memory.
+
+\end{flushleft}
+
+\subsection*{Syntax}\texttt{public class NetworkBuffer;}
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.NetworkBuffer.constructor.P.System.Net.Sockets.NetworkBuffer.RR.System.Net.Sockets.NetworkBuffer}{NetworkBuffer(System.\-Net.\-Sockets.\-NetworkBuffer\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Net.Sockets.NetworkBuffer.operator.assign.P.System.Net.Sockets.NetworkBuffer.RR.System.Net.Sockets.NetworkBuffer}{operator=(System.\-Net.\-Sockets.\-NetworkBuffer\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Net.Sockets.NetworkBuffer.Mem.C.P.System.Net.Sockets.NetworkBuffer}{Mem() const}
+& Returns a pointer to the allocated memory block.
+
+\\
+\hyperlink{System.Net.Sockets.NetworkBuffer.constructor.P.System.Net.Sockets.NetworkBuffer.int}{NetworkBuffer(int)}
+& Constructor. Allocates specified number of bytes from the system.
+
+\\
+\hyperlink{System.Net.Sockets.NetworkBuffer.Size.C.P.System.Net.Sockets.NetworkBuffer}{Size() const}
+& Returns the size of the allocated memory block.
+
+\\
+\hyperlink{System.Net.Sockets.NetworkBuffer.destructor.P.System.Net.Sockets.NetworkBuffer}{$\sim$NetworkBuffer()}
+& Destructor. Frees the allocated memory back to the system.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.constructor.P.System.Net.Sockets.NetworkBuffer.RR.System.Net.Sockets.NetworkBuffer}{\subsubsection*{NetworkBuffer(System.Net.Sockets.NetworkBuffer\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public NetworkBuffer(System.Net.Sockets.NetworkBuffer\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.NetworkBuffer}{System.\-Net.\-Sockets.\-NetworkBuffer\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.operator.assign.P.System.Net.Sockets.NetworkBuffer.RR.System.Net.Sockets.NetworkBuffer}{\subsubsection*{operator=(System.Net.Sockets.NetworkBuffer\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Net.Sockets.NetworkBuffer\&\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Net.Sockets.NetworkBuffer}{System.\-Net.\-Sockets.\-NetworkBuffer\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.Mem.C.P.System.Net.Sockets.NetworkBuffer}{\subsubsection*{Mem() const Member Function}}
+\begin{flushleft}
+Returns a pointer to the allocated memory block.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void* Mem() const;}
+
+\subsubsection*{Returns}void*
+\begin{flushleft}
+Returns a pointer to the allocated memory block.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.constructor.P.System.Net.Sockets.NetworkBuffer.int}{\subsubsection*{NetworkBuffer(int) Member Function}}
+\begin{flushleft}
+Constructor. Allocates specified number of bytes from the system.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public NetworkBuffer(int size\_);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+size\_
+& int
+& The number of bytes to allocate.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.Size.C.P.System.Net.Sockets.NetworkBuffer}{\subsubsection*{Size() const Member Function}}
+\begin{flushleft}
+Returns the size of the allocated memory block.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int Size() const;}
+
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the size of the allocated memory block.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.NetworkBuffer.destructor.P.System.Net.Sockets.NetworkBuffer}{\subsubsection*{$\sim$NetworkBuffer() Member Function}}
+\begin{flushleft}
+Destructor. Frees the allocated memory back to the system.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$NetworkBuffer();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream}{\section{SocketByteStream Class}}
+\begin{flushleft}
+Represent stream of bytes connected to a \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class SocketByteStream;}
+
+\subsection*{Base Class}System.IO.ByteStream\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream}{SocketByteStream()}
+& Default constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.SocketByteStream}{SocketByteStream(System.\-Net.\-Sockets.\-SocketByteStream\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.operator.assign.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.SocketByteStream}{operator=(System.\-Net.\-Sockets.\-SocketByteStream\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.Read.P.System.Net.Sockets.SocketByteStream.P.byte.int}{Read(byte*, int)}
+& Reads at most given number of bytes from the \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket} to the given buffer.
+Returns the number of bytes read.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.ReadByte.P.System.Net.Sockets.SocketByteStream}{ReadByte()}
+& Reads one byte of data from the \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket} and returns it.
+Return value of -1 indicates peer has shut down the connection (end of stream).
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.TcpSocket}{SocketByteStream(System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-)}
+& Constructor. Initializes the socket byte stream with the given \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.C.R.System.String.C.R.System.String}{SocketByteStream(const System.\-String\&\-, const System.\-String\&\-)}
+& Constructor. Initializes the socket byte stream by creating a TCP socket and connecting it to the specified node and service.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.Write.P.System.Net.Sockets.SocketByteStream.byte}{Write(byte)}
+& Writes given byte to the socket byte stream.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.Write.P.System.Net.Sockets.SocketByteStream.P.byte.int}{Write(byte*, int)}
+& Writes given number of bytes from the given buffer to the socket byte stream.
+
+\\
+\hyperlink{System.Net.Sockets.SocketByteStream.destructor.P.System.Net.Sockets.SocketByteStream}{$\sim$SocketByteStream()}
+& Destructor. Closes the socket.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream}{\subsubsection*{SocketByteStream() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketByteStream();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.SocketByteStream}{\subsubsection*{SocketByteStream(System.Net.Sockets.SocketByteStream\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketByteStream(System.Net.Sockets.SocketByteStream\&\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Net.Sockets.SocketByteStream}{System.\-Net.\-Sockets.\-SocketByteStream\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.operator.assign.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.SocketByteStream}{\subsubsection*{operator=(System.Net.Sockets.SocketByteStream\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Net.Sockets.SocketByteStream\&\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Net.Sockets.SocketByteStream}{System.\-Net.\-Sockets.\-SocketByteStream\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.Read.P.System.Net.Sockets.SocketByteStream.P.byte.int}{\subsubsection*{Read(byte*, int) Member Function}}
+\begin{flushleft}
+Reads at most given number of bytes from the \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket} to the given buffer.
+Returns the number of bytes read.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int Read(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer to read to.
+
+\\
+count
+& int
+& Maximum number of bytes to read.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns number of bytes read.
+Return value of 0 indicates peer has shut down the connection (end of stream).
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if reading fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.ReadByte.P.System.Net.Sockets.SocketByteStream}{\subsubsection*{ReadByte() Member Function}}
+\begin{flushleft}
+Reads one byte of data from the \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket} and returns it.
+Return value of -1 indicates peer has shut down the connection (end of stream).
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public int ReadByte();}
+\subsubsection*{Returns}
+int
+\begin{flushleft}
+Returns the byte read, or -1 if end of stream encountered.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if reading fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.RR.System.Net.Sockets.TcpSocket}{\subsubsection*{SocketByteStream(System.Net.Sockets.TcpSocket\&\&) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the socket byte stream with the given \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketByteStream(System.Net.Sockets.TcpSocket\&\& socket\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.43869cm}!{\raggedright}p{8.42798cm}!{\raggedright}p{3.31976cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+socket\_
+& \hyperlink{System.Net.Sockets.TcpSocket}{System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-}
+& A \hyperlink{System.Net.Sockets.TcpSocket}{TcpSocket}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.constructor.P.System.Net.Sockets.SocketByteStream.C.R.System.String.C.R.System.String}{\subsubsection*{SocketByteStream(const System.String\&, const System.String\&) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the socket byte stream by creating a TCP socket and connecting it to the specified node and service.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketByteStream(const System.String\& node, const System.String\& service);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.56801cm}!{\raggedright}p{4.63128cm}!{\raggedright}p{5.23538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+node
+& const System.\-String\&\-
+& A host name or an IP address to connect.
+
+\\
+service
+& const System.\-String\&\-
+& A protocol name or port number to connect.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if connecting fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.Write.P.System.Net.Sockets.SocketByteStream.byte}{\subsubsection*{Write(byte) Member Function}}\begin{flushleft}
+Writes given byte to the socket byte stream.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public void Write(byte x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& byte
+& A byte to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if writing fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.Write.P.System.Net.Sockets.SocketByteStream.P.byte.int}{\subsubsection*{Write(byte*, int) Member Function}}
+\begin{flushleft}
+Writes given number of bytes from the given buffer to the socket byte stream.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Write(byte* buf, int count);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& byte*
+& A buffer of data to write.
+
+\\
+count
+& int
+& Number of bytes to write.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if writing fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketByteStream.destructor.P.System.Net.Sockets.SocketByteStream}{\subsubsection*{$\sim$SocketByteStream() Member Function}}\begin{flushleft}
+Destructor. Closes the socket.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public $\sim$SocketByteStream();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError}{\section{SocketError Class}}
+\begin{flushleft}
+An exception class throw when a socket operation fails.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class SocketError;}
+\subsection*{Base Class}
+System.Exception\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError}{SocketError()}
+& Default constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.Net.Sockets.SocketError}{SocketError(const System.\-Net.\-Sockets.\-SocketError\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.operator.assign.P.System.Net.Sockets.SocketError.C.R.System.Net.Sockets.SocketError}{operator=(const System.\-Net.\-Sockets.\-SocketError\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.RR.System.Net.Sockets.SocketError}{SocketError(System.\-Net.\-Sockets.\-SocketError\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.operator.assign.P.System.Net.Sockets.SocketError.RR.System.Net.Sockets.SocketError}{operator=(System.\-Net.\-Sockets.\-SocketError\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.ErrorCode.C.P.System.Net.Sockets.SocketError}{ErrorCode() const}
+& Returns the error code.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.String.C.R.System.String.int}{SocketError(const System.\-String\&\-, const System.\-String\&\-, int)}
+& Constructor. Initializes the socket error with the specified operation text, error description text and error code.
+
+\\
+\hyperlink{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.String.int}{SocketError(const System.\-String\&\-, int)}
+& Constructor. Initializes the socket error with the specified operation text, retrieved error description and the specified error code.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError}{\subsubsection*{SocketError() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketError();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.Net.Sockets.SocketError}{\subsubsection*{SocketError(const System.Net.Sockets.SocketError\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketError(const System.Net.Sockets.SocketError\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Net.Sockets.SocketError}{const System.\-Net.\-Sockets.\-SocketError\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.operator.assign.P.System.Net.Sockets.SocketError.C.R.System.Net.Sockets.SocketError}{\subsubsection*{operator=(const System.Net.Sockets.SocketError\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Net.Sockets.SocketError\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.89046cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketError}{const System.\-Net.\-Sockets.\-SocketError\&\-}
+& Argument to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.RR.System.Net.Sockets.SocketError}{\subsubsection*{SocketError(System.Net.Sockets.SocketError\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketError(System.Net.Sockets.SocketError\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketError}{System.\-Net.\-Sockets.\-SocketError\&\-\&\-}
+& Argument to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.operator.assign.P.System.Net.Sockets.SocketError.RR.System.Net.Sockets.SocketError}{\subsubsection*{operator=(System.Net.Sockets.SocketError\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Net.Sockets.SocketError\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketError}{System.\-Net.\-Sockets.\-SocketError\&\-\&\-}
+& Argument to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.ErrorCode.C.P.System.Net.Sockets.SocketError}{\subsubsection*{ErrorCode() const Member Function}}\begin{flushleft}
+Returns the error code.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public int ErrorCode() const;}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the error code.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.String.C.R.System.String.int}{\subsubsection*{SocketError(const System.String\&, const System.String\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the socket error with the specified operation text, error description text and error code.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketError(const System.String\& operation, const System.String\& errorMessage, int errorCode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{3.02071cm}!{\raggedright}p{4.63128cm}!{\raggedright}p{5.23538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+operation
+& const System.\-String\&\-
+& Description of the failed operation.
+
+\\
+errorMessage
+& const System.\-String\&\-
+& Description of the error.
+
+\\
+errorCode\_
+& int
+& Error code.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketError.constructor.P.System.Net.Sockets.SocketError.C.R.System.String.int}{\subsubsection*{SocketError(const System.String\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the socket error with the specified operation text, retrieved error description and the specified error code.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketError(const System.String\& operation, int errorCode\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+operation
+& const System.\-String\&\-
+& Description of failed operation.
+
+\\
+errorCode\_
+& int
+& Error code.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibrary}{\section{SocketLibrary Class}}
+\begin{flushleft}
+Represents the socket library initializer implemented as a singleton.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class SocketLibrary;}
+
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{4.19644cm}!{\raggedright}p{10.9536cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.SocketLibrary.Init.P.System.Net.Sockets.SocketLibrary}{Init()}
+& Initializes the socket library.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibrary.Instance}{Instance()}
+& Returns a reference to the socket library singleton instance.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibrary.destructor.P.System.Net.Sockets.SocketLibrary}{$\sim$SocketLibrary()}
+& Destructor. Uninitializes the socket library.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibrary.Init.P.System.Net.Sockets.SocketLibrary}{\subsubsection*{Init() Member Function}}\begin{flushleft}
+Initializes the socket library.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public void Init();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibrary.Instance}{\subsubsection*{Instance() Member Function}}
+\begin{flushleft}
+Returns a reference to the socket library singleton instance.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public static System.Net.Sockets.SocketLibrary\& Instance();}
+\subsubsection*{Returns}
+\hyperlink{System.Net.Sockets.SocketLibrary}{System.\-Net.\-Sockets.\-SocketLibrary\&\-}
+\begin{flushleft}
+Returns a reference to the socket library singleton instance.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibrary.destructor.P.System.Net.Sockets.SocketLibrary}{\subsubsection*{$\sim$SocketLibrary() Member Function}}
+\begin{flushleft}
+Destructor. Uninitializes the socket library.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$SocketLibrary();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException}{\section{SocketLibraryException Class}}
+\begin{flushleft}
+Exception class thrown when the initialization of the socket library fails.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class SocketLibraryException;}
+
+\subsection*{Base Class}System.Exception\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException}{SocketLibraryException()}
+& Default constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.C.R.System.Net.Sockets.SocketLibraryException}{SocketLibraryException(const System.\-Net.\-Sockets.\-SocketLibraryException\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException.operator.assign.P.System.Net.Sockets.SocketLibraryException.C.R.System.Net.Sockets.SocketLibraryException}{operator=(const System.\-Net.\-Sockets.\-SocketLibraryException\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.RR.System.Net.Sockets.SocketLibraryException}{SocketLibraryException(System.\-Net.\-Sockets.\-SocketLibraryException\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException.operator.assign.P.System.Net.Sockets.SocketLibraryException.RR.System.Net.Sockets.SocketLibraryException}{operator=(System.\-Net.\-Sockets.\-SocketLibraryException\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.C.R.System.String}{SocketLibraryException(const System.\-String\&\-)}
+& Constructor. Initializes the socket library exception with the specified error message.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException}{\subsubsection*{SocketLibraryException() Member Function}}\begin{flushleft}
+Default constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketLibraryException();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.C.R.System.Net.Sockets.SocketLibraryException}{\subsubsection*{SocketLibraryException(const System.Net.Sockets.SocketLibraryException\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketLibraryException(const System.Net.Sockets.SocketLibraryException\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Net.Sockets.SocketLibraryException}{const System.\-Net.\-Sockets.\-SocketLibraryException\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.operator.assign.P.System.Net.Sockets.SocketLibraryException.C.R.System.Net.Sockets.SocketLibraryException}{\subsubsection*{operator=(const System.Net.Sockets.SocketLibraryException\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Net.Sockets.SocketLibraryException\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.89046cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketLibraryException}{const System.\-Net.\-Sockets.\-SocketLibraryException\&\-}
+& Argument to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.RR.System.Net.Sockets.SocketLibraryException}{\subsubsection*{SocketLibraryException(System.Net.Sockets.SocketLibraryException\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketLibraryException(System.Net.Sockets.SocketLibraryException\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketLibraryException}{System.\-Net.\-Sockets.\-SocketLibraryException\&\-\&\-}
+& Argument to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.operator.assign.P.System.Net.Sockets.SocketLibraryException.RR.System.Net.Sockets.SocketLibraryException}{\subsubsection*{operator=(System.Net.Sockets.SocketLibraryException\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Net.Sockets.SocketLibraryException\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.SocketLibraryException}{System.\-Net.\-Sockets.\-SocketLibraryException\&\-\&\-}
+& Argument to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.SocketLibraryException.constructor.P.System.Net.Sockets.SocketLibraryException.C.R.System.String}{\subsubsection*{SocketLibraryException(const System.String\&) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the socket library exception with the specified error message.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public SocketLibraryException(const System.String\& message\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+message\_
+& const System.\-String\&\-
+& An error message.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\hypertarget{System.Net.Sockets.TcpSocket}{\section{TcpSocket Class}}
+\begin{flushleft}
+Represents a TCP socket.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class TcpSocket;}
+
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket}{TcpSocket()}
+& Default constructor. Creates an unbound TCP socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.RR.System.Net.Sockets.TcpSocket}{TcpSocket(System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.operator.assign.P.System.Net.Sockets.TcpSocket.RR.System.Net.Sockets.TcpSocket}{operator=(System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Accept.P.System.Net.Sockets.TcpSocket}{Accept()}
+& Accepts a connection to a bound socket and returns a new connected TCP socket that represents the connection.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Bind.P.System.Net.Sockets.TcpSocket.int}{Bind(int)}
+& Binds the socket to a port.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Close.P.System.Net.Sockets.TcpSocket}{Close()}
+& Closes the socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.GetSocketHandle.C.P.System.Net.Sockets.TcpSocket}{GetSocketHandle() const}
+& Returns the socket handle.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Listen.P.System.Net.Sockets.TcpSocket.int}{Listen(int)}
+& Begins listening connections to a bound TCP socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Receive.P.System.Net.Sockets.TcpSocket.P.void.int}{Receive(void*, int)}
+& Receives data from a connected socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.ReceiveAll.P.System.Net.Sockets.TcpSocket}{ReceiveAll()}
+& Receives rest of data from a connected socket.
+That is: receives data until the peer shuts down its sending side of the connection.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Send.P.System.Net.Sockets.TcpSocket.C.R.System.String}{Send(const System.\-String\&\-)}
+& Sends a string of data to a connected socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Send.P.System.Net.Sockets.TcpSocket.C.P.void.int}{Send(const void*, int)}
+& Sends data to a connected socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.Shutdown.P.System.Net.Sockets.TcpSocket.ShutdownMode}{Shutdown(ShutdownMode)}
+& Shuts down a connected socket.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.C.R.System.String.C.R.System.String}{TcpSocket(const System.\-String\&\-, const System.\-String\&\-)}
+& Constructor. Creates a TCP socket and connects it to the specified node and service.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.int}{TcpSocket(int)}
+& Constructor. Initializes a TCP socket with an existing socket handle.
+
+\\
+\hyperlink{System.Net.Sockets.TcpSocket.destructor.P.System.Net.Sockets.TcpSocket}{$\sim$TcpSocket()}
+& Destructor. Closes the socket if it is bound or connected.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket}{\subsubsection*{TcpSocket() Member Function}}
+\begin{flushleft}
+Default constructor. Creates an unbound TCP socket.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public TcpSocket();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.RR.System.Net.Sockets.TcpSocket}{\subsubsection*{TcpSocket(System.Net.Sockets.TcpSocket\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public TcpSocket(System.Net.Sockets.TcpSocket\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.TcpSocket}{System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.operator.assign.P.System.Net.Sockets.TcpSocket.RR.System.Net.Sockets.TcpSocket}{\subsubsection*{operator=(System.Net.Sockets.TcpSocket\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Net.Sockets.TcpSocket\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Net.Sockets.TcpSocket}{System.\-Net.\-Sockets.\-TcpSocket\&\-\&\-}
+& 
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Accept.P.System.Net.Sockets.TcpSocket}{\subsubsection*{Accept() Member Function}}
+\begin{flushleft}
+Accepts a connection to a bound socket and returns a new connected TCP socket that represents the connection.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public System.Net.Sockets.TcpSocket Accept();}
+
+\subsubsection*{Returns}\hyperlink{System.Net.Sockets.TcpSocket}{System.\-Net.\-Sockets.\-TcpSocket}
+\begin{flushleft}
+Returns a connected TCP socket that represents the connection.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Bind.P.System.Net.Sockets.TcpSocket.int}{\subsubsection*{Bind(int) Member Function}}\begin{flushleft}
+Binds the socket to a port.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public void Bind(int port);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+port
+& int
+& A port number to which to bind.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Close.P.System.Net.Sockets.TcpSocket}{\subsubsection*{Close() Member Function}}\begin{flushleft}
+Closes the socket.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void Close();}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.GetSocketHandle.C.P.System.Net.Sockets.TcpSocket}{\subsubsection*{GetSocketHandle() const Member Function}}\begin{flushleft}
+Returns the socket handle.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public int GetSocketHandle() const;}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the socket handle.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Listen.P.System.Net.Sockets.TcpSocket.int}{\subsubsection*{Listen(int) Member Function}}
+\begin{flushleft}
+Begins listening connections to a bound TCP socket.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Listen(int backlog);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+backlog
+& int
+& The number of pending connections.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Receive.P.System.Net.Sockets.TcpSocket.P.void.int}{\subsubsection*{Receive(void*, int) Member Function}}\begin{flushleft}
+Receives data from a connected socket.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public int Receive(void* buf, int len);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& void*
+& A buffer.
+
+\\
+len
+& int
+& Maximum number of bytes to receive.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the number of bytes received.
+This might be less than the number of bytes requested.
+Return value of 0 indicates that the peer has shut down the connection.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if reading fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.ReceiveAll.P.System.Net.Sockets.TcpSocket}{\subsubsection*{ReceiveAll() Member Function}}
+\begin{flushleft}
+Receives rest of data from a connected socket.
+That is: receives data until the peer shuts down its sending side of the connection.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public System.String ReceiveAll();}
+
+\subsubsection*{Returns}System.\-String
+\begin{flushleft}
+Returns the received data as a string.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if reading fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Send.P.System.Net.Sockets.TcpSocket.C.R.System.String}{\subsubsection*{Send(const System.String\&) Member Function}}
+\begin{flushleft}
+Sends a string of data to a connected socket.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void Send(const System.String\& s);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+s
+& const System.\-String\&\-
+& A string to send.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if sending fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Send.P.System.Net.Sockets.TcpSocket.C.P.void.int}{\subsubsection*{Send(const void*, int) Member Function}}\begin{flushleft}
+Sends data to a connected socket.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public int Send(const void* buf, int len);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+buf
+& const void*
+& A buffer of data to send.
+
+\\
+len
+& int
+& Maximum number of bytes to send.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}int
+\begin{flushleft}
+Returns the number of bytes sent.
+This might be less than the number of bytes requested.
+
+\end{flushleft}
+\subsubsection*{Remarks}
+\begin{flushleft}
+Throws \hyperlink{System.Net.Sockets.SocketError}{SocketError} if sending fails.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.Shutdown.P.System.Net.Sockets.TcpSocket.ShutdownMode}{\subsubsection*{Shutdown(ShutdownMode) Member Function}}\begin{flushleft}
+Shuts down a connected socket.
+
+\end{flushleft}
+
+\subsubsection*{Syntax}\texttt{public void Shutdown(ShutdownMode mode);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+mode
+& \hyperlink{ShutdownMode}{ShutdownMode}
+& Shut down mode.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.C.R.System.String.C.R.System.String}{\subsubsection*{TcpSocket(const System.String\&, const System.String\&) Member Function}}
+\begin{flushleft}
+Constructor. Creates a TCP socket and connects it to the specified node and service.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public TcpSocket(const System.String\& node, const System.String\& service);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.56801cm}!{\raggedright}p{4.63128cm}!{\raggedright}p{5.23538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+node
+& const System.\-String\&\-
+& A host name or an IP address to connect.
+
+\\
+service
+& const System.\-String\&\-
+& A protocol name or port number to connect.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.constructor.P.System.Net.Sockets.TcpSocket.int}{\subsubsection*{TcpSocket(int) Member Function}}
+\begin{flushleft}
+Constructor. Initializes a TCP socket with an existing socket handle.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public TcpSocket(int socket\_);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+socket\_
+& int
+& A handle of an existing TCP socket.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Net.Sockets.TcpSocket.destructor.P.System.Net.Sockets.TcpSocket}{\subsubsection*{$\sim$TcpSocket() Member Function}}
+\begin{flushleft}
+Destructor. Closes the socket if it is bound or connected.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$TcpSocket();}
+\clearpage
+
+\subchapter{Constants}
+\begin{flushleft}
+\begin{supertabular}[l]{llll}
+\textbf{Constant}
+& \textbf{Type}
+& \textbf{Value}
+& \textbf{Description}
+\\
+\hline
+\hypertarget{System.Net.Sockets.invalidSocketHandle}{invalidSocketHandle}
+& int
+& -1
+& Represents invalid socket handle.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+\end{document}
+
+
