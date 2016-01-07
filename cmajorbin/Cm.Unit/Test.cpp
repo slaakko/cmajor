@@ -72,7 +72,7 @@ int GetBits()
         return 64;
     #else
         return 32;
-    #endif;
+    #endif
 #else
     #error unknown platform
 #endif

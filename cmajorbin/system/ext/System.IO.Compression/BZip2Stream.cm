@@ -1,0 +1,221 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+using System;
+using System.IO;
+
+namespace System.IO.Compression
+{
+    public const int minimumBZip2CompressionLevel = 1;
+    public const int optimalBZip2CompressionLevel = 9;
+    public const int defaultBZip2CompressionLevel = optimalBZip2CompressionLevel;
+    
+    public const int defaultBZip2WorkFactor = 0; // equal to 30 according to BZIP2 documentation
+    public const int maximumBZip2WorkFactor = 250;
+    
+    public nothrow string ExpandBZip2Error(const string& message, int errorCode)
+    {
+        string expandedMessage = message;
+        if (errorCode == BZ_IO_ERROR)
+        {
+            string reason = strerror(get_errno());
+            expandedMessage.Append(": ").Append(reason);
+        }
+        expandedMessage.Append(" error ").Append(bz2_retval_str(errorCode)).Append(" code ").Append(ToString(errorCode));
+        return expandedMessage;
+    }
+    
+    public class BZip2Exception : Exception
+    {
+        public BZip2Exception(const string& message_, int errorCode_) : base(ExpandBZip2Error(message_, errorCode_)), errorCode(errorCode_)
+        {
+        }
+        public nothrow inline int ErrorCode() const
+        {
+            return errorCode;
+        }
+        private int errorCode;
+    }
+    
+    public class BZip2Stream : ByteStream
+    {
+        public BZip2Stream(ByteStream& underlyingStream_, int compressionLevel_) : this(underlyingStream_, compressionLevel_, defaultBZip2WorkFactor)
+        {
+        }
+        public BZip2Stream(ByteStream& underlyingStream_, int compressionLevel_, int compressionWorkFactor_) : this(underlyingStream_, compressionLevel_, compressionWorkFactor_, 16384)
+        {
+        }
+        public BZip2Stream(ByteStream& underlyingStream_, int compressionLevel_, int compressionWorkFactor_, int bufferSize_) : 
+            underlyingStream(underlyingStream_), mode(CompressionMode.compress), bufferSize(bufferSize_), inAvail(0), endOfInput(false), endOfStream(false), in(cast<ulong>(bufferSize)), 
+            outHave(0), outAvail(0), outPos(0), out(cast<ulong>(bufferSize)), handle(null)
+        {
+            int ret = bz2_init(cast<int>(mode), compressionLevel_, compressionWorkFactor_, &handle);
+            if (ret < 0)
+            {
+                throw BZip2Exception("Could not create BZip2Stream", ret);
+            }
+        }
+        public BZip2Stream(ByteStream& underlyingStream_, CompressionMode mode_) : this(underlyingStream_, mode_, 16384)
+        {
+        }
+        public BZip2Stream(ByteStream& underlyingStream_, CompressionMode mode_, int bufferSize_) : 
+            underlyingStream(underlyingStream_), mode(mode_), bufferSize(bufferSize_), inAvail(0), endOfInput(false), endOfStream(false), in(cast<ulong>(bufferSize)), 
+            outHave(0), outAvail(0), outPos(0), out(cast<ulong>(bufferSize)), handle(null)
+        {
+            int ret = bz2_init(cast<int>(mode), defaultBZip2CompressionLevel, defaultBZip2WorkFactor, &handle);
+            if (ret < 0)
+            {
+                throw BZip2Exception("Could not create BZip2Stream", ret);
+            }
+        }
+        public inline nothrow CompressionMode Mode() const 
+        {
+            return mode;
+        }
+        public nothrow ~BZip2Stream()
+        {
+            if (handle != null)
+            {
+                try
+                {
+                    if (mode == CompressionMode.compress)
+                    {
+                        Finish();
+                    }
+                }        
+                catch (const Exception& ex)
+                {
+                    // destructor should not throw
+                }
+                bz2_done(cast<int>(mode), handle);
+            }
+        }
+        public override int ReadByte()
+        {
+            byte x = 0u;
+            int bytesRead = this->Read(&x, 1);
+            if (bytesRead == 0)
+            {
+                return -1;
+            }
+            return x;
+        }
+        public override int Read(byte* buf, int count)
+        {
+            if (mode != CompressionMode.decompress)
+            {
+                throw BZip2Exception("Cannot read from BZip2Stream in CompressionMode.compress", BZ_SEQUENCE_ERROR);
+            }
+            int bytesRead = 0;
+            do
+            {
+                if (inAvail == 0 && !endOfInput)
+                {
+                    inAvail = underlyingStream.Read(cast<byte*>(in.Mem()), bufferSize);
+                    if (inAvail == 0)
+                    {
+                        endOfInput = true;
+                    }
+                    bz2_set_input(in.Mem(), inAvail, handle);
+                }
+                do
+                {
+                    if (outHave == 0 && !endOfStream)
+                    {
+                        int ret = bz2_decompress(out.Mem(), bufferSize, &outHave, &outAvail, &inAvail, handle);
+                        if (ret < 0)
+                        {
+                            throw BZip2Exception("BZip2Stream could not decompress", ret);
+                        }
+                        if (ret == BZ_STREAM_END)
+                        {
+                            endOfStream = true;
+                        }
+                        outPos = 0;
+                    }                    
+                    while (count > 0 && outHave > 0)
+                    {
+                        *buf++ = cast<byte*>(out.Mem())[outPos++];
+                        --count;
+                        --outHave;
+                        ++bytesRead;
+                    }        
+                }
+                while (count > 0 && outAvail == 0);
+            }
+            while (count > 0 && !endOfStream && !endOfInput);
+            if (endOfInput && !endOfStream)
+            {
+                throw BZip2Exception("BZip2Stream unexpected end of input", BZ_UNEXPECTED_EOF);
+            }
+            return bytesRead;
+        }
+        public override void Write(byte x)
+        {
+            this->Write(&x, 1);
+        }
+        public override void Write(byte* buf, int count)
+        {
+            if (mode != CompressionMode.compress)
+            {
+                throw BZip2Exception("Cannot write to BZip2Stream in CompressionMode.decompress", BZ_SEQUENCE_ERROR);
+            }
+            while (count > 0)
+            {
+                byte* inP = cast<byte*>(in.Mem());
+                inAvail = 0;
+                while (count > 0 && inAvail < bufferSize)
+                {
+                    *inP++ = *buf++;
+                    --count;
+                    ++inAvail;
+                }
+                bz2_set_input(in.Mem(), inAvail, handle);
+                do
+                {
+                    int have = 0;
+                    int ret = bz2_compress(out.Mem(), bufferSize, &have, &outAvail, handle, BZ_RUN);
+                    if (ret < 0)
+                    {
+                        throw BZip2Exception("BZip2Stream could not compress", ret);
+                    }
+                    underlyingStream.Write(cast<byte*>(out.Mem()), have);
+                }
+                while (outAvail == 0);
+            }
+        }
+        private void Finish()
+        {
+            int ret = BZ_OK;
+            do
+            {
+                int have = 0;
+                ret = bz2_compress(out.Mem(), bufferSize, &have, &outAvail, handle, BZ_FINISH);
+                if (ret < 0)
+                {
+                    throw BZip2Exception("BZip2Stream could not compress", ret);
+                }
+                underlyingStream.Write(cast<byte*>(out.Mem()), have);
+            }
+            while (ret != BZ_STREAM_END);
+        }
+        private ByteStream& underlyingStream;
+        private CompressionMode mode;
+        private int bufferSize;
+        private int inAvail;
+        private bool endOfInput;
+        private bool endOfStream;
+        private IOBuffer in;
+        private int outHave;
+        private int outAvail;
+        private int outPos;
+        private IOBuffer out;
+        private void* handle;
+    }
+}

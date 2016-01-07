@@ -1,7 +1,7 @@
 /*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
- 
+
     Distributed under the GNU General Public License, version 3 (GPLv3).
     (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
 
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 
 typedef void* thread_t;
 thread_t this_thread(void);
@@ -24,17 +25,17 @@ typedef struct { const char* fun; const char* file; int line; } stack_frame;
 
 #define CALL_STACK_SIZE 1024
 
-typedef struct ThreadTblRec_ 
-{ 
-    thread_t tid; 
-    int current_exception_captured; 
-    int current_exception_id; 
-    void* current_exception_addr; 
-    void* table; 
-    stack_frame* call_stack; 
-    stack_frame* fp; 
-    struct ThreadTblRec_* next; 
-} 
+typedef struct ThreadTblRec_
+{
+    thread_t tid;
+    int current_exception_captured;
+    int current_exception_id;
+    void* current_exception_addr;
+    void* table;
+    stack_frame* call_stack;
+    stack_frame* fp;
+    struct ThreadTblRec_* next;
+}
 ThreadTblRec;
 
 static ThreadTblRec** threadHashTbl = 0;
@@ -57,7 +58,7 @@ void set_current_exception_captured()
             return;
         }
         rec = rec->next;
-    }    
+    }
 }
 
 int current_exception_captured()
@@ -72,7 +73,7 @@ int current_exception_captured()
             return rec->current_exception_captured;
         }
         rec = rec->next;
-    }    
+    }
 }
 
 int get_current_exception_id()
@@ -87,7 +88,7 @@ int get_current_exception_id()
             return rec->current_exception_id;
         }
         rec = rec->next;
-    }    
+    }
     return 0;
 }
 
@@ -120,7 +121,7 @@ void set_current_exception_id(int exception_id)
             return;
         }
         rec = rec->next;
-    }    
+    }
 }
 
 void set_current_exception_addr(void* exception_addr)
@@ -136,7 +137,7 @@ void set_current_exception_addr(void* exception_addr)
             return;
         }
         rec = rec->next;
-    }    
+    }
 }
 
 void reset_current_exception()
@@ -179,9 +180,9 @@ void enter_frame(const char* fun, const char* file, int line)
             ++fp;
             rec->fp = fp;
             return;
-        }    
+        }
         rec = rec->next;
-    }    
+    }
 }
 
 void leave_frame()
@@ -201,9 +202,9 @@ void leave_frame()
                 rec->fp = fp;
             }
             return;
-        }    
+        }
         rec = rec->next;
-    }    
+    }
 }
 
 #define CALL_STACK_BUFLEN 65536
@@ -290,7 +291,7 @@ const char* capture_call_stack()
                 call_stack_buf[0] = '\0';
             }
             return call_stack_buf;
-        }        
+        }
         rec = rec->next;
     }
 }
