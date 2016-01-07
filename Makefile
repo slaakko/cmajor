@@ -23,6 +23,7 @@ build:
 	$(MAKE) -C Cm.Emit
 	$(MAKE) -C Cm.Build
 	$(MAKE) -C Cm.Compiler
+	$(MAKE) -C Sockets
 	$(MAKE) -C Cm.Debugger
 	$(MAKE) -C Cm.Profiler
 	$(MAKE) -C Cm.Unit
@@ -70,6 +71,7 @@ clean:
 	$(MAKE) -C Cm.Emit clean
 	$(MAKE) -C Cm.Build clean
 	$(MAKE) -C Cm.Compiler clean
+	$(MAKE) -C Sockets clean
 	$(MAKE) -C Cm.Debugger clean
 	$(MAKE) -C Cm.Profiler clean
 	$(MAKE) -C Cm.Unit clean

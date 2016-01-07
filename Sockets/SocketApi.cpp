@@ -17,9 +17,11 @@
 #elif defined(__linux) || defined(__unix) || defined(__posix)
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
 #else
 #error unknown platform
 #endif
@@ -46,7 +48,7 @@ int get_last_socket_error()
 #ifdef _WIN32
     return WSAGetLastError();
 #elif defined(__linux) || defined(__unix) || defined(__posix)
-    return get_errno();
+    return errno;
 #else
 #error unknown platform
 #endif
