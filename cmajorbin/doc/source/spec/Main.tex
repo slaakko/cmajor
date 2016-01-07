@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.3}
+\title{Cmajor Programming Language Specification\\Version 3.4}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -1914,9 +1914,11 @@ If the main function is declared void, it returns exit code 0 to the environment
 \alt <library-reference>
 \alt <executable-declaration>
 \alt <c-library-declaration>
+\alt <add-library-path-declaration>
 \alt <source-file>
 \alt <asm-source-file>
 \alt <c-source-file>
+\alt <cpp-source-file>
 \alt <text-file>
 
 <target-declaration> ::= \lit*{target} '=' (\lit*{program} | \lit*{library}) ';
@@ -1929,11 +1931,15 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 <c-library-declaration> ::= \lit*{clib} <file-path> <properties>? ';'
 
+<add-library-path-declaration> ::= \lit*{addlibrarypath} <file-path> <properties>? ';'
+
 <source-file> ::= \lit*{source} <file-path> <properties>? ';'
 
 <asm-source-file> ::= \lit*{asmsource} <file-path> <properties>? ';'
 
 <c-source-file> ::= \lit*{csource} <file-path> <properties>? ';'
+
+<cpp-source-file> ::= \lit*{cppsource} <file-path> <properties>? ';'
 
 <text-file> ::= \lit*{text} <file-path> <properties>? ';'
 
@@ -1943,17 +1949,60 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 <property-name> ::= <identifier>
 
-<property-value> ::= <identifier>
+<property-value> ::= <identifier> | <long>
 
 <file-path> ::= "'<'" "[^>]+" "'\>'"
 
 \end{grammar}
 
-Properties can be used to include a declaration only in selected
-configurations.
-Currently property name can be \bf{backend} or \bf{os}.
+Target declaration \emph{$<$target-declaration$>$} sets whether we are building a program or a library.
+
+Assembly declaration \emph{$<$assembly-declaration$>$} sets the name of the archive that contains project's object code.
+By convention its extension is ".cma".
+
+Library reference \emph{$<$library-reference$>$} imports a Cmajor library to the project.
+By convention its extension is ".cml".
+The .cml file contains the metadata (symbol table etc.) of a Cmajor project.
+
+If target is "program", an executable declaration \emph{$<$executable-declaration$>$}
+sets the name of the executable file.
+In Windows ".exe" extension is appended automatically to the executable file name.
+
+A C-library declaration \emph{$<$c-library-declaration$>$}
+requests that named object code library must be linked to the final executable.
+Thus C-library declaration can be used in a library project or an executable project.
+Usually the object code library file is named "libfoo.a", but the link name needed here is just "foo",
+because the object code library is linked using gcc's -l option.
+
+Library path declaration \emph{$<$add-library-path-declaration$>$}
+adds a directory path to the library search paths when final executable is linked.
+Thus library path declaration can be used in a library project or an executable project.
+It is specified using gcc's -L option by the compiler when the program is linked.
+
+Source file declaration \emph{$<$source-file$>$} adds a Cmajor source file to the project.
+By convention its extension is ".cm".
+
+Assembly source file declaration \emph{$<$asm-source-file$>$} adds LLVM source file to the project.
+By its extension is ".ll". Assembly source file is compiled using the LLVM compiler \bf{llc}.
+
+C source file declaration \emph{$<$c-source-file$>$} adds a C source file to the project.
+By convention its extension is ".c". C source file is compiled using GNU C compiler \bf{gcc}.
+
+C++ source file declaration \emph{$<$cpp-source-file$>$} adds a C++ source file to the project.
+By convention its exension is ".cpp" or ".cxx".
+C++ source file is compiled using the GNU C++ compiler \bf{g++}.
+
+Text file declaration \emph{$<$text-file$>$} includes some text file to the project.
+The text file can have any extension. It is not processed by the compiler.
+
+Properties contains comma-separated list of property declarations.
+Properties can be used to include a declaration only in selected configurations.
+If the properties do not match current compilation properties, the associated declaration has no effect.
+
+Currently property name can be \bf{backend}, \bf{os} or \bf{bits}.
 Backend values can be \bf{c} and \bf{llvm}.
 Os values can be \bf{windows} and \bf{linux}.
+Bits values can be \bf{32} and \bf{64}.
 
 \clearpage
 
