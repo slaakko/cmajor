@@ -377,6 +377,14 @@ namespace Cm.Bind
             AddSymbol(funParam);
             ComputeName();
         }
+        public nothrow inline Cm.Sym.DelegateTypeSymbol* DelegateType() const
+        {
+            return delegateType;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* FunctionSymbol() const
+        {
+            return functionSymbol;
+        }
         public override void Generate(Cm.Core.Emitter& emitter, Cm.Core.GenResult& result)
         {
             Cm.IrIntf.Init(emitter, IrType(), result.Arg1(), result.MainObject());

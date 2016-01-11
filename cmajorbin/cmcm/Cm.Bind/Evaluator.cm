@@ -228,7 +228,7 @@ namespace Cm.Bind
                 throw Cm.Core.Error("expression '" + dotNode.Subject()->FullName() + "' must denote a namespace, class or enumerated type", dotNode.Subject()->GetSpan());
             }
         }
-        public override void BeginVisit(Cm.Ast.ArrowNode& arrowNode)
+        public override void Visit(Cm.Ast.ArrowNode& arrowNode)
         {
             ThrowCannotEvaluateStatically(arrowNode.GetSpan());
         }

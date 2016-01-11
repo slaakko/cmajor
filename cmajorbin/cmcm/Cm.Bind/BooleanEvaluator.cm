@@ -264,7 +264,7 @@ namespace Cm.Bind
                 interrupted = true;
             }
         }
-        public override void BeginVisit(Cm.Ast.ArrowNode& arrowNode)
+        public override void Visit(Cm.Ast.ArrowNode& arrowNode)
         {
             interrupted = true;
         }
