@@ -296,10 +296,7 @@ namespace Cm.Ast
         public virtual void EndVisit(DotNode& dotNode)
         {
         }
-        public virtual void BeginVisit(ArrowNode& arrowNode)
-        {
-        }
-        public virtual void EndVisit(ArrowNode& arrowNode)
+        public virtual void Visit(ArrowNode& arrowNode)
         {
         }
         public virtual void Visit(PostfixIncNode& postfixIncNode)

@@ -1048,7 +1048,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
             else
             {
-                throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
+                throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type or enumerated type object", dotNode.Subject()->GetSpan());
             }
         }
         Cm::Sym::ContainerScope* containerScope = containerSymbol->GetContainerScope();
@@ -1159,7 +1159,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         else
         {
-            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, enumerated type, or a class type object", dotNode.Subject()->GetSpan());
+            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, or enumerated type object", dotNode.Subject()->GetSpan());
         }
     }
 }
@@ -1679,8 +1679,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments, bool& firstArgByRef, 
-    bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs, FunctionMatch& bestMatch, std::vector<Cm::Core::Argument>& resolutionArguments, 
-    std::unique_ptr<Cm::Core::Exception>& exception)
+    bool& generateVirtualCall, const std::string& functionGroupName, int& numArgs, FunctionMatch& bestMatch, std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception)
 {
     firstArgByRef = false;
     generateVirtualCall = false;
@@ -2054,7 +2053,8 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
         {
             Cm::Ast::ConstructionStatementNode* constructionStatementNode = static_cast<Cm::Ast::ConstructionStatementNode*>(node);
             Cm::Sym::ContainerScope* localVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(constructionStatementNode);
-            BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constructionStatementNode, localVariableSymbol);
+            //BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constructionStatementNode, localVariableSymbol);
+            BindLocalVariable(boundCompileUnit.SymbolTable(), localVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -2080,7 +2080,8 @@ void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::
         {
             Cm::Ast::MemberVariableNode* memberVariableNode = static_cast<Cm::Ast::MemberVariableNode*>(node);
             Cm::Sym::ContainerScope* memberVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(memberVariableNode);
-            BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), memberVariableNode, memberVariableSymbol);
+            //BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(boundCompileUnit.SymbolTable(), memberVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), memberVariableNode, memberVariableSymbol);
         }
         else
         {

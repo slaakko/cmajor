@@ -892,11 +892,13 @@ namespace Cm.Ast
         {
             return Child();
         }
+        public nothrow inline IdentifierNode* MemberId() const
+        {
+            return memberId.GetPtr();
+        }
         public override void Accept(Visitor& visitor)
         {
-            visitor.BeginVisit(*this);
-            Subject()->Accept(visitor);
-            visitor.EndVisit(*this);
+            visitor.Visit(*this);
         }
         private UniquePtr<IdentifierNode> memberId;
     }
