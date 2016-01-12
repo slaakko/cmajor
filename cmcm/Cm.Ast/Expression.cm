@@ -764,6 +764,10 @@ namespace Cm.Ast
         {
             return Child();
         }
+        public nothrow inline Node* Index() const
+        {
+            return index.GetPtr();
+        }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
@@ -1520,6 +1524,10 @@ namespace Cm.Ast
         {
             return typeExpr.GetPtr();
         }
+        public nothrow inline const NodeList<Node>& Arguments() const
+        {
+            return arguments;
+        }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
@@ -1576,6 +1584,10 @@ namespace Cm.Ast
         public nothrow inline Node* TypeExpr() const
         {
             return typeExpr.GetPtr();
+        }
+        public nothrow inline const NodeList<Node>& Arguments() const
+        {
+            return arguments;
         }
         public override void Accept(Visitor& visitor)
         {
