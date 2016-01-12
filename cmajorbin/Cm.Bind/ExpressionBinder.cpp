@@ -2297,7 +2297,7 @@ void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
         }
         else
         {
-            throw std::runtime_error("not class type");
+            throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
         }
     }
     else
@@ -2361,7 +2361,7 @@ void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
         }
         else
         {
-            throw std::runtime_error("not class type");
+            throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
         }
     }
     else
@@ -2586,8 +2586,8 @@ void ExpressionBinder::Visit(Cm::Ast::ThisNode& thisNode)
         Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
         Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(&thisNode, thisParam);
         boundThisParam->SetType(thisParam->GetType());
-        boundExpressionStack.Push(boundThisParam);
         boundThisParam->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsThisOrBase);
+        boundExpressionStack.Push(boundThisParam);
     }
     else
     {
