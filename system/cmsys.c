@@ -634,16 +634,7 @@ int get_path_to_executable(char* buf, int bufSize)
 
 #elif defined(__linux) || defined(__unix) || defined(__posix)
 
-    int fd = open("/proc/self/exe", O_RDONLY);
-    if (fd == -1) return -1;
-    int result = read(fd, buf, bufSize);
-    if (result == -1)
-    {
-        close(fd);
-        return -1;
-    }
-    close(fd);
-    return 0;
+    return readlink("/proc/self/exe", buf, bufSize);
 
 #else
 
