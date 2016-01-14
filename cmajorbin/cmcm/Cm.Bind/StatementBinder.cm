@@ -9,8 +9,8 @@
 
 using System;
 using System.Collections;
-using Trim = System.Text.Trim;
 using Span = System.Text.Parsing.Span;
+using Trim = System.Text.Trim;
 
 namespace Cm.Bind
 {
@@ -33,7 +33,7 @@ namespace Cm.Bind
         }
         private static UniquePtr<TypeExprGrammarHolder> instance;
         private Cm.Parser.TypeExprGrammar* typeExprGrammar;
-    }
+    }   
     
     internal Cm.Ast.Node* MakeTypeIdNode(Cm.Sym.TypeSymbol* typeSymbol, const Span& span)
     {
@@ -41,6 +41,1584 @@ namespace Cm.Bind
         string typeSymbolText = Trim(typeSymbol->FullName());
         int n = typeSymbolText.Length();
         Cm.Parser.ParsingContext parsingContext;
-        return typeExprGrammar->Parse(typeSymbolText.Chars(), typeSymbolText.Chars() + n, 0, "", &parsingContext);
+        return typeExprGrammar->Parse(typeSymbolText.Chars(), typeSymbolText.Chars() + n, 0, "", &parsingContext);    
+    }   
+    
+    internal class ExpressionGrammarHolder
+    {
+        static ExpressionGrammarHolder() : instance(new ExpressionGrammarHolder())
+        {
+        }
+        private ExpressionGrammarHolder()
+        {
+            expressionGrammar = Cm.Parser.ExpressionGrammar.Create();
+        }
+        public static ExpressionGrammarHolder& Instance()
+        {
+            return *instance;
+        }
+        public Cm.Parser.ExpressionGrammar* GetExpressionGrammar()
+        {
+            return expressionGrammar;
+        }
+        private static UniquePtr<ExpressionGrammarHolder> instance;
+        private Cm.Parser.ExpressionGrammar* expressionGrammar;
+    }
+    
+    internal Cm.Ast.Node* MakeExpressionNode(Cm.Sym.TypeSymbol* typeSymbol, const Span& span)
+    {
+        Cm.Parser.ExpressionGrammar* expressionGrammar = ExpressionGrammarHolder.Instance().GetExpressionGrammar();
+        string typeSymbolText = Trim(typeSymbol->FullName());
+        int n = typeSymbolText.Length();
+        Cm.Parser.ParsingContext parsingContext;
+        return expressionGrammar->Parse(typeSymbolText.Chars(), typeSymbolText.Chars() + n, 0, "", &parsingContext);
+    }
+    
+    public abstract class StatementBinder : ExpressionBinder
+    {
+        public nothrow StatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), result(null)
+        {
+        }
+        public nothrow inline void SetResult(Cm.BoundTree.BoundStatement* result_) 
+        {
+            result = result_;
+        }
+        public nothrow inline Cm.BoundTree.BoundStatement* Result() const
+        {
+            return result;
+        }
+        private Cm.BoundTree.BoundStatement* result;
+    }
+    
+    public class ConstructionStatementBinder : StatementBinder
+    {
+        public nothrow ConstructionStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), constructionStatement(null)
+        {
+        }
+        public override void BeginVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
+        {
+            constructionStatement = new Cm.BoundTree.BoundConstructionStatement(&constructionStatementNode);
+            Cm.Sym.LocalVariableSymbol* localVariable = BindLocalVariable(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), &constructionStatementNode);
+            constructionStatement->SetLocalVariable(localVariable);
+            CurrentFunction()->AddLocalVariable(localVariable);
+        }
+        public override void EndVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
+        {
+            if (constructionStatement->LocalVariable()->Used())
+            {
+                throw Cm.Core.Error("local variable '" + constructionStatement->LocalVariable()->Name() + "' is used before it is defined", constructionStatement->LocalVariable()->GetUseSpan(), 
+                    constructionStatementNode.GetSpan());
+            }
+            constructionStatement->SetArguments(GetExpressions());
+            if (constructionStatement->LocalVariable()->GetType() is Cm.Sym.ClassDelegateTypeSymbol*)
+            {
+                if (constructionStatement->Arguments().Count() == 2 && (constructionStatement->Arguments()[0].GetPtr() is Cm.BoundTree.BoundFunctionGroup*) && 
+                    constructionStatement->Arguments()[1]->GetFlag(Cm.BoundTree.BoundNodeFlags.classObjectArg))
+                {
+                    constructionStatement->Arguments().Reverse();
+                }
+                else if (CurrentFunction()->FunctionSymbol()->IsMemberFunctionSymbol() && constructionStatement->Arguments().Count() == 1 && 
+                    (constructionStatement->Arguments()[0].GetPtr() is Cm.BoundTree.BoundFunctionGroup*))
+                {
+                    Cm.Sym.ParameterSymbol* thisParam = CurrentFunction()->FunctionSymbol()->Parameters()[0];
+                    Cm.BoundTree.BoundParameter* thisParamArg = new Cm.BoundTree.BoundParameter(&constructionStatementNode, thisParam);
+                    thisParamArg->SetType(thisParam->GetType());
+                    constructionStatement->Arguments().InsertFront(thisParamArg);
+                }
+            }
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.TypeSymbol* localVariableType = constructionStatement->LocalVariable()->GetType();
+            if (localVariableType->IsAbstract())
+            {
+                throw Cm.Core.Error("cannot instantiate an abstract class", localVariableType->GetSpan(), constructionStatementNode.GetSpan());
+            }
+            Cm.Core.Argument variableArgument(Cm.Core.ArgumentCategory.lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(localVariableType, constructionStatementNode.GetSpan()));
+            resolutionArguments.Add(variableArgument);
+            constructionStatement->GetResolutionArguments(localVariableType, resolutionArguments);
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.ConversionType conversionType = Cm.Sym.ConversionType.implicit;
+            Cm.Sym.FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, 
+                conversionType, OverloadResolutionFlags.none);
+            PrepareFunctionSymbol(ctor, constructionStatementNode.GetSpan());
+            constructionStatement->SetConstructor(ctor);
+            constructionStatement->InsertLocalVariableToArguments();
+            constructionStatement->Arguments()[0]->SetFlag(Cm.BoundTree.BoundNodeFlags.constructVariable);
+            int n = conversions.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+                if (conversionFun != null)
+                {
+                    Cm.BoundTree.BoundExpression* arg = constructionStatement->Arguments()[i].Release();
+                    constructionStatement->Arguments()[i].Reset(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &constructionStatementNode, arg, conversionFun, CurrentFunction()));
+                }
+            }
+            if (!(ctor is Cm.Core.BasicTypeOp*))
+            {
+                constructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->FunctionSymbol(), constructionStatementNode.GetSpan()));
+            }
+            if (ctor is DelegateFromFunCtor*)
+            {
+                DelegateFromFunCtor* delegateFromFunCtor = cast<DelegateFromFunCtor*>(ctor);
+                Cm.BoundTree.BoundFunctionId* boundFunctionId = new Cm.BoundTree.BoundFunctionId(&constructionStatementNode, delegateFromFunCtor->FunctionSymbol());
+                boundFunctionId->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
+                constructionStatement->Arguments()[1].Reset(boundFunctionId);
+            }
+            else if (ctor is ClassDelegateFromFunCtor*)
+            {
+                ClassDelegateFromFunCtor* classDelegateFromFunCtor = cast<ClassDelegateFromFunCtor*>(ctor);
+                Cm.BoundTree.BoundFunctionId* boundFunctionId = new Cm.BoundTree.BoundFunctionId(&constructionStatementNode, classDelegateFromFunCtor->FunctionSymbol());
+                boundFunctionId->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunCtor->DelegateType(), constructionStatementNode.GetSpan()));
+                constructionStatement->Arguments()[2].Reset(boundFunctionId);
+            }
+            PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), null, ctor->Parameters(), constructionStatement->Arguments(), true, BoundCompileUnit().IrClassTypeRepository(), 
+                ctor is Cm.Core.BasicTypeOp*);
+            if (localVariableType->IsReferenceType())
+            {
+                constructionStatement->Arguments()[1]->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            SetResult(constructionStatement);
+        }
+        private Cm.BoundTree.BoundConstructionStatement* constructionStatement;
+    }
+    
+    public class AssignmentStatementBinder : StatementBinder
+    {
+        public nothrow AssignmentStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
+        {
+            Cm.BoundTree.BoundExpression* left = null;
+            Cm.BoundTree.BoundExpression* right = null;
+            UniquePtr<Cm.BoundTree.BoundExpression> functionGroup;
+            if (Stack().Count() == 3)
+            {
+                right = Stack().Pop();
+                functionGroup.Reset(Stack().Pop());
+                left = Stack().Pop();
+            }
+            else
+            {
+                right = Stack().Pop();
+                left = Stack().Pop();
+            }
+            if ((left->Type() is Cm.Sym.ClassDelegateTypeSymbol*) && (right->Type() is Cm.Sym.FunctionGroupTypeSymbol*))
+            {
+                if (functionGroup.IsNull())
+                {
+                    functionGroup.Reset(right);
+                    Cm.Sym.ParameterSymbol* thisParam = CurrentFunction()->FunctionSymbol()->Parameters()[0];
+                    Cm.BoundTree.BoundParameter* thisParamArg = new Cm.BoundTree.BoundParameter(&assignmentStatementNode, thisParam);
+                    thisParamArg->SetType(thisParam->GetType());
+                    right = thisParamArg;
+                }
+            }
+            left->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.TypeSymbol* leftPlainType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(left->Type());
+            Cm.Core.Argument leftArgument(Cm.Core.ArgumentCategory.lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(leftPlainType, assignmentStatementNode.GetSpan()));
+            resolutionArguments.Add(leftArgument);
+            if (leftPlainType->IsPointerType() && right->IsBoundNullLiteral())
+            {
+                right->SetType(leftPlainType);
+            }
+            Cm.Core.Argument rightArgument(right->ArgumentCategory(), right->Type());
+            if (right->GetFlag(Cm.BoundTree.BoundNodeFlags.argIsTemporary))
+            {
+                rightArgument.SetBindToRvalueRef();
+            }
+            resolutionArguments.Add(rightArgument);
+            if (!functionGroup.IsNull())
+            {
+                resolutionArguments.Add(Cm.Core.Argument(functionGroup->ArgumentCategory(), functionGroup->Type()));
+            }
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassOrNsScope()));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* assignment = ResolveOverload(ContainerScope(), BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
+            PrepareFunctionSymbol(assignment, assignmentStatementNode.GetSpan());
+            int conversionCount = 2;
+            if (!functionGroup.IsNull())
+            {
+                conversionCount = 3;
+            }
+            if (conversions.Count() != conversionCount)
+            {
+                throw Exception("wrong number of conversions");
+            }
+            Cm.Sym.FunctionSymbol* leftConversion = conversions[0];
+            if (leftConversion != null)
+            {
+                left = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &assignmentStatementNode, left, leftConversion, CurrentFunction());
+            }
+            Cm.Sym.FunctionSymbol* rightConversion = conversions[1];
+            if (rightConversion != null)
+            {
+                right = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &assignmentStatementNode, right, rightConversion, CurrentFunction());
+            }
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(left);
+            arguments.Add(right);
+            if (assignment is ClassDelegateFromFunAssignment*)
+            {
+                ClassDelegateFromFunAssignment* classDelegateFromFunAssignment = cast<ClassDelegateFromFunAssignment*>(assignment);
+                Cm.BoundTree.BoundFunctionId* boundFunctionId = new Cm.BoundTree.BoundFunctionId(&assignmentStatementNode, classDelegateFromFunAssignment->FunctionSymbol());
+                boundFunctionId->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(classDelegateFromFunAssignment->DelegateType(), assignmentStatementNode.GetSpan()));
+                arguments.Add(boundFunctionId);
+            }
+            PrepareArguments(ContainerScope(), BoundCompileUnit(), CurrentFunction(), assignment->GetReturnType(), assignment->Parameters(), arguments, true, BoundCompileUnit().IrClassTypeRepository(), 
+                assignment is Cm.Core.BasicTypeOp*);
+            if (assignment is ClassDelegateFromFunAssignment*)
+            {
+                Cm.BoundTree.BoundFunctionCallStatement* functionCallStatement = new Cm.BoundTree.BoundFunctionCallStatement(assignment, Rvalue(arguments));
+                SetResult(functionCallStatement);
+                return;
+            }
+            left = arguments[0].Release();
+            right = arguments[1].Release();
+            Cm.BoundTree.BoundAssignmentStatement* assignmentStatement = new Cm.BoundTree.BoundAssignmentStatement(&assignmentStatementNode, left, right, assignment);
+            if (!(assignment is Cm.Core.BasicTypeOp*))
+            {
+                assignmentStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->FunctionSymbol(), assignmentStatementNode.GetSpan()));
+            }
+            if (assignment is DelegateFromFunAssignment*)
+            {
+                DelegateFromFunAssignment* delegateFromFunAssignment = cast<DelegateFromFunAssignment*>(assignment);
+                Cm.BoundTree.BoundFunctionId* boundFunctionId = new Cm.BoundTree.BoundFunctionId(&assignmentStatementNode, delegateFromFunAssignment->FunctionSymbol());
+                boundFunctionId->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunAssignment->DelegateType(), assignmentStatementNode.GetSpan()));
+                assignmentStatement->RightArgument().Reset(boundFunctionId);
+            }
+            SetResult(assignmentStatement);
+        }
+    }
+    
+    public class SimpleStatementBinder : StatementBinder
+    {
+        public nothrow SimpleStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.SimpleStatementNode& simpleStatementNode)
+        {
+            Cm.BoundTree.BoundSimpleStatement* simpleStatement = new Cm.BoundTree.BoundSimpleStatement(&simpleStatementNode);
+            if (simpleStatementNode.HasExpr())
+            {
+                Cm.BoundTree.BoundExpression* expression = Stack().Pop();
+                simpleStatement->SetExpression(expression);
+                if (expression is Cm.BoundTree.BoundFunctionCall*)
+                {
+                    Cm.BoundTree.BoundFunctionCall* funCall = cast<Cm.BoundTree.BoundFunctionCall*>(expression);
+                    if (funCall->Fun()->FullName() == "System.RethrowException(System.ExceptionPtr&)")
+                    {
+                        Cm.Ast.TryStatementNode* currentTry = CurrentFunction()->GetCurrentTry();
+                        if (currentTry == null && CurrentFunction()->FunctionSymbol()->IsNothrow())
+                        {
+                            throw Cm.Core.Error("nothrow function cannot throw", simpleStatementNode.GetSpan(), CurrentFunction()->FunctionSymbol()->GetSpan());
+                        }
+                        binder.AddBoundStatement(simpleStatement);
+                        binder.AddBoundStatement(new Cm.BoundTree.BoundBeginThrowStatement(&simpleStatementNode));
+                        Cm.Ast.InvokeNode* callThisThreadExpr = new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "this_thread"));
+                        Cm.Ast.InvokeNode* callGetExceptionTableAddrExpr = new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "get_exception_table_addr"));
+                        callGetExceptionTableAddrExpr->AddArgument(callThisThreadExpr);
+                        Cm.Ast.InvokeNode* callSetExceptionAddrExpr = new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), 
+                            new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "System.Support.SetExceptionAddr"));
+                        callSetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
+                        callSetExceptionAddrExpr->AddArgument(new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));
+                        callSetExceptionAddrExpr->AddArgument(new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_addr")));
+                        Cm.Ast.SimpleStatementNode* setExceptionAddrStatement = new Cm.Ast.SimpleStatementNode(simpleStatementNode.GetSpan(), callSetExceptionAddrExpr);
+                        Cm.Ast.AssignmentStatementNode* setExceptionCodeStatement = new Cm.Ast.AssignmentStatementNode(simpleStatementNode.GetSpan(), 
+                            new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()), new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), 
+                            new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));
+                        Cm.Ast.SimpleStatementNode* resetCurrentExceptionStatement = new Cm.Ast.SimpleStatementNode(simpleStatementNode.GetSpan(), new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(),
+                            new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), "reset_current_exception")));
+                        Cm.Ast.AssignmentStatementNode* setExceptionCodeParamStatement = null;
+                        Cm.Ast.StatementNode* endOfThrowStatement = null;
+                        Cm.Ast.FunctionNode* functionNode = simpleStatementNode.GetFunction();
+                        Cm.Ast.ExitTryStatementNode* exitTryStatement = null;
+                        Cm.Ast.TryStatementNode* ownerTry = null;
+                        if (CurrentFunction()->InHandler())
+                        {
+                            ownerTry = CurrentFunction()->GetParentTry();
+                        }
+                        else
+                        {
+                            ownerTry = CurrentFunction()->GetCurrentTry();
+                        }
+                        if (ownerTry != null)
+                        {
+                            int catchId = ownerTry->GetFirstHandler()->CatchId();
+                            if (catchId == -1)
+                            {
+                                catchId = CurrentFunction()->GetNextCatchId();
+                                ownerTry->SetFirstCatchId(catchId);
+                            }
+                            exitTryStatement = new Cm.Ast.ExitTryStatementNode(simpleStatementNode.GetSpan(), ownerTry);
+                            string continueLabelPrefix;
+                            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                            if (backend == Cm.IrIntf.Backend.llvm)
+                            {
+                                continueLabelPrefix = "$C";
+                            }
+                            else if (backend == Cm.IrIntf.Backend.c)
+                            {
+                                continueLabelPrefix = "_C_";
+                            }
+                            Cm.Ast.GotoStatementNode* gotoCatch = new Cm.Ast.GotoStatementNode(simpleStatementNode.GetSpan(), new Cm.Ast.LabelNode(simpleStatementNode.GetSpan(), 
+                                continueLabelPrefix + ToString(catchId)));
+                            gotoCatch->SetExceptionHandlingGoto();
+                            endOfThrowStatement = gotoCatch;
+                        }
+                        else
+                        {
+                            setExceptionCodeParamStatement = new Cm.Ast.AssignmentStatementNode(simpleStatementNode.GetSpan(), 
+                                new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), Cm.IrIntf.GetExceptionCodeParamName()),
+                                new Cm.Ast.IdentifierNode(simpleStatementNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                            Cm.Ast.Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+                            if (returnTypeExpr != null && returnTypeExpr->GetNodeType() != Cm.Ast.NodeType.voidNode)
+                            {
+                                Cm.Ast.CloneContext cloneContext;
+                                Cm.Ast.InvokeNode* defaultValue = new Cm.Ast.InvokeNode(simpleStatementNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
+                                endOfThrowStatement = new Cm.Ast.ReturnStatementNode(simpleStatementNode.GetSpan(), defaultValue);
+                            }
+                            else
+                            {
+                                endOfThrowStatement = new Cm.Ast.ReturnStatementNode(simpleStatementNode.GetSpan(), null);
+                            }
+                        }
+                        Cm.Ast.CompoundStatementNode* throwActions = new Cm.Ast.CompoundStatementNode(simpleStatementNode.GetSpan());
+                        CurrentFunction()->Own(throwActions);
+                        throwActions->SetLabelNode(simpleStatementNode.Label());
+                        throwActions->SetParent(functionNode);
+                        throwActions->AddStatement(setExceptionAddrStatement);
+                        throwActions->AddStatement(setExceptionCodeStatement);
+                        throwActions->AddStatement(resetCurrentExceptionStatement);
+                        if (setExceptionCodeParamStatement != null)
+                        {
+                            throwActions->AddStatement(setExceptionCodeParamStatement);
+                        }
+                        if (exitTryStatement != null)
+                        {
+                            throwActions->AddStatement(exitTryStatement);
+                        }
+                        throwActions->AddStatement(endOfThrowStatement);
+                        Cm.Sym.DeclarationVisitor declarationVisitor(BoundCompileUnit().SymbolTable());
+                        throwActions->Accept(declarationVisitor);
+                        Cm.Sym.ContainerScope* containerScope = BoundCompileUnit().SymbolTable().GetContainerScope(throwActions);
+                        containerScope->SetParent(ContainerScope());
+                        binder.BeginContainerScope(containerScope);
+                        throwActions->Accept(binder);
+                        binder.EndContainerScope();
+                        binder.AddBoundStatement(new Cm.BoundTree.BoundEndThrowStatement(&simpleStatementNode));
+                        SetResult(null);
+                        return;
+                    }
+                }
+            }
+            SetResult(simpleStatement);
+        }
+        private Binder& binder;
+    }
+    
+    public class ReturnStatementBinder : StatementBinder
+    {
+        public nothrow ReturnStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.ReturnStatementNode& returnStatementNode)
+        {
+            Cm.BoundTree.BoundReturnStatement* returnStatement = new Cm.BoundTree.BoundReturnStatement(&returnStatementNode);
+            Cm.Ast.FunctionNode* functionNode = returnStatementNode.GetFunction();
+            Cm.Ast.Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+            if (returnTypeExpr != null)
+            {
+                Cm.Sym.TypeSymbol* returnType = ResolveType(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), returnTypeExpr);
+                if (!(returnType is Cm.Sym.VoidTypeSymbol*))
+                {
+                    if (returnStatementNode.ReturnsValue())
+                    {
+                        returnStatement->SetReturnType(returnType);
+                        Cm.BoundTree.BoundExpression* returnValue = Stack().Pop();
+                        List<Cm.Core.Argument> resolutionArguments;
+                        Cm.Core.Argument targetArgument(Cm.Core.ArgumentCategory.lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(returnType, returnStatementNode.GetSpan()));
+                        resolutionArguments.Add(targetArgument);
+                        if (returnType->IsNonConstReferenceType() && (returnValue->Type()->IsNonConstReferenceType() || !returnValue->Type()->IsReferenceType()))
+                        {
+                            Cm.Core.Argument sourceArgument(returnValue->ArgumentCategory(), BoundCompileUnit().SymbolTable().GetTypeRepository().MakeReferenceType(returnValue->Type(), 
+                                returnStatementNode.GetSpan()));
+                            resolutionArguments.Add(sourceArgument);
+                            if (!returnValue->Type()->IsReferenceType())
+                            {
+                                returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+                            }
+                        }
+                        else
+                        {
+                            if (returnValue->Type() is Cm.Sym.FunctionGroupTypeSymbol*)
+                            {
+                                Cm.Core.Argument sourceArgument(returnValue->ArgumentCategory(), returnValue->Type());
+                                resolutionArguments.Add(sourceArgument);
+                            }
+                            else
+                            {
+                                Cm.Sym.TypeSymbol* sourceType = returnValue->Type();
+                                if (!sourceType->IsPointerType())
+                                {
+                                    sourceType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakeConstReferenceType(sourceType, returnStatementNode.GetSpan());
+                                }
+                                Cm.Core.Argument sourceArgument(returnValue->ArgumentCategory(), sourceType);
+                                resolutionArguments.Add(sourceArgument);
+                                if (returnType->IsReferenceType())
+                                {
+                                    if (!returnValue->Type()->IsReferenceType())
+                                    {
+                                        returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+                                    }
+                                }
+                            }
+                        }
+                        if (returnValue->GetFlag(Cm.BoundTree.BoundNodeFlags.argIsTemporary) || (returnValue is Cm.BoundTree.BoundLocalVariable*) || 
+                            (returnValue is Cm.BoundTree.BoundParameter*) && !returnValue->Type()->IsReferenceType())
+                        {
+                            Cm.Core.Argument& sourceArgument = resolutionArguments[1];
+                            sourceArgument.SetBindToRvalueRef();
+                        }
+                        if (returnValue is Cm.BoundTree.BoundMemberVariable*)
+                        {
+                            Cm.BoundTree.BoundMemberVariable* memberVar = cast<Cm.BoundTree.BoundMemberVariable*>(returnValue);
+                            if (memberVar->Symbol()->IsStatic() && returnType->IsNonClassReferenceType() && !returnValue->Type()->IsReferenceType())
+                            {
+                                Cm.Sym.LocalVariableSymbol* temporary = CurrentFunction()->CreateTempLocalVariable(returnType);
+                                temporary->SetSid(BoundCompileUnit().SymbolTable().GetSid());
+                                Cm.BoundTree.BoundLocalVariable* boundTemporary = new Cm.BoundTree.BoundLocalVariable(&returnStatementNode, temporary);
+                                boundTemporary->SetType(returnType);
+                                boundTemporary->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                                returnStatement->SetBoundTemporary(boundTemporary);
+                            }
+                        }
+                        Cm.Sym.FunctionLookupSet functionLookups;
+                        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, returnType->GetContainerScope()->ClassOrNsScope()));
+                        List<Cm.Sym.FunctionSymbol*> conversions;
+                        Cm.Sym.ConversionType conversionType = Cm.Sym.ConversionType.implicit;
+                        if (returnValue is Cm.BoundTree.BoundCast*)
+                        {
+                            conversionType = Cm.Sym.ConversionType.explicit_;
+                        }
+                        Cm.Sym.FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, returnStatementNode.GetSpan(), conversions, 
+                            conversionType, OverloadResolutionFlags.none);
+                        PrepareFunctionSymbol(ctor, returnStatementNode.GetSpan());
+                        returnStatement->SetConstructor(ctor);
+                        if (!(ctor is Cm.Core.BasicTypeOp*))
+                        {
+                            returnStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->FunctionSymbol(), returnStatementNode.GetSpan()));
+                        }
+                        if (ctor is DelegateFromFunCtor*)
+                        {
+                            DelegateFromFunCtor* delegateFromFunConstructor = cast<DelegateFromFunCtor*>(ctor);
+                            Cm.BoundTree.BoundFunctionId* boundFunctionId = new Cm.BoundTree.BoundFunctionId(&returnStatementNode, delegateFromFunConstructor->FunctionSymbol());
+                            boundFunctionId->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                            boundFunctionId->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(delegateFromFunConstructor->DelegateType(), returnStatementNode.GetSpan()));
+                            returnValue = boundFunctionId;
+                        }
+                        if (conversions.Count() != 2)
+                        {
+                            throw Exception("wrong number of conversions");
+                        }
+                        Cm.Sym.FunctionSymbol* conversionFun = conversions[1];
+                        if (conversionFun != null)
+                        {
+                            returnValue = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &returnStatementNode, returnValue, conversionFun, CurrentFunction());
+                        }
+                        if ((returnValue->Type() is Cm.Sym.ClassTypeSymbol*) && (returnType->IsReferenceType() || (returnType is Cm.Sym.ClassTypeSymbol*)))
+                        {
+                            returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                        }
+                        returnStatement->SetExpression(returnValue);
+                        returnStatement->SetBoundReturnValue(new Cm.BoundTree.BoundReturnValue(&returnStatementNode, CurrentFunction()->FunctionSymbol()->ReturnValue()));
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("must return value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+                    }
+                }
+                else if (returnStatementNode.ReturnsValue())
+                {
+                    throw Cm.Core.Error("void function cannot return a value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+                }
+            }
+            else if (returnStatementNode.ReturnsValue())
+            {
+                throw Cm.Core.Error("cannot return a value", returnStatementNode.GetSpan(), functionNode->GetSpan());
+            }
+            SetResult(returnStatement);
+        }
+    }
+    
+    public class ConditionalStatementBinder : StatementBinder
+    {
+        public ConditionalStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundConditionalStatement* conditionalStatement_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), conditionalStatement(conditionalStatement_)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
+        {
+            PopSkipContent();
+            Cm.BoundTree.BoundExpression* condition = Stack().Pop();
+            Cm.Sym.TypeSymbol* condType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(condition->Type());
+            if (!(condType is Cm.Sym.BoolTypeSymbol*))
+            {
+                throw Cm.Core.Error("if statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", conditionalStatementNode.Condition()->GetSpan());
+            }
+            condition->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            conditionalStatement->SetCondition(condition);
+        }
+        private Cm.BoundTree.BoundConditionalStatement* conditionalStatement;
+    }
+    
+    public class WhileStatementBinder : StatementBinder
+    {
+        public WhileStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundWhileStatement* whileStatement_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), whileStatement(whileStatement_)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
+        {
+            PopSkipContent();
+            Cm.BoundTree.BoundExpression* condition = Stack().Pop();
+            Cm.Sym.TypeSymbol* condType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(condition->Type());
+            if (!(condType is Cm.Sym.BoolTypeSymbol*))
+            {
+                throw Cm.Core.Error("while statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", whileStatementNode.Condition()->GetSpan());
+            }
+            condition->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            whileStatement->SetCondition(condition);
+        }
+        private Cm.BoundTree.BoundWhileStatement* whileStatement;
+    }
+    
+    public class DoStatementBinder : StatementBinder
+    {
+        public DoStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundDoStatement* doStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), doStatement(doStatement_)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.DoStatementNode& doStatementNode)
+        {
+            PopSkipContent();
+            Cm.BoundTree.BoundExpression* condition = Stack().Pop();
+            Cm.Sym.TypeSymbol* condType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(condition->Type());
+            if (!(condType is Cm.Sym.BoolTypeSymbol*))
+            {
+                throw Cm.Core.Error("do statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", doStatementNode.Condition()->GetSpan());
+            }
+            condition->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            doStatement->SetCondition(condition);
+        }
+        private Cm.BoundTree.BoundDoStatement* doStatement;
+    }
+    
+    public class ForStatementBinder : StatementBinder
+    {
+        public ForStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundForStatement* forStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), forStatement(forStatement_)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.ForStatementNode& forStatementNode)
+        {
+            PopSkipContent();
+            if (!forStatementNode.HasIncrement())
+            {
+                GenerateTrueExpression(&forStatementNode);
+            }
+            Cm.BoundTree.BoundExpression* increment = Stack().Pop();
+            forStatement->SetIncrement(increment);
+            if (!forStatementNode.HasCondition())
+            {
+                GenerateTrueExpression(&forStatementNode);
+            }
+            Cm.BoundTree.BoundExpression* condition = Stack().Pop();
+            Cm.Sym.TypeSymbol* condType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(condition->Type());
+            if (!(condType is Cm.Sym.BoolTypeSymbol*))
+            {
+                throw Cm.Core.Error("for statement condition must be Boolean expression (now of type '" + condType->FullName() + "')", forStatementNode.Condition()->GetSpan());
+            }
+            condition->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            forStatement->SetCondition(condition);
+        }
+        private Cm.BoundTree.BoundForStatement* forStatement;
+    }
+    
+    public class RangeForStatementBinder : StatementBinder
+    {
+        public RangeForStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.RangeForStatementNode& rangeForStatementNode)
+        {
+            rangeForStatementNode.Container()->Accept(*this);
+            UniquePtr<Cm.BoundTree.BoundExpression> container = Stack().Pop();
+            Cm.Sym.TypeSymbol* containerType = container->Type();
+            Cm.Sym.TypeSymbol* plainContainerType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(containerType);
+            Cm.Ast.IdentifierNode* beginNode = null;
+            Cm.Ast.IdentifierNode* endNode = null;
+            if (containerType->IsConstType())
+            {
+                beginNode = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "CBegin");
+                endNode = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "CEnd");
+            }
+            else
+            {
+                beginNode = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "Begin");
+                endNode = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "End");
+            }
+            Cm.Ast.CloneContext cloneContext;
+            Cm.Ast.DotNode* containerBeginNode = new Cm.Ast.DotNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.Container()->Clone(cloneContext), beginNode);
+            Cm.Ast.InvokeNode* invokeContainerBeginNode = new Cm.Ast.InvokeNode(rangeForStatementNode.GetSpan(), containerBeginNode);
+            Cm.Ast.DotNode* containerEndNode = new Cm.Ast.DotNode(rangeForStatementNode.GetSpan(), rangeForStatementNode.Container()->Clone(cloneContext), endNode);
+            Cm.Ast.InvokeNode* invokeContainerEndNode = new Cm.Ast.InvokeNode(rangeForStatementNode.GetSpan(), containerEndNode);
+            Cm.Ast.IdentifierNode* iteratorId = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
+            Cm.Ast.IdentifierNode* iteratorTypeId = null;
+            if (containerType->IsConstType())
+            {
+                iteratorTypeId = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "ConstIterator");
+            }
+            else
+            {
+                iteratorTypeId = new Cm.Ast.IdentifierNode(rangeForStatementNode.GetSpan(), "Iterator");
+            }
+            Cm.Ast.Node* containerTypeId = MakeExpressionNode(plainContainerType, rangeForStatementNode.GetSpan());
+            Cm.Ast.DotNode* containerIterator = new Cm.Ast.DotNode(rangeForStatementNode.GetSpan(), containerTypeId, iteratorTypeId);
+            Cm.Ast.ConstructionStatementNode* initNode = new Cm.Ast.ConstructionStatementNode(rangeForStatementNode.GetSpan(), containerIterator, iteratorId);
+            initNode->AddArgument(invokeContainerBeginNode);
+            Cm.Ast.NotEqualNode* iteratorNotEqualToEnd = new Cm.Ast.NotEqualNode(rangeForStatementNode.VariableSpan(), iteratorId->Clone(cloneContext), invokeContainerEndNode);
+            Cm.Ast.PrefixIncNode* incIterator = new Cm.Ast.PrefixIncNode(rangeForStatementNode.Container()->GetSpan(), iteratorId->Clone(cloneContext));
+            Cm.Ast.CompoundStatementNode* action = new Cm.Ast.CompoundStatementNode(rangeForStatementNode.GetSpan());
+            action->SetBeginBraceSpan(Span(0, 0, 0, 0));
+            action->SetEndBraceSpan(Span(0, 0, 0, 0));
+            action->SetParent(rangeForStatementNode.Parent());
+            Cm.Ast.DerefNode* derefIterator = new Cm.Ast.DerefNode(rangeForStatementNode.GetSpan(), iteratorId->Clone(cloneContext));
+            Cm.Ast.ConstructionStatementNode* initVariable = new Cm.Ast.ConstructionStatementNode(Span(0, 0, 0, 0), rangeForStatementNode.VarTypeExpr()->Clone(cloneContext), 
+                cast<Cm.Ast.IdentifierNode*>(rangeForStatementNode.VarId()->Clone(cloneContext)));
+            initVariable->AddArgument(derefIterator);
+            action->AddStatement(initVariable);
+            Cm.Sym.DeclarationVisitor declarationVisitor(BoundCompileUnit().SymbolTable());
+            action->AddStatement(cast<Cm.Ast.StatementNode*>(rangeForStatementNode.Action()->Clone(cloneContext)));
+            Cm.Ast.ForStatementNode* forStatementNode = new Cm.Ast.ForStatementNode(rangeForStatementNode.GetSpan(), initNode, iteratorNotEqualToEnd, incIterator, action);
+            forStatementNode->SetAsRangeForStatement();
+            forStatementNode->SetParent(rangeForStatementNode.Parent());
+            CurrentFunction()->Own(forStatementNode);
+            forStatementNode->Accept(declarationVisitor);
+            Cm.Sym.ContainerScope* containerScope = BoundCompileUnit().SymbolTable().GetContainerScope(forStatementNode);
+            containerScope->SetParent(ContainerScope());
+            binder.BeginContainerScope(containerScope);
+            forStatementNode->Accept(binder);
+            binder.EndContainerScope();
+        }
+        private Binder& binder;
+    }
+    
+    public class SwitchStatementBinder : StatementBinder
+    {
+        public nothrow SwitchStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
+        {
+        }
+        public override void BeginVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
+        {
+            PushSkipContent(true);
+            Cm.Ast.Node* conditionNode = switchStatementNode.Condition();
+            conditionNode->Accept(*this);
+            Cm.BoundTree.BoundExpression* condition = Stack().Pop();
+            Cm.Sym.TypeSymbol* condType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(condition->Type());
+            if (condType->IsIntegerTypeSymbol() || (condType is Cm.Sym.CharTypeSymbol*) || (condType is Cm.Sym.BoolTypeSymbol*) || (condType is Cm.Sym.EnumTypeSymbol*))
+            {
+                switchStatement->SetCondition(condition);
+            }
+            else
+            {
+                throw Cm.Core.Error("switch statement condition must be of integer, character, enumerated or Boolean type", conditionNode->GetSpan());
+            }
+        }
+        public override void EndVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
+        {
+            PopSkipContent();
+        }
+        private Cm.BoundTree.BoundSwitchStatement* switchStatement;
+    }
+    
+    internal bool TerminatesCase(Cm.Ast.StatementNode* statementNode)
+    {
+        if (statementNode is Cm.Ast.ConditionalStatementNode*)
+        {
+            Cm.Ast.ConditionalStatementNode* conditionalStatement = cast<Cm.Ast.ConditionalStatementNode*>(statementNode);
+            if (conditionalStatement->HasElseStatement())
+            {
+                if (TerminatesCase(conditionalStatement->ThenS()) && TerminatesCase(conditionalStatement->ElseS()))
+                {
+                    return true;
+                }
+            }
+        }
+        else if (statementNode is Cm.Ast.CompoundStatementNode*)
+        {
+            Cm.Ast.CompoundStatementNode* compoundStatement = cast<Cm.Ast.CompoundStatementNode*>(statementNode);
+            for (const UniquePtr<Cm.Ast.StatementNode>& statement : compoundStatement->Statements())
+            {
+                if (TerminatesCase(statement.GetPtr())) return true;
+            }
+        }
+        else 
+        {
+            return statementNode->IsCaseTerminatingNode();
+        }
+        return false;
+    }
+    
+    public class CaseStatementBinder : StatementBinder
+    {
+        public CaseStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundCaseStatement* caseStatement_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), caseStatement(caseStatement_), switchStatement(switchStatement_)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.CaseStatementNode& caseStatementNode)
+        {
+            PopSkipContent();
+            for (const UniquePtr<Cm.Ast.Node>& expr : caseStatementNode.Expressions())
+            {
+                Cm.Sym.TypeSymbol* condType = switchStatement->Condition()->Type();
+                if (condType is Cm.Sym.EnumTypeSymbol*)
+                {
+                    Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(condType);
+                    condType = enumTypeSymbol->GetUnderlyingType();
+                }
+                Cm.Sym.SymbolType symbolType = condType->GetSymbolType();
+                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+                Cm.Sym.Value* value = Evaluate(valueType, false, expr.GetPtr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
+                caseStatement->AddValue(value);
+            }
+            for (const UniquePtr<Cm.Ast.StatementNode>& statement : caseStatementNode.Statements())
+            {
+                if (TerminatesCase(statement.GetPtr())) return;
+            }
+            throw Cm.Core.Error("case must end in break, continue, return, throw, goto, goto case or goto default statement", caseStatementNode.GetSpan());
+        }
+        private Cm.BoundTree.BoundCaseStatement* caseStatement;
+        private Cm.BoundTree.BoundSwitchStatement* switchStatement;
+    }
+    
+    public class DefaultStatementBinder : StatementBinder
+    {
+        public DefaultStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundDefaultStatement* defaultStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), defaultStatement(defaultStatement_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.DefaultStatementNode& defaultStatementNode)
+        {
+            for (const UniquePtr<Cm.Ast.StatementNode>& statement : defaultStatementNode.Statements())
+            {
+                if (TerminatesCase(statement.GetPtr())) return;
+            }
+            throw Cm.Core.Error("default case must end in break, continue, return, throw, goto, goto case or goto default statement", defaultStatementNode.GetSpan());
+        }
+        private Cm.BoundTree.BoundDefaultStatement* defaultStatement;
+    }
+    
+    public class BreakStatementBinder : StatementBinder
+    {
+        public nothrow BreakStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void Visit(Cm.Ast.BreakStatementNode& breakStatementNode)
+        {
+            Cm.Ast.Node* parent = breakStatementNode.Parent();
+            while (parent != null && (parent is Cm.Ast.StatementNode*) && !cast<Cm.Ast.StatementNode*>(parent)->IsBreakEnclosingStatementNode())
+            {
+                parent = parent->Parent();
+            }
+            if (parent == null)
+            {
+                throw Cm.Core.Error("break statement must be enclosed in while, do, for, or switch statement", breakStatementNode.GetSpan());
+            }
+            Cm.BoundTree.BoundBreakStatement* boundBreakStatement = new Cm.BoundTree.BoundBreakStatement(&breakStatementNode);
+            SetResult(boundBreakStatement);
+        }
+    }
+    
+    public class ContinueStatementBinder : StatementBinder
+    {
+        public nothrow ContinueStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void Visit(Cm.Ast.ContinueStatementNode& continueStatementNode)
+        {
+            Cm.Ast.Node* parent = continueStatementNode.Parent();
+            while (parent != null && (parent is Cm.Ast.StatementNode*) && !cast<Cm.Ast.StatementNode*>(parent)->IsContinueEnclosingStatementNode())
+            {
+                parent = parent->Parent();
+            }
+            if (parent == null)
+            {
+                throw Cm.Core.Error("continue statement must be enclosed in while, do, or for statement", continueStatementNode.GetSpan());
+            }
+            Cm.BoundTree.BoundContinueStatement* boundContinueStatement = new Cm.BoundTree.BoundContinueStatement(&continueStatementNode);
+            SetResult(boundContinueStatement);
+        }
+    }
+    
+    public class GotoCaseStatementBinder : StatementBinder
+    {
+        public nothrow GotoCaseStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.GotoCaseStatementNode& gotoCaseStatementNode)
+        {
+            Cm.Ast.Node* parent = gotoCaseStatementNode.Parent();
+            while (parent != null && !(parent is Cm.Ast.CaseStatementNode*) && !(parent is Cm.Ast.DefaultStatementNode*))
+            {
+                parent = parent->Parent();
+            }
+            if (parent == null)
+            {
+                throw Cm.Core.Error("goto case statement must be enclosed in case or default statement", gotoCaseStatementNode.GetSpan());
+            }
+            Cm.Sym.TypeSymbol* condType = switchStatement->Condition()->Type();
+            if (condType is Cm.Sym.EnumTypeSymbol*)
+            {
+                Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(condType);
+                condType = enumTypeSymbol->GetUnderlyingType();
+            }
+            Cm.Sym.SymbolType symbolType = condType->GetSymbolType();
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+            Cm.Sym.Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
+            Cm.BoundTree.BoundGotoCaseStatement* boundGotoCaseStatement = new Cm.BoundTree.BoundGotoCaseStatement(&gotoCaseStatementNode);
+            boundGotoCaseStatement->SetValue(value);
+            SetResult(boundGotoCaseStatement);
+        }
+        private Cm.BoundTree.BoundSwitchStatement* switchStatement;
+    }
+    
+    public class GotoDefaultStatementBinder : StatementBinder
+    {
+        public nothrow GotoDefaultStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void Visit(Cm.Ast.GotoDefaultStatementNode& gotoDefaultStatementNode)
+        {
+            Cm.Ast.Node* parent = gotoDefaultStatementNode.Parent();
+            while (parent != null && !(parent is Cm.Ast.CaseStatementNode*))
+            {
+                parent = parent->Parent();
+            }
+            if (parent == null)
+            {
+                throw Cm.Core.Error("goto default statement must be enclosing in case statement", gotoDefaultStatementNode.GetSpan());
+            }
+            Cm.BoundTree.BoundGotoDefaultStatement* boundGotoDefaultStatement = new Cm.BoundTree.BoundGotoDefaultStatement(&gotoDefaultStatementNode);
+            SetResult(boundGotoDefaultStatement);
+        }
+    }
+    
+    public class DestroyStatementBinder : StatementBinder
+    {
+        public nothrow DestroyStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.DestroyStatementNode& destroyStatementNode)
+        {
+            UniquePtr<Cm.BoundTree.BoundExpression> ptr = Stack().Pop();
+            Cm.Sym.TypeSymbol* type = ptr->Type();
+            if (!type->IsPointerType())
+            {
+                throw Cm.Core.Error("destroy statement needs pointer type operand", destroyStatementNode.GetSpan());
+            }
+            if (type->GetPointerCount() == 1)
+            {
+                Cm.Sym.TypeSymbol* baseType = type->GetBaseType();
+                if (baseType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(baseType);
+                    Cm.Sym.FunctionSymbol* destructor = classType->Destructor();
+                    if (destructor != null)
+                    {
+                        Cm.BoundTree.BoundExpressionList arguments;
+                        arguments.Add(ptr.Release());
+                        Cm.BoundTree.BoundFunctionCallStatement* destructionStatement = new Cm.BoundTree.BoundFunctionCallStatement(destructor, Rvalue(arguments));
+                        destructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->FunctionSymbol(), destroyStatementNode.GetSpan()));
+                        SetResult(destructionStatement);
+                        return;
+                    }
+                }
+            }
+            SetResult(null);
+        }
+    }
+    
+    public class DeleteStatementBinder : StatementBinder
+    {
+        public nothrow DeleteStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), freeStatement(null)
+        {
+        }
+        public override void EndVisit(Cm.Ast.DeleteStatementNode& deleteStatementNode)
+        {
+            bool resultSet = false;
+            UniquePtr<Cm.BoundTree.BoundExpression> ptr = Stack().Pop();
+            Cm.Sym.TypeSymbol* type = ptr->Type();
+            if (!type->IsPointerType())
+            {
+                throw Cm.Core.Error("delete statement needs pointer type operand", deleteStatementNode.GetSpan());
+            }
+            if (type->GetPointerCount() == 1)
+            {
+                Cm.Sym.TypeSymbol* baseType = type->GetBaseType();
+                if (baseType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(baseType);
+                    Cm.Sym.FunctionSymbol* destructor = classType->Destructor();
+                    if (destructor != null)
+                    {
+                        Cm.BoundTree.BoundExpressionList arguments;
+                        arguments.Add(ptr.Release());
+                        Cm.BoundTree.BoundFunctionCallStatement* destructionStatement = new Cm.BoundTree.BoundFunctionCallStatement(destructor, Rvalue(arguments));
+                        destructionStatement->SetTraceCallInfo(CreateTraceCallInfo(BoundCompileUnit(), CurrentFunction()->FunctionSymbol(), deleteStatementNode.GetSpan()));
+                        SetResult(destructionStatement);
+                        resultSet = true;
+                    }
+                }
+            }
+            if (!resultSet)
+            {
+                SetResult(null);
+            }
+            deleteStatementNode.PointerExpr()->Accept(*this);
+            UniquePtr<Cm.BoundTree.BoundExpression> mem = Stack().Pop();
+            List<Cm.Core.Argument> resolutionArguments;
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, mem->Type()));
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_parent, ContainerScope()));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* memFreeFun = ResolveOverload(ContainerScope(), BoundCompileUnit(), "System.Support.MemFree", resolutionArguments, functionLookups, deleteStatementNode.GetSpan(), conversions);
+            if (conversions.Count() != 1)
+            {
+                throw Exception("wrong number of conversions");
+            }
+            Cm.BoundTree.BoundExpressionList arguments;
+            Cm.Sym.FunctionSymbol* conversion = conversions[0];
+            if (conversion != null)
+            {
+                arguments.Add(CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &deleteStatementNode, mem.Release(), conversion, CurrentFunction()));
+            }
+            else
+            {
+                arguments.Add(mem.Release());
+            }
+            freeStatement = new Cm.BoundTree.BoundFunctionCallStatement(memFreeFun, Rvalue(arguments));
+        }
+        public nothrow inline Cm.BoundTree.BoundStatement* FreeStatement() const
+        {
+            return freeStatement;
+        }
+        private Cm.BoundTree.BoundStatement* freeStatement;
+    }
+    
+    public class ThrowStatementBinder : StatementBinder
+    {
+        public nothrow ThrowStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void EndVisit(Cm.Ast.ThrowStatementNode& throwStatementNode)
+        {
+            Cm.Ast.TryStatementNode* ownerTry = CurrentFunction()->GetCurrentTry();
+            if (ownerTry == null && CurrentFunction()->FunctionSymbol()->IsNothrow())
+            {
+                throw Cm.Core.Error("nothrow function cannot throw", throwStatementNode.GetSpan(), CurrentFunction()->FunctionSymbol()->GetSpan());
+            }
+            UniquePtr<Cm.BoundTree.BoundExpression> exceptionExpr = Stack().Pop();
+            Cm.Sym.TypeSymbol* exceptionType = exceptionExpr->Type();
+            Cm.Sym.TypeSymbol* plainExceptionType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(exceptionType);
+            if (plainExceptionType is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* exceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(plainExceptionType);
+                if (exceptionClassType->IsAbstract())
+                {
+                    throw Cm.Core.Error("cannot instantiate an abstract class", exceptionClassType->GetSpan(), throwStatementNode.GetSpan());
+                }
+                Cm.Sym.Symbol* systemExceptionSymbol = BoundCompileUnit().SymbolTable().GlobalScope()->Lookup("System.Exception");
+                if (systemExceptionSymbol != null)
+                {
+                    if (systemExceptionSymbol is Cm.Sym.ClassTypeSymbol*)
+                    {
+                        Cm.Sym.ClassTypeSymbol* systemExceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(systemExceptionSymbol);
+                        if (Cm.Sym.TypesEqual(exceptionClassType, systemExceptionClassType) || exceptionClassType->HasBaseClass(systemExceptionClassType))
+                        {
+                            Cm.Sym.ExceptionTable* exceptionTable = Cm.Sym.ExceptionTable.Instance();
+                            exceptionTable->AddProjectException(exceptionClassType);
+                            Cm.Sym.WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), exceptionClassType->FullName());
+                            binder.AddBoundStatement(new Cm.BoundTree.BoundBeginThrowStatement(&throwStatementNode));
+                            int exceptionId = exceptionTable->GetExceptionId(exceptionClassType);
+                            string sourceFilePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(throwStatementNode.GetSpan().FileIndex());
+                            int sourceLineNumber = throwStatementNode.GetSpan().LineNumber();
+                            Cm.Ast.NewNode* newEx = new Cm.Ast.NewNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exceptionClassType->FullName()));
+                            Cm.Ast.CloneContext cloneContext;
+                            newEx->AddArgument(throwStatementNode.ExceptionExpr()->Clone(cloneContext));
+                            string exVarName = CurrentFunction()->GetNextTempVariableName();
+                            Cm.Ast.DerivationList pointerDerivation;
+                            pointerDerivation.Add(Cm.Ast.Derivation.pointer);
+                            Cm.Ast.DerivedTypeExprNode* exPtrType = new Cm.Ast.DerivedTypeExprNode(throwStatementNode.GetSpan(), pointerDerivation, 
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exceptionClassType->FullName()));
+                            Cm.Ast.ConstructionStatementNode* constructEx = new Cm.Ast.ConstructionStatementNode(throwStatementNode.GetSpan(), exPtrType,
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName));
+                            constructEx->AddArgument(newEx);
+                            Cm.Ast.InvokeNode* setExceptionTypeExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.ArrowNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "SetExceptionType")));
+                            Cm.Ast.DerefNode* derefExVar = new Cm.Ast.DerefNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName));
+                            Cm.Ast.TypeNameNode* typeNameNode = new Cm.Ast.TypeNameNode(throwStatementNode.GetSpan(), derefExVar);
+                            setExceptionTypeExpr->AddArgument(typeNameNode);
+                            Cm.Ast.SimpleStatementNode* setExceptionTypeStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), setExceptionTypeExpr);
+                            Cm.Ast.InvokeNode* setFileExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(),
+                                new Cm.Ast.ArrowNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "SetFile")));
+                            Cm.Ast.StringLiteralNode* sourceFilePathArg = new Cm.Ast.StringLiteralNode(throwStatementNode.GetSpan(), sourceFilePath);
+                            setFileExpr->AddArgument(sourceFilePathArg);
+                            Cm.Ast.SimpleStatementNode* setFileStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), setFileExpr);
+                            Cm.Ast.InvokeNode* setLineExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.ArrowNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "SetLine")));
+                            setLineExpr->AddArgument(new Cm.Ast.IntLiteralNode(throwStatementNode.GetSpan(), sourceLineNumber));
+                            Cm.Ast.SimpleStatementNode* setLineStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), setLineExpr);
+                         
+                            Cm.Ast.InvokeNode* beginCaptureCallStackCall = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "begin_capture_call_stack"));
+                            Cm.Ast.SimpleStatementNode* beginCaptureCallStackStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), beginCaptureCallStackCall);
+                            Cm.Ast.InvokeNode* captureCallStackCall = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "capture_call_stack"));
+                            Cm.Ast.InvokeNode* setCallStackExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.ArrowNode(throwStatementNode.GetSpan(), new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "SetCallStack")));
+                            setCallStackExpr->AddArgument(captureCallStackCall);
+                            Cm.Ast.SimpleStatementNode* setCallStackStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), setCallStackExpr);
+                            Cm.Ast.InvokeNode* endCaptureCallStackCall = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "end_capture_call_stack"));
+                            Cm.Ast.SimpleStatementNode* endCaptureCallStackStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), endCaptureCallStackCall);
+                            
+                            Cm.Ast.InvokeNode* callThisThreadExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "this_thread"));
+                            Cm.Ast.InvokeNode* callGetExceptionTableAddrExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "get_exception_table_addr"));
+                            callGetExceptionTableAddrExpr->AddArgument(callThisThreadExpr);
+                            Cm.Ast.InvokeNode* callSetExceptionAddrExpr = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(),
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), "System.Support.SetExceptionAddr"));
+                            callSetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
+                            Cm.Ast.IntLiteralNode* exceptionIdArg = new Cm.Ast.IntLiteralNode(throwStatementNode.GetSpan(), exceptionId);
+                            callSetExceptionAddrExpr->AddArgument(exceptionIdArg);
+                            callSetExceptionAddrExpr->AddArgument(new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), exVarName));
+                            Cm.Ast.SimpleStatementNode* setExceptionAddrStatement = new Cm.Ast.SimpleStatementNode(throwStatementNode.GetSpan(), callSetExceptionAddrExpr);
+                            
+                            Cm.Ast.AssignmentStatementNode* setExceptionCodeStatement = new Cm.Ast.AssignmentStatementNode(throwStatementNode.GetSpan(), 
+                                new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()),
+                                new Cm.Ast.IntLiteralNode(throwStatementNode.GetSpan(), exceptionId));
+                            Cm.Ast.AssignmentStatementNode* setExceptionCodeParamStatement = null;
+                            Cm.Ast.StatementNode* endOfThrowStatement = null;
+                            Cm.Ast.FunctionNode* functionNode = throwStatementNode.GetFunction();
+                            Cm.Ast.ExitTryStatementNode* exitTryStatement = null;
+                            Cm.Ast.TryStatementNode* ownerTry = null;
+                            if (CurrentFunction()->InHandler())
+                            {
+                                ownerTry = CurrentFunction()->GetParentTry();
+                            }
+                            else
+                            {
+                                ownerTry = CurrentFunction()->GetCurrentTry();
+                            }
+                            if (ownerTry != null)
+                            {
+                                int catchId = ownerTry->GetFirstHandler()->CatchId();
+                                if (catchId == -1)
+                                {
+                                    catchId = CurrentFunction()->GetNextCatchId();
+                                    ownerTry->SetFirstCatchId(catchId);
+                                }
+                                exitTryStatement = new Cm.Ast.ExitTryStatementNode(throwStatementNode.GetSpan(), ownerTry);
+                                string continueLabelPrefix;
+                                Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                                if (backend == Cm.IrIntf.Backend.llvm)
+                                {
+                                    continueLabelPrefix = "$C";
+                                }
+                                else if (backend == Cm.IrIntf.Backend.c)
+                                {
+                                    continueLabelPrefix = "_C_";
+                                }
+                                Cm.Ast.GotoStatementNode* gotoCatch = new Cm.Ast.GotoStatementNode(throwStatementNode.GetSpan(), new Cm.Ast.LabelNode(throwStatementNode.GetSpan(), 
+                                    continueLabelPrefix + ToString(catchId)));
+                                gotoCatch->SetExceptionHandlingGoto();
+                                endOfThrowStatement = gotoCatch;
+                            }
+                            else
+                            {
+                                setExceptionCodeParamStatement = new Cm.Ast.AssignmentStatementNode(throwStatementNode.GetSpan(), 
+                                    new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), Cm.IrIntf.GetExceptionCodeParamName()),
+                                    new Cm.Ast.IdentifierNode(throwStatementNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                                Cm.Ast.Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+                                if (returnTypeExpr != null && returnTypeExpr->GetNodeType() != Cm.Ast.NodeType.voidNode)
+                                {
+                                    Cm.Ast.CloneContext cloneContext;
+                                    Cm.Ast.InvokeNode* defaultValue = new Cm.Ast.InvokeNode(throwStatementNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
+                                    endOfThrowStatement = new Cm.Ast.ReturnStatementNode(throwStatementNode.GetSpan(), defaultValue);
+                                }
+                                else
+                                {
+                                    endOfThrowStatement = new Cm.Ast.ReturnStatementNode(throwStatementNode.GetSpan(), null);
+                                }
+                            }
+                            
+                            Cm.Ast.CompoundStatementNode* throwActions = new Cm.Ast.CompoundStatementNode(throwStatementNode.GetSpan());
+                            CurrentFunction()->Own(throwActions);
+                            throwActions->SetLabelNode(throwStatementNode.Label());
+                            throwActions->SetParent(functionNode);
+                            throwActions->AddStatement(constructEx);
+                            throwActions->AddStatement(setExceptionTypeStatement);
+                            throwActions->AddStatement(setFileStatement);
+                            throwActions->AddStatement(setLineStatement);
+                            throwActions->AddStatement(beginCaptureCallStackStatement);
+                            throwActions->AddStatement(setCallStackStatement);
+                            throwActions->AddStatement(endCaptureCallStackStatement);
+                            throwActions->AddStatement(setExceptionAddrStatement);
+                            throwActions->AddStatement(setExceptionCodeStatement);
+                            if (setExceptionCodeParamStatement != null)
+                            {
+                                throwActions->AddStatement(setExceptionCodeParamStatement);
+                            }
+                            if (exitTryStatement != null)
+                            {
+                                throwActions->AddStatement(exitTryStatement);
+                            }
+                            throwActions->AddStatement(endOfThrowStatement);
+                            Cm.Sym.DeclarationVisitor declarationVisitor(BoundCompileUnit().SymbolTable());
+                            throwActions->Accept(declarationVisitor);
+                            Cm.Sym.ContainerScope* containerScope = BoundCompileUnit().SymbolTable().GetContainerScope(throwActions);
+                            containerScope->SetParent(ContainerScope());
+                            binder.BeginContainerScope(containerScope);
+                            throwActions->Accept(binder);
+                            binder.EndContainerScope();
+                            binder.AddBoundStatement(new Cm.BoundTree.BoundEndThrowStatement(&throwStatementNode));
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("exception must be class type equal to or derived from System.Exception class", throwStatementNode.GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("System.Exception not class type", throwStatementNode.GetSpan());
+                    }
+                }
+                else
+                {
+                    throw Cm.Core.Error("System.Exception symbol not found", throwStatementNode.GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("type of exception must be class type", throwStatementNode.GetSpan());
+            }
+        }
+        private Binder& binder;
+    }
+    
+    public class TryBinder : StatementBinder
+    {
+        public nothrow TryBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void Visit(Cm.Ast.TryStatementNode& tryStatementNode)
+        {
+            CurrentFunction()->PushTryNode(&tryStatementNode);
+            Cm.Ast.CatchNode* firstHandler = tryStatementNode.GetFirstHandler();
+            if (firstHandler->CatchId() == -1)
+            {
+                firstHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
+            }
+            CurrentFunction()->AddTryCompound(&tryStatementNode, binder.GetCurrentCompound());
+            binder.AddBoundStatement(new Cm.BoundTree.BoundBeginTryStatement(&tryStatementNode, firstHandler->CatchId()));
+            int continueId = CurrentFunction()->GetNextCatchId();
+            string continueLabelPrefix;
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                continueLabelPrefix = "$C";
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                continueLabelPrefix = "_C_";
+            }
+            string continueLabel = continueLabelPrefix + ToString(continueId);
+            Cm.Sym.DeclarationVisitor declarationVisitor(BoundCompileUnit().SymbolTable());
+            tryStatementNode.TryBlock()->Accept(declarationVisitor);
+            Cm.Sym.ContainerScope* containerScope = BoundCompileUnit().SymbolTable().GetContainerScope(tryStatementNode.TryBlock());
+            containerScope->SetParent(ContainerScope());
+            binder.BeginContainerScope(containerScope);
+            tryStatementNode.TryBlock()->Accept(binder);
+            binder.EndContainerScope();
+            binder.AddBoundStatement(new Cm.BoundTree.BoundEndTryStatement(&tryStatementNode));
+            Cm.Ast.GotoStatementNode* gotoOverCatches = new Cm.Ast.GotoStatementNode(Span(0, 0, 0, 0), new Cm.Ast.LabelNode(Span(0, 0, 0, 0), continueLabel));
+            gotoOverCatches->SetExceptionHandlingGoto();
+            CurrentFunction()->Own(gotoOverCatches);
+            gotoOverCatches->Accept(binder);
+            CurrentFunction()->PopTryNode();
+            tryStatementNode.Handlers().Accept(binder);
+            Cm.Ast.SimpleStatementNode* emptyStatement = new Cm.Ast.SimpleStatementNode(Span(0, 0, 0, 0), null);
+            CurrentFunction()->Own(emptyStatement);
+            emptyStatement->SetLabelNode(new Cm.Ast.LabelNode(tryStatementNode.GetSpan(), continueLabel));
+            emptyStatement->Accept(binder);
+        }
+        private Binder& binder;
+    }
+    
+    public class CatchBinder : StatementBinder
+    {
+        public nothrow CatchBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void Visit(Cm.Ast.CatchNode& catchNode)
+        {
+            CurrentFunction()->PushHandler();
+            if (catchNode.CatchId() == -1)
+            {
+                catchNode.SetCatchId(CurrentFunction()->GetNextCatchId());
+            }
+            catchNode.ExceptionTypeExpr()->Accept(*this);
+            UniquePtr<Cm.BoundTree.BoundExpression> exceptionTypeExpr = Stack().Pop();
+            if (exceptionTypeExpr.GetPtr() is Cm.BoundTree.BoundTypeExpression*)
+            {
+                Cm.BoundTree.BoundTypeExpression* boundTypeExpression = cast<Cm.BoundTree.BoundTypeExpression*>(exceptionTypeExpr.GetPtr());
+                Cm.Sym.TypeSymbol* catchedExceptionType = boundTypeExpression->Symbol();
+                Cm.Sym.TypeSymbol* plainCatchedExceptionType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(catchedExceptionType);
+                if (plainCatchedExceptionType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* catchedExceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(plainCatchedExceptionType);
+                    if (catchedExceptionClassType->IsAbstract())
+                    {
+                        throw Cm.Core.Error("cannot instantiate an abstract class", catchedExceptionClassType->GetSpan(), catchNode.GetSpan());
+                    }
+                    Cm.Sym.Symbol* systemExceptionSymbol = BoundCompileUnit().SymbolTable().GlobalScope()->Lookup("System.Exception");
+                    if (systemExceptionSymbol != null)
+                    {
+                        if (systemExceptionSymbol is Cm.Sym.ClassTypeSymbol*)
+                        {
+                            Cm.Sym.ClassTypeSymbol* systemExceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(systemExceptionSymbol);
+                            if (Cm.Sym.TypesEqual(catchedExceptionClassType, systemExceptionClassType) || catchedExceptionClassType->HasBaseClass(systemExceptionClassType))
+                            {
+                                Cm.Sym.ExceptionTable* exceptionTable = Cm.Sym.ExceptionTable.Instance();
+                                exceptionTable->AddProjectException(catchedExceptionClassType);
+                                Cm.Sym.WriteExceptionIdToFile(BoundCompileUnit().IrFilePath(), catchedExceptionClassType->FullName());
+                                binder.AddBoundStatement(new Cm.BoundTree.BoundPushGenDebugInfoStatement(&catchNode, false));
+                                int catchedExceptionId = exceptionTable->GetExceptionId(catchedExceptionClassType);
+                                Cm.Ast.IdentifierNode* handleVarId = new Cm.Ast.IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
+                                Cm.Ast.ConstructionStatementNode* handleThisExStatement = new Cm.Ast.ConstructionStatementNode(catchNode.GetSpan(), new Cm.Ast.BoolNode(catchNode.GetSpan()), handleVarId);
+                                string continueLabelPrefix;
+                                Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                                if (backend == Cm.IrIntf.Backend.llvm)
+                                {
+                                    continueLabelPrefix = "$C";
+                                }
+                                else if (backend == Cm.IrIntf.Backend.c)
+                                {
+                                    continueLabelPrefix = "_C_";
+                                }
+                                handleThisExStatement->SetLabelNode(new Cm.Ast.LabelNode(catchNode.GetSpan(), continueLabelPrefix + ToString(catchNode.CatchId())));
+                                Cm.Ast.InvokeNode* handleThisExCall = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "System.Support.HandleThisEx"));
+                                handleThisExCall->AddArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExceptionBaseIdTableName()));
+                                handleThisExCall->AddArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                                Cm.Ast.CloneContext cloneContext;
+                                handleThisExCall->AddArgument(new Cm.Ast.IntLiteralNode(catchNode.GetSpan(), catchedExceptionId));
+                                handleThisExStatement->AddArgument(handleThisExCall);
+                                Cm.Ast.CompoundStatementNode* handlerBlock = new Cm.Ast.CompoundStatementNode(catchNode.GetSpan());
+                                handlerBlock->SetBeginBraceSpan(Span(0, 0, 0, 0));
+                                handlerBlock->SetEndBraceSpan(Span(0, 0, 0, 0));
+                                CurrentFunction()->Own(handlerBlock);
+                                Cm.Ast.FunctionNode* functionNode = catchNode.GetFunction();
+                                handlerBlock->SetParent(functionNode);
+                                handlerBlock->AddStatement(handleThisExStatement);
+                                Cm.Ast.Node* parent = catchNode.Parent();
+                                if (!(parent is Cm.Ast.TryStatementNode*))
+                                {
+                                    throw Exception("try statement node expected");
+                                }
+                                Cm.Ast.TryStatementNode* tryStatementNode = cast<Cm.Ast.TryStatementNode*>(parent);
+                                if (tryStatementNode->IsLastHandler(&catchNode))
+                                {
+                                    Cm.Ast.CompoundStatementNode* propagateExStatement = new Cm.Ast.CompoundStatementNode(catchNode.GetSpan());
+                                    Cm.Ast.TryStatementNode* parentTry = CurrentFunction()->GetParentTry();
+                                    if (parentTry != null)
+                                    {
+                                        Cm.Ast.CatchNode* outerHandler = parentTry->GetFirstHandler();
+                                        if (outerHandler->CatchId() == -1)
+                                        {
+                                            outerHandler->SetCatchId(CurrentFunction()->GetNextCatchId());
+                                        }
+                                        Cm.Ast.ExitTryStatementNode* exitTryStatement = new Cm.Ast.ExitTryStatementNode(catchNode.GetSpan(), parentTry);
+                                        propagateExStatement->AddStatement(exitTryStatement);
+                                        string continueLabelPrefix;
+                                        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                                        if (backend == Cm.IrIntf.Backend.llvm)
+                                        {
+                                            continueLabelPrefix = "$C";
+                                        }
+                                        else if (backend == Cm.IrIntf.Backend.c)
+                                        {
+                                            continueLabelPrefix = "_C_";
+                                        }
+                                        Cm.Ast.GotoStatementNode* gotoOuterCatch = new Cm.Ast.GotoStatementNode(catchNode.GetSpan(), new Cm.Ast.LabelNode(catchNode.GetSpan(), 
+                                            continueLabelPrefix + ToString(outerHandler->CatchId())));
+                                        gotoOuterCatch->SetExceptionHandlingGoto();
+                                        propagateExStatement->AddStatement(gotoOuterCatch);
+                                    }
+                                    else
+                                    {
+                                        if (CurrentFunction()->FunctionSymbol()->CanThrow())
+                                        {
+                                            Cm.Ast.AssignmentStatementNode* setExceptionCodeParamStatement = new Cm.Ast.AssignmentStatementNode(catchNode.GetSpan(),
+                                                new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExceptionCodeParamName()),
+                                                new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                                            propagateExStatement->AddStatement(setExceptionCodeParamStatement);
+                                        }
+                                        Cm.Ast.Node* returnTypeExpr = functionNode->ReturnTypeExpr();
+                                        if (returnTypeExpr != null && returnTypeExpr->GetNodeType() != Cm.Ast.NodeType.voidNode)
+                                        {
+                                            Cm.Ast.InvokeNode* defaultValue = new Cm.Ast.InvokeNode(catchNode.GetSpan(), returnTypeExpr->Clone(cloneContext));
+                                            Cm.Ast.ReturnStatementNode* returnStatement = new Cm.Ast.ReturnStatementNode(catchNode.GetSpan(), defaultValue);
+                                            propagateExStatement->AddStatement(returnStatement);
+                                        }
+                                        else
+                                        {
+                                            Cm.Ast.ReturnStatementNode* returnStatement = new Cm.Ast.ReturnStatementNode(catchNode.GetSpan(), null);
+                                            propagateExStatement->AddStatement(returnStatement);
+                                        }
+                                    }
+                                    Cm.Ast.ConditionalStatementNode* dontHandleTest = new Cm.Ast.ConditionalStatementNode(catchNode.GetSpan(), 
+                                        new Cm.Ast.NotNode(catchNode.GetSpan(), handleVarId->Clone(cloneContext)), propagateExStatement, null);
+                                    handlerBlock->AddStatement(dontHandleTest);
+                                }
+                                else
+                                {
+                                    Cm.Ast.CatchNode* nextHandler = tryStatementNode->GetNextHandler(&catchNode);
+                                    int nextCatchId = nextHandler->CatchId();
+                                    if (nextCatchId == -1)
+                                    {
+                                        nextCatchId = CurrentFunction()->GetNextCatchId();
+                                        nextHandler->SetCatchId(nextCatchId);
+                                    }
+                                    string continueLabelPrefix;
+                                    Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                                    if (backend == Cm.IrIntf.Backend.llvm)
+                                    {
+                                        continueLabelPrefix = "$C";
+                                    }
+                                    else if (backend == Cm.IrIntf.Backend.c)
+                                    {
+                                        continueLabelPrefix = "_C_";
+                                    }
+                                    Cm.Ast.GotoStatementNode* gotoNextHandler = new Cm.Ast.GotoStatementNode(catchNode.GetSpan(), new Cm.Ast.LabelNode(catchNode.GetSpan(), 
+                                        continueLabelPrefix + ToString(nextCatchId)));
+                                    gotoNextHandler->SetExceptionHandlingGoto();
+                                    Cm.Ast.ConditionalStatementNode* dontHandleTest = new Cm.Ast.ConditionalStatementNode(catchNode.GetSpan(), new Cm.Ast.NotNode(catchNode.GetSpan(), 
+                                        handleVarId->Clone(cloneContext)), gotoNextHandler, null);
+                                    handlerBlock->AddStatement(dontHandleTest);
+                                }
+                                Cm.Ast.InvokeNode* callThisThreadExpr = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "this_thread"));
+                                Cm.Ast.InvokeNode* callGetExceptionTableAddrExpr = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "get_exception_table_addr"));
+                                callGetExceptionTableAddrExpr->AddArgument(callThisThreadExpr);
+                                Cm.Ast.InvokeNode* callGetExceptionAddrExpr = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "System.Support.GetExceptionAddr"));
+                                callGetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
+                                callGetExceptionAddrExpr->AddArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                                Cm.Ast.DerivationList pointerDerivation;
+                                pointerDerivation.Add(Cm.Ast.Derivation.pointer);
+                                Cm.Ast.DerivedTypeExprNode* exPtrType = new Cm.Ast.DerivedTypeExprNode(catchNode.GetSpan(), pointerDerivation, new Cm.Ast.IdentifierNode(catchNode.GetSpan(), 
+                                    catchedExceptionClassType->FullName()));
+                                string exPtrVarName = CurrentFunction()->GetNextTempVariableName();
+                                Cm.Ast.ConstructionStatementNode* constructExPtrStatement = new Cm.Ast.ConstructionStatementNode(catchNode.GetSpan(), exPtrType, new Cm.Ast.IdentifierNode(catchNode.GetSpan(), 
+                                    exPtrVarName));
+                                constructExPtrStatement->AddArgument(new Cm.Ast.CastNode(catchNode.GetSpan(), exPtrType->Clone(cloneContext), callGetExceptionAddrExpr));
+                                handlerBlock->AddStatement(constructExPtrStatement);
+                                Cm.Ast.InvokeNode* invokeSetCurrentExceptionIdFun = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "set_current_exception_id"));
+                                invokeSetCurrentExceptionIdFun->AddArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), Cm.IrIntf.GetExCodeVarName()));
+                                Cm.Ast.SimpleStatementNode* setCurrentExceptionIdStatement = new Cm.Ast.SimpleStatementNode(catchNode.GetSpan(), invokeSetCurrentExceptionIdFun);
+                                handlerBlock->AddStatement(setCurrentExceptionIdStatement);
+                                Cm.Ast.InvokeNode* invokeSetCurrentExceptionAddrFun = new Cm.Ast.InvokeNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "set_current_exception_addr"));
+                                invokeSetCurrentExceptionAddrFun->AddArgument(callGetExceptionAddrExpr->Clone(cloneContext));
+                                Cm.Ast.SimpleStatementNode* setCurrentExceptionAddrStatement = new Cm.Ast.SimpleStatementNode(catchNode.GetSpan(), invokeSetCurrentExceptionAddrFun);
+                                handlerBlock->AddStatement(setCurrentExceptionAddrStatement);
+                                Cm.Ast.AssignmentStatementNode* resetExCodeStatement = new Cm.Ast.AssignmentStatementNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), 
+                                    Cm.IrIntf.GetExCodeVarName()), new Cm.Ast.IntLiteralNode(catchNode.GetSpan(), 0));
+                                handlerBlock->AddStatement(resetExCodeStatement);
+                                Cm.Ast.DerivationList constRefDerivation;
+                                constRefDerivation.Add(Cm.Ast.Derivation.const_);
+                                constRefDerivation.Add(Cm.Ast.Derivation.reference);
+                                Cm.Ast.Node* exTypeExpr = catchNode.ExceptionTypeExpr()->Clone(cloneContext);
+                                Cm.Ast.IdentifierNode* exId = null;
+                                if (catchNode.ExceptionId() != null)
+                                {
+                                    exId = cast<Cm.Ast.IdentifierNode*>(catchNode.ExceptionId()->Clone(cloneContext));
+                                }
+                                else
+                                {
+                                    exId = new Cm.Ast.IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName());
+                                }
+                                Cm.Ast.ConstructionStatementNode* constructExVarStatement = new Cm.Ast.ConstructionStatementNode(catchNode.GetSpan(), exTypeExpr, exId);
+                                constructExVarStatement->AddArgument(new Cm.Ast.DerefNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), exPtrVarName)));
+                                handlerBlock->AddStatement(constructExVarStatement);
+                                Cm.Ast.TemplateIdNode* exDeleterType = new Cm.Ast.TemplateIdNode(catchNode.GetSpan(), new Cm.Ast.IdentifierNode(catchNode.GetSpan(), "System.Support.ExDeleter"));
+                                exDeleterType->AddTemplateArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), catchedExceptionClassType->FullName()));
+                                Cm.Ast.ConstructionStatementNode* constructExDeleterStatement = new Cm.Ast.ConstructionStatementNode(catchNode.GetSpan(), exDeleterType, 
+                                    new Cm.Ast.IdentifierNode(catchNode.GetSpan(), CurrentFunction()->GetNextTempVariableName()));
+                                constructExDeleterStatement->AddArgument(new Cm.Ast.IdentifierNode(catchNode.GetSpan(), exPtrVarName));
+                                handlerBlock->AddStatement(constructExDeleterStatement);
+                                if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
+                                {
+                                    handlerBlock->AddStatement(new Cm.Ast.BeginCatchStatementNode(Span(0, 0, 0, 0)));
+                                }
+                                handlerBlock->AddStatement(cast<Cm.Ast.StatementNode*>(catchNode.CatchBlock()->Clone(cloneContext)));
+                                Cm.Sym.DeclarationVisitor declarationVisitor(BoundCompileUnit().SymbolTable());
+                                handlerBlock->Accept(declarationVisitor);
+                                Cm.Sym.ContainerScope* containerScope = BoundCompileUnit().SymbolTable().GetContainerScope(handlerBlock);
+                                containerScope->SetParent(ContainerScope());
+                                binder.BeginContainerScope(containerScope);
+                                handlerBlock->Accept(binder);
+                                binder.EndContainerScope();
+                            }
+                            else
+                            {
+                                throw Cm.Core.Error("exception must be class type equal to or derived from System.Exception class", catchNode.GetSpan());
+                            }
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("System.Exception symbol not class type", catchNode.GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("System.Exception symbol not found", catchNode.GetSpan());
+                    }
+                }
+                else
+                {
+                    throw Cm.Core.Error("type of exception must be class type", catchNode.GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("exception type expression has no type", catchNode.GetSpan());
+            }
+            CurrentFunction()->PopHandler();
+        }
+        private Binder& binder;
+    }
+    
+    public class ExitTryBinder : StatementBinder
+    {
+        public nothrow ExitTryBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+        {
+        }
+        public override void Visit(Cm.Ast.ExitTryStatementNode& exitTryStatementNode)
+        {
+            Cm.Ast.TryStatementNode* tryNode = exitTryStatementNode.TryNode();
+            Cm.BoundTree.BoundCompoundStatement* tryCompound = CurrentFunction()->GetTryCompound(tryNode);
+            binder.AddBoundStatement(new Cm.BoundTree.BoundExitBlocksStatement(&exitTryStatementNode, tryCompound));
+        }
+        private Binder& binder;
+    }
+    
+    public class AssertBinder : StatementBinder
+    {
+        public nothrow AssertBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
+            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+        {
+        }
+        public override void Visit(Cm.Ast.AssertStatementNode& assertStatementNode)
+        {
+            Cm.Sym.TypeSymbol* constCharPtrType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakeConstCharPtrType(assertStatementNode.GetSpan());
+            assertStatementNode.AssertExpr()->Accept(*this);
+            UniquePtr<Cm.BoundTree.BoundExpression> expr = Stack().Pop();
+            if (!(expr->Type() is Cm.Sym.BoolTypeSymbol*))
+            {
+                throw Cm.Core.Error("#assert expression must be of type bool (now of type '" + expr->Type()->FullName() + "')", assertStatementNode.GetSpan());
+            }
+            Cm.BoundTree.BoundExpressionList failAssertionArguments;
+            string assertExpr = assertStatementNode.AssertExpr()->ToString();
+            int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);
+            Cm.BoundTree.BoundStringLiteral* assertExprLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, assertExprId);
+            assertExprLiteral->SetType(constCharPtrType);
+            failAssertionArguments.Add(assertExprLiteral);
+            string filePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
+            int fileId = BoundCompileUnit().StringRepository().Install(filePath);
+            Cm.BoundTree.BoundStringLiteral* fileLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, fileId);
+            fileLiteral->SetType(constCharPtrType);
+            failAssertionArguments.Add(fileLiteral);
+            string line = ToString(assertStatementNode.GetSpan().LineNumber());
+            int lineId = BoundCompileUnit().StringRepository().Install(line);
+            Cm.BoundTree.BoundStringLiteral* lineLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, lineId);
+            lineLiteral->SetType(constCharPtrType);
+            failAssertionArguments.Add(lineLiteral);
+            Cm.BoundTree.BoundUnaryOp* notAssertExpr = new Cm.BoundTree.BoundUnaryOp(&assertStatementNode, expr.Release());
+            Cm.Sym.TypeSymbol* boolType = BoundCompileUnit().SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            notAssertExpr->SetType(boolType);
+            List<Cm.Core.Argument> notAssertExprArgs;
+            notAssertExprArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+            Cm.Sym.FunctionLookupSet notAssertExprLookups;
+            notAssertExprLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, BoundCompileUnit().SymbolTable().GlobalScope()));
+            List<Cm.Sym.FunctionSymbol*> notAssertExprConversions;
+            Cm.Sym.FunctionSymbol* notAssertFun = ResolveOverload(BoundCompileUnit().SymbolTable().GlobalScope(), BoundCompileUnit(), "operator!", notAssertExprArgs, notAssertExprLookups, 
+                assertStatementNode.GetSpan(), notAssertExprConversions);
+            notAssertExpr->SetFun(notAssertFun);
+            notAssertExpr->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            Cm.BoundTree.BoundFunctionCall* failAssertionExpr = new Cm.BoundTree.BoundFunctionCall(&assertStatementNode, Rvalue(failAssertionArguments));
+            failAssertionExpr->SetType(BoundCompileUnit().SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)));
+            Cm.Sym.FunctionSymbol* failAssertionFun = BoundCompileUnit().SymbolTable().GetOverload("System.Support.FailAssertion");
+            failAssertionExpr->SetFun(failAssertionFun);
+            Cm.BoundTree.BoundConditionalStatement* testAssertExprStatement = new Cm.BoundTree.BoundConditionalStatement(&assertStatementNode);
+            testAssertExprStatement->SetCondition(notAssertExpr);
+            Cm.BoundTree.BoundSimpleStatement* callFailAssertionStatement = new Cm.BoundTree.BoundSimpleStatement(&assertStatementNode);
+            callFailAssertionStatement->SetExpression(failAssertionExpr);
+            testAssertExprStatement->AddStatement(callFailAssertionStatement);
+            SetResult(testAssertExprStatement);
+        }
     }
 }

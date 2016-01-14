@@ -416,6 +416,14 @@ namespace Cm.Bind
         {
             Cm.IrIntf.Assign(emitter, IrType(), result.Arg1(), result.MainObject());
         }
+        public nothrow inline Cm.Sym.DelegateTypeSymbol* DelegateType() const
+        {
+            return delegateType;
+        }
+        public nothrow inline Cm.Sym.FunctionSymbol* FunctionSymbol() const
+        {
+            return functionSymbol;
+        }
         private Cm.Sym.TypeSymbol* delegatePtrType;
         private Cm.Sym.DelegateTypeSymbol* delegateType;
         private Cm.Sym.FunctionSymbol* functionSymbol;

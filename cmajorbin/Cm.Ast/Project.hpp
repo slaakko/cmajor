@@ -12,6 +12,7 @@
 #include <Cm.Ast/CompileUnit.hpp>
 #include <boost/filesystem.hpp>
 #include <map>
+#include <utility>
 
 namespace Cm { namespace Ast {
 
@@ -189,6 +190,48 @@ private:
     std::string libraryFilePath;
     std::string executableFilePath;
 };
+
+class ProgramVersion
+{
+public:
+    ProgramVersion();
+    ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_);
+    int Major() const { return major; }
+    int Minor() const { return minor; }
+    int Revision() const { return revision; }
+    int Build() const { return build; }
+    const std::string& VersionText() const { return versionText; }
+    std::string ToString() const;
+private:
+    int major;
+    int minor;
+    int revision;
+    int build;
+    std::string versionText;
+};
+
+bool operator==(const ProgramVersion& left, const ProgramVersion& right);
+bool operator<(const ProgramVersion& left, const ProgramVersion& right);
+
+inline bool operator!=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator!=(left, right);
+}
+
+inline bool operator>(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator>(left, right);
+}
+
+inline bool operator>=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator>=(left, right);
+}
+
+inline bool operator<=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator<=(left, right);
+}
 
 } } // namespace Cm::Ast
 

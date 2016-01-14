@@ -143,6 +143,14 @@ namespace Cm.Parser
     {
         Keyword;
     }
+    grammar LlvmVersionParser
+    {
+        LlvmVersion(var std::string versionText): Cm::Ast::ProgramVersion;
+        Major: int;
+        Minor: int;
+        Revision: int;
+        Build: int;
+    }
     grammar SolutionGrammar
     {
         Solution: Cm::Ast::Solution*;

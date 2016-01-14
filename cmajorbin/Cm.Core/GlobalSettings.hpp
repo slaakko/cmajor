@@ -9,6 +9,7 @@
 
 #ifndef CM_CORE_GLOBAL_SETTINGS_INCLUDED
 #define CM_CORE_GLOBAL_SETTINGS_INCLUDED
+#include <Cm.Ast/Project.hpp>
 #include <string>
 
 namespace Cm { namespace Core {
@@ -33,6 +34,8 @@ public:
     const std::string& TpgDotFileName() const { return tpgDotFileName; }
     void SetVirtualCallFileName(const std::string& virtualCallFileName_);
     const std::string& VirtualCallFileName() const { return virtualCallFileName; }
+    void SetLlvmVersion(const Cm::Ast::ProgramVersion& llvmVersion_);
+    const Cm::Ast::ProgramVersion& LlvmVersion() const { return llvmVersion; }
 private:
     std::string config;
     int optimizationLevel;
@@ -42,6 +45,7 @@ private:
     std::string classHierarchyDotFileName;
     std::string tpgDotFileName;
     std::string virtualCallFileName;
+    Cm::Ast::ProgramVersion llvmVersion;
 };
 
 GlobalSettings* GetGlobalSettings();

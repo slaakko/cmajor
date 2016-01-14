@@ -602,12 +602,12 @@ void LiteralGrammar::GetReferencedGrammars()
 
 void LiteralGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
-    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ureal", this, "Cm.Parsing.stdlib.ureal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ureal", this, "Cm.Parsing.stdlib.ureal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRule(new LiteralRule("Literal", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(

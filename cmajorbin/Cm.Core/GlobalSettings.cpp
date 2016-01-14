@@ -85,6 +85,11 @@ void GlobalSettings::SetVirtualCallFileName(const std::string& virtualCallFileNa
     virtualCallFileName = virtualCallFileName_;
 }
 
+void GlobalSettings::SetLlvmVersion(const Cm::Ast::ProgramVersion& llvmVersion_)
+{
+    llvmVersion = llvmVersion_;
+}
+
 GlobalSettings* globalSettings = nullptr;
 
 GlobalSettings* GetGlobalSettings()

@@ -11,6 +11,7 @@
 #include <Cm.Build/Build.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Parsing/Exception.hpp>
+#include <Cm.Parser/LlvmVersion.hpp>
 #include <Cm.Sym/InitDone.hpp>
 #include <Cm.Ast/InitDone.hpp>
 #include <Cm.Emit/InitDone.hpp>
@@ -22,6 +23,7 @@
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Cm.Util/Path.hpp>
+#include <Cm.Util/System.hpp>
 #include <Cm.IrIntf/BackEnd.hpp>
 #include <chrono>
 #include <iostream>
@@ -144,6 +146,39 @@ std::string GetDataLayout()
 
     }
     return dataLayout;
+}
+
+void ObtainLlvmVersion()
+{
+    boost::filesystem::path llvmVersionPath;
+    try
+    {
+        std::vector<std::string> libraryDirectories;
+        Cm::Build::GetLibraryDirectories(libraryDirectories);
+        if (libraryDirectories.empty())
+        {
+            throw std::runtime_error("no library directories");
+        }
+        std::string command = "llc --version";
+        llvmVersionPath = libraryDirectories[0];
+        llvmVersionPath /= "llvmver.txt";
+        Cm::Util::System(command, 1, llvmVersionPath.generic_string());
+        std::string versionString = Cm::Util::ReadFile(llvmVersionPath.generic_string());
+        Cm::Parser::LlvmVersionParser* versionParser = Cm::Parser::LlvmVersionParser::Create();
+        Cm::Ast::ProgramVersion llvmVersion = versionParser->Parse(versionString.c_str(), versionString.c_str() + versionString.length(), 0, llvmVersionPath.generic_string());
+        bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+        if (!quiet)
+        {
+            std::cout << "LLVM version is " << llvmVersion.ToString() << " (" << llvmVersion.VersionText() << ")" << std::endl;
+        }
+        Cm::Core::GetGlobalSettings()->SetLlvmVersion(llvmVersion);
+        boost::filesystem::remove(llvmVersionPath);
+    }
+    catch (const std::exception& ex)
+    {
+        boost::filesystem::remove(llvmVersionPath);
+        throw std::runtime_error(std::string("could not obtain LLVM compiler version (llc --version): ") + ex.what());
+    }
 }
 
 int main(int argc, const char** argv)
@@ -405,6 +440,7 @@ int main(int argc, const char** argv)
             }
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
+                ObtainLlvmVersion();
                 if (!emitNoTriple)
                 {
                     Cm::Core::GetGlobalSettings()->SetTargetTriple(targetTriple);

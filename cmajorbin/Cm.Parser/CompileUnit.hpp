@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_25453
-#define CompileUnit_hpp_25453
+#ifndef CompileUnit_hpp_11627
+#define CompileUnit_hpp_11627
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -39,4 +39,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // CompileUnit_hpp_25453
+#endif // CompileUnit_hpp_11627

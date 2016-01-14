@@ -1,5 +1,5 @@
-#ifndef Identifier_hpp_24386
-#define Identifier_hpp_24386
+#ifndef Identifier_hpp_11627
+#define Identifier_hpp_11627
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -23,4 +23,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Identifier_hpp_24386
+#endif // Identifier_hpp_11627
