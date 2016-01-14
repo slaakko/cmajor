@@ -6,16 +6,21 @@ int main()
 {
     try
     {
+        string exePath = GetPathToExecutable();
+        string projectDir = GetFullPath(Path.Combine(Path.GetDirectoryName(exePath), "../.."));
+        string testFilePath = Path.Combine(projectDir, "test.file");
+        string bz2FilePath = Path.Combine(projectDir, "test.bz2");
+        string decompressedFilePath = Path.Combine(projectDir, "test.decompressed");
         {
-            FileByteStream in("bzip2/test.file", FileMode.open);
-            FileByteStream out("bzip2/test.bz2", FileMode.create);
+            FileByteStream in(testFilePath, FileMode.open);
+            FileByteStream out(bz2FilePath, FileMode.create);
             BZip2Stream compressStream(out, CompressionMode.compress);
             in.CopyTo(compressStream);
         }    
         {
-            FileByteStream in("bzip2/test.bz2", FileMode.open);
+            FileByteStream in(bz2FilePath, FileMode.open);
             BZip2Stream decompressStream(in, CompressionMode.decompress);
-            FileByteStream out("bzip2/test.decompressed", FileMode.create);
+            FileByteStream out(decompressedFilePath, FileMode.create);
             decompressStream.CopyTo(out);
         }
     }
