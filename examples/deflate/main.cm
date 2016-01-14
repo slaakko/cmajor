@@ -6,16 +6,21 @@ int main()
 {
     try
     {
+        string exePath = GetPathToExecutable();
+        string projectDir = GetFullPath(Path.Combine(Path.GetDirectoryName(exePath), "../.."));
+        string testFilePath = Path.Combine(projectDir, "test.file");
+        string compressedFilePath = Path.Combine(projectDir, "test.compressed");
+        string decompressedFilePath = Path.Combine(projectDir, "test.decompressed");
         {
-            FileByteStream in("deflate/test.file", FileMode.open);
-            FileByteStream out("deflate/test.compressed", FileMode.create);
+            FileByteStream in(testFilePath , FileMode.open);
+            FileByteStream out(compressedFilePath, FileMode.create);
             DeflateStream compressStream(out, CompressionMode.compress);
             in.CopyTo(compressStream);
         }    
         {
-            FileByteStream in("deflate/test.compressed", FileMode.open);
+            FileByteStream in(compressedFilePath, FileMode.open);
             DeflateStream decompressStream(in, CompressionMode.decompress);
-            FileByteStream out("deflate/test.decompressed", FileMode.create);
+            FileByteStream out(decompressedFilePath, FileMode.create);
             decompressStream.CopyTo(out);
         }
     }

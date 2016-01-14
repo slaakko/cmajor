@@ -621,6 +621,37 @@ void set_stack_size(unsigned long long stackSize)
 #endif
 }
 
+int get_path_to_executable(char* buf, int bufSize)
+{
+#ifdef _WIN32
+
+    DWORD result = GetModuleFileName(NULL, buf, bufSize);
+    if (result == 0)
+    {
+        return -1;
+    }
+    return 0;
+
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+
+    int fd = open("/proc/self/exe", O_RDONLY);
+    if (fd == -1) return -1;
+    int result = read(fd, buf, bufSize);
+    if (result == -1)
+    {
+        close(fd);
+        return -1;
+    }
+    close(fd);
+    return 0;
+
+#else
+
+    #error unknown platform
+
+#endif
+}
+
 static int traceLevel = 0;
 
 void enter_traced_fun(const char* fun, const char* file, int line)

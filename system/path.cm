@@ -40,6 +40,19 @@ namespace System.IO
         }
     }
 
+    public string GetPathToExecutable()
+    {
+        IOBuffer buffer(4096u);
+        int result = get_path_to_executable(cast<char*>(buffer.Mem()), cast<int>(buffer.Size()));
+        if (result == -1)
+        {
+            string reason = strerror(get_errno());
+            throw IOException("could not get path to current executable: " + reason);
+        }
+        string p = GetFullPath(cast<const char*>(buffer.Mem()));
+        return p;
+    }
+
     public nothrow bool FileExists(const string& filePath)
     {
         return file_exists(filePath.Chars()) != 0;
