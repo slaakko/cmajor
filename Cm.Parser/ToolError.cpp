@@ -410,8 +410,8 @@ void ToolErrorGrammar::GetReferencedGrammars()
 
 void ToolErrorGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces", this, "Cm.Parsing.stdlib.spaces"));
+    AddRuleLink(new Cm::Parsing::RuleLink("int", this, "Cm.Parsing.stdlib.int"));
     AddRule(new ToolErrorRule("ToolError", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(

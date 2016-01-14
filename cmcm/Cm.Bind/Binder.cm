@@ -8,13 +8,14 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 
 namespace Cm.Bind
 {
     public class Binder : Cm.Ast.Visitor
     {
         public nothrow Binder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : 
-            base(true, false), boundCompileUnit(boundCompileUnit_)
+            base(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(null)
         {
         }
         public nothrow void SetCurrentFunction(Cm.BoundTree.BoundFunction* function)
@@ -25,7 +26,40 @@ namespace Cm.Bind
         {
             return boundFunction.Release();
         }
+        public void AddBoundStatement(Cm.BoundTree.BoundStatement* boundStatement)
+        {
+            if (currentParent.IsNull())
+            {
+                throw Exception("binder has no current parent");
+            }
+            currentParent->AddStatement(boundStatement);
+        }
+        public void BeginContainerScope(Cm.Sym.ContainerScope* containerScope)
+        {
+            containerScopeStack.Push(currentContainerScope);
+            currentContainerScope = containerScope;
+        }
+        public void EndContainerScope()
+        {
+            currentContainerScope = containerScopeStack.Pop();
+        }
+        public Cm.BoundTree.BoundCompoundStatement* GetCurrentCompound() 
+        {
+            Cm.BoundTree.BoundParentStatement* parent = currentParent.GetPtr();
+            if (parent is Cm.BoundTree.BoundCompoundStatement*)
+            {
+                return cast<Cm.BoundTree.BoundCompoundStatement*>(parent);
+            }
+            else
+            {
+                return parent->CompoundParent();
+            }
+        }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private UniquePtr<Cm.BoundTree.BoundFunction> boundFunction;
+        private UniquePtr<Cm.BoundTree.BoundParentStatement> currentParent;
+        private Stack<Cm.BoundTree.BoundParentStatement*> parentStack;
+        private Stack<Cm.Sym.ContainerScope*> containerScopeStack;
+        private Cm.Sym.ContainerScope* currentContainerScope;
     }
 }

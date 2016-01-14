@@ -441,7 +441,7 @@ void Binder::EndVisit(Cm::Ast::CompoundStatementNode& compoundStatementNode)
 
 void Binder::BeginVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode)
 {
-    RangeForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), rangeForStatementNode, *this);
+    RangeForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), *this);
     rangeForStatementNode.Accept(binder);
 }
 

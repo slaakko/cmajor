@@ -324,6 +324,10 @@ namespace Cm.Ast
         {
             return elseS.GetPtr();
         }
+        public nothrow inline Node* Condition() const
+        {
+            return condition.GetPtr();
+        }
         private UniquePtr<Node> condition;
         private UniquePtr<StatementNode> thenS;
         private UniquePtr<StatementNode> elseS;
@@ -603,6 +607,10 @@ namespace Cm.Ast
         {
             return true;
         }
+        public nothrow inline Node* TargetCaseExpr() const
+        {
+            return targetCaseExpr.GetPtr();
+        }    
         private UniquePtr<Node> targetCaseExpr;
     }
     
@@ -1372,6 +1380,10 @@ namespace Cm.Ast
                 pointerExpr->Accept(visitor);
             }
             visitor.EndVisit(*this);
+        }
+        public inline nothrow Node* PointerExpr() const
+        {
+            return pointerExpr.GetPtr();
         }
         private UniquePtr<Node> pointerExpr;
     }

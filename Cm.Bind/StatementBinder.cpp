@@ -288,12 +288,12 @@ void SimpleStatementBinder::EndVisit(Cm::Ast::SimpleStatementNode& simpleStateme
                 Cm::Ast::InvokeNode* callSetExceptionAddrExpr = new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
                     new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "System.Support.SetExceptionAddr"));
                 callSetExceptionAddrExpr->AddArgument(callGetExceptionTableAddrExpr);
-                callSetExceptionAddrExpr->AddArgument(new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));;
+                callSetExceptionAddrExpr->AddArgument(new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));
                 callSetExceptionAddrExpr->AddArgument(new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_addr")));
                 Cm::Ast::SimpleStatementNode* setExceptionAddrStatement = new Cm::Ast::SimpleStatementNode(simpleStatementNode.GetSpan(), callSetExceptionAddrExpr);
                 Cm::Ast::AssignmentStatementNode* setExceptionCodeStatement = new Cm::Ast::AssignmentStatementNode(simpleStatementNode.GetSpan(),
                     new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), Cm::IrIntf::GetExCodeVarName()),
-                    new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));;
+                    new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(), new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "get_current_exception_id")));
                 Cm::Ast::SimpleStatementNode* resetCurrentExceptionStatement = new Cm::Ast::SimpleStatementNode(simpleStatementNode.GetSpan(), new Cm::Ast::InvokeNode(simpleStatementNode.GetSpan(),
                     new Cm::Ast::IdentifierNode(simpleStatementNode.GetSpan(), "reset_current_exception")));
                 Cm::Ast::AssignmentStatementNode* setExceptionCodeParamStatement = nullptr;
@@ -634,7 +634,7 @@ Cm::Ast::Node* MakeTypeIdNode(Cm::Sym::TypeSymbol* typeSymbol, const Cm::Parsing
 }
 
 RangeForStatementBinder::RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Cm::Ast::RangeForStatementNode& rangeForStatementNode, Binder& binder_) :
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_) :
     StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
 {
 }
@@ -931,7 +931,8 @@ void DestroyStatementBinder::EndVisit(Cm::Ast::DestroyStatementNode& destroyStat
 }
 
 DeleteStatementBinder::DeleteStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_,
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::BoundTree::BoundFunction* currentFunction_) : 
+    StatementBinder(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), freeStatement(nullptr)
 {
 }
 
@@ -1576,7 +1577,7 @@ void AssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
     std::unique_ptr<Cm::BoundTree::BoundExpression> expr(Pop());
     if (!expr->GetType()->IsBoolTypeSymbol())
     {
-        throw Cm::Core::Exception("#assert expression must be of type bool", assertStatementNode.GetSpan());
+        throw Cm::Core::Exception("#assert expression must be of type bool (now of type '" + expr->GetType()->FullName() + "')", assertStatementNode.GetSpan());
     }
     Cm::BoundTree::BoundExpressionList failAssertionArguments;
     std::string assertExpr = assertStatementNode.AssertExpr()->ToString();

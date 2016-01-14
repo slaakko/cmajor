@@ -273,4 +273,35 @@ void Project::AddDeclaration(ProjectDeclaration* declaration)
     declarations.push_back(std::unique_ptr<ProjectDeclaration>(declaration));
 }
 
+ProgramVersion::ProgramVersion() : major(0), minor(0), revision(0), build(0), versionText()
+{
+}
+
+ProgramVersion::ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_) : major(major_), minor(minor_), revision(revision_), build(build_), versionText(versionText_)
+{
+}
+
+std::string ProgramVersion::ToString() const
+{
+    return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(revision) + "." + std::to_string(build);
+}
+
+bool operator==(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return left.Major() == right.Major() && left.Minor() == right.Minor() && left.Revision() == right.Revision() && left.Build() == right.Build();
+}
+
+bool operator<(const ProgramVersion& left, const ProgramVersion& right)
+{
+    if (left.Major() < right.Major()) return true;
+    if (left.Major() > right.Major()) return false;
+    if (left.Minor() < right.Minor()) return true;
+    if (left.Minor() > right.Minor()) return false;
+    if (left.Revision() < right.Revision()) return true;
+    if (left.Revision() > right.Revision()) return false;
+    if (left.Build() < right.Build()) return true;
+    if (left.Build() > right.Build()) return false;
+    return false;
+}
+
 } } // namespace Cm::Ast

@@ -1,5 +1,5 @@
-#ifndef Solution_hpp_24386
-#define Solution_hpp_24386
+#ifndef Solution_hpp_11627
+#define Solution_hpp_11627
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -28,4 +28,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Solution_hpp_24386
+#endif // Solution_hpp_11627

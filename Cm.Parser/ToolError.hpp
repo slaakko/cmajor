@@ -1,5 +1,5 @@
-#ifndef ToolError_hpp_24386
-#define ToolError_hpp_24386
+#ifndef ToolError_hpp_11627
+#define ToolError_hpp_11627
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // ToolError_hpp_24386
+#endif // ToolError_hpp_11627

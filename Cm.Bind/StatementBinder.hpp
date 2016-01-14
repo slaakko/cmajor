@@ -17,7 +17,7 @@ namespace Cm { namespace Bind {
 class StatementBinder : public ExpressionBinder
 {
 public:
-    StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScope_, 
+    StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
         Cm::BoundTree::BoundFunction* currentFunction_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
@@ -116,7 +116,7 @@ class RangeForStatementBinder : public StatementBinder
 {
 public:
     RangeForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::Ast::RangeForStatementNode& rangeForStatementNode, Binder& binder_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder& binder_);
     void EndVisit(Cm::Ast::RangeForStatementNode& rangeForStatementNode) override;
 private:
     Binder& binder;

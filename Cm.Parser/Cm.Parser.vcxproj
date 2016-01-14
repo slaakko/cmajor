@@ -34,6 +34,7 @@
     <None Include="Json.parser" />
     <None Include="Keyword.parser" />
     <None Include="Literal.parser" />
+    <None Include="LlvmVersion.parser" />
     <None Include="Parameter.parser" />
     <None Include="Project.parser" />
     <None Include="Solution.parser" />
@@ -60,6 +61,7 @@
     <ClCompile Include="Json.cpp" />
     <ClCompile Include="Keyword.cpp" />
     <ClCompile Include="Literal.cpp" />
+    <ClCompile Include="LlvmVersion.cpp" />
     <ClCompile Include="Parameter.cpp" />
     <ClCompile Include="ParsingContext.cpp" />
     <ClCompile Include="Project.cpp" />
@@ -87,6 +89,7 @@
     <ClInclude Include="Json.hpp" />
     <ClInclude Include="Keyword.hpp" />
     <ClInclude Include="Literal.hpp" />
+    <ClInclude Include="LlvmVersion.hpp" />
     <ClInclude Include="Operator.hpp" />
     <ClInclude Include="Parameter.hpp" />
     <ClInclude Include="ParsingContext.hpp" />
