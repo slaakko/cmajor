@@ -15,7 +15,9 @@
 namespace Cm { namespace Util {
 
 void System(const std::string& command);
+void System(const std::string& command, bool ignoreReturnValue);
 void System(const std::string& command, int redirectFd, const std::string& toFile);
+void System(const std::string& command, int redirectFd, const std::string& toFile, bool ignoreReturnValue);
 void System(const std::string& command, const std::vector<std::pair<int, std::string>>& redirections);
 unsigned long long Spawn(const std::string& filename, const std::vector<std::string>& args);
 int Wait(unsigned long long processHandle);

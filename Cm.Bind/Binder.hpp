@@ -102,7 +102,6 @@ private:
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
     std::stack<bool> condCompilationEvaluationStack;
-    bool isRvalueArrayFun;
     void PushCondCompValue(bool value);
     bool PopCondCompValue();
 };

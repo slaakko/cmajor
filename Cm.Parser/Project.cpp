@@ -8,6 +8,7 @@
 #include <Cm.Parsing/Exception.hpp>
 #include <Cm.Parsing/StdLib.hpp>
 #include <Cm.Parsing/XmlLog.hpp>
+#include <Cm.Parser/LlvmVersion.hpp>
 
 namespace Cm { namespace Parser {
 
@@ -34,7 +35,7 @@ ProjectGrammar::ProjectGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     SetOwner(0);
 }
 
-Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend, std::string os, int bits)
+Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int fileIndex, const std::string& fileName, std::string config, std::string backend, std::string os, int bits, Cm::Ast::ProgramVersion llvmVersion)
 {
     Cm::Parsing::Scanner scanner(start, end, fileName, fileIndex, SkipRule());
     std::unique_ptr<Cm::Parsing::XmlLog> xmlLog;
@@ -49,6 +50,7 @@ Cm::Ast::Project* ProjectGrammar::Parse(const char* start, const char* end, int 
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(backend)));
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<std::string>(os)));
     stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<int>(bits)));
+    stack.push(std::unique_ptr<Cm::Parsing::Object>(new ValueObject<Cm::Ast::ProgramVersion>(llvmVersion)));
     Cm::Parsing::Match match = Cm::Parsing::Grammar::Parse(scanner, stack);
     Cm::Parsing::Span stop = scanner.GetSpan();
     if (Log())
@@ -82,12 +84,16 @@ public:
         AddInheritedAttribute(AttrOrVariable("std::string", "backend"));
         AddInheritedAttribute(AttrOrVariable("std::string", "os"));
         AddInheritedAttribute(AttrOrVariable("int", "bits"));
+        AddInheritedAttribute(AttrOrVariable("Cm::Ast::ProgramVersion", "llvmVersion"));
         SetValueTypeName("Cm::Ast::Project*");
     }
     virtual void Enter(Cm::Parsing::ObjectStack& stack)
     {
         contextStack.push(std::move(context));
         context = Context();
+        std::unique_ptr<Cm::Parsing::Object> llvmVersion_value = std::move(stack.top());
+        context.llvmVersion = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ProgramVersion>*>(llvmVersion_value.get());
+        stack.pop();
         std::unique_ptr<Cm::Parsing::Object> bits_value = std::move(stack.top());
         context.bits = *static_cast<Cm::Parsing::ValueObject<int>*>(bits_value.get());
         stack.pop();
@@ -121,7 +127,7 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os, context.bits);
+        context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os, context.bits, context.llvmVersion);
     }
     void Postqualified_id(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -139,11 +145,12 @@ public:
 private:
     struct Context
     {
-        Context(): config(), backend(), os(), bits(), value(), fromqualified_id() {}
+        Context(): config(), backend(), os(), bits(), llvmVersion(), value(), fromqualified_id() {}
         std::string config;
         std::string backend;
         std::string os;
         int bits;
+        Cm::Ast::ProgramVersion llvmVersion;
         Cm::Ast::Project* value;
         std::string fromqualified_id;
     };
@@ -1320,12 +1327,14 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertiesRule>(this, &PropertiesRule::A0Action));
         Cm::Parsing::NonterminalParser* nameNonterminalParser = GetNonterminal("name");
         nameNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertiesRule>(this, &PropertiesRule::Postname));
+        Cm::Parsing::NonterminalParser* relNonterminalParser = GetNonterminal("rel");
+        relNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertiesRule>(this, &PropertiesRule::Postrel));
         Cm::Parsing::NonterminalParser* valNonterminalParser = GetNonterminal("val");
         valNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertiesRule>(this, &PropertiesRule::Postval));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value.AddProperty(context.fromname, context.fromval);
+        context.value.AddProperty(context.fromname, context.fromrel, context.fromval);
     }
     void Postname(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1333,6 +1342,15 @@ public:
         {
             std::unique_ptr<Cm::Parsing::Object> fromname_value = std::move(stack.top());
             context.fromname = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromname_value.get());
+            stack.pop();
+        }
+    }
+    void Postrel(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromrel_value = std::move(stack.top());
+            context.fromrel = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::RelOp>*>(fromrel_value.get());
             stack.pop();
         }
     }
@@ -1348,10 +1366,76 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromname(), fromval() {}
+        Context(): value(), fromname(), fromrel(), fromval() {}
         Cm::Ast::Properties value;
         std::string fromname;
+        Cm::Ast::RelOp fromrel;
         std::string fromval;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
+class ProjectGrammar::RelOpRule : public Cm::Parsing::Rule
+{
+public:
+    RelOpRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        SetValueTypeName("Cm::Ast::RelOp");
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::RelOp>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A4Action));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::equal;
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::lessEq;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::greaterEq;
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::less;
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::greater;
+    }
+private:
+    struct Context
+    {
+        Context(): value() {}
+        Cm::Ast::RelOp value;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -1385,6 +1469,10 @@ public:
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyValueRule>(this, &PropertyValueRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyValueRule>(this, &PropertyValueRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<PropertyValueRule>(this, &PropertyValueRule::A2Action));
+        Cm::Parsing::NonterminalParser* versionNumberNonterminalParser = GetNonterminal("VersionNumber");
+        versionNumberNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyValueRule>(this, &PropertyValueRule::PostVersionNumber));
         Cm::Parsing::NonterminalParser* idNonterminalParser = GetNonterminal("id");
         idNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<PropertyValueRule>(this, &PropertyValueRule::Postid));
         Cm::Parsing::NonterminalParser* numNonterminalParser = GetNonterminal("num");
@@ -1392,11 +1480,24 @@ public:
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = context.fromid;
+        context.value = std::string(matchBegin, matchEnd);
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
+        context.value = context.fromid;
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
         context.value = std::to_string(context.fromnum);
+    }
+    void PostVersionNumber(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromVersionNumber_value = std::move(stack.top());
+            context.fromVersionNumber = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::ProgramVersion>*>(fromVersionNumber_value.get());
+            stack.pop();
+        }
     }
     void Postid(Cm::Parsing::ObjectStack& stack, bool matched)
     {
@@ -1419,8 +1520,9 @@ public:
 private:
     struct Context
     {
-        Context(): value(), fromid(), fromnum() {}
+        Context(): value(), fromVersionNumber(), fromid(), fromnum() {}
         std::string value;
+        Cm::Ast::ProgramVersion fromVersionNumber;
         std::string fromid;
         int64_t fromnum;
     };
@@ -1478,15 +1580,22 @@ void ProjectGrammar::GetReferencedGrammars()
         grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.VersionNumberParser");
+    if (!grammar1)
+    {
+        grammar1 = Cm::Parser::VersionNumberParser::Create(pd);
+    }
+    AddGrammarReference(grammar1);
 }
 
 void ProjectGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("VersionNumber", this, "VersionNumberParser.VersionNumber"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
-    AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
+    AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
     AddRule(new ProjectRule("Project", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -1690,16 +1799,34 @@ void ProjectGrammar::CreateRules()
                         new Cm::Parsing::SequenceParser(
                             new Cm::Parsing::SequenceParser(
                                 new Cm::Parsing::NonterminalParser("name", "identifier", 0),
-                                new Cm::Parsing::CharParser('=')),
+                                new Cm::Parsing::NonterminalParser("rel", "RelOp", 0)),
                             new Cm::Parsing::NonterminalParser("val", "PropertyValue", 0))),
                     new Cm::Parsing::CharParser(','))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser(']')))));
+    AddRule(new RelOpRule("RelOp", GetScope(),
+        new Cm::Parsing::AlternativeParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::AlternativeParser(
+                        new Cm::Parsing::ActionParser("A0",
+                            new Cm::Parsing::CharParser('=')),
+                        new Cm::Parsing::ActionParser("A1",
+                            new Cm::Parsing::StringParser("<="))),
+                    new Cm::Parsing::ActionParser("A2",
+                        new Cm::Parsing::StringParser(">="))),
+                new Cm::Parsing::ActionParser("A3",
+                    new Cm::Parsing::CharParser('<'))),
+            new Cm::Parsing::ActionParser("A4",
+                new Cm::Parsing::CharParser('>')))));
     AddRule(new PropertyValueRule("PropertyValue", GetScope(),
         new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("id", "identifier", 0)),
-            new Cm::Parsing::ActionParser("A1",
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::ActionParser("A0",
+                    new Cm::Parsing::NonterminalParser("VersionNumber", "VersionNumber", 0)),
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::NonterminalParser("id", "identifier", 0))),
+            new Cm::Parsing::ActionParser("A2",
                 new Cm::Parsing::NonterminalParser("num", "long", 0)))));
     AddRule(new FilePathRule("FilePath", GetScope(),
         new Cm::Parsing::TokenParser(

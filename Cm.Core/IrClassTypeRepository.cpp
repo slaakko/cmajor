@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Core/IrClassTypeRepository.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -218,8 +219,16 @@ void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, C
     rttiIrType->SetOwned();
     std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
     rttiIrObject->SetOwned();
-    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
-        std::to_string(classType->Cid()) + "}");
+    if (Cm::Core::GetGlobalSettings()->LlvmVersion() < Cm::Ast::ProgramVersion::ProgramVersion(3, 7, 0, 0, ""))
+    {
+        codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
+            std::to_string(classType->Cid()) + "}");
+    }
+    else
+    {
+        codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " + 
+            classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + std::to_string(classType->Cid()) + "}");
+    }
 
     std::string vtblHeader;
     vtblHeader.append(vtblIrObject->Name()).append(" = linkonce_odr unnamed_addr constant ").append(vtblIrType->Name());

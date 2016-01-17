@@ -79,6 +79,11 @@ int GetBits()
     return 64;
 }
 
+Cm::Ast::ProgramVersion GetLlvmVersion()
+{
+    return Cm::Core::GetGlobalSettings()->LlvmVersion();
+}
+
 Cm::Ast::FunctionNode* CreateDriverFunction(const std::string& unitTestName)
 {
     Cm::Ast::FunctionNode* driverFunction = new Cm::Ast::FunctionNode(Cm::Parsing::Span(), Cm::Ast::Specifiers::public_ | Cm::Ast::Specifiers::nothrow_,
@@ -551,7 +556,7 @@ bool TestProject(const std::string& projectFilePath, const std::string& fileName
         projectGrammar = Cm::Parser::ProjectGrammar::Create();
     }
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(),
-        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
+        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits(), GetLlvmVersion()));
     project->ResolveDeclarations();
     return TestProject(project.get(), fileName, testName, defines);
 }

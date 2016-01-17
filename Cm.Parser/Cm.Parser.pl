@@ -146,6 +146,10 @@ namespace Cm.Parser
     grammar LlvmVersionParser
     {
         LlvmVersion(var std::string versionText): Cm::Ast::ProgramVersion;
+    }
+    grammar VersionNumberParser
+    {
+        VersionNumber: Cm::Ast::ProgramVersion;
         Major: int;
         Minor: int;
         Revision: int;
@@ -168,7 +172,7 @@ namespace Cm.Parser
     }
     grammar ProjectGrammar
     {
-        Project(std::string config, std::string backend, std::string os, int bits): Cm::Ast::Project*;
+        Project(std::string config, std::string backend, std::string os, int bits, Cm::Ast::ProgramVersion llvmVersion): Cm::Ast::Project*;
         Declarations(Cm::Ast::Project* project);
         Declaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
         SourceFileDeclaration(Cm::Ast::Project* project): Cm::Ast::ProjectDeclaration*;
@@ -184,6 +188,7 @@ namespace Cm.Parser
         TargetDeclaration: Cm::Ast::ProjectDeclaration*;
         StackSizeDeclaration: Cm::Ast::ProjectDeclaration*;
         Properties: Cm::Ast::Properties;
+        RelOp: Cm::Ast::RelOp;
         PropertyValue: std::string;
         FilePath: std::string;
     }

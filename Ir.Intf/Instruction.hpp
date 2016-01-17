@@ -54,6 +54,8 @@ public:
     virtual bool IsRet() const { return false; }
     virtual bool IsCall() const { return false; }
     virtual bool IsAlloca() const { return false; }
+    virtual bool IsLoadInst() const { return false; }
+    virtual bool IsGetElementPtrInst() const { return false; }
     virtual LabelObject* GetTargetLabel() const { return nullptr; }
     void Remove() { removed = true; }
     bool Removed() const { return removed; }

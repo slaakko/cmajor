@@ -125,6 +125,7 @@ public:
     CfgNode* GetActiveCfgNode() const { return activeCfgNode; }
     void SetProfilingHandler(ProfilingHandler* profilingHandler_) { profilingHandler = profilingHandler_; }
 private:
+    bool newLlvmSyntax;
     Ir::Intf::Function* irFunction;
     std::unordered_set<std::shared_ptr<GenData>> labelRequestSet;
     Ir::Intf::LabelObject* gotoTargetLabel;

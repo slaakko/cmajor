@@ -8,6 +8,7 @@
  ========================================================================*/
 
  [hpp]#include <Cm.Ast/Project.hpp>
+ [cpp]#include <Cm.Parser/LlvmVersion.hpp>
 
 namespace Cm.Parser
 {
@@ -20,10 +21,11 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         using stdlib.ulong;
         using stdlib.long;
+        using VersionNumberParser.VersionNumber;
         skip spaces_and_comments;
 
-        Project(std::string config, std::string backend, std::string os, int bits): Cm::Ast::Project*
-            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os, bits); }
+        Project(std::string config, std::string backend, std::string os, int bits, Cm::Ast::ProgramVersion llvmVersion): Cm::Ast::Project*
+            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os, bits, llvmVersion); }
                 Declarations(value)
             ;
 
@@ -95,11 +97,20 @@ namespace Cm.Parser
             ;
 
         Properties: Cm::Ast::Properties
-            ::= '[' ((identifier:name '=' PropertyValue:val){ value.AddProperty(name, val); } % ',') ']'!
+            ::= '[' ((identifier:name RelOp:rel PropertyValue:val){ value.AddProperty(name, rel, val); } % ',') ']'!
+            ;
+
+        RelOp: Cm::Ast::RelOp
+            ::= '='{ value = Cm::Ast::RelOp::equal; }
+            |   "<="{ value = Cm::Ast::RelOp::lessEq; }
+            |   ">="{ value = Cm::Ast::RelOp::greaterEq; }
+            |   '<'{ value = Cm::Ast::RelOp::less; }
+            |   '>'{ value = Cm::Ast::RelOp::greater; }
             ;
 
         PropertyValue: std::string
-            ::= identifier:id{ value = id; }
+            ::= VersionNumber{ value = std::string(matchBegin, matchEnd); }
+            |   identifier:id{ value = id; }
             |   long:num{ value = std::to_string(num); }
             ;
 

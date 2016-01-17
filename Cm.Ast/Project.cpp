@@ -23,6 +23,13 @@ std::string TargetStr(Target target)
     return "";
 }
 
+VersionParser* projectVersionParser = nullptr;
+
+void SetVersionParser(VersionParser* versionParser)
+{
+    projectVersionParser = versionParser;
+}
+
 ProjectDeclaration::ProjectDeclaration(const Span& span_, const Properties& properties_) : span(span_), properties(properties_)
 {
 }
@@ -72,23 +79,63 @@ Properties::Properties()
 {
 }
 
-void Properties::AddProperty(const std::string& name_, const std::string& value_)
+void Properties::AddProperty(const std::string& name_, RelOp rel_, const std::string& value_)
 {
-    propertyMap[name_] = value_;
+    propertyMap[name_] = std::make_pair(rel_, value_);
 }
 
-std::string Properties::GetProperty(const std::string& name_) const
+std::pair<RelOp, std::string> Properties::GetProperty(const std::string& name_) const
 {
-    std::map<std::string, std::string>::const_iterator i = propertyMap.find(name_);
+    std::map<std::string, std::pair<RelOp, std::string>>::const_iterator i = propertyMap.find(name_);
     if (i != propertyMap.cend())
     {
         return i->second;
     }
-    return std::string();
+    return std::make_pair(RelOp::equal, std::string());
 }
 
-Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_) :
-    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), bits(bits_), target(Target::none), stackSize(0)
+bool Compare(const std::string& propertyValue, const std::pair<RelOp, std::string>& declaredValue)
+{
+    switch (declaredValue.first)
+    {
+        case RelOp::equal: return propertyValue == declaredValue.second;
+        case RelOp::less: return propertyValue < declaredValue.second;
+        case RelOp::greater: return propertyValue > declaredValue.second;
+        case RelOp::lessEq: return propertyValue <= declaredValue.second;
+        case RelOp::greaterEq: return propertyValue >= declaredValue.second;
+    }
+    return false;
+}
+
+bool Compare(int propertyValue, const std::pair<RelOp, std::string>& declaredValue)
+{
+    switch (declaredValue.first)
+    {
+        case RelOp::equal: return propertyValue == std::stoi(declaredValue.second);
+        case RelOp::less: return propertyValue < std::stoi(declaredValue.second);
+        case RelOp::greater: return propertyValue > std::stoi(declaredValue.second);
+        case RelOp::lessEq: return propertyValue <= std::stoi(declaredValue.second);
+        case RelOp::greaterEq: return propertyValue >= std::stoi(declaredValue.second);
+    }
+    return false;
+}
+
+bool Compare(const ProgramVersion& propertyValue, const std::pair<RelOp, std::string>& declaredValue)
+{
+    ProgramVersion declaredVersion = projectVersionParser->Parse(declaredValue.second);
+    switch (declaredValue.first)
+    {
+        case RelOp::equal: return propertyValue == declaredVersion;
+        case RelOp::less: return propertyValue < declaredVersion;
+        case RelOp::greater: return propertyValue > declaredVersion;
+        case RelOp::lessEq: return propertyValue <= declaredVersion;
+        case RelOp::greaterEq: return propertyValue >= declaredVersion;
+    }
+    return false;
+}
+
+Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_, const ProgramVersion& llvmVersion_) :
+    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target::none), stackSize(0)
 {
     basePath.remove_filename();
     outputBasePath = basePath;
@@ -101,21 +148,25 @@ void Project::ResolveDeclarations()
     for (const std::unique_ptr<ProjectDeclaration>& declaration : declarations)
     {
         const Properties& properties = declaration->GetProperties();
-        std::string declBackEnd = properties.GetProperty("backend");
-        if (!declBackEnd.empty())
+        std::pair<RelOp, std::string> declBackEnd = properties.GetProperty("backend");
+        if (!declBackEnd.second.empty())
         {
-            if (declBackEnd != backend) continue;
+            if (!Compare(backend, declBackEnd)) continue;
         }
-        std::string declOs = properties.GetProperty("os");
-        if (!declOs.empty())
+        std::pair<RelOp, std::string> declOs = properties.GetProperty("os");
+        if (!declOs.second.empty())
         {
-            if (declOs != os) continue;
+            if (!Compare(os, declOs)) continue;
         }
-        std::string declBits = properties.GetProperty("bits");
-        if (!declBits.empty())
+        std::pair<RelOp, std::string> declBits = properties.GetProperty("bits");
+        if (!declBits.second.empty())
         {
-            int db = std::stoi(declBits);
-            if (db != bits) continue;
+            if (!Compare(bits, declBits)) continue;
+        }
+        std::pair<RelOp, std::string> declLlvmVersion = properties.GetProperty("llvm_version");
+        if (!declLlvmVersion.second.empty())
+        {
+            if (!Compare(llvmVersion, declLlvmVersion)) continue;
         }
         if (declaration->IsSourceFileDeclaration())
         {
@@ -273,17 +324,18 @@ void Project::AddDeclaration(ProjectDeclaration* declaration)
     declarations.push_back(std::unique_ptr<ProjectDeclaration>(declaration));
 }
 
-ProgramVersion::ProgramVersion() : major(0), minor(0), revision(0), build(0), versionText()
+ProgramVersion::ProgramVersion() : majorVersion(0), minorVersion(0), revision(0), build(0), versionText()
 {
 }
 
-ProgramVersion::ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_) : major(major_), minor(minor_), revision(revision_), build(build_), versionText(versionText_)
+ProgramVersion::ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_) : 
+    majorVersion(major_), minorVersion(minor_), revision(revision_), build(build_), versionText(versionText_)
 {
 }
 
 std::string ProgramVersion::ToString() const
 {
-    return std::to_string(major) + "." + std::to_string(minor) + "." + std::to_string(revision) + "." + std::to_string(build);
+    return std::to_string(majorVersion) + "." + std::to_string(minorVersion) + "." + std::to_string(revision) + "." + std::to_string(build);
 }
 
 bool operator==(const ProgramVersion& left, const ProgramVersion& right)

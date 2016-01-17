@@ -120,16 +120,24 @@ std::vector<std::string> ParseCommand(const std::string& command)
     return args;
 }
 
-void System(const std::string& command)
+void System(const std::string& command, bool ignoreReturnValue)
 {
     int retVal = system(command.c_str());
-    if (retVal != 0)
+    if (!ignoreReturnValue)
     {
-        throw std::runtime_error("'" + command + "' returned " + std::to_string(retVal));
+        if (retVal != 0)
+        {
+            throw std::runtime_error("'" + command + "' returned " + std::to_string(retVal));
+        }
     }
 }
 
-void System(const std::string& command, int redirectFd, const std::string& toFile)
+void System(const std::string& command)
+{
+    return System(command, false);
+}
+
+void System(const std::string& command, int redirectFd, const std::string& toFile, bool ignoreReturnValue)
 {
     Handle old = dup(redirectFd);
     if (old == -1)
@@ -147,7 +155,7 @@ void System(const std::string& command, int redirectFd, const std::string& toFil
     }
     try
     {
-        System(command);
+        System(command, ignoreReturnValue);
         dup2(old, redirectFd);
     }
     catch (...)
@@ -155,6 +163,11 @@ void System(const std::string& command, int redirectFd, const std::string& toFil
         dup2(old, redirectFd);
         throw;
     }
+}
+
+void System(const std::string& command, int redirectFd, const std::string& toFile)
+{
+    System(command, redirectFd, toFile, false);
 }
 
 void System(const std::string& command, const std::vector<std::pair<int, std::string>>& redirections)
