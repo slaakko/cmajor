@@ -17,6 +17,7 @@
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/ToolError.hpp>
+#include <Cm.Parser/LlvmVersion.hpp>
 #include <Cm.Parsing/ParsingDomain.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/Writer.hpp>
@@ -99,6 +100,11 @@ int GetBits()
     #error unknown platform
 #endif
     return 64;
+}
+
+Cm::Ast::ProgramVersion GetLlvmVersion()
+{
+    return Cm::Core::GetGlobalSettings()->LlvmVersion();
 }
 
 std::string GetCmLibraryPath()
@@ -2030,10 +2036,27 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
 }
 
 Cm::Parser::ProjectGrammar* projectGrammar = nullptr;
+Cm::Parser::VersionNumberParser* versionNumberParser = nullptr;
+
+class VersionParser : public Cm::Ast::VersionParser
+{
+public:
+    Cm::Ast::ProgramVersion Parse(const std::string& versionString) override
+    {
+        if (!versionNumberParser)
+        {
+            versionNumberParser = Cm::Parser::VersionNumberParser::Create();
+        }
+        return versionNumberParser->Parse(versionString.c_str(), versionString.c_str() + versionString.length(), 0, "");
+    }
+};
+
+VersionParser versionParser;
 
 void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
     CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
+    Cm::Ast::SetVersionParser(&versionParser);
     if (!boost::filesystem::exists(projectFilePath))
     {
         throw std::runtime_error("project file '" + projectFilePath + "' not found");
@@ -2044,7 +2067,7 @@ void BuildProject(const std::string& projectFilePath, bool rebuild, const std::v
         projectGrammar = Cm::Parser::ProjectGrammar::Create();
     }
     std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
-        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
+        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits(), GetLlvmVersion()));
     project->ResolveDeclarations();
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
     {
@@ -2061,6 +2084,7 @@ Cm::Parser::SolutionGrammar* solutionGrammar = nullptr;
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
     CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
+    Cm::Ast::SetVersionParser(&versionParser);
     int built = 0;
     int uptodate = 0;
     if (!boost::filesystem::exists(solutionFilePath))
@@ -2099,7 +2123,7 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
         }
         Cm::Util::MappedInputFile projectFile(projectFilePath);
         std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(), 
-            Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits()));
+            Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits(), GetLlvmVersion()));
         project->ResolveDeclarations();
         solution->AddProject(std::move(project));
     }

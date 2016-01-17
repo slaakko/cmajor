@@ -1,7 +1,7 @@
 include ../Makefile.common
 
 OBJECTS = BasicType.o Class.o CompileUnit.o Concept.o Constant.o Delegate.o Enumeration.o Error.o Expression.o FileRegistry.o Function.o Identifier.o \
-Json.o Keyword.o Literal.o Parameter.o ParsingContext.o Project.o Solution.o Specifier.o Statement.o Template.o ToolError.o Typedef.o TypeExpr.o
+Json.o Keyword.o Literal.o LlvmVersion.o Parameter.o ParsingContext.o Project.o Solution.o Specifier.o Statement.o Template.o ToolError.o Typedef.o TypeExpr.o
 
 %o: %.cpp
 	$(CXX) -c $(CXXFLAGS) -o $@ $<

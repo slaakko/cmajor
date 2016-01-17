@@ -307,7 +307,7 @@ std::string AllocaInst::ToString() const
     return alloca;
 }
 
-LoadInst::LoadInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_): Ir::Intf::Instruction("load"), type(type_), result(result_), ptr(ptr_), alignment(0)
+LoadInst::LoadInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_): Ir::Intf::Instruction("load"), itemType(nullptr), type(type_), result(result_), ptr(ptr_), alignment(0)
 {
 }
 
@@ -323,7 +323,14 @@ std::string LoadInst::ToString() const
     std::string load;
     std::string space(1, ' ');
     std::string comma(", ");
-    load.append(result->Name()).append(" = ").append(Name()).append(space).append(type->Name()).append(space).append(ptr->Name());
+    if (itemType)
+    {
+        load.append(result->Name()).append(" = ").append(Name()).append(space).append(itemType->Name()).append(comma).append(type->Name()).append(space).append(ptr->Name());
+    }
+    else
+    {
+        load.append(result->Name()).append(" = ").append(Name()).append(space).append(type->Name()).append(space).append(ptr->Name());
+    }
     if (alignment > 0)
     {
         load.append(comma).append("align ").append(std::to_string(alignment));
@@ -356,18 +363,18 @@ std::string StoreInst::ToString() const
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_): 
-    Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
+    Ir::Intf::Instruction("getelementptr"), itemType(nullptr), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
 {
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, Ir::Intf::Object* index1_): 
-    Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
+    Ir::Intf::Instruction("getelementptr"), itemType(nullptr), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
 {
 	indeces.push_back(index1_);
 }
 
 GetElementPtrInst::GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_): 
-    Ir::Intf::Instruction("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
+    Ir::Intf::Instruction("getelementptr"), itemType(nullptr), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
 {
 }
 
@@ -400,7 +407,14 @@ std::string GetElementPtrInst::ToString() const
     {
         getElementPtr.append("inbounds").append(space);
     }
-    getElementPtr.append(ptrType->Name()).append(space).append(ptr->Name()).append(comma).append(index->GetType()->Name()).append(space).append(index->Name());   
+    if (itemType)
+    {
+        getElementPtr.append(itemType->Name()).append(comma).append(ptrType->Name()).append(space).append(ptr->Name()).append(comma).append(index->GetType()->Name()).append(space).append(index->Name());
+    }
+    else
+    {
+        getElementPtr.append(ptrType->Name()).append(space).append(ptr->Name()).append(comma).append(index->GetType()->Name()).append(space).append(index->Name());
+    }
     for (Ir::Intf::Object* idx : indeces)
     {
         getElementPtr.append(comma).append(idx->GetType()->Name()).append(space).append(idx->Name());

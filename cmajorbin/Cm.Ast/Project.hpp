@@ -30,14 +30,69 @@ enum class Target
 
 std::string TargetStr(Target target);
 
+class ProgramVersion
+{
+public:
+    ProgramVersion();
+    ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_);
+    int Major() const { return majorVersion; }
+    int Minor() const { return minorVersion; }
+    int Revision() const { return revision; }
+    int Build() const { return build; }
+    const std::string& VersionText() const { return versionText; }
+    std::string ToString() const;
+private:
+    int majorVersion;
+    int minorVersion;
+    int revision;
+    int build;
+    std::string versionText;
+};
+
+bool operator==(const ProgramVersion& left, const ProgramVersion& right);
+bool operator<(const ProgramVersion& left, const ProgramVersion& right);
+
+inline bool operator!=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator!=(left, right);
+}
+
+inline bool operator>(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator>(left, right);
+}
+
+inline bool operator>=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator>=(left, right);
+}
+
+inline bool operator<=(const ProgramVersion& left, const ProgramVersion& right)
+{
+    return std::rel_ops::operator<=(left, right);
+}
+
+class VersionParser
+{
+public:
+    virtual ProgramVersion Parse(const std::string& versionString) = 0;
+};
+
+void SetVersionParser(VersionParser* versionParser);
+
+enum class RelOp
+{
+    equal, lessEq, greaterEq, less, greater
+};
+
 class Properties
 {
 public:
     Properties();
-    void AddProperty(const std::string& name_, const std::string& value_);
-    std::string GetProperty(const std::string& name_) const;
+    void AddProperty(const std::string& name_, RelOp rel_, const std::string& value_);
+    std::pair<RelOp, std::string> GetProperty(const std::string& name_) const;
 private:
-    std::map<std::string, std::string> propertyMap;
+    std::map<std::string, std::pair<RelOp, std::string>> propertyMap;
 };
 
 class ProjectDeclaration
@@ -145,7 +200,7 @@ private:
 class Project
 {
 public:
-    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_);
+    Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_, const ProgramVersion& llvmVersion_);
     void AddDeclaration(ProjectDeclaration* declaration);
     void ResolveDeclarations();
     const std::string& Name() const { return name; }
@@ -175,6 +230,7 @@ private:
     std::string backend;
     std::string os;
     int bits;
+    ProgramVersion llvmVersion;
     Target target;
     uint64_t stackSize;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
@@ -190,48 +246,6 @@ private:
     std::string libraryFilePath;
     std::string executableFilePath;
 };
-
-class ProgramVersion
-{
-public:
-    ProgramVersion();
-    ProgramVersion(int major_, int minor_, int revision_, int build_, const std::string& versionText_);
-    int Major() const { return major; }
-    int Minor() const { return minor; }
-    int Revision() const { return revision; }
-    int Build() const { return build; }
-    const std::string& VersionText() const { return versionText; }
-    std::string ToString() const;
-private:
-    int major;
-    int minor;
-    int revision;
-    int build;
-    std::string versionText;
-};
-
-bool operator==(const ProgramVersion& left, const ProgramVersion& right);
-bool operator<(const ProgramVersion& left, const ProgramVersion& right);
-
-inline bool operator!=(const ProgramVersion& left, const ProgramVersion& right)
-{
-    return std::rel_ops::operator!=(left, right);
-}
-
-inline bool operator>(const ProgramVersion& left, const ProgramVersion& right)
-{
-    return std::rel_ops::operator>(left, right);
-}
-
-inline bool operator>=(const ProgramVersion& left, const ProgramVersion& right)
-{
-    return std::rel_ops::operator>=(left, right);
-}
-
-inline bool operator<=(const ProgramVersion& left, const ProgramVersion& right)
-{
-    return std::rel_ops::operator<=(left, right);
-}
 
 } } // namespace Cm::Ast
 

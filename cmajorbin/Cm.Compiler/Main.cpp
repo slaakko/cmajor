@@ -162,7 +162,7 @@ void ObtainLlvmVersion()
         std::string command = "llc --version";
         llvmVersionPath = libraryDirectories[0];
         llvmVersionPath /= "llvmver.txt";
-        Cm::Util::System(command, 1, llvmVersionPath.generic_string());
+        Cm::Util::System(command, 1, llvmVersionPath.generic_string(), true); // ignore return value
         std::string versionString = Cm::Util::ReadFile(llvmVersionPath.generic_string());
         Cm::Parser::LlvmVersionParser* versionParser = Cm::Parser::LlvmVersionParser::Create();
         Cm::Ast::ProgramVersion llvmVersion = versionParser->Parse(versionString.c_str(), versionString.c_str() + versionString.length(), 0, llvmVersionPath.generic_string());

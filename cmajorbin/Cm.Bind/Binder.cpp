@@ -98,7 +98,6 @@ Cm::BoundTree::BoundCompoundStatement* Binder::ReleaseCurrentCompound()
 void Binder::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
 {
     Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&namespaceNode);
-    Cm::Sym::ContainerSymbol* container = containerScope->Container();
     BeginContainerScope(containerScope);
 }
 
@@ -373,10 +372,6 @@ void Binder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
 void Binder::EndVisit(Cm::Ast::FunctionNode& functionNode)
 {
     if (functionNode.TemplateParameters().Count() > 0)
-    {
-        PopSkipContent();
-    }
-    else if (isRvalueArrayFun)
     {
         PopSkipContent();
     }

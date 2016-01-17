@@ -14,7 +14,10 @@ namespace Cm.Parser
     grammar LlvmVersionParser
     {
         using stdlib.newline;
-        using stdlib.int;
+        using VersionNumberParser.Major;
+        using VersionNumberParser.Minor;
+        using VersionNumberParser.Revision;
+        using VersionNumberParser.Build;
 
         LlvmVersion(var std::string versionText) : Cm::Ast::ProgramVersion
             ::= ("LLVM" (anychar - newline)* newline
@@ -23,6 +26,16 @@ namespace Cm.Parser
                 {
                     value = Cm::Ast::ProgramVersion(Major, Minor, Revision, Build, versionText);
                 }
+            ;
+
+    }
+
+    grammar VersionNumberParser
+    {
+        using stdlib.int;
+
+        VersionNumber : Cm::Ast::ProgramVersion
+            ::= (Major '.' Minor ('.' Revision ('.' Build)?)?){ value = Cm::Ast::ProgramVersion(Major, Minor, Revision, Build, ""); }
             ;
 
         Major : int
@@ -42,4 +55,3 @@ namespace Cm.Parser
             ;
     }
 }
-

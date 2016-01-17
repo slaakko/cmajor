@@ -11,7 +11,9 @@
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Core/CDebugInfo.hpp>
+#include <Cm.Core/GlobalSettings.hpp>
 #include <Ir.Intf/Label.hpp>
+#include <Llvm.Ir/Instruction.hpp>
 #include <iostream>
 #include <stdexcept>
 
@@ -143,8 +145,12 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
     nextTargets.clear();
 }
 
-Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr), profilingHandler(nullptr)
+Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr), profilingHandler(nullptr), newLlvmSyntax(false)
 {
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm && Cm::Core::GetGlobalSettings()->LlvmVersion() >= Cm::Ast::ProgramVersion::ProgramVersion(3, 7, 0, 0, ""))
+    {
+        newLlvmSyntax = true;
+    }
 }
 
 void Emitter::RequestLabelFor(std::shared_ptr<GenData> genData)
@@ -203,6 +209,41 @@ void Emitter::Emit(Ir::Intf::Instruction* instruction)
     if (profilingHandler && instruction->IsRet())
     {
         profilingHandler->EmitEndProfiledFun(label);
+    }
+    if (newLlvmSyntax && (instruction->IsLoadInst() || instruction->IsGetElementPtrInst()))
+    {
+        Ir::Intf::Type* ptrType = nullptr; 
+        Llvm::LoadInst* loadInst = nullptr;
+        Llvm::GetElementPtrInst* getElementPtrInst = nullptr;
+        if (instruction->IsLoadInst())
+        { 
+            loadInst = static_cast<Llvm::LoadInst*>(instruction);
+            ptrType = loadInst->Type();
+        }
+        else if (instruction->IsGetElementPtrInst())
+        {
+            getElementPtrInst = static_cast<Llvm::GetElementPtrInst*>(instruction);
+            ptrType = getElementPtrInst->PtrType();
+        }
+        int numPointers = ptrType->NumPointers();
+        Ir::Intf::Type* itemType = nullptr;
+        if (numPointers > 1)
+        {
+            itemType = Cm::IrIntf::Pointer(ptrType->GetBaseType(), numPointers - 1);
+        }
+        else
+        {
+            itemType = ptrType->GetBaseType();
+        }
+        Own(itemType);
+        if (loadInst)
+        {
+            loadInst->SetItemType(itemType);
+        }
+        else if (getElementPtrInst)
+        {
+            getElementPtrInst->SetItemType(itemType);
+        }
     }
     irFunction->AddInstruction(instruction);
     if (instruction->IsRet())

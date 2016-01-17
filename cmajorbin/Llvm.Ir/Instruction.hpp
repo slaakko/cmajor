@@ -268,11 +268,15 @@ class LoadInst: public Ir::Intf::Instruction
 {
 public:
     LoadInst(Ir::Intf::Type* type_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_);
+    void SetItemType(Ir::Intf::Type* itemType_) { itemType = itemType_; }
     void SetAlignment(int alignment_) override;
     std::string ToString() const override;
     bool ReturnsResult() const override { return true; }
     Ir::Intf::Object* GetResult() const override { return result; }
+    bool IsLoadInst() const override { return true; }
+    Ir::Intf::Type* Type() const { return type; }
 private:
+    Ir::Intf::Type* itemType;
     Ir::Intf::Type* type;
     Ir::Intf::Object* result;
     Ir::Intf::Object* ptr;
@@ -303,11 +307,15 @@ public:
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, Ir::Intf::Object* index1_);
     GetElementPtrInst(Ir::Intf::Type* ptrType_, Ir::Intf::Object* result_, Ir::Intf::Object* ptr_, Ir::Intf::Object* index_, const std::vector<Ir::Intf::Object*>& indeces_);
 	~GetElementPtrInst();
+    void SetItemType(Ir::Intf::Type* itemType_) { itemType = itemType_; }
     void SetInbounds() override { inbounds = true; }
     std::string ToString() const override;
     bool ReturnsResult() const override { return true; }
     Ir::Intf::Object* GetResult() const override { return result; }
+    bool IsGetElementPtrInst() const override { return true; }
+    Ir::Intf::Type* PtrType() const { return ptrType; }
 private:
+    Ir::Intf::Type* itemType;
     Ir::Intf::Type* ptrType;
     Ir::Intf::Object* result;
     Ir::Intf::Object* ptr;

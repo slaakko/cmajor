@@ -1945,11 +1945,15 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 <properties> ::= '[' <property> (',' <property>)* ']'
 
-<property> ::= <property-name> '=' <propterty-value>
+<property> ::= <property-name> <rel-op> <propterty-value>
 
 <property-name> ::= <identifier>
 
-<property-value> ::= <identifier> | <long>
+<rel-op> ::= "=" | ">=" | "<=" | "<" | ">"
+
+<property-value> ::= <version-number> | <identifier> | <long>
+
+<version-number> ::= <int> '.' <int> ('.' <int> ('.' <int>)?)?
 
 <file-path> ::= "'<'" "[^>]+" "'\>'"
 
@@ -1999,10 +2003,11 @@ Properties contains comma-separated list of property declarations.
 Properties can be used to include a declaration only in selected configurations.
 If the properties do not match current compilation properties, the associated declaration has no effect.
 
-Currently property name can be \bf{backend}, \bf{os} or \bf{bits}.
+Currently property name can be \bf{backend}, \bf{os}, \bf{bits} or \bf{llvm-version}.
 Backend values can be \bf{c} and \bf{llvm}.
 Os values can be \bf{windows} and \bf{linux}.
 Bits values can be \bf{32} and \bf{64}.
+Llvm-version number is obtained by the compiler at the start of compilation by executing command \verb|llc --version|.
 
 \clearpage
 
