@@ -40,7 +40,7 @@ void ImportModules(Cm::Sym::SymbolTable& symbolTable, Cm::Ast::Project* project,
 void Bind(Cm::Ast::CompileUnitNode* compileUnit, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void AnalyzeControlFlow(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 bool GenerateExceptionTableUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& projectOutputBasePath, std::vector<std::string>& objectFilePaths, bool changed);
-void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines);
+void AddPlatformConfigAndBitsDefines(std::unordered_set<std::string>& defines);
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project,
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
     std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable,

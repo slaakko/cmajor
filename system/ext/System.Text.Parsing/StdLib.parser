@@ -53,6 +53,12 @@ namespace System.Text.Parsing
                                             }
                                             ;
                                             
+        long: long                          ::= token(sign? digit_sequence)
+                                            {
+                                                value = ParseLong(string(matchBegin, matchEnd));
+                                            }
+                                            ;   
+                                                                                  
         ulong: ulong                        ::= digit_sequence
                                             {
                                                 value = ParseULong(string(matchBegin, matchEnd));

@@ -30,6 +30,8 @@ source <Keyword.cm>;
 text <Keyword.parser>;
 source <Literal.cm>;
 text <Literal.parser>;
+source <LlvmVersion.cm>;
+text <LlvmVersion.parser>;
 source <Operator.cm>;
 source <Parameter.cm>;
 text <Parameter.parser>;

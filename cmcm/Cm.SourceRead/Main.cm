@@ -24,7 +24,7 @@ namespace Cm.SourceRead
     internal void ReadProject(ProjectGrammar* projectGrammar, CompileUnitGrammar* compileUnitGrammar, const string& projectFilePath)
     {
         FileMapping projectFile(projectFilePath);
-        UniquePtr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", "windows"));
+        UniquePtr<Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, "debug", "llvm", "windows", 64, Cm.Ast.ProgramVersion(3, 7, 1, 0, "")));
         project->ResolveDeclarations();
         Console.Out() << projectFilePath << ": " << project->Name() << endl();
         Console.Out() << "===============================================================" << endl();

@@ -95,6 +95,42 @@ namespace System.Text.Parsing
             private Stack<Context> contextStack;
             private Context context;
         }
+        private class longRule: System.Text.Parsing.Rule
+        {
+            public longRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("long");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<long>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = ParseLong(string(matchBegin, matchEnd));
+            }
+            private class Context
+            {
+                public long value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
         private class ulongRule: System.Text.Parsing.Rule
         {
             public ulongRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
@@ -847,6 +883,13 @@ namespace System.Text.Parsing
             AddRule(new uintRule("uint", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("digit_sequence", "digit_sequence", 0))));
+            AddRule(new longRule("long", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new SequenceParser(
+                            new OptionalParser(
+                                new NonterminalParser("sign", "sign", 0)),
+                            new NonterminalParser("digit_sequence", "digit_sequence", 0))))));
             AddRule(new ulongRule("ulong", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("digit_sequence", "digit_sequence", 0))));

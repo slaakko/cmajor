@@ -35,7 +35,7 @@ ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& libaryFi
 {
 }
 
-const char moduleFileId[4] = { 'M', 'C', '1', '2' };
+const char moduleFileId[4] = { 'M', 'C', '1', '3' };
 
 Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
@@ -469,6 +469,7 @@ void Module::Dump()
     ReadSourceFilePaths(reader);
     ReadReferenceFilePaths(reader);
     ReadCLibraryFilePaths(reader);
+    ReadLibrarySearchPaths(reader);
     ReadDebugInfoFilePaths(reader);
     ReadBcuPaths(reader);
     std::unordered_set<std::string> importedModules;

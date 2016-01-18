@@ -357,10 +357,10 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
             Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
@@ -369,10 +369,10 @@ namespace Cm.Parser
                 grammar1 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar2 == null)
             {
-                grammar2 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
             Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
@@ -391,10 +391,10 @@ namespace Cm.Parser
         public override void CreateRules()
         {
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
             AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
             AddRule(new EnumTypeRule("EnumType", GetScope(),
                 new SequenceParser(
                     new SequenceParser(

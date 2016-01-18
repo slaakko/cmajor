@@ -31,8 +31,7 @@
 
 namespace Cm { namespace Bind {
 
-Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr),
-    switchStatement(nullptr), isRvalueArrayFun(false)
+Binder::Binder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) : Cm::Ast::Visitor(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(nullptr), currentParent(nullptr), switchStatement(nullptr)
 {
 }
 
@@ -516,6 +515,7 @@ void Binder::EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNod
 void Binder::BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
 {
     parentStack.push(currentParent.release());
+    switchStatementStack.push(switchStatement);
     switchStatement = new Cm::BoundTree::BoundSwitchStatement(&switchStatementNode);
     SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.GetFileScopes(), boundFunction.get(), switchStatement);
     switchStatementNode.Accept(binder);
@@ -544,7 +544,8 @@ void Binder::EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode)
     {
         throw std::runtime_error("not a switch statement");
     }
-    switchStatement = nullptr;
+    switchStatement = switchStatementStack.top();
+    switchStatementStack.pop();
 }
 
 void Binder::BeginVisit(Cm::Ast::CaseStatementNode& caseStatementNode)

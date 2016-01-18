@@ -252,7 +252,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     std::vector<std::string> objectFilePaths;
     std::vector<std::string> allLibrarySearchPaths;
     std::unordered_set<std::string> allDefines = defines;
-    Cm::Build::AddPlatformAndConfigDefines(allDefines);
+    Cm::Build::AddPlatformConfigAndBitsDefines(allDefines);
     Cm::Sym::Define(allDefines);
     BuildSymbolTable(symbolTable, globalConceptData, testUnit, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, unitTestName,
         allLibrarySearchPaths);

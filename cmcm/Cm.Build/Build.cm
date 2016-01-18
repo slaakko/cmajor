@@ -81,7 +81,9 @@ namespace Cm.Build
             FileMapping projectFile(projectFilePath);
             string backend = Cm.IrIntf.GetBackendStr();
             string os = GetOs();
-            UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
+            int bits = GetBits();
+            Cm.Ast.ProgramVersion llvmVersion = GetLlvmVersion();
+            UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os, bits, llvmVersion));
             project->ResolveDeclarations();
             solution->AddProject(Rvalue(project));
         }
@@ -140,7 +142,9 @@ namespace Cm.Build
         FileMapping projectFile(projectFilePath);
         string backend = Cm.IrIntf.GetBackendStr();
         string os = GetOs();
-        UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os));
+        int bits = GetBits();
+        Cm.Ast.ProgramVersion llvmVersion = GetLlvmVersion();
+        UniquePtr<Cm.Ast.Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm.Core.GetConfig(), backend, os, bits, llvmVersion));
         project->ResolveDeclarations();
         bool clean = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.clean);
         if (clean)
@@ -172,7 +176,7 @@ namespace Cm.Build
         {
             ReadIdeDefines(allDefines, project);
         }
-        AddPlatformAndConfigDefines(allDefines);
+        AddPlatformConfigAndBitsDefines(allDefines);
         Cm.Sym.Define(allDefines);
         Cm.Parser.FileRegistry.Init();
         if (!quiet)
@@ -206,6 +210,7 @@ namespace Cm.Build
         List<string> allNativeObjectFilePaths;
         List<string> allBcuPaths;
         List<ulong> classHierarchyTable;
+        List<string> allLibrarySearchPaths;
         string libraryFilePath = Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(project->FilePath()), ".cml"));
         if (!rebuild && FileExists(libraryFilePath))
         {
@@ -213,7 +218,7 @@ namespace Cm.Build
             module.CheckFileVersion();
         }
         BuildSymbolTable(symbolTable, rebuild, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
-            classHierarchyTable);
+            classHierarchyTable, allLibrarySearchPaths);
         CreateDirectories(project->OutputBasePath());
         List<string> objectFilePaths;
         bool cFilesChanged = CompileCFiles(project, objectFilePaths);
@@ -276,6 +281,7 @@ namespace Cm.Build
             projectModule.SetSourceFilePaths(project->SourceFilePaths());
             projectModule.SetReferenceFilePaths(allReferenceFilePaths);
             projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
+            projectModule.SetLibrarySearchPaths(project->LibrarySearchPaths());
             projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
             projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
             projectModule.SetBcuPaths(bcuPaths);
@@ -414,11 +420,12 @@ namespace Cm.Build
     
     public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, bool rebuild, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
         const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths,
-        List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
+        List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable, List<string>& allLibrarySearchPaths)
     {
         Cm.Core.InitSymbolTable(symbolTable);
         ReadNextSid(symbolTable);
-        ImportModules(symbolTable, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
+        ImportModules(symbolTable, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable,
+            allLibrarySearchPaths);
         symbolTable.InitVirtualFunctionTables();
         for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
         {
@@ -436,7 +443,8 @@ namespace Cm.Build
     }
     
     public void ImportModules(Cm.Sym.SymbolTable& symbolTable, Cm.Ast.Project* project, const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, 
-        List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
+        List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable, 
+        List<string>& allLibrarySearchPaths)
     {
         List<string> referenceFilePaths = project->ReferenceFilePaths();
         bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
@@ -456,7 +464,8 @@ namespace Cm.Build
             {
                 importedModules.Insert(libraryReferencePath);
                 Cm.Sym.Module module(libraryReferencePath);
-                module.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable);
+                module.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable,
+                    allLibrarySearchPaths);
                 module.CheckUpToDate();
             }
         }
@@ -616,7 +625,7 @@ namespace Cm.Build
         }
     }
     
-    public char GetPlatformPathSeparatorChar()
+    public nothrow char GetPlatformPathSeparatorChar()
     {
     #if (WINDOWS)
         return ';';
@@ -624,12 +633,25 @@ namespace Cm.Build
         return ':';
     }
     
-    public const char* GetOs() 
+    public nothrow const char* GetOs() 
     {
     #if (WINDOWS)
         return "windows";
     #endif
         return "linux";
+    }
+    
+    public nothrow int GetBits()
+    {
+    #if (BITS64)
+        return 64;
+    #endif
+        return 32;
+    }
+    
+    public nothrow const Cm.Ast.ProgramVersion& GetLlvmVersion()
+    {
+        return Cm.Core.GlobalSettings.Instance().GetLlvmVersion();
     }
     
     public void ReadIdeDefines(HashSet<string>& allDefines, Cm.Ast.Project* project)
@@ -646,7 +668,7 @@ namespace Cm.Build
         }
     }
     
-    public void AddPlatformAndConfigDefines(HashSet<string>& allDefines)
+    public void AddPlatformConfigAndBitsDefines(HashSet<string>& allDefines)
     {
     #if (WINDOWS)
         allDefines.Insert("WINDOWS");
@@ -660,6 +682,14 @@ namespace Cm.Build
         else
         {
             allDefines.Insert("RELEASE");
+        }
+        if (GetBits() == 64)
+        {
+            allDefines.Insert("BITS64");
+        }        
+        else if (GetBits() == 32)
+        {
+            allDefines.Insert("BITS32");
         }
     }
     

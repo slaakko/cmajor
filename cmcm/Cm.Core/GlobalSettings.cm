@@ -102,6 +102,14 @@ namespace Cm.Core
         {
             return virtualCallFileName;
         }
+        public nothrow const Cm.Ast.ProgramVersion& GetLlvmVersion() const
+        {
+            return llvmVersion;
+        }
+        public nothrow void SetLlvmVersion(const Cm.Ast.ProgramVersion& llvmVersion_)
+        {
+            llvmVersion = llvmVersion_;
+        }
         private static UniquePtr<GlobalSettings> instance;
         private string currentProjectName;
         private string config;
@@ -111,6 +119,7 @@ namespace Cm.Core
         private string classHierarchyDotFileName;
         private string tpgDotFileName;
         private string virtualCallFileName;
+        private Cm.Ast.ProgramVersion llvmVersion;
     }
     
     public nothrow const string& GetConfig()

@@ -34,22 +34,146 @@ namespace Cm.Ast
         return "none";
     }
     
+    public class ProgramVersion
+    {
+        public nothrow ProgramVersion() : major(0), minor(0), revision(0), build(0), versionText()
+        {
+        }
+        public nothrow ProgramVersion(int major_, int minor_, int revision_, int build_, const string& versionText_) : major(major_), minor(minor_), revision(revision_), build(build_), versionText(versionText_)
+        {
+        }
+        public nothrow inline int Major() const 
+        { 
+            return major; 
+        }
+        public nothrow inline int Minor() const 
+        { 
+            return minor; 
+        }
+        public nothrow inline int Revision() const 
+        { 
+            return revision; 
+        }
+        public nothrow inline int Build() const 
+        { 
+            return build; 
+        }
+        public nothrow inline const string& VersionText() const 
+        { 
+            return versionText; 
+        }
+        public nothrow string ToString() const
+        {
+            return ToString(major) + "." + ToString(minor) + "." + ToString(revision) + "." + ToString(build);
+        }
+        private int major;
+        private int minor;
+        private int revision;
+        private int build;
+        private string versionText;
+    }
+
+    public bool operator==(const ProgramVersion& left, const ProgramVersion& right)
+    {
+        return left.Major() == right.Major() && left.Minor() == right.Minor() && left.Revision() == right.Revision() && left.Build() == right.Build();
+    }
+
+    public bool operator<(const ProgramVersion& left, const ProgramVersion& right)
+    {
+        if (left.Major() < right.Major()) return true;
+        if (left.Major() > right.Major()) return false;
+        if (left.Minor() < right.Minor()) return true;
+        if (left.Minor() > right.Minor()) return false;
+        if (left.Revision() < right.Revision()) return true;
+        if (left.Revision() > right.Revision()) return false;
+        if (left.Build() < right.Build()) return true;
+        if (left.Build() > right.Build()) return false;
+        return false;
+    }
+    
+    public abstract class VersionParser
+    {
+        public static nothrow VersionParser() : instance(null)
+        {
+        }
+        public static nothrow VersionParser& Instance()
+        {
+            #assert(instance != null);
+            return *instance;
+        }
+        public static nothrow void SetInstance(VersionParser* instance_)
+        {
+            instance = instance_;
+        }
+        public virtual ~VersionParser()
+        {
+        }
+        public abstract ProgramVersion Parse(const string& versionString);
+        private static VersionParser* instance;
+    }
+    
+    public enum RelOp
+    {
+        equal, lessEq, greaterEq, less, greater
+    }
+    
     public class Properties
     {
-        public void AddProperty(const string& name, const string& value)
+        public void AddProperty(const string& name, RelOp op, const string& value)
         {
-            propertyMap[name] = value;
+            propertyMap[name] = MakePair(op, value);
         }
-        public nothrow string GetProperty(const string& name) const
+        public Pair<RelOp, string> GetProperty(const string& name) const
         {
-            Map<string, string>.ConstIterator i = propertyMap.CFind(name);
+            Map<string, Pair<RelOp, string>>.ConstIterator i = propertyMap.CFind(name);
             if (i != propertyMap.CEnd())
             {
                 return i->second;
             }
-            return string();
+            return MakePair(RelOp.equal, string());
         }
-        private Map<string, string> propertyMap;
+        private Map<string, Pair<RelOp, string>> propertyMap;
+    }
+    
+    public nothrow bool Compare(const string& propertyValue, const Pair<RelOp, string>& declaredValue)
+    {
+        switch (declaredValue.first)
+        {
+            case RelOp.equal: return propertyValue == declaredValue.second;
+            case RelOp.less: return propertyValue < declaredValue.second;
+            case RelOp.greater: return propertyValue > declaredValue.second;
+            case RelOp.lessEq: return propertyValue <= declaredValue.second;
+            case RelOp.greaterEq: return propertyValue >= declaredValue.second;
+        }
+        return false;
+    }
+    
+    public bool Compare(int propertyValue, const Pair<RelOp, string>& declaredValue)
+    {
+        int dval = ParseInt(declaredValue.second);
+        switch (declaredValue.first)
+        {
+            case RelOp.equal: return propertyValue == dval;
+            case RelOp.less: return propertyValue < dval;
+            case RelOp.greater: return propertyValue > dval;
+            case RelOp.lessEq: return propertyValue <= dval;
+            case RelOp.greaterEq: return propertyValue >= dval;
+        }
+        return false;
+    }
+    
+    public bool Compare(const ProgramVersion& propertyValue, const Pair<RelOp, string>& declaredValue)
+    {
+        ProgramVersion dval = VersionParser.Instance().Parse(declaredValue.second);
+        switch (declaredValue.first)
+        {
+            case RelOp.equal: return propertyValue == dval;
+            case RelOp.less: return propertyValue < dval;
+            case RelOp.greater: return propertyValue > dval;
+            case RelOp.lessEq: return propertyValue <= dval;
+            case RelOp.greaterEq: return propertyValue >= dval;
+        }
+        return false;
     }
     
     public abstract class ProjectDeclaration
@@ -128,6 +252,19 @@ namespace Cm.Ast
         }
         private string filePath;
     }
+    
+    public class AddLibraryPathDeclaration : ProjectDeclaration
+    {
+        public AddLibraryPathDeclaration(const Span& span_, const string& filePath_, const string& basePath_, const Properties& properties_) :
+            base(span_, properties_), filePath(GetFullPath(Path.Combine(basePath_, filePath_)))
+        {
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        private string filePath;
+    }
 
     public class CLibraryDeclaration : ProjectDeclaration
     {
@@ -153,10 +290,22 @@ namespace Cm.Ast
         private Target target;
     }
     
+    public class StackSizeDeclaration : ProjectDeclaration
+    {
+        public StackSizeDeclaration(const Span& span_, ulong stackSize_) : base(span_, Properties()), stackSize(stackSize_)
+        {
+        }
+        public nothrow inline ulong StackSize() const
+        {
+            return stackSize;
+        }
+        private ulong stackSize;
+    }
+    
     public class Project
     {
-        public Project(const string& name_, const string& filePath_, const string& config_, const string& backend_, const string& os_) :
-            name(name_), filePath(filePath_), basePath(Path.GetParent(filePath)), config(config_), backend(backend_), os(os_), target(Target.none)
+        public Project(const string& name_, const string& filePath_, const string& config_, const string& backend_, const string& os_, int bits_, const ProgramVersion& llvmVersion_) :
+            name(name_), filePath(filePath_), basePath(Path.GetParent(filePath)), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target.none), stackSize(0u)
         {
             outputBasePath = Path.Combine(Path.Combine(basePath, config), backend);
         }
@@ -208,6 +357,10 @@ namespace Cm.Ast
         {
             return referenceFilePaths;
         }
+        public nothrow inline const List<string>& LibrarySearchPaths() const
+        {
+            return librarySearchPaths;
+        }
         public nothrow inline const List<string>& CLibraryFilePaths() const
         {
             return cLibraryFilePaths;
@@ -224,26 +377,34 @@ namespace Cm.Ast
         {
             return executableFilePath;
         }
+        public nothrow inline ulong StackSize() const
+        {
+            return stackSize;
+        }
         public void ResolveDeclarations()
         {
             for (const UniquePtr<ProjectDeclaration>& declaration : declarations)
             {
                 const Properties& properties = declaration->GetProperties();
-                string declBackend = properties.GetProperty("backend");
-                if (!declBackend.IsEmpty())
+                Pair<RelOp, string> declBackend = properties.GetProperty("backend");
+                if (!declBackend.second.IsEmpty())
                 {
-                    if (declBackend != backend)
-                    {
-                        continue;
-                    }
+                    if (!Compare(backend, declBackend)) continue;
                 }
-                string declOs = properties.GetProperty("os");
-                if (!declOs.IsEmpty())
+                Pair<RelOp, string> declOs = properties.GetProperty("os");
+                if (!declOs.second.IsEmpty())
                 {
-                    if (declOs != os)
-                    {
-                        continue;
-                    }
+                    if (!Compare(os, declOs)) continue;
+                }
+                Pair<RelOp, string> declBits = properties.GetProperty("bits");
+                if (!declBits.second.IsEmpty())
+                {
+                    if (!Compare(bits, declBits)) continue;
+                }
+                Pair<RelOp, string> declLlvmVersion = properties.GetProperty("llvm-version");
+                if (!declLlvmVersion.second.IsEmpty())
+                {
+                    if (!Compare(llvmVersion, declLlvmVersion)) continue;
                 }
                 if (declaration.GetPtr() is SourceFileDeclaration*)
                 {
@@ -324,6 +485,11 @@ namespace Cm.Ast
                     }
                     referenceFilePaths.Add(rfd->FilePath());
                 }
+                else if (declaration.GetPtr() is AddLibraryPathDeclaration*)
+                {
+                    AddLibraryPathDeclaration* lsp = cast<AddLibraryPathDeclaration*>(declaration.GetPtr());
+                    librarySearchPaths.Add(lsp->FilePath());
+                }
                 else if (declaration.GetPtr() is CLibraryDeclaration*)
                 {
                     CLibraryDeclaration* clib = cast<CLibraryDeclaration*>(declaration.GetPtr());
@@ -347,6 +513,11 @@ namespace Cm.Ast
                     {
                         throw Exception("target '" + TargetStr(td->GetTarget()) + "' already specified ('" + GetFullPath(FilePath()) + "' line " + ToString(declaration->GetSpan().LineNumber()) + ")");
                     }
+                }
+                else if (declaration.GetPtr() is StackSizeDeclaration*)
+                {
+                    StackSizeDeclaration* s = cast<StackSizeDeclaration*>(declaration.GetPtr());
+                    stackSize = s->StackSize();
                 }
                 else if (declaration.GetPtr() is AssemblyFileDeclaration*)
                 {
@@ -392,7 +563,10 @@ namespace Cm.Ast
         private string config;
         private string backend;
         private string os;
+        private int bits;
+        private ProgramVersion llvmVersion;
         private Target target;
+        private ulong stackSize;
         private List<UniquePtr<ProjectDeclaration>> declarations;
         private List<string> sourceFilePaths;
         private List<string> asmSourceFilePaths;
@@ -401,6 +575,7 @@ namespace Cm.Ast
         private List<string> textFilePaths;
         private List<string> referenceFilePaths;
         private List<string> cLibraryFilePaths;
+        private List<string> librarySearchPaths;
         private string assemblyFilePath;
         private string libraryFilePath;
         private string executableFilePath;

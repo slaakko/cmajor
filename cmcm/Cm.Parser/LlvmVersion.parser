@@ -1,0 +1,57 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    grammar LlvmVersionGrammar
+    {
+        using stdlib.newline;
+        using VersionNumberGrammar.Major;
+        using VersionNumberGrammar.Minor;
+        using VersionNumberGrammar.Revision;
+        using VersionNumberGrammar.Build;
+        
+        LlvmVersion(var string versionText) : ProgramVersion
+            ::= ("LLVM" (anychar - newline)* newline
+                "  LLVM version " (Major '.' Minor ('.' Revision ('.' Build)?)? (anychar - newline)*){ versionText = string(matchBegin, matchEnd); } newline
+                anychar*
+            )
+            {
+                value = ProgramVersion(Major, Minor, Revision, Build, versionText);
+            }
+            ;
+    }
+    
+    grammar VersionNumberGrammar
+    {
+        using stdlib.int;
+        
+        VersionNumber : ProgramVersion
+            ::= (Major '.' Minor ('.' Revision ('.' Build)?)?){ value = ProgramVersion(Major, Minor, Revision, Build, ""); }
+            ;
+            
+        Major : int
+            ::= int:major{ value = major; }
+            ;
+
+        Minor : int
+            ::= int:minor{ value = minor; }
+            ;
+
+        Revision : int
+            ::= int:revision{ value = revision; }
+            ;
+
+        Build : int
+            ::= int:build{ value = build; }
+            ;
+    }
+}

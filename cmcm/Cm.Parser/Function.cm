@@ -466,10 +466,10 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.KeywordGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.KeywordGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
             Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
@@ -478,16 +478,16 @@ namespace Cm.Parser
                 grammar1 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.KeywordGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.KeywordGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar3 == null)
             {
-                grammar3 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar3 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
             Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
@@ -496,16 +496,16 @@ namespace Cm.Parser
                 grammar4 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.StatementGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
-            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
             if (grammar6 == null)
             {
-                grammar6 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar6 = Cm.Parser.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
             Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
@@ -517,15 +517,15 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
-            AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
-            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
             AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+            AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
             AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRule(new FunctionRule("Function", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",

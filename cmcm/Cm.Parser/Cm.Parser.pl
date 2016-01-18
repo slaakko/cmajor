@@ -135,6 +135,10 @@ namespace Cm.Parser
         StringLiteral(var string r): Node*;
         NullLiteral: Node*;
     }
+    grammar LlvmVersionGrammar
+    {
+        LlvmVersion(var string versionText): ProgramVersion;
+    }
     grammar ParameterGrammar
     {
         ParameterList(ParsingContext* ctx, Node* owner);
@@ -142,7 +146,7 @@ namespace Cm.Parser
     }
     grammar ProjectGrammar
     {
-        Project(string config, string backend, string os): Project*;
+        Project(string config, string backend, string os, int bits, ProgramVersion llvmVersion): Project*;
         Declarations(Project* project);
         Declaration(Project* project): ProjectDeclaration*;
         SourceFileDeclaration(Project* project): ProjectDeclaration*;
@@ -153,9 +157,13 @@ namespace Cm.Parser
         ReferenceFileDeclaration(Project* project): ProjectDeclaration*;
         CLibraryDeclaration(Project* project): ProjectDeclaration*;
         TargetDeclaration: ProjectDeclaration*;
+        StackSizeDeclaration: ProjectDeclaration*;
         AssemblyFileDeclaration(Project* project): ProjectDeclaration*;
         ExecutableFileDeclaration(Project* project): ProjectDeclaration*;
+        AddLibraryPathDeclaration(Project* project): ProjectDeclaration*;
         Properties: Properties;
+        RelOp: RelOp;
+        PropertyValue: string;
         FilePath: string;
     }
     grammar SolutionGrammar
@@ -234,5 +242,13 @@ namespace Cm.Parser
     grammar TypedefGrammar
     {
         Typedef(ParsingContext* ctx): Node*;
+    }
+    grammar VersionNumberGrammar
+    {
+        VersionNumber: ProgramVersion;
+        Major: int;
+        Minor: int;
+        Revision: int;
+        Build: int;
     }
 }

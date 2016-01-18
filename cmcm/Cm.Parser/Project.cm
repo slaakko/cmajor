@@ -24,7 +24,7 @@ namespace Cm.Parser
         {
             SetOwner(0);
         }
-        public Project* Parse(const char* start, const char* end, int fileIndex, const string& fileName, string config, string backend, string os)
+        public Project* Parse(const char* start, const char* end, int fileIndex, const string& fileName, string config, string backend, string os, int bits, ProgramVersion llvmVersion)
         {
             Scanner scanner(start, end, fileIndex, fileName, SkipRule());
             System.IO.OutputStream* log = Log();
@@ -39,6 +39,8 @@ namespace Cm.Parser
             stack.Push(UniquePtr<Object>(new ValueObject<string>(config)));
             stack.Push(UniquePtr<Object>(new ValueObject<string>(backend)));
             stack.Push(UniquePtr<Object>(new ValueObject<string>(os)));
+            stack.Push(UniquePtr<Object>(new ValueObject<int>(bits)));
+            stack.Push(UniquePtr<Object>(new ValueObject<ProgramVersion>(llvmVersion)));
             Match match = Parse(scanner, stack);
             Span stop = scanner.GetSpan();
             if (log != null)
@@ -69,12 +71,18 @@ namespace Cm.Parser
                 AddInheritedAttribute(AttrOrVariable("string", "config"));
                 AddInheritedAttribute(AttrOrVariable("string", "backend"));
                 AddInheritedAttribute(AttrOrVariable("string", "os"));
+                AddInheritedAttribute(AttrOrVariable("int", "bits"));
+                AddInheritedAttribute(AttrOrVariable("ProgramVersion", "llvmVersion"));
                 SetValueTypeName("Project*");
             }
             public override void Enter(Stack<UniquePtr<Object>>& stack)
             {
                 contextStack.Push(Rvalue(context));
                 context = Context();
+                UniquePtr<Object> llvmVersion_value = stack.Pop();
+                context.llvmVersion = *cast<ValueObject<ProgramVersion>*>(llvmVersion_value.GetPtr());
+                UniquePtr<Object> bits_value = stack.Pop();
+                context.bits = *cast<ValueObject<int>*>(bits_value.GetPtr());
                 UniquePtr<Object> os_value = stack.Pop();
                 context.os = *cast<ValueObject<string>*>(os_value.GetPtr());
                 UniquePtr<Object> backend_value = stack.Pop();
@@ -101,7 +109,7 @@ namespace Cm.Parser
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os);
+                context.value = new Project(context.fromqualified_id, fileName, context.config, context.backend, context.os, context.bits, context.llvmVersion);
             }
             public throw void Postqualified_id(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -120,6 +128,8 @@ namespace Cm.Parser
                 public string config;
                 public string backend;
                 public string os;
+                public int bits;
+                public ProgramVersion llvmVersion;
                 public Project* value;
                 public string fromqualified_id;
             }
@@ -221,6 +231,10 @@ namespace Cm.Parser
                 a8ActionParser->SetAction(ParsingAction(A8Action));
                 ActionParser* a9ActionParser = GetAction("A9");
                 a9ActionParser->SetAction(ParsingAction(A9Action));
+                ActionParser* a10ActionParser = GetAction("A10");
+                a10ActionParser->SetAction(ParsingAction(A10Action));
+                ActionParser* a11ActionParser = GetAction("A11");
+                a11ActionParser->SetAction(ParsingAction(A11Action));
                 NonterminalParser* sourceFileDeclarationNonterminalParser = GetNonterminal("SourceFileDeclaration");
                 sourceFileDeclarationNonterminalParser->SetPreCall(PreCall(PreSourceFileDeclaration));
                 sourceFileDeclarationNonterminalParser->SetPostCall(PostCall(PostSourceFileDeclaration));
@@ -244,12 +258,17 @@ namespace Cm.Parser
                 cLibraryDeclarationNonterminalParser->SetPostCall(PostCall(PostCLibraryDeclaration));
                 NonterminalParser* targetDeclarationNonterminalParser = GetNonterminal("TargetDeclaration");
                 targetDeclarationNonterminalParser->SetPostCall(PostCall(PostTargetDeclaration));
+                NonterminalParser* stackSizeDeclarationNonterminalParser = GetNonterminal("StackSizeDeclaration");
+                stackSizeDeclarationNonterminalParser->SetPostCall(PostCall(PostStackSizeDeclaration));
                 NonterminalParser* assemblyFileDeclarationNonterminalParser = GetNonterminal("AssemblyFileDeclaration");
                 assemblyFileDeclarationNonterminalParser->SetPreCall(PreCall(PreAssemblyFileDeclaration));
                 assemblyFileDeclarationNonterminalParser->SetPostCall(PostCall(PostAssemblyFileDeclaration));
                 NonterminalParser* executableFileDeclarationNonterminalParser = GetNonterminal("ExecutableFileDeclaration");
                 executableFileDeclarationNonterminalParser->SetPreCall(PreCall(PreExecutableFileDeclaration));
                 executableFileDeclarationNonterminalParser->SetPostCall(PostCall(PostExecutableFileDeclaration));
+                NonterminalParser* addLibraryPathDeclarationNonterminalParser = GetNonterminal("AddLibraryPathDeclaration");
+                addLibraryPathDeclarationNonterminalParser->SetPreCall(PreCall(PreAddLibraryPathDeclaration));
+                addLibraryPathDeclarationNonterminalParser->SetPostCall(PostCall(PostAddLibraryPathDeclaration));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -285,11 +304,19 @@ namespace Cm.Parser
             }
             public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromAssemblyFileDeclaration;
+                context.value = context.fromStackSizeDeclaration;
             }
             public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
+                context.value = context.fromAssemblyFileDeclaration;
+            }
+            public throw void A10Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
                 context.value = context.fromExecutableFileDeclaration;
+            }
+            public throw void A11Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromAddLibraryPathDeclaration;
             }
             public throw void PreSourceFileDeclaration(Stack<UniquePtr<Object>>& stack)
             {
@@ -383,6 +410,14 @@ namespace Cm.Parser
                     context.fromTargetDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromTargetDeclaration_value.GetPtr());
                 }
             }
+            public throw void PostStackSizeDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromStackSizeDeclaration_value = stack.Pop();
+                    context.fromStackSizeDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromStackSizeDeclaration_value.GetPtr());
+                }
+            }
             public throw void PreAssemblyFileDeclaration(Stack<UniquePtr<Object>>& stack)
             {
                 stack.Push(UniquePtr<Object>(new ValueObject<Project*>(context.project)));
@@ -407,6 +442,18 @@ namespace Cm.Parser
                     context.fromExecutableFileDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromExecutableFileDeclaration_value.GetPtr());
                 }
             }
+            public throw void PreAddLibraryPathDeclaration(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<Project*>(context.project)));
+            }
+            public throw void PostAddLibraryPathDeclaration(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromAddLibraryPathDeclaration_value = stack.Pop();
+                    context.fromAddLibraryPathDeclaration = *cast<ValueObject<ProjectDeclaration*>*>(fromAddLibraryPathDeclaration_value.GetPtr());
+                }
+            }
             private class Context
             {
                 public Project* project;
@@ -419,8 +466,10 @@ namespace Cm.Parser
                 public ProjectDeclaration* fromReferenceFileDeclaration;
                 public ProjectDeclaration* fromCLibraryDeclaration;
                 public ProjectDeclaration* fromTargetDeclaration;
+                public ProjectDeclaration* fromStackSizeDeclaration;
                 public ProjectDeclaration* fromAssemblyFileDeclaration;
                 public ProjectDeclaration* fromExecutableFileDeclaration;
+                public ProjectDeclaration* fromAddLibraryPathDeclaration;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -901,6 +950,53 @@ namespace Cm.Parser
             private Stack<Context> contextStack;
             private Context context;
         }
+        private class StackSizeDeclarationRule: System.Text.Parsing.Rule
+        {
+            public StackSizeDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("ProjectDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ProjectDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* stackSizeNonterminalParser = GetNonterminal("stackSize");
+                stackSizeNonterminalParser->SetPostCall(PostCall(PoststackSize));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new StackSizeDeclaration(span, context.fromstackSize);
+            }
+            public throw void PoststackSize(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromstackSize_value = stack.Pop();
+                    context.fromstackSize = *cast<ValueObject<ulong>*>(fromstackSize_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ProjectDeclaration* value;
+                public ulong fromstackSize;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
         private class AssemblyFileDeclarationRule: System.Text.Parsing.Rule
         {
             public AssemblyFileDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
@@ -1014,6 +1110,68 @@ namespace Cm.Parser
             private Stack<Context> contextStack;
             private Context context;
         }
+        private class AddLibraryPathDeclarationRule: System.Text.Parsing.Rule
+        {
+            public AddLibraryPathDeclarationRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("Project*", "project"));
+                SetValueTypeName("ProjectDeclaration*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> project_value = stack.Pop();
+                context.project = *cast<ValueObject<Project*>*>(project_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ProjectDeclaration*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* filePathNonterminalParser = GetNonterminal("FilePath");
+                filePathNonterminalParser->SetPostCall(PostCall(PostFilePath));
+                NonterminalParser* propertiesNonterminalParser = GetNonterminal("Properties");
+                propertiesNonterminalParser->SetPostCall(PostCall(PostProperties));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new AddLibraryPathDeclaration(span, context.fromFilePath, context.project->BasePath(), context.fromProperties);
+            }
+            public throw void PostFilePath(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromFilePath_value = stack.Pop();
+                    context.fromFilePath = *cast<ValueObject<string>*>(fromFilePath_value.GetPtr());
+                }
+            }
+            public throw void PostProperties(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromProperties_value = stack.Pop();
+                    context.fromProperties = *cast<ValueObject<Properties>*>(fromProperties_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Project* project;
+                public ProjectDeclaration* value;
+                public string fromFilePath;
+                public Properties fromProperties;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
         private class PropertiesRule: System.Text.Parsing.Rule
         {
             public PropertiesRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
@@ -1040,12 +1198,14 @@ namespace Cm.Parser
                 a0ActionParser->SetAction(ParsingAction(A0Action));
                 NonterminalParser* nameNonterminalParser = GetNonterminal("name");
                 nameNonterminalParser->SetPostCall(PostCall(Postname));
+                NonterminalParser* opNonterminalParser = GetNonterminal("op");
+                opNonterminalParser->SetPostCall(PostCall(Postop));
                 NonterminalParser* valNonterminalParser = GetNonterminal("val");
                 valNonterminalParser->SetPostCall(PostCall(Postval));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value.AddProperty(context.fromname, context.fromval);
+                context.value.AddProperty(context.fromname, context.fromop, context.fromval);
             }
             public throw void Postname(Stack<UniquePtr<Object>>& stack, bool matched)
             {
@@ -1053,6 +1213,14 @@ namespace Cm.Parser
                 {
                     UniquePtr<Object> fromname_value = stack.Pop();
                     context.fromname = *cast<ValueObject<string>*>(fromname_value.GetPtr());
+                }
+            }
+            public throw void Postop(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromop_value = stack.Pop();
+                    context.fromop = *cast<ValueObject<RelOp>*>(fromop_value.GetPtr());
                 }
             }
             public throw void Postval(Stack<UniquePtr<Object>>& stack, bool matched)
@@ -1067,7 +1235,149 @@ namespace Cm.Parser
             {
                 public Properties value;
                 public string fromname;
+                public RelOp fromop;
                 public string fromval;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class RelOpRule: System.Text.Parsing.Rule
+        {
+            public RelOpRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("RelOp");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<RelOp>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.equal;
+            }
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.lessEq;
+            }
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.greaterEq;
+            }
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.less;
+            }
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.greater;
+            }
+            private class Context
+            {
+                public RelOp value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class PropertyValueRule: System.Text.Parsing.Rule
+        {
+            public PropertyValueRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* versionNumberNonterminalParser = GetNonterminal("VersionNumber");
+                versionNumberNonterminalParser->SetPostCall(PostCall(PostVersionNumber));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
+                NonterminalParser* valNonterminalParser = GetNonterminal("val");
+                valNonterminalParser->SetPostCall(PostCall(Postval));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = string(matchBegin, matchEnd);
+            }
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromidentifier;
+            }
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = ToString(context.fromval);
+            }
+            public throw void PostVersionNumber(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromVersionNumber_value = stack.Pop();
+                    context.fromVersionNumber = *cast<ValueObject<ProgramVersion>*>(fromVersionNumber_value.GetPtr());
+                }
+            }
+            public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromidentifier_value = stack.Pop();
+                    context.fromidentifier = *cast<ValueObject<string>*>(fromidentifier_value.GetPtr());
+                }
+            }
+            public throw void Postval(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromval_value = stack.Pop();
+                    context.fromval = *cast<ValueObject<long>*>(fromval_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public string value;
+                public ProgramVersion fromVersionNumber;
+                public string fromidentifier;
+                public long fromval;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -1117,12 +1427,21 @@ namespace Cm.Parser
                 grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.VersionNumberGrammar");
+            if (grammar1 == null)
+            {
+                grammar1 = Cm.Parser.VersionNumberGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("long", this, "System.Text.Parsing.stdlib.long"));
+            AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
             AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1147,26 +1466,32 @@ namespace Cm.Parser
                                         new AlternativeParser(
                                             new AlternativeParser(
                                                 new AlternativeParser(
-                                                    new ActionParser("A0",
-                                                        new NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
-                                                    new ActionParser("A1",
-                                                        new NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
-                                                new ActionParser("A2",
-                                                    new NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
-                                            new ActionParser("A3",
-                                                new NonterminalParser("CppSourceFileDeclaration", "CppSourceFileDeclaration", 1))),
-                                        new ActionParser("A4",
-                                            new NonterminalParser("TextFileDeclaration", "TextFileDeclaration", 1))),
-                                    new ActionParser("A5",
-                                        new NonterminalParser("ReferenceFileDeclaration", "ReferenceFileDeclaration", 1))),
-                                new ActionParser("A6",
-                                    new NonterminalParser("CLibraryDeclaration", "CLibraryDeclaration", 1))),
-                            new ActionParser("A7",
-                                new NonterminalParser("TargetDeclaration", "TargetDeclaration", 0))),
-                        new ActionParser("A8",
-                            new NonterminalParser("AssemblyFileDeclaration", "AssemblyFileDeclaration", 1))),
-                    new ActionParser("A9",
-                        new NonterminalParser("ExecutableFileDeclaration", "ExecutableFileDeclaration", 1)))));
+                                                    new AlternativeParser(
+                                                        new AlternativeParser(
+                                                            new ActionParser("A0",
+                                                                new NonterminalParser("SourceFileDeclaration", "SourceFileDeclaration", 1)),
+                                                            new ActionParser("A1",
+                                                                new NonterminalParser("AsmSourceFileDeclaration", "AsmSourceFileDeclaration", 1))),
+                                                        new ActionParser("A2",
+                                                            new NonterminalParser("CSourceFileDeclaration", "CSourceFileDeclaration", 1))),
+                                                    new ActionParser("A3",
+                                                        new NonterminalParser("CppSourceFileDeclaration", "CppSourceFileDeclaration", 1))),
+                                                new ActionParser("A4",
+                                                    new NonterminalParser("TextFileDeclaration", "TextFileDeclaration", 1))),
+                                            new ActionParser("A5",
+                                                new NonterminalParser("ReferenceFileDeclaration", "ReferenceFileDeclaration", 1))),
+                                        new ActionParser("A6",
+                                            new NonterminalParser("CLibraryDeclaration", "CLibraryDeclaration", 1))),
+                                    new ActionParser("A7",
+                                        new NonterminalParser("TargetDeclaration", "TargetDeclaration", 0))),
+                                new ActionParser("A8",
+                                    new NonterminalParser("StackSizeDeclaration", "StackSizeDeclaration", 0))),
+                            new ActionParser("A9",
+                                new NonterminalParser("AssemblyFileDeclaration", "AssemblyFileDeclaration", 1))),
+                        new ActionParser("A10",
+                            new NonterminalParser("ExecutableFileDeclaration", "ExecutableFileDeclaration", 1))),
+                    new ActionParser("A11",
+                        new NonterminalParser("AddLibraryPathDeclaration", "AddLibraryPathDeclaration", 1)))));
             AddRule(new SourceFileDeclarationRule("SourceFileDeclaration", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(
@@ -1266,6 +1591,18 @@ namespace Cm.Parser
                                     new KeywordParser("library"))))),
                     new ExpectationParser(
                         new CharParser(';')))));
+            AddRule(new StackSizeDeclarationRule("StackSizeDeclaration", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("stack"),
+                                new ExpectationParser(
+                                    new CharParser('='))),
+                            new ExpectationParser(
+                                new NonterminalParser("stackSize", "ulong", 0))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
             AddRule(new AssemblyFileDeclarationRule("AssemblyFileDeclaration", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(
@@ -1286,6 +1623,17 @@ namespace Cm.Parser
                             new ExpectationParser(
                                 new NonterminalParser("FilePath", "FilePath", 0))),
                         new CharParser(';')))));
+            AddRule(new AddLibraryPathDeclarationRule("AddLibraryPathDeclaration", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new KeywordParser("addlibrarypath"),
+                                new ExpectationParser(
+                                    new NonterminalParser("FilePath", "FilePath", 0))),
+                            new OptionalParser(
+                                new NonterminalParser("Properties", "Properties", 0))),
+                        new CharParser(';')))));
             AddRule(new PropertiesRule("Properties", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
@@ -1295,11 +1643,35 @@ namespace Cm.Parser
                                 new SequenceParser(
                                     new SequenceParser(
                                         new NonterminalParser("name", "identifier", 0),
-                                        new CharParser('=')),
-                                    new NonterminalParser("val", "identifier", 0))),
+                                        new NonterminalParser("op", "RelOp", 0)),
+                                    new NonterminalParser("val", "PropertyValue", 0))),
                             new CharParser(','))),
                     new ExpectationParser(
                         new CharParser(']')))));
+            AddRule(new RelOpRule("RelOp", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new AlternativeParser(
+                                new ActionParser("A0",
+                                    new CharParser('=')),
+                                new ActionParser("A1",
+                                    new StringParser("<="))),
+                            new ActionParser("A2",
+                                new StringParser(">="))),
+                        new ActionParser("A3",
+                            new CharParser('<'))),
+                    new ActionParser("A4",
+                        new CharParser('>')))));
+            AddRule(new PropertyValueRule("PropertyValue", GetScope(),
+                new AlternativeParser(
+                    new AlternativeParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("VersionNumber", "VersionNumber", 0)),
+                        new ActionParser("A1",
+                            new NonterminalParser("identifier", "identifier", 0))),
+                    new ActionParser("A2",
+                        new NonterminalParser("val", "long", 0)))));
             AddRule(new FilePathRule("FilePath", GetScope(),
                 new TokenParser(
                     new SequenceParser(

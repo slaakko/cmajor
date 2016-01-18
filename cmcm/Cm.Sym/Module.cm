@@ -15,7 +15,7 @@ namespace Cm.Sym
 {
     public nothrow const char* ModuleFileTag()
     {
-        return "MC12";
+        return "MC13";
     }
     
     public class ModuleFileFormatError : Error
@@ -53,6 +53,10 @@ namespace Cm.Sym
         public void SetCLibraryFilePaths(const List<string>& cLibraryFilePaths_)
         {
             cLibraryFilePaths = cLibraryFilePaths_;
+        }
+        public void SetLibrarySearchPaths(const List<string>& librarySearchPaths_)
+        {
+            librarySearchPaths = librarySearchPaths_;
         }
         public void SetDebugInfoFilePaths(const List<string>& debugInfoFilePaths_)
         {
@@ -110,7 +114,8 @@ namespace Cm.Sym
             CheckModuleFileId(reader);
         }
         public void Import(SymbolTable& symbolTable, HashSet<string>& importedModules, List<string>& assemblyFilePaths, List<string>& cLibs, 
-            List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable)
+            List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths, List<string>& allNativeObjectFilePaths, List<string>& allBcuPaths, List<ulong>& classHierarchyTable,
+            List<string>& allLibrarySearchPaths)
         {
             string assemblyFilePath = Path.ChangeExtension(filePath, ".cma");
             assemblyFilePaths.Add(GetFullPath(assemblyFilePath));
@@ -122,6 +127,7 @@ namespace Cm.Sym
             ReadSourceFilePaths(reader);
             ReadReferenceFilePaths(reader);
             ReadCLibraryFilePaths(reader);
+            ReadLibrarySearchPaths(reader);
             ReadDebugInfoFilePaths(reader);
             ReadNativeObjectFilePaths(reader);
             ReadBcuPaths(reader);
@@ -141,6 +147,10 @@ namespace Cm.Sym
             {
                 cLibs.Add(cLibraryFilePath);
             }
+            for (const string& librarySearchPath : librarySearchPaths)
+            {
+                allLibrarySearchPaths.Add(librarySearchPath);
+            }
             for (const string& referenceFilePath : referenceFilePaths)
             {
                 if (importedModules.CFind(referenceFilePath) == importedModules.CEnd())
@@ -148,7 +158,7 @@ namespace Cm.Sym
                     importedModules.Insert(referenceFilePath);
                     Module referencedModule(referenceFilePath);
                     referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
-                        classHierarchyTable);
+                        classHierarchyTable, allLibrarySearchPaths);
                     referencedModule.CheckUpToDate();
                 }
             }
@@ -188,6 +198,7 @@ namespace Cm.Sym
             WriteSourceFilePaths(writer);
             WriteReferenceFilePaths(writer);
             WriteCLibraryFilePaths(writer);
+            WriteLibrarySearchPaths(writer);
             WriteDebugInfoFilePaths(writer);
             WriteNativeObjectFilePaths(writer);
             WriteBcuPaths(writer);
@@ -255,6 +266,15 @@ namespace Cm.Sym
             for (int i = 0; i < n; ++i)
             {
                 writer.GetBinaryWriter().Write(cLibraryFilePaths[i]);
+            }
+        }
+        private void WriteLibrarySearchPaths(Writer& writer)
+        {
+            int n = librarySearchPaths.Count();
+            writer.GetBinaryWriter().Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                writer.GetBinaryWriter().Write(librarySearchPaths[i]);
             }
         }
         private void WriteDebugInfoFilePaths(Writer& writer)
@@ -343,6 +363,15 @@ namespace Cm.Sym
                 cLibraryFilePaths.Add(cLibraryFilePath);
             }
         }
+        private void ReadLibrarySearchPaths(Reader& reader)
+        {
+            int n = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                string librarySearchPath = reader.GetBinaryReader().ReadString();
+                librarySearchPaths.Add(librarySearchPath);
+            }
+        }
         private void ReadDebugInfoFilePaths(Reader& reader)
         {
             int n = reader.GetBinaryReader().ReadInt();
@@ -399,6 +428,7 @@ namespace Cm.Sym
         private List<string> sourceFilePaths;
         private List<string> referenceFilePaths;
         private List<string> cLibraryFilePaths;
+        private List<string> librarySearchPaths;
         private List<string> debugInfoFilePaths;
         private List<string> nativeObjectFilePaths;
         private List<string> bcuPaths;
