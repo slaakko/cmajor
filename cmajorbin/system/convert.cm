@@ -438,6 +438,53 @@ namespace System
         throw ConversionException("uint value cannot be parsed from input string '" + s + "'");
     }
 
+    public bool ParseLong(const string& s, long& x)
+    {
+        x = 0;
+        if (s.IsEmpty()) return false;
+        String.ConstIterator i = s.Begin();
+        String.ConstIterator e = s.End();
+        bool negative = false;
+        if (*i == '+')
+        {
+            ++i;
+        }
+        else if (*i == '-')
+        {
+            negative = true;
+            ++i;
+        }
+        if (i == e) return false;
+        while (i < e)
+        {
+            char c = *i;
+            if (c >= '0' && c <= '9')
+            {
+                x = 10 * x + (cast<long>(c) - cast<long>('0'));
+            }
+            else
+            {
+                return false;
+            }
+            ++i;
+        }
+        if (negative)
+        {
+            x = -x;
+        }
+        return true;
+    }
+
+    public long ParseLong(const string& s)
+    {
+        long x;
+        if (ParseLong(s, x))
+        {
+            return x;
+        }
+        throw ConversionException("long value cannot be parsed from input string '" + s + "'");
+    }
+
     public bool ParseULong(const string& s, ulong& x)
     {
         x = 0u;

@@ -76,6 +76,11 @@ internal string DurationStr(const Duration& duration)
     return durationStr;
 }
 
+internal void ObtainLlvmVersion()
+{
+    Cm.Core.GlobalSettings.Instance().SetLlvmVersion(Cm.Ast.ProgramVersion(3, 7, 1, 0, "")); // todo
+}
+
 int main(int argc, const char** argv)
 {
     try
@@ -239,6 +244,10 @@ int main(int argc, const char** argv)
                 }
             }
             Cm.IrIntf.SetBackend(backend);
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                ObtainLlvmVersion();
+            }
             // todo: debug info
             bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
             if (!quiet)

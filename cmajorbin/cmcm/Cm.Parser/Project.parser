@@ -16,10 +16,14 @@ namespace Cm.Parser
         using stdlib.identifier;
         using stdlib.qualified_id;
         using stdlib.spaces_and_comments;
+        using stdlib.ulong;
+        using stdlib.long;
+        using VersionNumberGrammar.VersionNumber;
+        
         skip spaces_and_comments;
 
-        Project(string config, string backend, string os) : Project*
-            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os); } Declarations(value)
+        Project(string config, string backend, string os, int bits, ProgramVersion llvmVersion) : Project*
+            ::= (keyword("project") qualified_id ';'!){ value = new Project(qualified_id, fileName, config, backend, os, bits, llvmVersion); } Declarations(value)
             ;
 
         Declarations(Project* project)
@@ -35,8 +39,10 @@ namespace Cm.Parser
             |   ReferenceFileDeclaration(project){ value = ReferenceFileDeclaration; }
             |   CLibraryDeclaration(project){ value = CLibraryDeclaration; }
             |   TargetDeclaration{ value = TargetDeclaration; }
+            |   StackSizeDeclaration{ value = StackSizeDeclaration; }
             |   AssemblyFileDeclaration(project){ value = AssemblyFileDeclaration; }
             |   ExecutableFileDeclaration(project){ value = ExecutableFileDeclaration; }
+            |   AddLibraryPathDeclaration(project){ value = AddLibraryPathDeclaration; }
             ;
 
         SourceFileDeclaration(Project* project) : ProjectDeclaration*
@@ -70,6 +76,10 @@ namespace Cm.Parser
         TargetDeclaration : ProjectDeclaration*
             ::= keyword("target") '='! (keyword("program"){ value = new TargetDeclaration(span, Target.program); } | keyword("library"){ value = new TargetDeclaration(span, Target.library); })! ';'!
             ;
+            
+        StackSizeDeclaration : ProjectDeclaration*
+            ::= (keyword("stack") '='! ulong:stackSize! ';'!){ value = new StackSizeDeclaration(span, stackSize); }
+            ;
 
         AssemblyFileDeclaration(Project* project) : ProjectDeclaration*
             ::= (keyword("assembly") FilePath! Properties? ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->BasePath(), Properties); }
@@ -78,9 +88,27 @@ namespace Cm.Parser
         ExecutableFileDeclaration(Project* project) : ProjectDeclaration*
             ::= (keyword("executable") FilePath! ';'){ value = new ExecutableFileDeclaration(span, FilePath, project->OutputBasePath()); }
             ;
+            
+        AddLibraryPathDeclaration(Project* project) : ProjectDeclaration*
+            ::= (keyword("addlibrarypath") FilePath! Properties? ';'){ value = new AddLibraryPathDeclaration(span, FilePath, project->BasePath(), Properties); }
+            ;
 
         Properties : Properties
-            ::= '[' ((identifier:name '=' identifier:val){ value.AddProperty(name, val); } % ',') ']'!
+            ::= '[' ((identifier:name RelOp:op PropertyValue:val){ value.AddProperty(name, op, val); } % ',') ']'!
+            ;
+            
+        RelOp : RelOp
+            ::= '='{ value = RelOp.equal; }
+            |   "<="{ value = RelOp.lessEq; }
+            |   ">="{ value = RelOp.greaterEq; }
+            |   '<'{ value = RelOp.less; }
+            |   '>'{ value = RelOp.greater; }
+            ;
+            
+        PropertyValue : string
+            ::= VersionNumber{ value = string(matchBegin, matchEnd); }
+            |   identifier{ value = identifier; }
+            |   long:val{ value = ToString(val); }
             ;
 
         FilePath: string

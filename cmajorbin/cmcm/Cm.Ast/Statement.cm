@@ -2051,6 +2051,10 @@ namespace Cm.Ast
             statements.Accept(visitor);
             visitor.EndVisit(*this);
         }
+        public nothrow inline CondCompExprNode* Expr() const
+        {
+            return expr.GetPtr();
+        }
         private UniquePtr<CondCompExprNode> expr;
         private NodeList<StatementNode> statements;
     }

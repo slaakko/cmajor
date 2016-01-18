@@ -12,6 +12,7 @@ source <Function.parser>;
 source <Identifier.parser>;
 source <Keyword.parser>;
 source <Literal.parser>;
+source <LlvmVersion.parser>;
 source <Parameter.parser>;
 source <Project.parser>;
 source <Solution.parser>;

@@ -1576,7 +1576,7 @@ void ReadIdeDefines(std::unordered_set<std::string>& defines, Cm::Ast::Project* 
     }
 }
 
-void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
+void AddPlatformConfigAndBitsDefines(std::unordered_set<std::string>& defines)
 {
 #ifdef _WIN32
     defines.insert("WINDOWS");
@@ -1590,6 +1590,14 @@ void AddPlatformAndConfigDefines(std::unordered_set<std::string>& defines)
     else
     {
         defines.insert("RELEASE");
+    }
+    if (GetBits() == 64)
+    {
+        defines.insert("BITS64");
+    }
+    else if (GetBits() == 32)
+    {
+        defines.insert("BITS32");
     }
 }
 
@@ -1836,7 +1844,7 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         ReadIdeDefines(allDefines, project);
     }
-    AddPlatformAndConfigDefines(allDefines);
+    AddPlatformConfigAndBitsDefines(allDefines);
     Cm::Sym::Define(allDefines);
     Cm::Parser::FileRegistry::Init();
     int numSourceFiles = int(project->SourceFilePaths().size());

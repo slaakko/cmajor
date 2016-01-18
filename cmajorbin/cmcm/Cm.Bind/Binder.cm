@@ -15,7 +15,7 @@ namespace Cm.Bind
     public class Binder : Cm.Ast.Visitor
     {
         public nothrow Binder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : 
-            base(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(null)
+            base(true, false), boundCompileUnit(boundCompileUnit_), currentContainerScope(null), switchStatement(null)
         {
         }
         public override void BeginVisit(Cm.Ast.NamespaceNode& namespaceNode)
@@ -303,6 +303,412 @@ namespace Cm.Bind
             }
             EndContainerScope();
         }
+        public override void BeginVisit(Cm.Ast.ForStatementNode& forStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundForStatement(&forStatementNode));
+            BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&forStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.ForStatementNode& forStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundForStatement*)
+            {
+                Cm.BoundTree.BoundForStatement* forStatement = cast<Cm.BoundTree.BoundForStatement*>(cp);
+                ForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), forStatement);
+                forStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(forStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("for statement expected");
+            }
+            EndContainerScope();
+        }
+        public override void BeginVisit(Cm.Ast.RangeForStatementNode& rangeForStatementNode)
+        {
+            RangeForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            rangeForStatementNode.Accept(binder);
+        }
+        public override void BeginVisit(Cm.Ast.ReturnStatementNode& returnStatementNode)
+        {
+            ReturnStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            returnStatementNode.Accept(binder);
+            currentParent->AddStatement(binder.Result());
+        }
+        public override void BeginVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundConditionalStatement(&conditionalStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundConditionalStatement*)
+            {
+                Cm.BoundTree.BoundConditionalStatement* conditionalStatement = cast<Cm.BoundTree.BoundConditionalStatement*>(cp);
+                ConditionalStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), conditionalStatement);
+                conditionalStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(conditionalStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("conditional statement expected");
+            }
+        }
+        public override void BeginVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            switchStatementStack.Push(switchStatement);
+            switchStatement = new Cm.BoundTree.BoundSwitchStatement(&switchStatementNode);
+            SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), switchStatement);
+            switchStatementNode.Accept(binder);
+            currentParent.Reset(switchStatement);
+        }
+        public override void EndVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundSwitchStatement*)
+            {
+                Cm.BoundTree.BoundSwitchStatement* switchStatement = cast<Cm.BoundTree.BoundSwitchStatement*>(cp);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(switchStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("switch statement expected");
+            }
+            switchStatement = switchStatementStack.Pop();
+        }
+        public override void BeginVisit(Cm.Ast.CaseStatementNode& caseStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundCaseStatement(&caseStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.CaseStatementNode& caseStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundCaseStatement*)
+            {
+                Cm.BoundTree.BoundCaseStatement* caseStatement = cast<Cm.BoundTree.BoundCaseStatement*>(cp);
+                CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), caseStatement, switchStatement);
+                caseStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(caseStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("case statement expected");
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DefaultStatementNode& defaultStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundDefaultStatement(&defaultStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.DefaultStatementNode& defaultStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundDefaultStatement*)
+            {
+                Cm.BoundTree.BoundDefaultStatement* defaultStatement = cast<Cm.BoundTree.BoundDefaultStatement*>(cp);
+                DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), defaultStatement);
+                defaultStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(defaultStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("default statement expected");
+            }        
+        }
+        public override void EndVisit(Cm.Ast.GotoCaseStatementNode& gotoCaseStatementNode)
+        {
+            GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), switchStatement);
+            gotoCaseStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void Visit(Cm.Ast.GotoDefaultStatementNode& gotoDefaultStatementNode)
+        {
+            GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            gotoDefaultStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void BeginVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundWhileStatement(&whileStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundWhileStatement*)
+            {
+                Cm.BoundTree.BoundWhileStatement* whileStatement = cast<Cm.BoundTree.BoundWhileStatement*>(cp);
+                WhileStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), whileStatement);
+                whileStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(whileStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("while statement expected");
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DoStatementNode& doStatementNode)
+        {
+            parentStack.Push(currentParent.Release());
+            currentParent.Reset(new Cm.BoundTree.BoundDoStatement(&doStatementNode));
+        }
+        public override void EndVisit(Cm.Ast.DoStatementNode& doStatementNode)
+        {
+            Cm.BoundTree.BoundParentStatement* cp = currentParent.Release();
+            if (cp is Cm.BoundTree.BoundDoStatement*)
+            {
+                Cm.BoundTree.BoundDoStatement* doStatement = cast<Cm.BoundTree.BoundDoStatement*>(cp);
+                DoStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), doStatement);
+                doStatementNode.Accept(binder);
+                Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
+                if (parent != null)
+                {
+                    parent->AddStatement(doStatement);
+                    currentParent.Reset(parent);
+                }
+                else
+                {
+                    throw Exception("no parent");
+                }
+            }
+            else
+            {
+                throw Exception("do statement expected");
+            }    
+        }
+        public override void Visit(Cm.Ast.BreakStatementNode& breakStatementNode)
+        {
+            BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            breakStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void Visit(Cm.Ast.ContinueStatementNode& continueStatementNode)
+        {
+            ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            continueStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void Visit(Cm.Ast.GotoStatementNode& gotoStatementNode)
+        {
+            boundFunction->SetHasGotos();
+            boundCompileUnit.SetHasGotos();
+            Cm.BoundTree.BoundGotoStatement* boundGotoStatement = new Cm.BoundTree.BoundGotoStatement(&gotoStatementNode, gotoStatementNode.Target()->Label());
+            if (gotoStatementNode.IsExceptionHandlingGoto())
+            {
+                boundGotoStatement->SetExceptionHandlingGoto();
+            }
+            AddBoundStatement(boundGotoStatement);
+        }
+        public override void BeginVisit(Cm.Ast.SimpleStatementNode& simpleStatementNode)
+        {
+            SimpleStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            simpleStatementNode.Accept(binder);
+            if (binder.Result() != null)
+            {
+                AddBoundStatement(binder.Result());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
+        {
+            AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            assignmentStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void BeginVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
+        {
+            ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            constructionStatementNode.Accept(binder);
+            AddBoundStatement(binder.Result());
+        }
+        public override void BeginVisit(Cm.Ast.DeleteStatementNode& deleteStatementNode)
+        {
+            DeleteStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            deleteStatementNode.Accept(binder);
+            if (binder.Result() != null)
+            {
+                AddBoundStatement(binder.Result());
+            }            
+            Cm.BoundTree.BoundStatement* freeStatement = binder.FreeStatement();
+            AddBoundStatement(freeStatement);
+        }
+        public override void BeginVisit(Cm.Ast.DestroyStatementNode& destroyStatementNode)
+        {
+            DestroyStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            destroyStatementNode.Accept(binder);
+            if (binder.Result() != null)
+            {
+                AddBoundStatement(binder.Result());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.ThrowStatementNode& throwStatementNode)
+        {
+            ThrowStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            throwStatementNode.Accept(binder);
+        }
+        public override void Visit(Cm.Ast.TryStatementNode& tryStatementNode)
+        {
+            TryBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            tryStatementNode.Accept(binder);
+        }
+        public override void Visit(Cm.Ast.CatchNode& catchNode)
+        {
+            CatchBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            catchNode.Accept(binder);
+        }
+        public override void Visit(Cm.Ast.ExitTryStatementNode& exitTryStatementNode)
+        {
+            ExitTryBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), *this);
+            exitTryStatementNode.Accept(binder);
+        }
+        public override void Visit(Cm.Ast.BeginCatchStatementNode& beginCatchStatementNode)
+        {
+            AddBoundStatement(new Cm.BoundTree.BoundBeginCatchStatement(&beginCatchStatementNode));
+        }
+        public override void Visit(Cm.Ast.AssertStatementNode& assertStatementNode)
+        {
+            if (Cm.Core.GetConfig() == "debug")
+            {
+                AssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+                assertStatementNode.Accept(binder);
+                AddBoundStatement(binder.Result());
+            }
+        }
+        public override void EndVisit(Cm.Ast.CondCompDisjunctionNode& condCompDisjunctionNode)
+        {
+            bool right = PopCondCompValue();
+            bool left = PopCondCompValue();
+            bool value = left || right;
+            PushCondCompValue(value);
+        }
+        public override void EndVisit(Cm.Ast.CondCompConjunctionNode& condCompConjunctionNode)
+        {
+            bool right = PopCondCompValue();
+            bool left = PopCondCompValue();
+            bool value = left && right;
+            PushCondCompValue(value);
+        }
+        public override void EndVisit(Cm.Ast.CondCompNotNode& condCompNotNode)
+        {
+            bool value = PopCondCompValue();
+            PushCondCompValue(!value);
+        }
+        public override void Visit(Cm.Ast.CondCompPrimaryNode& condCompPrimaryNode)
+        {
+            bool defined = Cm.Sym.IsSymbolDefined(condCompPrimaryNode.Symbol()->Str());
+            PushCondCompValue(defined);
+        }
+        public override void Visit(Cm.Ast.CondCompStatementNode& condCompStatementNode)
+        {
+            if (!condCompilationEvaluationStack.IsEmpty())
+            {
+                throw Exception("conditional compilation evaluation stack is not empty");
+            }
+            Cm.Ast.CondCompPartNode* ifPartNode = condCompStatementNode.IfPart();
+            if (ifPartNode == null)
+            {
+                throw Exception("conditional compilation if part is empty");
+            }
+            if (ifPartNode->Expr() == null)
+            {
+                throw Exception("conditional compilation if part expression is empty");
+            }
+            ifPartNode->Expr()->Accept(*this);
+            bool execute = PopCondCompValue();
+            if (execute)
+            {
+                ifPartNode->Accept(*this);
+            }
+            else
+            {
+                const Cm.Ast.NodeList<Cm.Ast.CondCompPartNode>& elifPartNodes = condCompStatementNode.ElifParts();
+                int n = elifPartNodes.Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Ast.CondCompPartNode* elifPartNode = elifPartNodes[i];
+                    if (elifPartNode == null)
+                    {
+                        throw Exception("conditional compilation elif part is empty");
+                    }
+                    if (elifPartNode->Expr() == null)
+                    {
+                        throw Exception("conditional compilation elif part expression is empty");
+                    }
+                    elifPartNode->Expr()->Accept(*this);
+                    execute = PopCondCompValue();
+                    if (execute)
+                    {
+                        elifPartNode->Accept(*this);
+                        break;
+                    }
+                }
+                if (!execute)
+                {
+                    Cm.Ast.CondCompPartNode* elsePartNode = condCompStatementNode.ElsePart();
+                    if (elsePartNode != null)
+                    {
+                        elsePartNode->Accept(*this);
+                    }
+                }
+            }
+        }
         public nothrow void SetCurrentFunction(Cm.BoundTree.BoundFunction* function)
         {
             boundFunction.Reset(function);
@@ -340,13 +746,24 @@ namespace Cm.Bind
                 return parent->CompoundParent();
             }
         }
+        private void PushCondCompValue(bool value)
+        {
+            condCompilationEvaluationStack.Push(value);
+        }
+        private bool PopCondCompValue()
+        {
+            return condCompilationEvaluationStack.Pop();
+        }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private UniquePtr<Cm.BoundTree.BoundFunction> boundFunction;
         private UniquePtr<Cm.BoundTree.BoundParentStatement> currentParent;
         private Stack<Cm.BoundTree.BoundParentStatement*> parentStack;
+        private Cm.BoundTree.BoundSwitchStatement* switchStatement;
+        private Stack<Cm.BoundTree.BoundSwitchStatement*> switchStatementStack;
         private Stack<Cm.Sym.ContainerScope*> containerScopeStack;
         private Cm.Sym.ContainerScope* currentContainerScope;
         private UniquePtr<Cm.BoundTree.BoundClass> boundClass;
         private Stack<UniquePtr<Cm.BoundTree.BoundClass>> boundClassStack;
+        private Stack<bool> condCompilationEvaluationStack;
     }
 }

@@ -101,6 +101,7 @@ private:
     std::unique_ptr<Cm::BoundTree::BoundParentStatement> currentParent;
     std::stack<Cm::BoundTree::BoundParentStatement*> parentStack;
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
+    std::stack<Cm::BoundTree::BoundSwitchStatement*> switchStatementStack;
     std::stack<bool> condCompilationEvaluationStack;
     void PushCondCompValue(bool value);
     bool PopCondCompValue();
