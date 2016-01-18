@@ -812,24 +812,24 @@ namespace Cm.Sym
             if (!typeArguments.IsEmpty())
             {
                 s.Append('<');
-            }
-            bool first = true;
-            for (TypeSymbol* typeArgument : typeArguments)
-            {
-                if (first)
+                bool first = true;
+                for (TypeSymbol* typeArgument : typeArguments)
                 {
-                    first = false;
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        s.Append(", ");
+                    }
+                    s.Append(typeArgument->FullName());
                 }
-                else
-                {
-                    s.Append(", ");
-                }
-                s.Append(typeArgument->FullName());
-            }
-            s.Append('>');
+                s.Append('>');
+            }        
             bool isConst = false;
             s.Append('(');
-            first = true;
+            bool first = true;
             for (ParameterSymbol* parameter : parameters)
             {
                 if (first)

@@ -1551,7 +1551,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         }
         else
         {
-            throw std::runtime_error("BindInvoke todo");
+            throw Cm::Core::Exception("invalid invoke subject", node->GetSpan());
         }
     }
     PrepareFunctionSymbol(fun, node->GetSpan());

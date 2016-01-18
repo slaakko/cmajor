@@ -691,7 +691,7 @@ namespace Cm.Core
             thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thisParam);
             Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
-            thatParam->SetType(typeRepository.MakeRvalueRefType(sourceType, Span()));
+            thatParam->SetType(sourceType);
             thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
             AddSymbol(thatParam);
             ComputeName();

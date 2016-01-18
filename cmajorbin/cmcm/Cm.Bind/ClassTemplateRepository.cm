@@ -116,10 +116,6 @@ namespace Cm.Bind
             Cm.Ast.IdentifierNode* classInstanceId = new Cm.Ast.IdentifierNode(classInstanceNode->GetSpan(), templateTypeSymbol->FullName());
             classInstanceNode->SetId(classInstanceId);
             currentNs->AddMember(classInstanceNode);
-            if (subjectClassTypeSymbol->Name().Find("Map") != -1)
-            {
-                int x = 0;
-            }
             Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
             declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
             globalNs->Accept(declarationVisitor);

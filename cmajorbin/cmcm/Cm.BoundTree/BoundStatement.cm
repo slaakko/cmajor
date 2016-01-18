@@ -12,7 +12,7 @@ using System.Collections;
 
 namespace Cm.BoundTree
 {
-    public const uint noStatementId = 0xFFFFFFFF;
+    public const uint noStatementId = cast<uint>(-1);
     
     public abstract class BoundStatement : BoundNode
     {
@@ -159,7 +159,15 @@ namespace Cm.BoundTree
         }
         public void InsertStatement(int index, BoundStatement* statement)
         {
-            statements.Insert(statements.Begin() + index, UniquePtr<BoundStatement>(statement));
+            if (statements.IsEmpty())
+            {
+                #assert(index == 0);
+                AddStatement(statement);
+            }
+            else
+            {
+                statements.Insert(statements.Begin() + index, UniquePtr<BoundStatement>(statement));
+            }
         }
         public void Accept(Visitor& visitor)
         {

@@ -1603,7 +1603,7 @@ namespace Cm.Bind
                 }
                 else
                 {
-                    throw Exception("BindInvoke todo");
+                    throw Cm.Core.Error("invalid invoke subject", node->GetSpan());
                 }
             }
             PrepareFunctionSymbol(fun, node->GetSpan());
@@ -1767,6 +1767,7 @@ namespace Cm.Bind
                     {
                         resolutionArgument.SetBindToRvalueRef();
                     }
+                    resolutionArguments.Add(resolutionArgument);
                 }
                 if (first)
                 {

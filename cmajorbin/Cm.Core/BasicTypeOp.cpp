@@ -669,9 +669,11 @@ ConvertingCtor::ConvertingCtor(Cm::Sym::TypeRepository& typeRepository, Cm::Sym:
     SetGroupName("@constructor");
     Cm::Sym::ParameterSymbol* thisParam(new Cm::Sym::ParameterSymbol(Span(), "this"));
     thisParam->SetType(typeRepository.MakePointerType(targetType, Span()));
+    thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thisParam);
     Cm::Sym::ParameterSymbol* thatParam(new Cm::Sym::ParameterSymbol(Span(), "that"));
     thatParam->SetType(sourceType);
+    thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
     AddSymbol(thatParam);
     ComputeName();
 }

@@ -730,6 +730,7 @@ namespace Cm.Build
                 boundCompileUnit->AddFileScope(fileScopes[index].Release());
                 Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
             }
+            ++index;
         }
         return changed;
     }

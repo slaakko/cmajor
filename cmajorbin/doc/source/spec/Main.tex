@@ -1910,6 +1910,7 @@ If the main function is declared void, it returns exit code 0 to the environment
 <project-file-declarations> ::= <project-file-declaration>*
 
 <project-file-declaration> ::= <target-declaration>
+\alt <stack-size-declaration>
 \alt <assembly-declaration>
 \alt <library-reference>
 \alt <executable-declaration>
@@ -1921,7 +1922,9 @@ If the main function is declared void, it returns exit code 0 to the environment
 \alt <cpp-source-file>
 \alt <text-file>
 
-<target-declaration> ::= \lit*{target} '=' (\lit*{program} | \lit*{library}) ';
+<target-declaration> ::= \lit*{target} '=' (\lit*{program} | \lit*{library}) ';'
+
+<stack-size-declaration> ::= \lit*{stack} '=' <ulong> ';'
 
 <assembly-declaration> ::= \lit*{assembly} <file-path> <properties>? ';'
 
@@ -1949,7 +1952,7 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 <property-name> ::= <identifier>
 
-<rel-op> ::= "=" | ">=" | "<=" | "<" | ">"
+<rel-op> ::= "=" | "!=" | ">=" | "<=" | "<" | ">"
 
 <property-value> ::= <version-number> | <identifier> | <long>
 
@@ -1960,6 +1963,8 @@ If the main function is declared void, it returns exit code 0 to the environment
 \end{grammar}
 
 Target declaration \emph{$<$target-declaration$>$} sets whether we are building a program or a library.
+
+Stack size declaration \emph{$<$stack-size-declaration$>$} sets the size of the program stack in bytes.
 
 Assembly declaration \emph{$<$assembly-declaration$>$} sets the name of the archive that contains project's object code.
 By convention its extension is ".cma".
