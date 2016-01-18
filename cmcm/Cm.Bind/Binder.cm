@@ -550,7 +550,7 @@ namespace Cm.Bind
         {
             boundFunction->SetHasGotos();
             boundCompileUnit.SetHasGotos();
-            Cm.BoundTree.BoundGotoStatement* boundGotoStatement = new Cm.BoundTree.BoundGotoStatement(&gotoStatementNode, gotoStatementNode.Target()->Label());
+            Cm.BoundTree.BoundGotoStatement* boundGotoStatement = new Cm.BoundTree.BoundGotoStatement(&gotoStatementNode, gotoStatementNode.GetTarget()->Label());
             if (gotoStatementNode.IsExceptionHandlingGoto())
             {
                 boundGotoStatement->SetExceptionHandlingGoto();

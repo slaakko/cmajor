@@ -573,6 +573,13 @@ void CheckFunctionAccessLevels(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::Conta
         {
             throw Cm::Core::Exception("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
         }
+        if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize) && functionSymbol->IsInline())
+        {
+            if (parameterType->Access() != Cm::Sym::SymbolAccess::public_)
+            {
+                throw Cm::Core::Exception("parameter type of inline function must be public", parameterType->GetSpan(), functionSymbol->GetSpan());
+            }
+        }
     }
 }
 

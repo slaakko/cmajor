@@ -449,6 +449,11 @@ namespace Cm.Bind
                     {
                         returnStatement->SetReturnType(returnType);
                         Cm.BoundTree.BoundExpression* returnValue = Stack().Pop();
+                        Cm.Sym.MemberVariableSymbol* memberVariableSymbol = returnValue->GetMemberVariableSymbol();
+                        if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize) && CurrentFunction()->FunctionSymbol()->IsInline() && memberVariableSymbol != null && memberVariableSymbol->IsStatic())
+                        {
+                            throw Cm.Core.Error("inline function cannot return address of a static member variable", returnStatementNode.GetSpan(), memberVariableSymbol->GetSpan());
+                        }
                         List<Cm.Core.Argument> resolutionArguments;
                         Cm.Core.Argument targetArgument(Cm.Core.ArgumentCategory.lvalue, BoundCompileUnit().SymbolTable().GetTypeRepository().MakePointerType(returnType, returnStatementNode.GetSpan()));
                         resolutionArguments.Add(targetArgument);

@@ -155,6 +155,13 @@ namespace Cm.Bind
             functionSymbol->SetInline();
             if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
             {
+                for (const Cm.Sym.ParameterSymbol* parameterSymbol : functionSymbol->Parameters())
+                {
+                    if (!parameterSymbol->GetType()->IsPublic())
+                    {
+                        throw Cm.Core.Error("type of inline function parameter must be public", parameterSymbol->GetSpan(), functionSymbol->GetSpan());
+                    }
+                }
                 functionSymbol->SetReplicated();
             }
         }
@@ -563,6 +570,13 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());
             }            
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize) && functionSymbol->IsInline())
+            {
+                if (parameterType->Access() != Cm.Sym.SymbolAccess.public_)
+                {
+                    throw Cm.Core.Error("parameter type of inline function must be public", parameterType->GetSpan(), functionSymbol->GetSpan());
+                }
+            }
         }
     }
 }

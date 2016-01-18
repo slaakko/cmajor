@@ -16,7 +16,7 @@
 #include <string.h>
 #ifdef _WIN32
 #include <process.h>
-#include <Windows.h>
+#include <windows.h>
 #include <io.h>
 #elif defined(__linux) || defined(__posix) || defined(__unix)
 #include <unistd.h>

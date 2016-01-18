@@ -49,6 +49,7 @@ public:
     virtual bool IsEnumConstant() const { return false; }
     virtual bool IsBoundCast() const { return false; }
     virtual void SetType(Cm::Sym::TypeSymbol* type_) { type = type_;  }
+    virtual Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const { return nullptr; }
     Cm::Sym::TypeSymbol* GetType() const { return type; }
     virtual Cm::Core::ArgumentCategory GetArgumentCategory() const { return Cm::Core::ArgumentCategory::rvalue; }
     void SetCfgNode(Cm::Core::CfgNode* cfgNode_);
@@ -260,6 +261,7 @@ public:
     void Accept(Visitor& visitor) override;
     void SetClassObject(Cm::BoundTree::BoundExpression* classObject_);
     Cm::BoundTree::BoundExpression* GetClassObject() const { return classObject.get(); }
+    Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const override { return symbol; }
 private:
     std::unique_ptr<Cm::BoundTree::BoundExpression> classObject;
     Cm::Sym::MemberVariableSymbol* symbol;
@@ -325,6 +327,7 @@ public:
     void Accept(Visitor& visitor) override;
     void SetBoundTemporary(Cm::BoundTree::BoundExpression* boundTemporary_);
     Cm::BoundTree::BoundExpression* BoundTemporary() const { return boundTemporary.get(); }
+    Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const override { return operand->GetMemberVariableSymbol(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
@@ -345,6 +348,7 @@ public:
     BoundExpression* Operand() const { return operand.get(); }
     void SetSourceType(Cm::Sym::TypeSymbol* sourceType_) { sourceType = sourceType_; }
     Cm::Sym::TypeSymbol* GetSourceType() const { return sourceType; }
+    Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const override { return operand->GetMemberVariableSymbol(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* conversionFun;
@@ -440,6 +444,7 @@ public:
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
     Cm::Core::ArgumentCategory GetArgumentCategory() const override { return argumentCategory; }
     void SetArgumentCategory(Cm::Core::ArgumentCategory argumentCategory_) { argumentCategory = argumentCategory_; }
+    Cm::Sym::MemberVariableSymbol* GetMemberVariableSymbol() const override { return operand->GetMemberVariableSymbol(); }
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;

@@ -37,14 +37,52 @@ namespace Cm.Build
         {
             return compileUnitGrammar;
         }
+        public Cm.Parser.LlvmVersionGrammar* GetLlvmVersionGrammar()
+        {
+            if (llvmVersionGrammar == null)
+            {
+                llvmVersionGrammar = Cm.Parser.LlvmVersionGrammar.Create();
+            }
+            return llvmVersionGrammar;
+        }
+        public Cm.Parser.VersionNumberGrammar* GetVersionNumberGrammar()
+        {
+            if (versionNumberGrammar == null)
+            {
+                versionNumberGrammar = Cm.Parser.VersionNumberGrammar.Create();
+            }
+            return versionNumberGrammar;
+        }
         private static UniquePtr<Grammars> instance;
         private Cm.Parser.SolutionGrammar* solutionGrammar;
         private Cm.Parser.ProjectGrammar* projectGrammar;
         private Cm.Parser.CompileUnitGrammar* compileUnitGrammar;
+        private Cm.Parser.LlvmVersionGrammar* llvmVersionGrammar;
+        private Cm.Parser.VersionNumberGrammar* versionNumberGrammar;
+    }
+    
+    public class GlobalVersionParser : Cm.Ast.VersionParser
+    {
+        static nothrow GlobalVersionParser() : globalInstance(new GlobalVersionParser())
+        {
+        }
+        private nothrow GlobalVersionParser()
+        {
+            SetInstance(this);
+        }
+        public static nothrow void Create()
+        {
+        }
+        public override Cm.Ast.ProgramVersion Parse(const string& versionNumberStr)
+        {
+            return Grammars.Instance().GetVersionNumberGrammar()->Parse(versionNumberStr.Chars(), versionNumberStr.Chars() + versionNumberStr.Length(), 0, "");
+        }
+        private static UniquePtr<GlobalVersionParser> globalInstance;
     }
     
     public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
     {
+        GlobalVersionParser.Create();
         int built = 0;
         int uptodate = 0;
         if (!FileExists(solutionFilePath))
@@ -138,6 +176,7 @@ namespace Cm.Build
         {
             throw Cm.Core.Error("project file '" + projectFilePath + "' not found");
         }
+        GlobalVersionParser.Create();
         Cm.Parser.ProjectGrammar* projectGrammar = Grammars.Instance().GetProjectGrammar();
         FileMapping projectFile(projectFilePath);
         string backend = Cm.IrIntf.GetBackendStr();
@@ -235,7 +274,7 @@ namespace Cm.Build
         List<string> debugInfoFilePaths;
         List<string> bcuPaths;
         changed = true; // todo: remove this
-        if (Compile(project->Name(), symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
+        if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
         {
             changed = true;
         }
@@ -534,7 +573,7 @@ namespace Cm.Build
         return true;
     }
     
-    public bool Compile(const string& projectName, Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, const string& outputBasePath, List<string>& objectFilePaths, bool rebuild,
+    public bool Compile(Cm.Ast.Project* project, Cm.Sym.SymbolTable& symbolTable, const Cm.Ast.SyntaxTree& syntaxTree, const string& outputBasePath, List<string>& objectFilePaths, bool rebuild,
         const List<string>& compileFileNames, List<string>& debugInfoFilePaths, List<string>& bcuPaths)
     {
         bool changed = false;
@@ -570,7 +609,136 @@ namespace Cm.Build
             Cm.Bind.VirtualBinder virtualBinder(symbolTable, compileUnit.GetPtr(), prebindCompileUnit);
             compileUnit->Accept(virtualBinder);
         }
+        if (project->Name() == "system")
+        {
+            Cm.Sym.ExceptionTable* exceptionTable = Cm.Sym.ExceptionTable.Instance();
+            Cm.Sym.Symbol* systemExceptionSymbol = symbolTable.GlobalScope()->Lookup("System.Exception");
+            if (systemExceptionSymbol != null)
+            {
+                if (systemExceptionSymbol is Cm.Sym.TypeSymbol*)
+                {
+                    Cm.Sym.TypeSymbol* systemExceptionType = cast<Cm.Sym.TypeSymbol*>(systemExceptionSymbol);
+                    exceptionTable->AddProjectException(systemExceptionType);
+                }
+                else
+                {
+                    throw Exception("System.Exception not a type");
+                }
+            }
+            else
+            {
+                throw Exception("System.Exception not found");
+            }
+        }
+        HashSet<Cm.BoundTree.BoundCompileUnit*> buildSet;
+        List<UniquePtr<Cm.BoundTree.BoundCompileUnit>> boundCompileUnits;
+        Cm.Core.CompileUnitMap compileUnitMap;
+        Cm.Sym.SetCompileUnitMap(&compileUnitMap);
+        for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            string ext;
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                ext = ".ll";
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                ext = ".c";
+            }
+            string fileName = Path.GetFileNameWithoutExtension(compileUnit->FilePath());
+            string compileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, fileName) + ext);
+            UniquePtr<Cm.BoundTree.BoundCompileUnit> boundCompileUnit(new Cm.BoundTree.BoundCompileUnit(symbolTable, compileUnit.GetPtr(), compileUnitIrFilePath));
+            boundCompileUnit->SetFileName(fileName);
+            boundCompileUnit->SetProjectName(project->Name());
+            bcuPaths.Add(boundCompileUnit->BcuPath());
+            compileUnitMap.MapCompileUnit(compileUnit.GetPtr(), boundCompileUnit.GetPtr());
+            boundCompileUnits.Add(Rvalue(boundCompileUnit));
+        }
+        if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
+        {
+            for (const UniquePtr<Cm.BoundTree.BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+            {
+                debugInfoFilePaths.Add(boundCompileUnit->CDebugInfoFilePath());
+            }
+        }
+        if (!rebuild)
+        {
+            if (!compileFileNames.IsEmpty())
+            {
+                for (const UniquePtr<Cm.BoundTree.BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+                {
+                    boundCompileUnit->ReadDependencyFile();
+                    for (const string& compileFileName : compileFileNames)
+                    {
+                        string cfn = Path.MakeCanonical(compileFileName);
+                        if (LastComponentsEqual(cfn, boundCompileUnit->SyntaxUnit()->FilePath(), '/'))
+                        {
+                            boundCompileUnit->WriteChangedFile();
+                            buildSet.Insert(boundCompileUnit.GetPtr());
+                        }
+                    }
+                }
+            }
+            else
+            {
+                for (const UniquePtr<Cm.BoundTree.BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+                {
+                    boundCompileUnit->ReadDependencyFile();
+                    if (boundCompileUnit->HasChangedFile())
+                    {
+                        for (Cm.BoundTree.BoundCompileUnit* dependentUnit : boundCompileUnit->DependentUnits())
+                        {
+                            buildSet.Insert(dependentUnit);
+                        }
+                        boundCompileUnit->RemoveChangedFile();
+                    }
+                    else if (boundCompileUnit->Changed())
+                    {
+                        buildSet.Insert(boundCompileUnit.GetPtr());
+                        for (Cm.BoundTree.BoundCompileUnit* dependentUnit : boundCompileUnit->DependentUnits())
+                        {
+                            buildSet.Insert(dependentUnit);
+                        } 
+                    }
+                }
+            }
+        }
+        int index = 0;
+        bool first = true;
+        List<Cm.BoundTree.BoundCompileUnit*> objectCodeCompileUnits;
+        for (const UniquePtr<Cm.BoundTree.BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+        {
+            if (rebuild || buildSet.CFind(boundCompileUnit.GetPtr()) != buildSet.CEnd())
+            {
+                if (!quiet && first)
+                {
+                    first = false;
+                    Console.Out() << "Compiling..." << endl();
+                }
+                if (!quiet)
+                {
+                    Console.Out() << "> " << GetFullPath(boundCompileUnit->SyntaxUnit()->FilePath()) << endl();
+                }
+                changed = true;
+                boundCompileUnit->SetClassTemplateRepository(new Cm.Bind.ClassTemplateRepository(*boundCompileUnit));
+                boundCompileUnit->SetInlineFunctionRepository(new Cm.Bind.InlineFunctionRepository(*boundCompileUnit));
+                boundCompileUnit->SetSynthesizedClassFunRepository(new Cm.Bind.SynthesizedClassFunRepository(*boundCompileUnit));
+                boundCompileUnit->SetDelegateTypeOpRepository(new Cm.Bind.DelegateTypeOpRepository(*boundCompileUnit));
+                boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm.Bind.ClassDelegateTypeOpRepository(*boundCompileUnit));
+                boundCompileUnit->SetArrayTypeOpRepository(new Cm.Bind.ArrayTypeOpRepository(*boundCompileUnit));
+                boundCompileUnit->AddFileScope(fileScopes[index].Release());
+                Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
+            }
+        }
         return changed;
+    }
+    
+    public void Bind(Cm.Ast.CompileUnitNode* compileUnit, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.Sym.EraseExceptionIdFile(boundCompileUnit.IrFilePath());
+        Cm.Bind.Binder binder(boundCompileUnit);
+        compileUnit->Accept(binder);
     }
     
     public bool Archive(const List<string>& objectFilePaths, const string& assemblyFilePath)

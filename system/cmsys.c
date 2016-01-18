@@ -14,6 +14,8 @@
 #define _CRT_RAND_S
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <io.h>
+#include <process.h>
 #endif
 #include <stdlib.h>
 #include <string.h>
@@ -32,6 +34,39 @@
 #if defined(_WIN32)
 #include <pthread_time.h>
 #endif
+
+int duplicate_handle(int handle)
+{
+#if defined(_WIN32)
+    return _dup(handle);
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    return dup(handle);
+#else
+    #error unknown platform
+#endif
+}
+
+int duplicate_handle_2(int old_handle, int new_handle)
+{
+#if defined(_WIN32)
+    return _dup2(old_handle, new_handle);
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    return dup2(old_handle, new_handle);
+#else
+    #error unknown platform
+#endif
+}
+
+int create_file(const char* fileName, int pmode)
+{
+#if defined(_WIN32)
+    return _creat(fileName, pmode);
+#elif defined(__linux) || defined(__unix) || defined(__posix)
+    return creat(fileName, pmode);
+#else
+    #error unknown platform
+#endif
+}
 
 typedef unsigned long long thread_t;
 typedef void* mutex_t;

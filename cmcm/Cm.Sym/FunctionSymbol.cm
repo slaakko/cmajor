@@ -66,7 +66,7 @@ namespace Cm.Sym
         {
             scopeLookup = lookup;
         }
-        public nothrow inline ContainerScope* Scope() const
+        public nothrow inline ContainerScope* GetContainerScope() const
         {
             return scope;
         }
@@ -107,7 +107,7 @@ namespace Cm.Sym
             FunctionLookup toInsert = lookup;
             for (const FunctionLookup& existingLookup : functionLookups)
             {
-                if (toInsert.Scope() == existingLookup.Scope())
+                if (toInsert.GetContainerScope() == existingLookup.GetContainerScope())
                 {
                     toInsert.SetLookup(cast<ScopeLookup>(toInsert.Lookup() & ~existingLookup.Lookup()));
                 } 
