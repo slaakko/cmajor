@@ -401,6 +401,11 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
             {
                 returnStatement->SetReturnType(returnType);
                 Cm::BoundTree::BoundExpression* returnValue = Pop();
+                Cm::Sym::MemberVariableSymbol* memberVariableSymbol = returnValue->GetMemberVariableSymbol();
+                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize) && CurrentFunction()->GetFunctionSymbol()->IsInline() && memberVariableSymbol != nullptr && memberVariableSymbol->IsStatic())
+                {
+                    throw Cm::Core::Exception("inline function cannot return address of a static member variable", returnStatementNode.GetSpan(), memberVariableSymbol->GetSpan());
+                }
                 std::vector<Cm::Core::Argument> resolutionArguments;
                 Cm::Core::Argument targetArgument(Cm::Core::ArgumentCategory::lvalue, SymbolTable().GetTypeRepository().MakePointerType(returnType, returnStatementNode.GetSpan()));
                 resolutionArguments.push_back(targetArgument);

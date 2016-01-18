@@ -14,6 +14,7 @@ source <console.cm>;
 source <convert.cm>;
 source <date.cm>;
 source <exception.cm>;
+source <exec.cm>;
 source <filestream.cm>;
 source <function.cm>;
 source <fwdlist.cm>;

@@ -78,7 +78,42 @@ internal string DurationStr(const Duration& duration)
 
 internal void ObtainLlvmVersion()
 {
-    Cm.Core.GlobalSettings.Instance().SetLlvmVersion(Cm.Ast.ProgramVersion(3, 7, 1, 0, "")); // todo
+    string llvmVersionFilePath;
+    try
+    {
+        List<string> libraryDirectories;
+        Cm.Build.GetLibraryDirectories(libraryDirectories);
+        if (libraryDirectories.IsEmpty())
+        {
+            throw Exception("no library directories");
+        }
+        string command = "llc --version";
+        llvmVersionFilePath = Path.Combine(libraryDirectories[0], "llvmver.txt");
+        Execute(command, 1, llvmVersionFilePath, true); // ignore return value
+        string versionString = ReadFile(llvmVersionFilePath);
+        Cm.Ast.ProgramVersion llvmVersion = Cm.Build.Grammars.Instance().GetLlvmVersionGrammar()->Parse(versionString.Chars(), versionString.Chars() + versionString.Length(), 0, llvmVersionFilePath);
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet)
+        {
+            Console.Out() << "LLVM version is " << llvmVersion.ToString() << " (" << llvmVersion.VersionText() << ")" << endl();
+        }
+        Cm.Core.GlobalSettings.Instance().SetLlvmVersion(llvmVersion);
+        RemoveFile(llvmVersionFilePath);
+    }
+    catch (const Exception& ex)
+    {
+        try
+        {
+            if (!llvmVersionFilePath.IsEmpty())
+            {
+                RemoveFile(llvmVersionFilePath);
+            }
+        }
+        catch (const Exception&)
+        {
+        }
+        throw Exception("could not obtain LLVM compiler version (llc --version): " + ex.Message());
+    }
 }
 
 int main(int argc, const char** argv)
@@ -244,10 +279,6 @@ int main(int argc, const char** argv)
                 }
             }
             Cm.IrIntf.SetBackend(backend);
-            if (backend == Cm.IrIntf.Backend.llvm)
-            {
-                ObtainLlvmVersion();
-            }
             // todo: debug info
             bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
             if (!quiet)
@@ -260,6 +291,10 @@ int main(int argc, const char** argv)
                 {
                     throw Exception("solution or project must be specified when compiling single files");
                 }
+            }
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                ObtainLlvmVersion();
             }
             for (const string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {

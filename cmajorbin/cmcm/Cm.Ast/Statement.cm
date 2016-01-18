@@ -1156,7 +1156,7 @@ namespace Cm.Ast
         {
             visitor.Visit(*this);
         }
-        public nothrow inline LabelNode* Target() const
+        public nothrow inline LabelNode* GetTarget() const
         {
             return target.GetPtr();
         }

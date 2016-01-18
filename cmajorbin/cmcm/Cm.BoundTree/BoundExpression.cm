@@ -41,6 +41,10 @@ namespace Cm.BoundTree
         {
             return false;
         }
+        public virtual nothrow Cm.Sym.MemberVariableSymbol* GetMemberVariableSymbol() const 
+        { 
+            return null; 
+        }
         private Cm.Sym.TypeSymbol* type;
         private Cm.Core.CfgNode* cfgNode;
     }
@@ -377,6 +381,10 @@ namespace Cm.BoundTree
         {
             return symbol;
         }
+        public override nothrow Cm.Sym.MemberVariableSymbol* GetMemberVariableSymbol() const 
+        { 
+            return symbol; 
+        }
         private UniquePtr<BoundExpression> classObject;
         private Cm.Sym.MemberVariableSymbol* symbol;
     }
@@ -474,6 +482,10 @@ namespace Cm.BoundTree
         {
             boundTemporary.Reset(boundTemporary_);
         }
+        public override nothrow Cm.Sym.MemberVariableSymbol* GetMemberVariableSymbol() const 
+        { 
+            return operand->GetMemberVariableSymbol(); 
+        }
         private UniquePtr<BoundExpression> operand;
         private Cm.Sym.FunctionSymbol* conversionFun;
         private UniquePtr<BoundExpression> boundTemporary;
@@ -506,6 +518,10 @@ namespace Cm.BoundTree
         public inline void SetSourceType(Cm.Sym.TypeSymbol* sourceType_)
         {
             sourceType = sourceType_;
+        }
+        public override nothrow Cm.Sym.MemberVariableSymbol* GetMemberVariableSymbol() const 
+        { 
+            return operand->GetMemberVariableSymbol(); 
         }
         private UniquePtr<BoundExpression> operand;
         private Cm.Sym.FunctionSymbol* conversionFun;
@@ -677,6 +693,10 @@ namespace Cm.BoundTree
         public nothrow inline void SetArgumentCategory(Cm.Core.ArgumentCategory argumentCategory_)
         {
             argumentCategory = argumentCategory_;
+        }
+        public override nothrow Cm.Sym.MemberVariableSymbol* GetMemberVariableSymbol() const 
+        { 
+            return operand->GetMemberVariableSymbol(); 
         }
         private UniquePtr<BoundExpression> operand;
         private Cm.Sym.FunctionSymbol* fun;

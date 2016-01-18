@@ -94,7 +94,7 @@ namespace Cm.Bind
             for (const Cm.Sym.FunctionLookup& functionLookup : functionLookups)
             {
                 Cm.Sym.ScopeLookup lookup = functionLookup.Lookup();
-                Cm.Sym.ContainerScope* scope = functionLookup.Scope();
+                Cm.Sym.ContainerScope* scope = functionLookup.GetContainerScope();
                 if (scope != null)
                 {
                     scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
@@ -765,7 +765,7 @@ namespace Cm.Bind
         return overloadName;
     }
     
-    internal inline bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)
+    internal bool GetFlag(OverloadResolutionFlags flag, OverloadResolutionFlags flags)
     {
         return (flags & flag) != OverloadResolutionFlags.none;
     }

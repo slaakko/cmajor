@@ -21,6 +21,7 @@ namespace System
     {
         public Pair(): first(), second() {}
         public Pair(const T& first_, const U& second_): first(first_), second(second_) {}
+        public Pair(T&& first_, U&& second_) : first(Rvalue(first_)), second(Rvalue(second_)) {}
         public T first;
         public U second;
     }

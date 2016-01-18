@@ -1,0 +1,159 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+// Copyright (c) 1994
+// Hewlett-Packard Company
+// Copyright (c) 1996
+// Silicon Graphics Computer Systems, Inc.
+// Copyright (c) 2009 Alexander Stepanov and Paul McJones
+
+using System.Collections;
+
+namespace System
+{
+    public class Handle
+    {
+        public nothrow Handle() : handle(-1)
+        {
+        }
+        public nothrow Handle(int handle_) : handle(handle_)
+        {
+        }
+        public nothrow ~Handle()
+        {
+            if (handle != -1)
+            {
+                close(handle);
+            }
+        }
+        suppress Handle(const Handle&);
+        suppress void operator=(const Handle&);
+        public nothrow Handle(Handle&& that) : handle(that.handle)
+        {
+            that.handle = -1;
+        }
+        public default nothrow void operator=(Handle&& that);
+        public operator int() const
+        {
+            return handle;
+        }
+        private int handle;
+    }
+    
+    public void Execute(const string& command)
+    {
+        Execute(command, false);
+    }
+    
+    public void Execute(const string& command, bool ignoreReturnValue)
+    {
+        int retVal = system(command.Chars());
+        if (!ignoreReturnValue)
+        {
+            if (retVal != 0)
+            {
+                throw Exception("Execute '" + command + "' returned " + ToString(retVal));
+            }
+        }
+    }
+    
+    public void Execute(const string& command, int redirectFd, const string& toFile)
+    {
+        Execute(command, redirectFd, toFile, false);
+    }
+    
+    public class Exec
+    {
+        public Exec(const string& command, bool ignoreReturnValue, int old_, int redirectFd_) : old(old_), redirectFd(redirectFd_)
+        {
+            Execute(command, ignoreReturnValue);
+        }
+        public ~Exec()
+        {
+            duplicate_handle_2(old, redirectFd);
+        }
+        private int old;
+        private int redirectFd;
+    }
+    
+    public void Execute(const string& command, int redirectFd, const string& toFile, bool ignoreReturnValue)
+    {
+        Handle old = duplicate_handle(redirectFd);
+        if (old == -1)
+        {
+            string reason = strerror(get_errno());
+            throw Exception("Execute redirect: could not duplicate handle " + ToString(redirectFd) + ": " + reason);
+        }
+        Handle fd = create_file(toFile.Chars(), get_default_pmode());
+        if (fd == -1)
+        {
+            string reason = strerror(get_errno());
+            throw Exception("Execute: could not create file '" + toFile + "': " + reason);
+        }
+        if (duplicate_handle_2(fd, redirectFd) == -1)
+        {
+            string reason = strerror(get_errno());
+            throw Exception("Execute: redirect dup2 failed: " + reason);
+        }
+        Exec exec(command, ignoreReturnValue, old, redirectFd);
+    }
+    
+    public class ExecRestore
+    {
+        public ExecRestore(const string& command, List<Pair<int, Handle>>& toRestore_, bool ignoreReturnValue) : toRestore(toRestore_)
+        {
+            Execute(command, ignoreReturnValue);
+        }
+        public ~ExecRestore()
+        {
+            for (Pair<int, Handle>& r : toRestore)
+            {
+                int handle = r.first;
+                Handle old = Rvalue(r.second);
+                duplicate_handle_2(old, handle);
+            }
+        }
+        private List<Pair<int, Handle>>& toRestore;
+    }
+    
+    public void Execute(const string& command, const List<Pair<int, string>>& redirections)
+    {
+        Execute(command, redirections, false);
+    }
+    
+    public void Execute(const string& command, const List<Pair<int, string>>& redirections, bool ignoreReturnValue)
+    {
+        List<Pair<int, Handle>> toRestore;
+        for (const Pair<int, string>& redirection : redirections)
+        {
+            int handle = redirection.first;
+            string toFile = redirection.second;
+            Handle oldHandle = duplicate_handle(handle);
+            if (oldHandle == -1)
+            {
+                string reason = strerror(get_errno());
+                throw Exception("Execute redirect: could not duplicate handle " + ToString(handle) + ": " + reason);
+            }
+            Pair<int, Handle> p(Rvalue(handle), Rvalue(oldHandle));
+            toRestore.Add(Rvalue(p));
+            Handle fd = create_file(toFile.Chars(), get_default_pmode());
+            if (fd == -1)
+            {
+                string reason = strerror(get_errno());
+                throw Exception("Execute: could not create file '" + toFile + "': " + reason);
+            }
+            if (duplicate_handle_2(fd, handle) == -1)
+            {
+                string reason = strerror(get_errno());
+                throw Exception("Execute: redirect dup2 failed: " + reason);
+            }
+        }
+        ExecRestore(command, toRestore, ignoreReturnValue);
+    }
+}
