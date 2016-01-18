@@ -219,7 +219,7 @@ void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, C
     rttiIrType->SetOwned();
     std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
     rttiIrObject->SetOwned();
-    if (Cm::Core::GetGlobalSettings()->LlvmVersion() < Cm::Ast::ProgramVersion::ProgramVersion(3, 7, 0, 0, ""))
+    if (Cm::Core::GetGlobalSettings()->LlvmVersion() < Cm::Ast::ProgramVersion(3, 7, 0, 0, ""))
     {
         codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
             std::to_string(classType->Cid()) + "}");

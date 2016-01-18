@@ -147,7 +147,7 @@ void GenData::BackpatchNextTargets(Ir::Intf::LabelObject* label_)
 
 Emitter::Emitter() : irFunction(nullptr), gotoTargetLabel(nullptr), cDebugNode(nullptr), activeCfgNode(nullptr), profilingHandler(nullptr), newLlvmSyntax(false)
 {
-    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm && Cm::Core::GetGlobalSettings()->LlvmVersion() >= Cm::Ast::ProgramVersion::ProgramVersion(3, 7, 0, 0, ""))
+    if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm && Cm::Core::GetGlobalSettings()->LlvmVersion() >= Cm::Ast::ProgramVersion(3, 7, 0, 0, ""))
     {
         newLlvmSyntax = true;
     }
