@@ -1273,6 +1273,8 @@ namespace Cm.Parser
                 a3ActionParser->SetAction(ParsingAction(A3Action));
                 ActionParser* a4ActionParser = GetAction("A4");
                 a4ActionParser->SetAction(ParsingAction(A4Action));
+                ActionParser* a5ActionParser = GetAction("A5");
+                a5ActionParser->SetAction(ParsingAction(A5Action));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -1280,17 +1282,21 @@ namespace Cm.Parser
             }
             public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = RelOp.lessEq;
+                context.value = RelOp.notEq;
             }
             public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = RelOp.greaterEq;
+                context.value = RelOp.lessEq;
             }
             public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = RelOp.less;
+                context.value = RelOp.greaterEq;
             }
             public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = RelOp.less;
+            }
+            public throw void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = RelOp.greater;
             }
@@ -1436,12 +1442,12 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("long", this, "System.Text.Parsing.stdlib.long"));
             AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
-            AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1653,15 +1659,18 @@ namespace Cm.Parser
                     new AlternativeParser(
                         new AlternativeParser(
                             new AlternativeParser(
-                                new ActionParser("A0",
-                                    new CharParser('=')),
-                                new ActionParser("A1",
+                                new AlternativeParser(
+                                    new ActionParser("A0",
+                                        new CharParser('=')),
+                                    new ActionParser("A1",
+                                        new StringParser("!="))),
+                                new ActionParser("A2",
                                     new StringParser("<="))),
-                            new ActionParser("A2",
+                            new ActionParser("A3",
                                 new StringParser(">="))),
-                        new ActionParser("A3",
+                        new ActionParser("A4",
                             new CharParser('<'))),
-                    new ActionParser("A4",
+                    new ActionParser("A5",
                         new CharParser('>')))));
             AddRule(new PropertyValueRule("PropertyValue", GetScope(),
                 new AlternativeParser(

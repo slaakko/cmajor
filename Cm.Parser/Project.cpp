@@ -1410,6 +1410,8 @@ public:
         a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A3Action));
         Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
         a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A4Action));
+        Cm::Parsing::ActionParser* a5ActionParser = GetAction("A5");
+        a5ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<RelOpRule>(this, &RelOpRule::A5Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1417,17 +1419,21 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = Cm::Ast::RelOp::lessEq;
+        context.value = Cm::Ast::RelOp::notEq;
     }
     void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = Cm::Ast::RelOp::greaterEq;
+        context.value = Cm::Ast::RelOp::lessEq;
     }
     void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = Cm::Ast::RelOp::less;
+        context.value = Cm::Ast::RelOp::greaterEq;
     }
     void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = Cm::Ast::RelOp::less;
+    }
+    void A5Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
         context.value = Cm::Ast::RelOp::greater;
     }
@@ -1809,15 +1815,18 @@ void ProjectGrammar::CreateRules()
             new Cm::Parsing::AlternativeParser(
                 new Cm::Parsing::AlternativeParser(
                     new Cm::Parsing::AlternativeParser(
-                        new Cm::Parsing::ActionParser("A0",
-                            new Cm::Parsing::CharParser('=')),
-                        new Cm::Parsing::ActionParser("A1",
+                        new Cm::Parsing::AlternativeParser(
+                            new Cm::Parsing::ActionParser("A0",
+                                new Cm::Parsing::CharParser('=')),
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::StringParser("!="))),
+                        new Cm::Parsing::ActionParser("A2",
                             new Cm::Parsing::StringParser("<="))),
-                    new Cm::Parsing::ActionParser("A2",
+                    new Cm::Parsing::ActionParser("A3",
                         new Cm::Parsing::StringParser(">="))),
-                new Cm::Parsing::ActionParser("A3",
+                new Cm::Parsing::ActionParser("A4",
                     new Cm::Parsing::CharParser('<'))),
-            new Cm::Parsing::ActionParser("A4",
+            new Cm::Parsing::ActionParser("A5",
                 new Cm::Parsing::CharParser('>')))));
     AddRule(new PropertyValueRule("PropertyValue", GetScope(),
         new Cm::Parsing::AlternativeParser(

@@ -183,10 +183,6 @@ namespace Cm.Sym
         {
             return false;
         }
-        public nothrow virtual bool IsNullPtrType() const
-        {
-            return false;
-        }
         public nothrow virtual bool IsULongType() const
         {
             return false;

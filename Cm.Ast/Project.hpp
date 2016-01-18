@@ -82,7 +82,7 @@ void SetVersionParser(VersionParser* versionParser);
 
 enum class RelOp
 {
-    equal, lessEq, greaterEq, less, greater
+    equal, notEq, lessEq, greaterEq, less, greater
 };
 
 class Properties

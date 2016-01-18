@@ -99,6 +99,7 @@ bool Compare(const std::string& propertyValue, const std::pair<RelOp, std::strin
     switch (declaredValue.first)
     {
         case RelOp::equal: return propertyValue == declaredValue.second;
+        case RelOp::notEq: return propertyValue != declaredValue.second;
         case RelOp::less: return propertyValue < declaredValue.second;
         case RelOp::greater: return propertyValue > declaredValue.second;
         case RelOp::lessEq: return propertyValue <= declaredValue.second;
@@ -112,6 +113,7 @@ bool Compare(int propertyValue, const std::pair<RelOp, std::string>& declaredVal
     switch (declaredValue.first)
     {
         case RelOp::equal: return propertyValue == std::stoi(declaredValue.second);
+        case RelOp::notEq: return propertyValue != std::stoi(declaredValue.second);
         case RelOp::less: return propertyValue < std::stoi(declaredValue.second);
         case RelOp::greater: return propertyValue > std::stoi(declaredValue.second);
         case RelOp::lessEq: return propertyValue <= std::stoi(declaredValue.second);
@@ -126,6 +128,7 @@ bool Compare(const ProgramVersion& propertyValue, const std::pair<RelOp, std::st
     switch (declaredValue.first)
     {
         case RelOp::equal: return propertyValue == declaredVersion;
+        case RelOp::notEq: return propertyValue != declaredVersion;
         case RelOp::less: return propertyValue < declaredVersion;
         case RelOp::greater: return propertyValue > declaredVersion;
         case RelOp::lessEq: return propertyValue <= declaredVersion;

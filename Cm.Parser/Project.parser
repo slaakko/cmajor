@@ -102,6 +102,7 @@ namespace Cm.Parser
 
         RelOp: Cm::Ast::RelOp
             ::= '='{ value = Cm::Ast::RelOp::equal; }
+            |   "!="{ value = Cm::Ast::RelOp::notEq; }
             |   "<="{ value = Cm::Ast::RelOp::lessEq; }
             |   ">="{ value = Cm::Ast::RelOp::greaterEq; }
             |   '<'{ value = Cm::Ast::RelOp::less; }

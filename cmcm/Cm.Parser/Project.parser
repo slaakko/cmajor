@@ -99,6 +99,7 @@ namespace Cm.Parser
             
         RelOp : RelOp
             ::= '='{ value = RelOp.equal; }
+            |   "!="{ value = RelOp.notEq; }
             |   "<="{ value = RelOp.lessEq; }
             |   ">="{ value = RelOp.greaterEq; }
             |   '<'{ value = RelOp.less; }

@@ -226,10 +226,6 @@ namespace Cm.Bind
                     scope = nsTypeSymbol->Ns()->GetContainerScope();
                 }
                 const string& memberName = dotNode.MemberId()->Str();
-                if (memberName == "Iterator")
-                {
-                    int x = 0;
-                }
                 Cm.Sym.Symbol* symbol = scope->Lookup(memberName, Cm.Sym.ScopeLookup.this_and_base, lookupId);
                 if (symbol != null)
                 {
