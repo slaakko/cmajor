@@ -131,6 +131,12 @@ namespace Cm.Ast
         {
             writer.Write(constraint.GetPtr());
         }
+        public override void Accept(Cm.Ast.Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            constraint->Accept(visitor);
+            visitor.EndVisit(*this);
+        }
         private UniquePtr<ConstraintNode> constraint;
     }
     

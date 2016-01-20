@@ -17,6 +17,8 @@
 
 namespace Cm { namespace Bind {
 
+void SetPrevBpHit();
+
 bool CheckConstraint(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FileScope* functionFileScope, Cm::Ast::WhereConstraintNode* constraint, 
     const std::vector<Cm::Sym::TypeParameterSymbol*>& templateParameters, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments, Cm::Core::ConceptCheckException& exception);
 

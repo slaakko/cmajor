@@ -22,7 +22,7 @@ namespace System
         public nothrow Handle() : handle(-1)
         {
         }
-        public nothrow Handle(int handle_) : handle(handle_)
+        public nothrow explicit Handle(int handle_) : handle(handle_)
         {
         }
         public nothrow ~Handle()
@@ -84,13 +84,13 @@ namespace System
     
     public void Execute(const string& command, int redirectFd, const string& toFile, bool ignoreReturnValue)
     {
-        Handle old = duplicate_handle(redirectFd);
+        Handle old(duplicate_handle(redirectFd));
         if (old == -1)
         {
             string reason = strerror(get_errno());
             throw Exception("Execute redirect: could not duplicate handle " + ToString(redirectFd) + ": " + reason);
         }
-        Handle fd = create_file(toFile.Chars(), get_default_pmode());
+        Handle fd(create_file(toFile.Chars(), get_default_pmode()));
         if (fd == -1)
         {
             string reason = strerror(get_errno());
@@ -134,7 +134,7 @@ namespace System
         {
             int handle = redirection.first;
             string toFile = redirection.second;
-            Handle oldHandle = duplicate_handle(handle);
+            Handle oldHandle(duplicate_handle(handle));
             if (oldHandle == -1)
             {
                 string reason = strerror(get_errno());
@@ -142,7 +142,7 @@ namespace System
             }
             Pair<int, Handle> p(Rvalue(handle), Rvalue(oldHandle));
             toRestore.Add(Rvalue(p));
-            Handle fd = create_file(toFile.Chars(), get_default_pmode());
+            Handle fd(create_file(toFile.Chars(), get_default_pmode()));
             if (fd == -1)
             {
                 string reason = strerror(get_errno());

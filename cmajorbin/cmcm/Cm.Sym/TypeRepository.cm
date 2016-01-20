@@ -201,7 +201,7 @@ namespace Cm.Sym
                 return MakeDerivedType(derivations, derivedType->GetBaseType(), derivedType->ArrayDimensions(), span);
             }
             Cm.Ast.DerivationList derivations;
-            derivations.Add(Cm.Ast.Derivation.pointer);
+            derivations.Add(Cm.Ast.Derivation.rvalueRef);
             return MakeDerivedType(derivations, baseType, List<int>(), span);
         }
         public TypeSymbol* MakeReferenceType(TypeSymbol* baseType, const Span& span)

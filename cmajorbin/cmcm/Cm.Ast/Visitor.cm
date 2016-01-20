@@ -581,6 +581,12 @@ namespace Cm.Ast
         public virtual void Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode)
         {
         }
+        public virtual void BeginVisit(WhereConstraintNode& whereConstraintNode)
+        {
+        }
+        public virtual void EndVisit(WhereConstraintNode& whereConstraintNode)
+        {
+        }
         public virtual void Visit(IsConstraintNode& isConstraintNode)
         {
         }

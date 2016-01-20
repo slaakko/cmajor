@@ -299,7 +299,7 @@ namespace System.IO
             OpenFlags openFlags = cast<OpenFlags>(OpenFlags.text | OpenFlags.writeOnly);
             if (append)
             {
-                openFlags = cast<OpenFlags>(openFlags | OpenFlags.append);
+                openFlags = cast<OpenFlags>(openFlags | OpenFlags.create | OpenFlags.append);
             }
             else
             {

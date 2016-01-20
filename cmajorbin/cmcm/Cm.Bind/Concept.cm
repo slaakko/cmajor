@@ -13,6 +13,22 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
+    class PrevBp
+    {
+        static PrevBp() : hit(false)
+        {
+        }
+        public static void SetHit()
+        {
+            hit = true;
+        }
+        public static bool Hit() 
+        {
+            return hit;
+        }
+        static bool hit;
+    }
+    
     internal bool CheckConstraint(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FileScope* functionFileScope, Cm.Ast.WhereConstraintNode* constraint, 
         const List<Cm.Sym.TypeParameterSymbol*>& templateParameters, const List<Cm.Sym.TypeSymbol*>& templateArguments, Cm.Core.ConceptCheckError& exception)
     {
@@ -97,7 +113,7 @@ namespace Cm.Bind
         {
             lookupIdStack.Push(lookupId);
             lookupId = Cm.Sym.SymbolTypeSetId.lookupConceptGroup;
-            conceptIdNode.Accept(*this);
+            conceptIdNode.Id()->Accept(*this);
             lookupId = lookupIdStack.Pop();
             if (conceptGroup != null)
             {
@@ -296,11 +312,16 @@ namespace Cm.Bind
             Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(firstTypeArgument, constructorConstraintNode.GetSpan());
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
             int n = constructorConstraintNode.Parameters().Count();
+            Cm.Sym.TypeSymbol* firstParameterType = null;
             for (int i = 0; i < n; ++i)
             {
                 Cm.Ast.ParameterNode* parameterNode = constructorConstraintNode.Parameters()[i];
                 Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), 
                     parameterNode->TypeExpr());
+                if (i == 0)
+                {
+                    firstParameterType = parameterType;
+                }
                 Cm.Core.ArgumentCategory argumentCategory = Cm.Core.ArgumentCategory.rvalue;
                 if (parameterType->IsReferenceType())
                 {
@@ -313,6 +334,13 @@ namespace Cm.Bind
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
             List<Cm.Sym.FunctionSymbol*> conversions;
+            if (PrevBp.Hit())
+            {
+                if (firstParameterType != null && firstParameterType->IsRvalueRefType())
+                {
+                    int x = 0;
+                }
+            }
             Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
                 cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
             if (functionSymbol == null)

@@ -813,7 +813,7 @@ namespace Cm.Core
                             viableFunctions.Insert(cache->GetVoidPtrToPtrConversion(typeRepository, pointerType, span));
                             return;
                         }
-                        else if (rightPlainType is Cm.Sym.NullPtrType*) // nullptr type to pointer type conversion
+                        else if (rightPlainType is Cm.Sym.NullPtrTypeSymbol*) // nullptr type to pointer type conversion
                         {
                             DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
                             if (cache == null)
@@ -1006,7 +1006,7 @@ namespace Cm.Core
                 Cm.Sym.TypeSymbol* pointerType = typeRepository.MakePlainTypeWithOnePointerRemoved(leftType);
                 Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
                 Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
-                if (rightPlainType is Cm.Sym.NullPtrType*) // pointer from nullptr type assignment
+                if (rightPlainType is Cm.Sym.NullPtrTypeSymbol*) // pointer from nullptr type assignment
                 {
                     DerivedTypeOpCache* cache = derivedTypeOpCacheMap[pointerType];
                     if (cache == null)
@@ -1091,11 +1091,11 @@ namespace Cm.Core
             if (arity != 2) return;
             Cm.Sym.TypeSymbol* leftType = arguments[0].Type();
             Cm.Sym.TypeSymbol* leftPlainType = typeRepository.MakePlainType(leftType);
-            if (leftType->IsPointerType() || (leftType is Cm.Sym.NullPtrType*))
+            if (leftType->IsPointerType() || (leftType is Cm.Sym.NullPtrTypeSymbol*))
             {
                 Cm.Sym.TypeSymbol* rightType = arguments[1].Type();
                 Cm.Sym.TypeSymbol* rightPlainType = typeRepository.MakePlainType(rightType);
-                if (rightType->IsPointerType() || (rightType is Cm.Sym.NullPtrType*))
+                if (rightType->IsPointerType() || (rightType is Cm.Sym.NullPtrTypeSymbol*))
                 {
                     if (Cm.Sym.TypesEqual(leftPlainType, rightPlainType)) // operator==(ptr, ptr)
                     {
@@ -1108,7 +1108,7 @@ namespace Cm.Core
                         }
                         viableFunctions.Insert(cache->GetOpEqual(typeRepository, leftPlainType));
                     }
-                    else if (leftType is Cm.Sym.NullPtrType*) // operator==(null, ptr)
+                    else if (leftType is Cm.Sym.NullPtrTypeSymbol*) // operator==(null, ptr)
                     {
                         DerivedTypeOpCache* cache = derivedTypeOpCacheMap[rightType];
                         if (cache == null)
@@ -1119,7 +1119,7 @@ namespace Cm.Core
                         }
                         viableFunctions.Insert(cache->GetOpEqual(typeRepository, rightType));
                     }
-                    else if (rightType is Cm.Sym.NullPtrType*) // operator==(ptr, null)
+                    else if (rightType is Cm.Sym.NullPtrTypeSymbol*) // operator==(ptr, null)
                     {
                         DerivedTypeOpCache* cache = derivedTypeOpCacheMap[leftType];
                         if (cache == null)
