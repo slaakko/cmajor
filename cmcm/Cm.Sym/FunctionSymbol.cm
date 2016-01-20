@@ -779,7 +779,7 @@ namespace Cm.Sym
             }
             else if (IsConversionFunction())
             {
-                return parameters[1]->GetType()->GetBaseType();
+                return parameters[0]->GetType()->GetBaseType();
             }
             else
             {

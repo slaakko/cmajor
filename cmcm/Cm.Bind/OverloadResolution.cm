@@ -904,7 +904,7 @@ namespace Cm.Bind
                             for (int i = 0; i < n; ++i)
                             {
                                 Cm.Sym.TypeSymbol* argumentTypeArgumentSymbol = argumentTemplateTypeSymbol->TypeArguments()[i];
-                                Cm.Sym.TypeSymbol* parameterTypeArgumentSymbol = argumentTemplateTypeSymbol->TypeArguments()[i];
+                                Cm.Sym.TypeSymbol* parameterTypeArgumentSymbol = parameterTemplateTypeSymbol->TypeArguments()[i];
                                 if (parameterTypeArgumentSymbol is Cm.Sym.TypeParameterSymbol*)
                                 {
                                     Cm.Sym.TypeParameterSymbol* typeParameterSymbol = cast<Cm.Sym.TypeParameterSymbol*>(parameterTypeArgumentSymbol);

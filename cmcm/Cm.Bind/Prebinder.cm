@@ -267,6 +267,14 @@ namespace Cm.Bind
         {
             containerScope = containerScopeStack.Pop();
         }
+        public nothrow inline void SetDontCompleteFunctions()
+        {
+            dontCompleteFunctions = true;
+        }
+        public nothrow inline void SetCurrentClass(Cm.Sym.ClassTypeSymbol* currentClass_)
+        {
+            currentClass = currentClass_;
+        }
         private Cm.Sym.SymbolTable& symbolTable;
         private List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
         private Cm.Core.ClassTemplateRepository& classTemplateRepository;

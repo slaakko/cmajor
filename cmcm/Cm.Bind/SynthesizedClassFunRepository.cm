@@ -154,7 +154,7 @@ namespace Cm.Bind
                 Cm.Sym.TypeSymbol* secondArgumentType = arguments[1].Type();
                 if (secondArgumentType->IsPointerType()) return;
                 Cm.Sym.TypeSymbol* secondArgumentBaseType = secondArgumentType->GetBaseType();
-                if (!secondArgumentBaseType->IsRvalueRefType() && !arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+                if (!secondArgumentType->IsRvalueRefType() && !arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
                 {
                     if (classType->IsStatic())
                     {
@@ -191,7 +191,7 @@ namespace Cm.Bind
                         }
                     }
                 }
-                else if (secondArgumentType->IsRvalueRefType() && arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+                else if ((secondArgumentType->IsRvalueRefType() || arguments[1].BindToRvalueRef()) && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
                 {
                     if (classType->IsStatic())
                     {
@@ -286,7 +286,7 @@ namespace Cm.Bind
                     }
                 }
             }
-            else if (secondArgumentType->IsRvalueRefType() && arguments[1].BindToRvalueRef() && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
+            else if ((secondArgumentType->IsRvalueRefType() || arguments[1].BindToRvalueRef()) && Cm.Sym.TypesEqual(classType, secondArgumentBaseType))
             {
                 if (classType->IsStatic())
                 {

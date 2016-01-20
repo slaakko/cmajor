@@ -1803,6 +1803,11 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()));
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
     }
+    if (currentFunction->GetFunctionSymbol()->GroupName() == "ToString" && functionGroupSymbol->Name() == "Reverse")
+    {
+        SetPrevBpHit();
+        int x = 0;
+    }
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions, 
         Cm::Sym::ConversionType::implicit, boundTemplateArguments, OverloadResolutionFlags::nothrow, bestMatch, exception);
     if (fun)

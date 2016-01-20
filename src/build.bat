@@ -2,6 +2,7 @@
 cmpdf ../system/algorithm.cm
 cmpdf ../system/assert.cm
 cmpdf ../system/bitset.cm
+cmpdf ../system/bytestream.cm
 cmpdf ../system/charclass.cm
 cmpdf ../system/codeformatter.cm
 cmpdf ../system/concept.cm
@@ -11,6 +12,7 @@ cmpdf ../system/convert.cm
 cmpdf ../system/date.cm
 cmpdf ../system/eh.cm
 cmpdf ../system/exception.cm
+cmpdf ../system/exec.cm
 cmpdf ../system/filestream.cm
 cmpdf ../system/function.cm
 cmpdf ../system/fwdlist.cm

@@ -21,11 +21,106 @@ namespace Cm.Bind
         public override void CollectViableFunctions(const string& groupName, int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, 
             HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
         {
-            // todo
+            if (arguments.Count() != arity)
+            {
+                throw Exception("wrong number of arguments");
+            }
+            if (arity < 1) return;
+            Cm.Sym.TypeSymbol* leftArgType = arguments[0].Type();
+            if (leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerToTemplateType()) return;
+            Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(leftArgType->GetBaseType());
+            if (!templateTypeSymbol->IsBound())
+            {
+                BindTemplateTypeSymbol(templateTypeSymbol, containerScope, List<UniquePtr<Cm.Sym.FileScope>>());
+            }
         }
         public override void Instantiate(Cm.Sym.ContainerScope* containerScope, Cm.Sym.FunctionSymbol* memberFunctionSymbol)
         {
-            // todo
+            if (boundCompileUnit.IsPrebindCompileUnit()) return;
+            if (boundCompileUnit.Instantiated(memberFunctionSymbol)) return;
+            Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(memberFunctionSymbol, false);
+            if (node == null)
+            {
+                if (memberFunctionSymbol->IsDestructor()) return;
+                throw Cm.Core.Error("node for symbol '" + memberFunctionSymbol->FullName() + "' not found in symbol table", memberFunctionSymbol->GetSpan());
+            }
+            boundCompileUnit.AddToInstantiated(memberFunctionSymbol);
+            memberFunctionSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+            Cm.Sym.Symbol* parent = memberFunctionSymbol->Parent();
+            if (!(parent is Cm.Sym.TemplateTypeSymbol*))
+            {
+                throw Exception("template type symbol expected");
+            }
+            Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(parent);
+            templateTypeSymbols.Insert(templateTypeSymbol);
+            if (templateTypeSymbol->Constraint() != null) // if has unchecked constraint, check it now...
+            {
+                Cm.Sym.TypeSymbol* subjectTypeSymbol = templateTypeSymbol->SubjectType();
+                if (!(subjectTypeSymbol is Cm.Sym.ClassTypeSymbol*))
+                {
+                    throw Exception("class type symbol expected");
+                }
+                Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(subjectTypeSymbol);
+                Cm.Core.ConceptCheckError exception;
+                bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, templateTypeSymbol->GetFileScope(), templateTypeSymbol->Constraint(), subjectClassTypeSymbol->TypeParameters(), 
+                    templateTypeSymbol->TypeArguments(), exception);
+                if (!constraintSatisfied)
+                {
+                    throw Cm.Core.Error("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
+                }
+                templateTypeSymbol->SetConstraint(null);
+            }
+            Cm.Ast.Node* ttNode = boundCompileUnit.SymbolTable().GetNode(templateTypeSymbol);
+            if (!(ttNode is Cm.Ast.ClassNode*))
+            {
+                throw Exception("class node expected");
+            }
+            Cm.Ast.ClassNode* templateTypeNode = cast<Cm.Ast.ClassNode*>(ttNode);
+            if (!(node is Cm.Ast.FunctionNode*))
+            {
+                throw Exception("function node expected");
+            }
+            Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+            bool isDefault = (functionNode->GetSpecifiers() & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none;
+            if (isDefault)
+            {
+                // implementation generated from elsewhere
+            }
+            else
+            {
+                Cm.Ast.CloneContext cloneContext;
+                if (functionNode->BodySource() == null)
+                {
+                    throw Exception("body source expected");
+                }
+                functionNode->SetBody(cast<Cm.Ast.CompoundStatementNode*>(functionNode->BodySource()->Clone(cloneContext)));
+                functionNode->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+                boundCompileUnit.AddFileScope(templateTypeSymbol->CloneFileScope());
+                Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+                boundCompileUnit.SymbolTable().BeginContainer(memberFunctionSymbol);
+                functionNode->Body()->Accept(declarationVisitor);
+                boundCompileUnit.SymbolTable().EndContainer();
+                Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+                prebinder.SetDontCompleteFunctions();
+                prebinder.SetCurrentClass(templateTypeSymbol);
+                prebinder.BeginCompileUnit();
+                Cm.Sym.ContainerScope* ttContainerScope = boundCompileUnit.SymbolTable().GetContainerScope(ttNode);
+                prebinder.BeginContainerScope(ttContainerScope);
+                functionNode->Accept(prebinder);
+                prebinder.EndContainerScope();
+                prebinder.EndCompileUnit();
+                Binder binder(boundCompileUnit);
+                binder.BeginVisit(*templateTypeNode);
+                functionNode->Accept(binder);
+                binder.EndVisit(*templateTypeNode);
+                boundCompileUnit.RemoveLastFileScope();
+            }
+            if (templateTypeSymbol->Destructor() != null)
+            {
+                Instantiate(containerScope, templateTypeSymbol->Destructor());
+            }
+            InstantiateVirtualFunctionsFor(containerScope, templateTypeSymbol);
+            memberFunctionSymbols.Add(memberFunctionSymbol);
         }
         public override void BindTemplateTypeSymbol(Cm.Sym.TemplateTypeSymbol* templateTypeSymbol, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes)
         {
@@ -134,6 +229,10 @@ namespace Cm.Bind
                 }
                 else
                 {
+                    if (templateTypeSymbol->Name() == "Pair<int, System.Handle>")
+                    {
+                        PrevBp.SetHit();
+                    }
                     Cm.Core.ConceptCheckError exception;
                     bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
                         exception);
@@ -158,7 +257,27 @@ namespace Cm.Bind
         }
         public override void InstantiateVirtualFunctionsFor(Cm.Sym.ContainerScope* containerScope, Cm.Sym.ClassTypeSymbol* templateTypeSymbol)
         {
-            // todo
+            if (virtualFunctionsInstantiated.CFind(templateTypeSymbol) != virtualFunctionsInstantiated.CEnd()) return;
+            virtualFunctionsInstantiated.Insert(templateTypeSymbol);
+            for (Cm.Sym.FunctionSymbol* virtualFunction : templateTypeSymbol->Vtbl())
+            {
+                if (virtualFunction != null)
+                {
+                    Cm.Sym.Symbol* parent = virtualFunction->Parent();
+                    if (!(parent is Cm.Sym.TypeSymbol*))
+                    {
+                        throw Exception("type symbol expected");
+                    }
+                    Cm.Sym.TypeSymbol* parentType = cast<Cm.Sym.TypeSymbol*>(parent);
+                    if (Cm.Sym.TypesEqual(parentType, templateTypeSymbol))
+                    {
+                        if (!virtualFunction->IsAbstract())
+                        {
+                            Instantiate(containerScope, virtualFunction);
+                        }
+                    }
+                }
+            }
         }
         public override void ResolveDefaultTypeArguments(List<Cm.Sym.TypeSymbol*>& typeArguments, Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
             const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, const Span& span)
@@ -231,5 +350,7 @@ namespace Cm.Bind
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private HashSet<Cm.Sym.TemplateTypeSymbol*> templateTypeSymbols;
         private HashSet<Cm.Sym.ClassTypeSymbol*> classTemplates;
+        private HashSet<Cm.Sym.ClassTypeSymbol*> virtualFunctionsInstantiated;
+        private List<Cm.Sym.FunctionSymbol*> memberFunctionSymbols;
     }
 }
