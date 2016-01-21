@@ -190,7 +190,7 @@ namespace Cm.Bind
                     Cm.Sym.TypeSymbol* returnType = virtualFunction->GetReturnType();
                     if (returnType != null && (returnType->GetBaseType() is Cm.Sym.ClassTypeSymbol*))
                     {
-                        Cm.Sym.ClassTypeSymbol* returnClassType = cast<Cm.Sym.ClassTypeSymbol*>(returnType);
+                        Cm.Sym.ClassTypeSymbol* returnClassType = cast<Cm.Sym.ClassTypeSymbol*>(returnType->GetBaseType());
                         AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
                     }
                     for (Cm.Sym.ParameterSymbol* parameter : virtualFunction->Parameters())

@@ -139,7 +139,7 @@ namespace Cm.Bind
                 clonedReturnTypeExpr = returnTypeExpr->Clone(cloneContext);
             }
             Cm.Ast.FunctionGroupIdNode* groupId = functionTemplate->GroupId();
-            functionInstanceNode = new Cm.Ast.FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), clonedReturnTypeExpr, 
+            functionInstanceNode = new Cm.Ast.FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), clonedReturnTypeExpr, 
                 cast<Cm.Ast.FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
             ownedBody.Reset(ReadFunctionTemplateBody(functionTemplate));
             for (const Cm.Sym.ParameterSymbol* parameter : functionTemplate->Parameters())
