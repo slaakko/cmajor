@@ -100,7 +100,7 @@ namespace Cm.Bind
                     scope->CollectViableFunctions(lookup, groupName, arity, viableFunctions);
                     processedContainerScopes.Insert(scope);
                 }
-                if ((lookup & Cm.Sym.ScopeLookup.fileScopes) != Cm.Sym.ScopeLookup.none && fileScopesLookedUp)
+                if ((lookup & Cm.Sym.ScopeLookup.fileScopes) != Cm.Sym.ScopeLookup.none && !fileScopesLookedUp)
                 {
                     fileScopesLookedUp = true;
                     for (const UniquePtr<Cm.Sym.FileScope>& fileScope : boundCompileUnit.FileScopes())
@@ -412,7 +412,7 @@ namespace Cm.Bind
         }
     }
     
-    internal class ArgumentMatch
+    public class ArgumentMatch
     {
         public nothrow ArgumentMatch() : conversionRank(Cm.Sym.ConversionRank.exactMatch), conversionDistance(0)
         {
@@ -487,7 +487,7 @@ namespace Cm.Bind
         }
     }
     
-    internal class FunctionMatch
+    public class FunctionMatch
     {
         public nothrow FunctionMatch() : function(null), numConversions(0), constraint(null), containerScope(null), boundCompileUnit(null), boundConstraint(null)
         {
@@ -599,7 +599,7 @@ namespace Cm.Bind
         private Cm.BoundTree.BoundConstraint* boundConstraint;
     }
     
-    internal class BetterFunctionMatch : Rel<FunctionMatch>
+    public class BetterFunctionMatch : Rel<FunctionMatch>
     {
         public nothrow BetterFunctionMatch(List<UniquePtr<Cm.BoundTree.BoundConstraint>>* boundConstraints_) : boundConstraints(boundConstraints_)
         {

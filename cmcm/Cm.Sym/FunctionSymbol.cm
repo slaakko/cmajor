@@ -62,7 +62,7 @@ namespace Cm.Sym
         {
             return scopeLookup;
         }
-        public nothrow inline void SetLookup(ScopeLookup lookup)
+        public nothrow void SetLookup(ScopeLookup lookup)
         {
             scopeLookup = lookup;
         }

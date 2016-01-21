@@ -164,6 +164,14 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         functionSymbol->SetInline();
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
         {
+            for (const Cm::Sym::ParameterSymbol* parameterSymbol : functionSymbol->Parameters())
+            {
+                if (!parameterSymbol->GetType()->IsPublic())
+                {
+                    throw Cm::Core::Exception("inline function '" + functionSymbol->FullName() + "' has non-public parameter type '" + parameterSymbol->GetType()->FullName() + "'",
+                        functionSymbol->GetSpan(), parameterSymbol->GetType()->GetSpan());
+                }
+            }
             functionSymbol->SetReplicated();
         }
     }

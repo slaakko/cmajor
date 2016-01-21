@@ -159,7 +159,8 @@ namespace Cm.Bind
                 {
                     if (!parameterSymbol->GetType()->IsPublic())
                     {
-                        throw Cm.Core.Error("type of inline function parameter must be public", parameterSymbol->GetSpan(), functionSymbol->GetSpan());
+                        throw Cm.Core.Error("inline function '" + functionSymbol->FullName() + "' has non-public parameter type '" + parameterSymbol->GetType()->FullName() + "'", 
+                            functionSymbol->GetSpan(), parameterSymbol->GetType()->GetSpan());
                     }
                 }
                 functionSymbol->SetReplicated();
