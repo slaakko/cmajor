@@ -50,7 +50,6 @@ namespace Cm.Ast
             Register(NodeType.doubleNode, new Creator<DoubleNode>());
             Register(NodeType.charNode, new Creator<CharNode>());
             Register(NodeType.voidNode, new Creator<VoidNode>());
-            Register(NodeType.identifierNode, new Creator<IdentifierNode>());
             Register(NodeType.booleanLiteralNode, new Creator<BooleanLiteralNode>());
             Register(NodeType.sbyteLiteralNode, new Creator<SByteLiteralNode>());
             Register(NodeType.byteLiteralNode, new Creator<ByteLiteralNode>());
@@ -103,6 +102,8 @@ namespace Cm.Ast
             Register(NodeType.sizeOfNode, new Creator<SizeOfNode>());
             Register(NodeType.typeNameNode, new Creator<TypeNameNode>());
             Register(NodeType.castNode, new Creator<CastNode>());
+            Register(NodeType.isNode, new Creator<IsNode>());
+            Register(NodeType.asNode, new Creator<AsNode>());
             Register(NodeType.newNode, new Creator<NewNode>());
             Register(NodeType.constructNode, new Creator<ConstructNode>());
             Register(NodeType.thisNode, new Creator<ThisNode>());

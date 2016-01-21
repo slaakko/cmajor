@@ -1,0 +1,23 @@
+This subdirectory (cmcm) contains Cmajor compiler written in Cmajor.
+
+It is manually translated from C++ code to Cmajor code so that the
+algorithms and data structures of the compiler are the same.
+Hopefully I'm not making any new bugs compared to the C++ version.
+
+The performance of it is considerably poorer compared to C++ version,
+but at least it's a starting point to a path to convert C++ versions
+of Cmajor tool chain to Cmajor programs.
+
+To compile debug version of the compiler using LLVM backend compile with:
+cmc [-R] cmcm.cms
+
+To compile release version of the compiler using LLVM backend compile with:
+cmc [-R] -config=release cmcm.cms
+
+To compile debug version of the compiler using C backend compile with:
+cmc [-R] -backend=c cmcm.cms
+
+To compile release version of the compiler using LLVM backend compile with:
+cmc [-R] -config=release -backend=c cmcm.cms
+
+-Seppo
