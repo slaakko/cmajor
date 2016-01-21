@@ -79,7 +79,7 @@ namespace Cm.Core
             {
                 moveCtor.Reset(new MoveCtor(typeRepository, enumType));
             }
-            return copyCtor.GetPtr();
+            return moveCtor.GetPtr();
         }
         public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
         {
@@ -95,7 +95,7 @@ namespace Cm.Core
             {
                 moveAssignment.Reset(new MoveAssignment(typeRepository, enumType));
             }
-            return copyAssignment.GetPtr();
+            return moveAssignment.GetPtr();
         }
         public Cm.Sym.FunctionSymbol* GetOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* enumType)
         {

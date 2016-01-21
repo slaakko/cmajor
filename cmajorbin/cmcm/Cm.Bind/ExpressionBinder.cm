@@ -1475,7 +1475,7 @@ namespace Cm.Bind
                         }
                         firstArg.Reset(arguments.ReleaseFirst());
                     }
-                }
+                }                
                 fun2 = BindInvokeFun(node, conversions2, arguments, firstArgByRef2, generateVirtualCall2, functionGroupSymbol, functionGroup->BoundTemplateArguments(), bestMatch2, resolutionArguments2, 
                     exception2, qualifiedScope);
                 if (fun2 != null)

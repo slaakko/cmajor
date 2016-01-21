@@ -13,22 +13,6 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
-    class PrevBp
-    {
-        static PrevBp() : hit(false)
-        {
-        }
-        public static void SetHit()
-        {
-            hit = true;
-        }
-        public static bool Hit() 
-        {
-            return hit;
-        }
-        static bool hit;
-    }
-    
     internal bool CheckConstraint(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FileScope* functionFileScope, Cm.Ast.WhereConstraintNode* constraint, 
         const List<Cm.Sym.TypeParameterSymbol*>& templateParameters, const List<Cm.Sym.TypeSymbol*>& templateArguments, Cm.Core.ConceptCheckError& exception)
     {
@@ -334,13 +318,6 @@ namespace Cm.Bind
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
             List<Cm.Sym.FunctionSymbol*> conversions;
-            if (PrevBp.Hit())
-            {
-                if (firstParameterType != null && firstParameterType->IsRvalueRefType())
-                {
-                    int x = 0;
-                }
-            }
             Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
                 cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.dontInstantiate));
             if (functionSymbol == null)

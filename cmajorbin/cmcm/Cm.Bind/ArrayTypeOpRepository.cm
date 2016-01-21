@@ -34,7 +34,7 @@ namespace Cm.Bind
                 if (!Cm.Sym.HasPointerToArrayDerivation(ptrArrayType->Derivations())) return;
                 Cm.Ast.DerivationList derivations = ptrArrayType->Derivations();
                 derivations.RemoveLastPointer();
-                arrayType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(ptrArrayType->Derivations(), ptrArrayType->GetBaseType(), ptrArrayType->ArrayDimensions(), span);
+                arrayType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeDerivedType(derivations, ptrArrayType->GetBaseType(), ptrArrayType->ArrayDimensions(), span);
             }
             else
             {

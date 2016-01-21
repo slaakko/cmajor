@@ -229,10 +229,6 @@ namespace Cm.Bind
                 }
                 else
                 {
-                    if (templateTypeSymbol->Name() == "Pair<int, System.Handle>")
-                    {
-                        PrevBp.SetHit();
-                    }
                     Cm.Core.ConceptCheckError exception;
                     bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
                         exception);
