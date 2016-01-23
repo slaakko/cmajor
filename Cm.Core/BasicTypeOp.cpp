@@ -743,7 +743,7 @@ void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
         case ConversionInst::trunc: emitter.Emit(Cm::IrIntf::Trunc(sourceType->GetIrType(), to, from, targetType->GetIrType())); break;
         case ConversionInst::bitcast: 
         {
-            if (result.ArgByRef())
+            if (result.ArgByRef() && !sourceType->IsReferenceType())
             {
                 Ir::Intf::Type* pointerSourceType = Cm::IrIntf::Pointer(sourceType->GetIrType(), 1);
                 emitter.Own(pointerSourceType);

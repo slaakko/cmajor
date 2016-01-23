@@ -640,11 +640,11 @@ namespace Cm.Build
             string ext;
             if (backend == Cm.IrIntf.Backend.llvm)
             {
-                ext = ".ll";
+                ext = ".ll0";
             }
             else if (backend == Cm.IrIntf.Backend.c)
             {
-                ext = ".c";
+                ext = ".c0";
             }
             string fileName = Path.GetFileNameWithoutExtension(compileUnit->FilePath());
             string compileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, fileName) + ext);

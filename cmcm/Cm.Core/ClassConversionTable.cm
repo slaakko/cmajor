@@ -55,7 +55,14 @@ namespace Cm.Core
         {
             if (derivedClassDerivedType is Cm.Sym.ClassTypeSymbol*)
             {
-                derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+                if (baseClassDerivedType->IsReferenceType())
+                {
+                    derivedClassDerivedType = typeRepository.MakeReferenceType(derivedClassDerivedType, span);
+                }
+                else
+                {
+                    derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+                }
             }
             BaseDerivedPair key(baseClassDerivedType, derivedClassDerivedType);
             HashMap<BaseDerivedPair, Cm.Sym.FunctionSymbol*>.ConstIterator i = classConversionMap.CFind(key);

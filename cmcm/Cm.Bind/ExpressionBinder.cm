@@ -174,7 +174,11 @@ namespace Cm.Bind
             {
                 argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
             }
-            else
+            else if (paramType->IsReferenceType() && (argument->Type() is Cm.Sym.ClassTypeSymbol*))
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else            
             {
                 if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
                 {
