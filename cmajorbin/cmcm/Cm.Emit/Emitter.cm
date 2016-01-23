@@ -1,0 +1,45 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Emit
+{
+    public class Emitter : Cm.BoundTree.Visitor
+    {
+        public nothrow Emitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
+            Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) :
+            base(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), 
+            externalConstantRepository(externalConstantRepository_), irFile(irFilePath_), codeFormatter(irFile), currentClass(null), currentCompileUnit(null), enterFrameFun(null), leaveFrameFun(null),
+            enterTracedCallFun(null), leaveTracedCallFun(null), profile(false), nextTempTypedefNumber(0)
+        {
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+        private Cm.Core.IrFunctionRepository& irFunctionRepository;
+        private Cm.Core.IrClassTypeRepository& irClassTypeRepository;
+        private Cm.Core.StringRepository& stringRepository;
+        private Cm.Core.ExternalConstantRepository& externalConstantRepository;
+        private OutputFileStream irFile;
+        private CodeFormatter codeFormatter;
+        private Cm.BoundTree.BoundClass* currentClass;
+        private Cm.Ast.CompileUnitNode* currentCompileUnit;
+        private HashSet<string> internalFunctionNames;
+        private HashSet<Ir.Intf.Function*> externalFunctions;
+        private Cm.Sym.FunctionSymbol* enterFrameFun;
+        private Cm.Sym.FunctionSymbol* leaveFrameFun;
+        private Cm.Sym.FunctionSymbol* enterTracedCallFun;
+        private Cm.Sym.FunctionSymbol* leaveTracedCallFun;
+        private HashSet<Cm.Sym.ClassTypeSymbol*> processedClasses;
+        private bool profile;
+        private int nextTempTypedefNumber;
+    }
+}

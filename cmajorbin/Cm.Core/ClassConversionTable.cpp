@@ -33,7 +33,14 @@ Cm::Sym::FunctionSymbol* ClassConversionTable::MakeBaseClassDerivedClassConversi
 {
     if (derivedClassDerivedType->IsClassTypeSymbol())
     {
-        derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+        if (baseClassDerivedType->IsReferenceType())
+        {
+            derivedClassDerivedType = typeRepository.MakeReferenceType(derivedClassDerivedType, span);
+        }
+        else
+        {
+            derivedClassDerivedType = typeRepository.MakePointerType(derivedClassDerivedType, span);
+        }
     }
     BaseDerivedPair key(baseClassDerivedType, derivedClassDerivedType);
     ClassConversionMapIt i = classConversionMap.find(key);

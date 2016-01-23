@@ -739,8 +739,8 @@ namespace Cm.Core
                 case ConversionInst.zext: emitter.Emit(Cm.IrIntf.Zext(sourceType->IrType(), to, from, targetType->IrType())); break;
                 case ConversionInst.trunc: emitter.Emit(Cm.IrIntf.Trunc(sourceType->IrType(), to, from, targetType->IrType())); break;
                 case ConversionInst.bitcast: 
-                {
-                    if (result.ArgByRef())
+                {                     
+                    if (result.ArgByRef() && !sourceType->IsReferenceType())
                     {
                         Ir.Intf.Type* pointerSourceType = Cm.IrIntf.Pointer(sourceType->IrType(), 1u);
                         emitter.Own(pointerSourceType);

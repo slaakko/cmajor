@@ -205,6 +205,10 @@ Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* c
         {
             argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         }
+        else if (paramType->IsReferenceType() && argument->GetType()->IsClassTypeSymbol())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
         else
         {
             if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
