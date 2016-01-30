@@ -1261,8 +1261,22 @@ namespace Cm.Bind
                         templateArgument.GetPtr());
                     typeArguments.Add(templateArgumentType);
                 }
-                Cm.Sym.TypeSymbol* templateTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
-                stack.Push(new Cm.BoundTree.BoundTypeExpression(&templateIdNode, templateTypeSymbol));
+                if (subjectType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* subjectClassType = cast<Cm.Sym.ClassTypeSymbol*>(subjectType);
+                    int n = subjectClassType->TypeParameters().Count();
+                    int m = templateIdNode.TemplateArguments().Count();
+                    if (m < n)
+                    {
+                        boundCompileUnit.ClassTemplateRepository().ResolveDefaultTypeArguments(typeArguments, subjectClassType, containerScope, fileScopes, templateIdNode.GetSpan());
+                    }
+                    Cm.Sym.TypeSymbol* templateTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
+                    stack.Push(new Cm.BoundTree.BoundTypeExpression(&templateIdNode, templateTypeSymbol));
+                }
+                else
+                {
+                    throw Cm.Core.Error("class type expected", templateIdNode.GetSpan());
+                }
             }
             else
             {

@@ -382,6 +382,10 @@ namespace Llvm
         {
             return numPointers;
         }
+        public nothrow override bool IsPointerType() const
+        {
+            return true;
+        }
         private Ir.Intf.Type* baseType;
         private UniquePtr<Ir.Intf.Type> ownedBaseType;
         private byte numPointers;

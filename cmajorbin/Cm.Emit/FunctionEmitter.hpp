@@ -141,8 +141,8 @@ public:
     void Visit(Cm::BoundTree::BoundConjunction& boundConjunction) override;
     void Visit(Cm::BoundTree::BoundPostfixIncDecExpr& boundPostfixIncDecExpr) override;
     void BeginVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
-    void BackpatchNextTargets(Ir::Intf::LabelObject* label);
     void EndVisitStatement(Cm::BoundTree::BoundStatement& statement) override;
+    void BackpatchNextTargets(Ir::Intf::LabelObject* label);
     void BeginVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void EndVisit(Cm::BoundTree::BoundCompoundStatement& boundCompoundStatement) override;
     void Visit(Cm::BoundTree::BoundReceiveStatement& boundReceiveStatement) override;

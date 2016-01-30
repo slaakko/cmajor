@@ -343,6 +343,38 @@ namespace Cm.Bind
                 boundCompileUnit.RemoveLastFileScope();
             }
         }
+        public override void RetrieveMemberVariableLayoutIndecesFrom(const HashMap<string, Cm.Sym.ClassTypeSymbol*>& classTypeMap)
+        {
+            if (templateTypeSymbols.IsEmpty()) return;
+            HashMap<string, Cm.Sym.TemplateTypeSymbol*> templateTypeSymbolMap;
+            for (Cm.Sym.TemplateTypeSymbol* templateTypeSymbol : templateTypeSymbols)
+            {
+                templateTypeSymbolMap[templateTypeSymbol->FullName()] = templateTypeSymbol;
+            }
+            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : classTypeMap)
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                HashMap<string, Cm.Sym.TemplateTypeSymbol*>.ConstIterator i = templateTypeSymbolMap.CFind(classType->FullName());
+                if (i != templateTypeSymbolMap.CEnd())
+                {
+                    Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = i->second;
+                    HashMap<string, Cm.Sym.MemberVariableSymbol*> memberVariableMap;
+                    for (Cm.Sym.MemberVariableSymbol* memberVariable : templateTypeSymbol->MemberVariables())
+                    {
+                        memberVariableMap[memberVariable->FullName()] = memberVariable;
+                    }
+                    for (Cm.Sym.MemberVariableSymbol* classTypeMemberVariable : classType->MemberVariables())
+                    {
+                        HashMap<string, Cm.Sym.MemberVariableSymbol*>.ConstIterator j = memberVariableMap.CFind(classTypeMemberVariable->FullName());
+                        if (j != memberVariableMap.CEnd())
+                        {
+                            Cm.Sym.MemberVariableSymbol* memberVariable = j->second;
+                            memberVariable->SetLayoutIndex(classTypeMemberVariable->LayoutIndex());
+                        }
+                    }
+                }
+            }
+        }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private HashSet<Cm.Sym.TemplateTypeSymbol*> templateTypeSymbols;
         private HashSet<Cm.Sym.ClassTypeSymbol*> classTemplates;

@@ -731,7 +731,7 @@ int CFunctionEmitter::RetrievePrevDebugNodes()
     if (GenerateDebugInfo())
     {
         int debugNodeSetHandle = int(debugNodeSets.size());
-        debugNodeSets.push_back(std::move(functionDebugInfo->Cfg().RetrivePrevNodes()));
+        debugNodeSets.push_back(std::move(functionDebugInfo->Cfg().RetrievePrevNodes()));
         return debugNodeSetHandle;
     }
     return -1;

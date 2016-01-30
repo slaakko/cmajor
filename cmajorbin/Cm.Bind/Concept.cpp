@@ -22,13 +22,6 @@
 
 namespace Cm { namespace Bind {
 
-bool prevBpHit = false;
-
-void SetPrevBpHit()
-{
-    prevBpHit = true;
-}
-
 class ConstraintCheckStack
 {
 public:
@@ -692,10 +685,6 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
         }
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
-        if (groupName == "operator==" && prevBpHit)
-        {
-            int x = 0;
-        }
         functionSymbol = ResolveOverload(containerScope, *boundCompileUnit, groupName, resolutionArguments, functionLookups, functionConstraintNode.GetSpan(), conversions,
             OverloadResolutionFlags::nothrow | OverloadResolutionFlags::dontInstantiate);
     }

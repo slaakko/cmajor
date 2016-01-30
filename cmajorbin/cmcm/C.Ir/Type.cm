@@ -388,6 +388,14 @@ namespace C
                 return new ArrayType(itemType, size);
             }
         }
+        public override void GetFunctionPtrTypes(HashSet<Ir.Intf.Type*>& functionPtrTypes)
+        {
+            itemType->GetFunctionPtrTypes(functionPtrTypes);
+        }
+        public override void ReplaceFunctionPtrTypes(const HashMap<Ir.Intf.Type*, Ir.Intf.Type*>& tdfMap)
+        {
+            itemType->ReplaceFunctionPtrTypes(tdfMap);
+        }
         public nothrow inline int Size() const
         {
             return size;
@@ -472,6 +480,20 @@ namespace C
             }
             return new StructureType(tagName, clonedElementTypes, elementNames);
         }
+        public override void GetFunctionPtrTypes(HashSet<Ir.Intf.Type*>& functionPtrTypes)
+        {
+            for (const UniquePtr<Ir.Intf.Type>& elementType : elementTypes)
+            {
+                elementType->GetFunctionPtrTypes(functionPtrTypes);
+            }
+        }
+        public override void ReplaceFunctionPtrTypes(const HashMap<Ir.Intf.Type*, Ir.Intf.Type*>& tdfMap)
+        {
+            for (const UniquePtr<Ir.Intf.Type>& elementType : elementTypes)
+            {
+                elementType->ReplaceFunctionPtrTypes(tdfMap);
+            }
+        }
         private string tagName;
         private List<UniquePtr<Ir.Intf.Type>> elementTypes;
         private List<string> elementNames;
@@ -507,6 +529,25 @@ namespace C
         public nothrow override bool IsFunctionPtrPtrType() const
         {
             return (baseType is FunctionType*) && numPointers == 2u;
+        }
+        public nothrow override bool IsPointerType() const
+        {
+            return true;
+        }
+        public override void GetFunctionPtrTypes(HashSet<Ir.Intf.Type*>& functionPtrTypes)
+        {
+            if (baseType is FunctionType*)
+            {
+                functionPtrTypes.Insert(this);
+            }
+        }
+        public override void ReplaceFunctionPtrTypes(const HashMap<Ir.Intf.Type*, Ir.Intf.Type*>& tdfMap)
+        {
+            HashMap<Ir.Intf.Type*, Ir.Intf.Type*>.ConstIterator i = tdfMap.CFind(this);
+            if (i != tdfMap.CEnd())
+            {
+                SetName(i->second->BaseName());
+            }
         }
         public override Ir.Intf.Type* Clone() const
         {
@@ -686,6 +727,10 @@ namespace C
         public override Ir.Intf.Type* Clone() const
         {
             return new Typedef(baseName, type);
+        }
+        public override nothrow const string& BaseName() const
+        {
+            return baseName;
         }
         private string baseName;
         private Ir.Intf.Type* type;

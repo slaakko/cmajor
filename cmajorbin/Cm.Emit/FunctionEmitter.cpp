@@ -559,7 +559,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
         }
         std::shared_ptr<Cm::Core::GenResult> ptrResult = resultStack.Pop();
         Cm::Sym::TypeSymbol* type = boundMemberVariable.Symbol()->GetType();
-        Ir::Intf::MemberVar *memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult->MainObject());
+        Ir::Intf::MemberVar* memberVariableIrObject = irObjectRepository.MakeMemberVariableIrObject(&boundMemberVariable, ptrResult->MainObject());
         if (!ptrResult->MainObject()->GetType()->IsPointerType())
         {
             memberVariableIrObject->SetDotMember();
@@ -2761,6 +2761,7 @@ void FunctionEmitter::PushGenDebugInfo(bool generate)
 void FunctionEmitter::PopGenDebugInfo()
 {
     generateDebugInfo = generateDebugInfoStack.top();
+    generateDebugInfoStack.pop(); // pop added
 }
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement) 

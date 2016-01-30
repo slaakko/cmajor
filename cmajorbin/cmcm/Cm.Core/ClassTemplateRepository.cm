@@ -25,5 +25,6 @@ namespace Cm.Core
         public abstract void InstantiateVirtualFunctionsFor(Cm.Sym.ContainerScope* containerScope, Cm.Sym.ClassTypeSymbol* templateTypeSymbol);
         public abstract void ResolveDefaultTypeArguments(List<Cm.Sym.TypeSymbol*>& typeArguments, Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
             const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, const Span& span);
+        public abstract void RetrieveMemberVariableLayoutIndecesFrom(const HashMap<string, Cm.Sym.ClassTypeSymbol*>& classTypeMap);
     }
 }

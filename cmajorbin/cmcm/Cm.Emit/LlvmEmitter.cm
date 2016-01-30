@@ -1,0 +1,111 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Emit
+{
+    public nothrow string Unquote(const string& s)
+    {
+        string t;
+        for (char c : s)
+        {
+            if (c != '"')
+            {
+                t.Append(c);
+            }
+        }
+        return t;
+    }
+    
+    public class LlvmEmitter : Emitter
+    {
+        public nothrow LlvmEmitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
+            Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) : 
+            base(irFilePath_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_)
+        {
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
+        {
+            base->BeginVisit(compileUnit);
+            funFilePath = GetFullPath(Path.ChangeExtension(compileUnit.IrFilePath(), ".fun"));
+            funFile.Open(funFilePath);
+        }
+        public override void EndVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
+        {
+            IrClassTypeRepository().Write(GetCodeFormatter(), ExternalFunctions(), IrFunctionRepository(), List<Ir.Intf.Type*>());
+            for (Ir.Intf.Function* function : ExternalFunctions())
+            {
+                if (InternalFunctionNames().CFind(function->Name()) == InternalFunctionNames().CEnd())
+                {
+                    function->WriteDeclaration(GetCodeFormatter(), false, false);
+                }
+            }
+            staticMemberVariableRepository.Write(GetCodeFormatter());
+            ExternalConstantRepository().Write(GetCodeFormatter());
+            funFile.Close();
+            string funFileContent = ReadFile(funFilePath);
+            GetCodeFormatter().WriteLine(funFileContent);
+            RemoveFile(funFilePath);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundClass& boundClass)
+        {
+            SetCurrentClass(&boundClass);
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = boundClass.Symbol();
+            if (ProcessedClasses().CFind(classTypeSymbol) != ProcessedClasses().CEnd()) return;
+            ProcessedClasses().Insert(classTypeSymbol);
+            for (Cm.Sym.MemberVariableSymbol* staticMemberVariableSymbol : classTypeSymbol->StaticMemberVariables())
+            {
+                staticMemberVariableRepository.Add(staticMemberVariableSymbol);
+            }
+            if (classTypeSymbol->InitializedVar() != null)
+            {
+                staticMemberVariableRepository.Add(classTypeSymbol->InitializedVar());
+            }
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundFunction& boundFunction)
+        {
+            if (boundFunction.FunctionSymbol()->IsExternal()) return;
+            CodeFormatter funFormatter(funFile);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.fullConfig))
+            {
+                if (generatedFunctions.CFind(boundFunction.FunctionSymbol()->FullName()) != generatedFunctions.CEnd()) return;
+            }
+            generatedFunctions.Insert(boundFunction.FunctionSymbol()->FullName());
+            LlvmFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), ExternalFunctions(),
+                staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), Profile());
+            boundFunction.Accept(functionEmitter);
+        }
+        public override void WriteCompileUnitHeader(CodeFormatter& codeFormatter)
+        {
+            string targetTriple = Unquote(Cm.Core.GlobalSettings.Instance().TargetTriple());
+            if (!targetTriple.IsEmpty())
+            {
+                codeFormatter.WriteLine("target triple = \"" + targetTriple + "\"");
+            }
+            string dataLayout = Unquote(Cm.Core.GlobalSettings.Instance().DataLayout());
+            if (!dataLayout.IsEmpty())
+            {
+                codeFormatter.WriteLine("target datalayout = \"" + dataLayout + "\"");
+            }
+            codeFormatter.WriteLine("%rtti = type { i8*, i64 }");
+        }
+        public override Cm.Core.StaticMemberVariableRepository& GetStaticMemberVariableRepository()
+        {
+            return staticMemberVariableRepository;
+        }
+        private string funFilePath;
+        private OutputFileStream funFile;
+        private Cm.Core.LlvmStaticMemberVariableRepository staticMemberVariableRepository;
+        private HashSet<string> generatedFunctions;
+    }
+}

@@ -26,7 +26,7 @@ namespace Cm.Core
         {
             classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
         }
-        public abstract void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
+        public abstract void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs);
         public abstract void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter);
         public abstract void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
         public abstract void WriteDestructionNodeDef(CodeFormatter& codeFormatter);
@@ -63,7 +63,7 @@ namespace Cm.Core
     
     public class LlvmIrClassTypeRepository : IrClassTypeRepository
     {
-        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs)
         {
             WriteDestructionNodeDef(codeFormatter);
             for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
@@ -283,7 +283,7 @@ namespace Cm.Core
     
     public class CIrClassTypeRepository : IrClassTypeRepository
     {
-        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs)
         {
             WriteDestructionNodeDef(codeFormatter);
             HashMap<string, Cm.Sym.ClassTypeSymbol*> classMap;
@@ -329,6 +329,10 @@ namespace Cm.Core
             for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
             {
                 WriteIrLayout(classType, codeFormatter);
+            }
+            for (Ir.Intf.Type* tdf : tdfs)
+            {
+                codeFormatter.WriteLine(tdf->Name() + ";");
             }
             for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
             {

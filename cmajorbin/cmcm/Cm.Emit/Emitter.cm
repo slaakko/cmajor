@@ -14,7 +14,7 @@ using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Emit
 {
-    public class Emitter : Cm.BoundTree.Visitor
+    public abstract class Emitter : Cm.BoundTree.Visitor
     {
         public nothrow Emitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
             Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) :
@@ -22,6 +22,109 @@ namespace Cm.Emit
             externalConstantRepository(externalConstantRepository_), irFile(irFilePath_), codeFormatter(irFile), currentClass(null), currentCompileUnit(null), enterFrameFun(null), leaveFrameFun(null),
             enterTracedCallFun(null), leaveTracedCallFun(null), profile(false), nextTempTypedefNumber(0)
         {
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
+        {
+            WriteCompileUnitHeader(codeFormatter);
+            stringRepository.Write(codeFormatter);
+            irClassTypeRepository.SetLayoutIndeces();
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.fullConfig))
+            {
+                compileUnit.ClassTemplateRepository().RetrieveMemberVariableLayoutIndecesFrom(irClassTypeRepository.ClassTypeMap());
+                Cm.Core.StaticMemberVariableRepository& staticMemberVariableRepository = GetStaticMemberVariableRepository();
+                staticMemberVariableRepository.SetClassTypeMap(&irClassTypeRepository.ClassTypeMap());
+            }
+            currentCompileUnit = compileUnit.SyntaxUnit();
+            enterFrameFun = compileUnit.SymbolTable().GetOverload("enter_frame");
+            leaveFrameFun = compileUnit.SymbolTable().GetOverload("leave_frame");
+            enterTracedCallFun = compileUnit.SymbolTable().GetOverload("enter_traced_call");
+            leaveTracedCallFun = compileUnit.SymbolTable().GetOverload("leave_traced_call");
+            if (!compileUnit.IsMainUnit() && Cm.Core.GetConfig() == "profile")
+            {
+                profile = true;
+            }
+        }
+        public abstract void WriteCompileUnitHeader(CodeFormatter& codeFormatter);
+        public abstract Cm.Core.StaticMemberVariableRepository& GetStaticMemberVariableRepository();
+        protected const HashSet<Ir.Intf.Function*>& ExternalFunctions() const
+        {
+            return externalFunctions;
+        }
+        protected HashSet<Ir.Intf.Function*>& ExternalFunctions()
+        {
+            return externalFunctions;
+        }
+        protected const HashSet<string>& InternalFunctionNames() const
+        {
+            return internalFunctionNames;
+        }
+        protected HashSet<string>& InternalFunctionNames()
+        {
+            return internalFunctionNames;
+        }
+        protected CodeFormatter& GetCodeFormatter()
+        {
+            return codeFormatter;
+        }
+        protected Cm.Core.ExternalConstantRepository& ExternalConstantRepository()
+        {
+            return externalConstantRepository;
+        }
+        protected Cm.BoundTree.BoundClass* CurrentClass()
+        {
+            return currentClass;
+        }
+        protected void SetCurrentClass(Cm.BoundTree.BoundClass* currentClass_)
+        {
+            currentClass = currentClass_;
+        }
+        protected const HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses() const
+        {
+            return processedClasses;
+        }
+        protected HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses()
+        {
+            return processedClasses;
+        }
+        protected Cm.Sym.TypeRepository& TypeRepository()
+        {
+            return typeRepository;
+        }
+        protected Cm.Core.IrFunctionRepository& IrFunctionRepository()
+        {
+            return irFunctionRepository;
+        }
+        protected Cm.Core.IrClassTypeRepository& IrClassTypeRepository()
+        {
+            return irClassTypeRepository;
+        }
+        protected Cm.Core.StringRepository& StringRepository()
+        {
+            return stringRepository;
+        }
+        protected Cm.Ast.CompileUnitNode* CurrentCompileUnit()
+        {
+            return currentCompileUnit;
+        }
+        protected Cm.Sym.FunctionSymbol* EnterFrameFun()
+        {
+            return enterFrameFun;
+        }
+        protected Cm.Sym.FunctionSymbol* LeaveFrameFun()
+        {
+            return leaveFrameFun;
+        }
+        protected Cm.Sym.FunctionSymbol* EnterTracedCallFun()
+        {
+            return enterTracedCallFun;
+        }
+        protected Cm.Sym.FunctionSymbol* LeaveTracedCallFun()
+        {
+            return leaveTracedCallFun;
+        }
+        protected bool Profile() const
+        {
+            return profile;
         }
         private Cm.Sym.TypeRepository& typeRepository;
         private Cm.Core.IrFunctionRepository& irFunctionRepository;

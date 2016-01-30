@@ -1807,11 +1807,6 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroupSymbol->GetContainerScope()));
         functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
     }
-    if (currentFunction->GetFunctionSymbol()->GroupName() == "ToString" && functionGroupSymbol->Name() == "Reverse")
-    {
-        SetPrevBpHit();
-        int x = 0;
-    }
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroupSymbol->Name(), resolutionArguments, functionLookups, node->GetSpan(), conversions, 
         Cm::Sym::ConversionType::implicit, boundTemplateArguments, OverloadResolutionFlags::nothrow, bestMatch, exception);
     if (fun)
@@ -2535,8 +2530,22 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
                 templateArgument.get());
             typeArguments.push_back(templateArgumentType);
         }
-        Cm::Sym::TypeSymbol* templateTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
-        boundExpressionStack.Push(new Cm::BoundTree::BoundTypeExpression(&templateIdNode, templateTypeSymbol));
+        if (subjectType->IsClassTypeSymbol())
+        {
+            Cm::Sym::ClassTypeSymbol* subjectClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectType);
+            int n = int(subjectClassType->TypeParameters().size());
+            int m = int(templateIdNode.TemplateArguments().Count());
+            if (m < n)
+            {
+                boundCompileUnit.ClassTemplateRepository().ResolveDefaultTypeArguments(typeArguments, subjectClassType, containerScope, fileScopes, templateIdNode.GetSpan());
+            }
+            Cm::Sym::TypeSymbol* templateTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().MakeTemplateType(subjectType, typeArguments, templateIdNode.GetSpan());
+            boundExpressionStack.Push(new Cm::BoundTree::BoundTypeExpression(&templateIdNode, templateTypeSymbol));
+        }
+        else
+        {
+            throw Cm::Core::Exception("class type expected", templateIdNode.GetSpan());
+        }
     }
     else
     {
