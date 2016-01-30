@@ -415,7 +415,7 @@ void ControlFlowGraph::PatchPrevNodes(CfgNode* nextNode)
     prevNodes.clear();
 }
 
-std::unordered_set<CfgNode*> ControlFlowGraph::RetrivePrevNodes()
+std::unordered_set<CfgNode*> ControlFlowGraph::RetrievePrevNodes()
 {
     std::unordered_set<CfgNode*> copy = std::move(prevNodes);
     prevNodes.clear();

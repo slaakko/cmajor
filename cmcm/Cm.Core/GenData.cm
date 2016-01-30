@@ -43,6 +43,11 @@ namespace Cm.Core
         flags = cast<GenFlags>(flags | flag);
     }
     
+    public nothrow inline void ResetFlag(GenFlags& flags, GenFlags flag)
+    {
+        flags = cast<GenFlags>(flags & ~flag);
+    }
+    
     public class GenData
     {
         public nothrow GenData() : label(null)

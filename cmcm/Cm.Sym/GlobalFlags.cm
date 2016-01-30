@@ -24,7 +24,9 @@ namespace Cm.Sym
         unit_test = 1u << 7u,
         generate_debug_info = 1u << 8u,
         generate_docs = 1u << 9u,
-        no_call_stacks = 1u << 10u
+        no_call_stacks = 1u << 10u,
+        fullConfig = 1u << 11u,
+        debugVCalls = 1u << 12u
     }
     
     public class GlobalFlagsHolder

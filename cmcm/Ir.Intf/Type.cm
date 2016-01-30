@@ -8,6 +8,7 @@
 ========================================================================*/
 
 using System;
+using System.Collections;
 
 namespace Ir.Intf
 {
@@ -28,6 +29,10 @@ namespace Ir.Intf
         {
             name = name_;
         }
+        public virtual nothrow bool IsPointerType() const
+        {
+            return false;
+        }
         public virtual nothrow bool IsFunctionPointerType() const
         {
             return false;
@@ -35,6 +40,12 @@ namespace Ir.Intf
         public virtual nothrow bool IsFunctionPtrPtrType() const
         {
             return false;
+        }
+        public virtual void GetFunctionPtrTypes(HashSet<Type*>& functionPtrTypes)
+        {
+        }
+        public virtual void ReplaceFunctionPtrTypes(const HashMap<Type*, Type*>& tdfMap)
+        {
         }
         public virtual nothrow string Prefix() const
         {
@@ -71,6 +82,10 @@ namespace Ir.Intf
         public nothrow inline void SetOwned()
         {
             owned = true;
+        }
+        public nothrow virtual const string& BaseName() const
+        {
+            return name;
         }
         private string name;
         private bool owned;

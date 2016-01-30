@@ -9,9 +9,63 @@
 
 using System;
 using System.Collections;
+using Span = System.Text.Parsing.Span;
+using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Core
 {
+    public class SourceFileLine
+    {
+        public nothrow SourceFileLine() : sourceFilePath(), sourceLineNumber(0)
+        {
+        }
+        public nothrow SourceFileLine(const string& sourceFilePath_, int sourceLineNumber_) : sourceFilePath(sourceFilePath_), sourceLineNumber(sourceLineNumber_)
+        {
+        }
+        public nothrow inline bool IsEmpty() const
+        {
+            return sourceLineNumber == 0;
+        }
+        public nothrow inline const string& SourceFilePath() const
+        {
+            return sourceFilePath;
+        }
+        public nothrow inline int SourceLineNumber() const
+        {
+            return sourceLineNumber;
+        }
+        public nothrow inline void SetSourceFilePath(const string& sourceFilePath_)
+        {
+            sourceFilePath = sourceFilePath_;
+        }
+        public nothrow inline void SetSourceLineNumber(int sourceLineNumber_)
+        {
+            sourceLineNumber = sourceLineNumber_;
+        }
+        public string ToString() const
+        {
+            string s;
+            s.Append(sourceFilePath).Append(":").Append(ToString(sourceLineNumber));
+            return s;
+        }
+        private string sourceFilePath;
+        private int sourceLineNumber;
+    }
+    
+    public nothrow inline bool operator==(const SourceFileLine& left, const SourceFileLine& right)
+    {
+        return left.SourceFilePath() == right.SourceFilePath() && left.SourceLineNumber() == right.SourceLineNumber();
+    }
+    
+    public nothrow inline bool operator<(const SourceFileLine& left, const SourceFileLine& right)
+    {
+        if (left.SourceFilePath() < right.SourceFilePath()) return true;
+        if (left.SourceFilePath() > right.SourceFilePath()) return false;
+        if (left.SourceLineNumber() < right.SourceLineNumber()) return true;
+        if (left.SourceLineNumber() > right.SourceLineNumber()) return false;
+        return false;
+    }
+    
     public class SourceSpan
     {
         public nothrow SourceSpan() : line(0), startCol(0), endCol(0)
@@ -36,19 +90,435 @@ namespace Cm.Core
         {
             return line == 0 && startCol == 0 && endCol == 0;
         }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            line  = reader.ReadInt();
+            startCol = reader.ReadInt();
+            endCol = reader.ReadInt();
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(line);
+            writer.Write(startCol);
+            writer.Write(endCol);
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("span: " + ToString(line) + ":" + ToString(startCol) + ":" + ToString(endCol) + ";");
+        }
         private int line;
         private int startCol;
         private int endCol;
     }
     
+    public const char* LineStart(const char* start, const char* pos)
+    {
+        while (pos > start && *pos != '\n')
+        {
+            --pos;
+        }
+        if (*pos == '\n')
+        {
+            ++pos;
+        }
+        return pos;
+    }
+    
+    public const char* LineEnd(const char* end, const char* pos)
+    {
+        while (pos < end && *pos != '\n' && *pos != '\r')
+        {
+            ++pos;
+        }
+        return pos;
+    }
+    
+    public SourceSpan FromSpan(const char* start, const char* end, const Span& span)
+    {
+        if (span.IsNull())
+        {
+            return SourceSpan(0, 0, 0);
+        }
+        const char* s = start + span.Start();
+        if (s < start || s > end) return SourceSpan();
+        const char* e = start + span.End();
+        if (e < start || e > end) return SourceSpan();
+        const char* lineStart = LineStart(start, s);
+        const char* lineEnd = LineEnd(end, s);
+        if (e > lineEnd)
+        {
+            e = lineEnd;
+        }
+        int startCol = (s - lineStart) + 1;
+        int endCol = (e - lineStart) + 1;
+        return SourceSpan(span.LineNumber(), startCol, endCol);
+    }
+    
+    public class Local
+    {
+        public nothrow Local() : name(), irName(), typeName(), defNode(-1)
+        {
+        }
+        public nothrow Local(const string& name_, const string& irName_, const string& typeName_, int defNode_) : name(name_), irName(irName_), typeName(typeName_), defNode(defNode_)
+        {
+        }
+        public nothrow inline const string& Name() const
+        {
+            return name;
+        }
+        public nothrow inline const string& IrName() const
+        {
+            return irName;
+        }
+        public nothrow inline const string& TypeName() const
+        {
+            return typeName;
+        }
+        public nothrow inline int DefNode() const
+        {
+            return defNode;
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            name = reader.ReadString();
+            irName = reader.ReadString();
+            typeName = reader.ReadString();
+            defNode = reader.ReadInt();
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(name);
+            writer.Write(irName);
+            writer.Write(typeName);
+            writer.Write(defNode);
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine(name + ":" + irName + ":" + typeName + ":" + ToString(defNode));
+        }
+        private string name;
+        private string irName;
+        private string typeName;
+        private int defNode;
+    }
+    
+    public class LocalSection
+    {
+        public void AddLocal(Local* local)
+        {
+            locals.Add(UniquePtr<Local>(local));
+            localMap[local->Name()] = local;
+        }
+        public Local* GetLocal(const string& localName) const
+        {
+            HashMap<string, Local*>.ConstIterator i = localMap.CFind(localName);
+            if (i != localMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            int n = reader.ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                Local* local = new Local();
+                local->Read(reader);
+                AddLocal(local);
+            }
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            int n = locals.Count();
+            writer.Write(n);
+            for (int i = 0; i < n; ++i)
+            {
+                const UniquePtr<Local>& local = locals[i];
+                local->Write(writer);
+            }
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("locals:");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (const UniquePtr<Local>& local : locals)
+            {
+                local->Dump(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        private HashMap<string, Local*> localMap;
+        private List<UniquePtr<Local>> locals;
+    }
+    
     public class CFunctionDebugInfo
     {
-        // todo
+        public nothrow CFunctionDebugInfo() : isMain(false), isUnique(false), file(null)
+        {
+        }
+        public nothrow CFunctionDebugInfo(const string& mangledFunctionName_) : mangledFunctionName(mangledFunctionName_), isMain(false), isUnique(false), file(null)
+        {
+        }
+        public nothrow inline const string& MangledFunctionName() const
+        {
+            return mangledFunctionName;
+        }
+        public nothrow inline bool IsMain() const
+        {
+            return isMain;
+        }
+        public nothrow inline void SetMain()
+        {
+            isMain = true;
+        }
+        public nothrow inline bool IsUnique() const
+        {
+            return isUnique;
+        }
+        public nothrow inline void SetUnique()
+        {
+            isUnique = true;
+        }
+        public nothrow inline void SetFunctionDisplayName(const string& functionDisplayName_)
+        {
+            functionDisplayName = functionDisplayName_;
+        }
+        public nothrow inline const string& FunctionDisplayName() const
+        {
+            return functionDisplayName;
+        }
+        public nothrow inline ControlFlowGraph& Cfg() 
+        {
+            return cfg;
+        }
+        public nothrow inline LocalSection& Locals() 
+        {
+            return locals;
+        }
+        public nothrow inline void SetSourceFilePath(const string& sourceFilePath_)
+        {
+            sourceFilePath = sourceFilePath_;
+        }
+        public nothrow inline const string& SourceFilePath() const
+        {
+            return sourceFilePath;
+        }
+        public nothrow inline void SetCFilePath(const string& cFilePath_)
+        {
+            cFilePath = cFilePath_;
+        }
+        public nothrow inline const string& CFilePath() const
+        {
+            return cFilePath;
+        }
+        public void FixCLines(int offset)
+        {
+            cfg.FixCLines(offset);
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            mangledFunctionName = reader.ReadString();
+            isMain = reader.ReadBool();
+            isUnique = reader.ReadBool();
+            functionDisplayName = reader.ReadString();
+            cfg.Read(reader);
+            sourceFilePath = reader.ReadString();
+            cFilePath = reader.ReadString();
+            locals.Read(reader);
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(mangledFunctionName);
+            writer.Write(isMain);
+            writer.Write(isUnique);
+            writer.Write(functionDisplayName);
+            cfg.Write(writer);
+            writer.Write(sourceFilePath);
+            writer.Write(cFilePath);
+            locals.Write(writer);
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine(mangledFunctionName);
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            string isMainStr = "false";
+            if (isMain)
+            {
+                isMainStr = "true";
+            }
+            string isUniqueStr = "false";
+            if (isUnique)
+            {
+                isUniqueStr = "true";
+            }
+            formatter.WriteLine("main: " + isMainStr + ";");
+            formatter.WriteLine("unique: " + isUniqueStr + ";");
+            formatter.WriteLine("display name: " + functionDisplayName + ";");
+            formatter.WriteLine("source file path: " + sourceFilePath + ";");
+            formatter.WriteLine("C file path: " + cFilePath + ";");
+            cfg.Dump(formatter);
+            locals.Dump(formatter);
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public inline nothrow CDebugInfoFile* File() const
+        {
+            return file;
+        }
+        public inline nothrow void SetFile(CDebugInfoFile* file_)
+        {
+            file = file_;
+        }
+        public CfgNode* Entry() const
+        {
+            if (cfg.IsEmpty())
+            {
+                throw Exception("cfg for function '" + mangledFunctionName + "' is empty");
+            }
+            return cfg.GetNode(0);
+        }
+        private string mangledFunctionName;
+        private bool isMain;
+        private bool isUnique;
+        private string functionDisplayName;
+        private ControlFlowGraph cfg;
+        private string sourceFilePath;
+        private string cFilePath;
+        private LocalSection locals;
+        private CDebugInfoFile* file;
+    }
+    
+    public class CFunCall : Ir.Intf.CDebugNode
+    {
+        public nothrow CFunCall() : funNames(), cLine(0), cfgNode(null), index(-1)
+        {
+        }
+        public nothrow CFunCall(const List<string>& funNames_) : funNames(funNames_), cLine(0), cfgNode(null), index(-1)
+        {
+        }
+        public nothrow inline const List<string>& FunNames() const
+        {
+            return funNames;
+        }
+        public nothrow inline int ReturnCLine() const
+        {
+            return cLine;
+        }
+        public nothrow inline int CallCLine() const
+        {
+            return cLine - 1;
+        }
+        public override nothrow void SetCLine(int cLine_)
+        {
+            cLine = cLine_;
+        }
+        public void FixCLines(int offset)
+        {
+            cLine = cLine + offset;
+        }
+        public nothrow inline CfgNode* Node() const
+        {
+            return cfgNode;
+        }
+        public nothrow inline void SetNode(CfgNode* node)
+        {
+            cfgNode = node;
+        }
+        public nothrow inline int Index() const
+        {
+            return index;
+        }
+        public nothrow inline void SetIndex(int index_)
+        {
+            index = index_;
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            int numFunNames = reader.ReadInt();
+            for (int i = 0; i < numFunNames; ++i)
+            {
+                string funName = reader.ReadString();
+                funNames.Add(funName);
+            }
+            cLine = reader.ReadInt();
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            int numFunNames = funNames.Count();
+            writer.Write(numFunNames);
+            for (const string& funName : funNames)
+            {
+                writer.Write(funName);
+            }
+            writer.Write(cLine);
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            for (const string& funName : funNames)
+            {
+                formatter.WriteLine(funName + ";");
+            }
+            formatter.WriteLine("cline: " + ToString(cLine) + ";");
+        }
+        public SourceFileLine GetCallCFileLine() const
+        {
+            if (cfgNode == null)
+            {
+                throw Exception("cfg node of function call not set");
+            }
+            CFunctionDebugInfo* function = cfgNode->Function();
+            if (function == null)
+            {
+                throw Exception("function debug info of cfg node not set");
+            }
+            return SourceFileLine(function->CFilePath(), cLine - 1);
+        }
+        public SourceFileLine GetReturnCFileLine() const
+        {
+            if (cfgNode == null)
+            {
+                throw Exception("cfg node of function call not set");
+            }
+            CFunctionDebugInfo* function = cfgNode->Function();
+            if (function == null)
+            {
+                throw Exception("function debug info of cfg node not set");
+            }
+            return SourceFileLine(function->CFilePath(), cLine);
+        }
+        public bool IsLastCall() const
+        {
+            if (cfgNode == null)
+            {
+                throw Exception("cfg node of function call not set");
+            }
+            return index >= cfgNode->CFunCalls().Count() - 1;
+        }
+        private List<string> funNames;
+        private int cLine;
+        private CfgNode* cfgNode;
+        private int index;
     }
     
     public enum CfgNodeKind : byte
     {
         regularNode, exitNode, throwNode, catchNode
+    }
+    
+    public nothrow const char* CfgNodeKindStr(CfgNodeKind nodeKind)
+    {
+        switch (nodeKind)
+        {
+            case CfgNodeKind.regularNode: return "regular";
+            case CfgNodeKind.exitNode: return "exit";
+            case CfgNodeKind.throwNode: return "throw";
+            case CfgNodeKind.catchNode: return "catch";
+        }
+        return "";
     }
     
     public class CfgNode : Ir.Intf.CDebugNode
@@ -91,11 +561,547 @@ namespace Cm.Core
         {
             next.Insert(nextNodeId);
         }
+        public inline nothrow const List<UniquePtr<CFunCall>>& CFunCalls() const
+        {
+            return cFunCalls;
+        }
+        public void AddCFunCall(CFunCall* cFunCall)
+        {
+            cFunCalls.Add(UniquePtr<CFunCall>(cFunCall));
+        }
+        public nothrow inline CFunCall* GetCFunCall(int index) const
+        {
+            return cFunCalls[index].GetPtr();
+        }
+        public nothrow inline CFunctionDebugInfo* Function() const
+        {
+            return function;
+        }
+        public nothrow inline void SetFunction(CFunctionDebugInfo* function_)
+        {
+            function = function_;
+        }
+        public void FixCLines(int offset)
+        {
+            cLine = cLine + offset;
+            for (const UniquePtr<CFunCall>& cFunCall : cFunCalls)
+            {
+                cFunCall->FixCLines(offset);
+            }
+        }
+        public SourceFileLine GetCFileLine() const
+        {
+            if (function == null)
+            {
+                throw Exception("cfg node function not set");
+            }
+            return SourceFileLine(function->CFilePath(), cLine);
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            id = reader.ReadInt();
+            sourceSpan.Read(reader);
+            cLine = reader.ReadInt();
+            int nNext = reader.ReadInt();
+            for (int i = 0; i < nNext; ++i)
+            {
+                int id = reader.ReadInt();
+                next.Insert(id);
+            }
+            int nFunCalls = reader.ReadInt();
+            for (int i = 0; i < nFunCalls; ++i)
+            {
+                CFunCall* cFunCall = new CFunCall();
+                cFunCall->Read(reader);
+                AddCFunCall(cFunCall);
+            }
+            kind  = cast<CfgNodeKind>(reader.ReadByte());
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(id);
+            sourceSpan.Write(writer);
+            writer.Write(cLine);
+            int nNext = next.Count();
+            writer.Write(nNext);
+            for (int id : next)
+            {
+                writer.Write(id);
+            }
+            int nFunCalls = cFunCalls.Count();
+            writer.Write(nFunCalls);
+            for (const UniquePtr<CFunCall>& cFunCall : cFunCalls)
+            {
+                cFunCall->Write(writer);
+            }
+            writer.Write(cast<byte>(kind));
+        }    
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.Write("node " + ToString(id));
+            if (!next.IsEmpty())
+            {
+                formatter.Write(": ");
+                bool first = true;
+                for (int nextId : next)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        formatter.Write(", ");
+                    }
+                    formatter.Write(ToString(nextId));
+                }
+            }
+            formatter.WriteLine(";");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            sourceSpan.Dump(formatter);
+            formatter.WriteLine("cline: " + ToString(cLine));
+            formatter.WriteLine("calls:");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            int n = cFunCalls.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                CFunCall* cFunCall = GetCFunCall(i);
+                formatter.WriteLine("call " + ToString(i) + ":");
+                formatter.WriteLine("{");
+                formatter.IncIndent();
+                cFunCall->Dump(formatter);
+                formatter.DecIndent();
+                formatter.WriteLine("}");
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+            formatter.WriteLine("kind: " + string(CfgNodeKindStr(kind)) + ";");
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
         private int id;
         private SourceSpan sourceSpan;
         private int cLine;
         private CfgNodeKind kind;
         private HashSet<int> next;
+        private List<UniquePtr<CFunCall>> cFunCalls;
         private CFunctionDebugInfo* function;
+    }
+    
+    public bool Found(const ControlFlowGraph& cfg, const HashSet<int>& nodeIds, int nodeId, HashSet<int>& s, HashSet<int>& checked)
+    {
+        if (nodeIds.CFind(nodeId) != nodeIds.CEnd())
+        {
+            s.Insert(nodeId);
+            return true;
+        }
+        for (int next : nodeIds)
+        {
+            if (checked.CFind(next) != checked.CEnd()) continue;
+            checked.Insert(next);
+            CfgNode* nextNode = cfg.GetNode(next);
+            if (Found(cfg, nextNode->Next(), nodeId, s, checked))
+            {
+                s.Insert(nextNode->Id());
+                for (int n : nextNode->Next())
+                {
+                    s.Insert(n);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public class ControlFlowGraph
+    {
+        public CfgNode* CreateNode(const Span& span, const char* start, const char* end)
+        {
+            int id = nodes.Count();
+            CfgNode* node = new CfgNode(id, FromSpan(start, end, span));
+            nodes.Add(UniquePtr<CfgNode>(node));
+            return node;
+        }
+        public nothrow inline const List<UniquePtr<CfgNode>>& Nodes() const
+        {
+            return nodes;
+        }
+        public void AddNode(CfgNode* node)
+        {
+            nodes.Add(UniquePtr<CfgNode>(node));
+        }
+        public CfgNode* GetNode(int nodeId) const
+        {
+            return nodes[nodeId].GetPtr();
+        }
+        public CfgNode* FindNode(int sourceLineNumber) const
+        {
+            for (const UniquePtr<CfgNode>& node : nodes)
+            {
+                if (node->GetSourceSpan().Line() == sourceLineNumber) return node.GetPtr();
+            }
+            return null;
+        }
+        public HashSet<int> GetNodeSetIncluding(int nodeId) const
+        {
+            HashSet<int> nodeIds;
+            HashSet<int> checked;
+            nodeIds.Insert(0);
+            if (nodes.IsEmpty())
+            {
+                throw Exception("nodes empty");
+            }
+            CfgNode* first = nodes[0].GetPtr();
+            if (Found(*this, first->Next(), nodeId, nodeIds, checked))
+            {
+                return nodeIds;
+            }
+            return nodeIds;
+        }
+        public void AddToPrevNodes(CfgNode* node)
+        {
+            prevNodes.Insert(node);
+        }
+        public void AddToPrevNodes(HashSet<CfgNode*>& nodes)
+        {
+            for (CfgNode* node : nodes)
+            {
+                AddToPrevNodes(node);
+            }
+        }
+        public void PatchPrevNodes(CfgNode* nextNode)
+        {
+            for (CfgNode* prevNode : prevNodes)
+            {
+                prevNode->AddNext(nextNode->Id());
+            }
+            prevNodes.Clear();
+        }
+        public HashSet<CfgNode*> RetrievePrevNodes()
+        {
+            HashSet<CfgNode*> moved = Rvalue(prevNodes);
+            prevNodes.Clear();
+            return moved;
+        }
+        public void Patch(HashSet<CfgNode*>& set, CfgNode* nextNode)
+        {
+            for (CfgNode* prevNode : set)
+            {
+                prevNode->AddNext(nextNode->Id());
+            }
+        }
+        public void FixCLines(int offset)
+        {
+            for (const UniquePtr<CfgNode>& node : nodes)
+            {
+                node->FixCLines(offset);
+            }
+        }
+        public nothrow inline bool IsEmpty() const
+        {
+            return nodes.IsEmpty();
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            int n = reader.ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                CfgNode* node = new CfgNode();
+                node->Read(reader);
+                AddNode(node);
+            }
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            int n = nodes.Count();
+            writer.Write(n);
+            for (const UniquePtr<CfgNode>& node : nodes)
+            {
+                node->Write(writer);
+            }
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("cfg:");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (const UniquePtr<CfgNode>& node : nodes)
+            {
+                node->Dump(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        public nothrow inline const HashSet<CfgNode*>& Exits() const
+        {
+            return exits;
+        }
+        public void AddExit(CfgNode* exitNode)
+        {
+            exits.Insert(exitNode);
+        }
+        private List<UniquePtr<CfgNode>> nodes;
+        private HashSet<CfgNode*> prevNodes;
+        private HashSet<CfgNode*> exits;
+    }
+    
+    public enum ClassDebugInfoFlags : byte
+    {
+        none = 0u, 
+        isVirtual = 1u << 0u, 
+        hasVptr = 1u << 1u
+    }
+    
+    public class MemberVariableDebugInfo
+    {
+        public nothrow MemberVariableDebugInfo() : memberVarName(), memberVarTypeName()
+        {
+        }
+        public nothrow MemberVariableDebugInfo(const string& memberVarName_, const string& memberVarTypeName_) : memberVarName(memberVarName_), memberVarTypeName(memberVarTypeName_)
+        {
+        }
+        public nothrow inline const string& MemberVarName() const
+        {
+            return memberVarName;
+        }
+        public nothrow inline const string& MemberVarTypeName() const
+        {
+            return memberVarTypeName;
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            memberVarName = reader.ReadString();
+            memberVarTypeName = reader.ReadString();
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(memberVarName);
+            writer.Write(memberVarTypeName);
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            formatter.WriteLine("name=" + memberVarName + ":type=" + memberVarTypeName + ";");
+        }
+        private string memberVarName;
+        private string memberVarTypeName;
+    }
+    
+    public class ClassDebugInfo
+    {
+        public nothrow ClassDebugInfo() : flags(ClassDebugInfoFlags.none), fullName(), baseClassFullName(), irTypeName(), memberVariables()
+        {
+        }
+        public nothrow ClassDebugInfo(const string& fullName_, const string& baseClassFullName_, const string& irTypeName_) : 
+            flags(ClassDebugInfoFlags.none), fullName(fullName_), baseClassFullName(baseClassFullName_), irTypeName(irTypeName_), memberVariables()
+        {
+        }
+        public nothrow inline bool IsVirtual() const
+        {
+            return GetFlag(ClassDebugInfoFlags.isVirtual);
+        }
+        public nothrow inline void SetVirtual()
+        {
+            SetFlag(ClassDebugInfoFlags.isVirtual);
+        }
+        public nothrow inline bool HasVptr() const
+        {
+            return GetFlag(ClassDebugInfoFlags.hasVptr);
+        }
+        public nothrow inline void SetHasVptr()
+        {
+            SetFlag(ClassDebugInfoFlags.hasVptr);
+        }
+        public nothrow inline const string& FullName() const
+        {
+            return fullName;
+        }
+        public nothrow inline const string& BaseClassFullName() const
+        {
+            return baseClassFullName;
+        }
+        public nothrow inline const string& IrTypeName() const
+        {
+            return irTypeName;
+        }
+        public void AddMemberVariable(const MemberVariableDebugInfo& memberVariable)
+        {
+            memberVariables.Add(memberVariable);
+        }
+        public nothrow inline const List<MemberVariableDebugInfo>& MemberVariables() const
+        {
+            return memberVariables;
+        }
+        public nothrow inline MemberVariableDebugInfo* GetMemberVariable(const string& memberVariableName) const
+        {
+            for (const MemberVariableDebugInfo& memberVar : memberVariables)
+            {
+                if (memberVar.MemberVarName() == memberVariableName)
+                {
+                    return &memberVar;
+                }
+            }
+            return null;
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            flags = cast<ClassDebugInfoFlags>(reader.ReadByte());
+            fullName = reader.ReadString();
+            baseClassFullName = reader.ReadString();
+            irTypeName = reader.ReadString();
+            int n = reader.ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                MemberVariableDebugInfo memberVar;
+                memberVar.Read(reader);
+                AddMemberVariable(memberVar);
+            }
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(cast<byte>(flags));
+            writer.Write(fullName);
+            writer.Write(baseClassFullName);
+            writer.Write(irTypeName);
+            int n = memberVariables.Count();
+            writer.Write(n);
+            for (MemberVariableDebugInfo& memberVar : memberVariables)
+            {
+                memberVar.Write(writer);
+            }
+        }
+        public void Dump(CodeFormatter& formatter)
+        {
+            string derivation;
+            if (!baseClassFullName.IsEmpty())
+            {
+                derivation.Append(" : ").Append(baseClassFullName);
+            }
+            formatter.WriteLine("class " + fullName + derivation);
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            formatter.WriteLine("irTypeName=" + irTypeName + ";");
+            if (IsVirtual())
+            {
+                formatter.WriteLine("virtual;");
+            }
+            if (HasVptr())
+            {
+                formatter.WriteLine("hasVptr;");
+            }
+            for (MemberVariableDebugInfo& memberVar : memberVariables)
+            {
+                memberVar.Dump(formatter);
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("}");
+        }
+        private nothrow inline bool GetFlag(ClassDebugInfoFlags flag) const
+        {
+            return (flags & flag) != ClassDebugInfoFlags.none;
+        }
+        private nothrow inline void SetFlag(ClassDebugInfoFlags flag)
+        {
+            flags = cast<ClassDebugInfoFlags>(flags | flag);
+        }
+        private ClassDebugInfoFlags flags;
+        private string fullName;
+        private string baseClassFullName;
+        private string irTypeName;
+        private List<MemberVariableDebugInfo> memberVariables;
+    }
+    
+    public class CDebugInfoFile
+    {
+        public void AddFunctionDebugInfo(CFunctionDebugInfo* functionDebugInfo)
+        {
+            if (!functionDebugInfo->Cfg().IsEmpty())
+            {
+                functionDebugInfos.Add(UniquePtr<CFunctionDebugInfo>(functionDebugInfo));
+            }
+            else
+            {
+                delete functionDebugInfo;
+            }
+        }
+        public nothrow inline const List<UniquePtr<CFunctionDebugInfo>>& FunctionDebugInfos() const
+        {
+            return functionDebugInfos;
+        }
+        public void FixCLines(int offset)
+        {
+            for (const UniquePtr<CFunctionDebugInfo>& functionDebugInfo : functionDebugInfos)
+            {
+                functionDebugInfo->FixCLines(offset);
+            }
+        }
+        public void Read(Cm.Ser.BinaryReader& reader)
+        {
+            int n = reader.ReadInt();
+            for (int i = 0; i < n; ++i)
+            {
+                CFunctionDebugInfo* functionDebugInfo = new CFunctionDebugInfo();
+                functionDebugInfo->Read(reader);
+                AddFunctionDebugInfo(functionDebugInfo);
+            }
+            int m = reader.ReadInt();
+            for (int i = 0; i < m; ++i)
+            {
+                ClassDebugInfo* classDebugInfo = new ClassDebugInfo();
+                classDebugInfo->Read(reader);
+                AddClassDebugInfo(classDebugInfo);
+            }
+        }
+        public void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            int n = functionDebugInfos.Count();
+            writer.Write(n);
+            for (const UniquePtr<CFunctionDebugInfo>& functionDebugInfo : functionDebugInfos)
+            {
+                functionDebugInfo->Write(writer);
+            }
+            int m = classDebugInfos.Count();
+            writer.Write(m);
+            for (const UniquePtr<ClassDebugInfo>& classDebugInfo : classDebugInfos)
+            {
+                classDebugInfo->Write(writer);
+            }
+        }
+        public void Dump(CodeFormatter& codeFormatter)
+        {
+            for (const UniquePtr<CFunctionDebugInfo>& functionDebugInfo : functionDebugInfos)
+            {
+                functionDebugInfo->Dump(codeFormatter);
+            }
+            for (const UniquePtr<ClassDebugInfo>& classDebugInfo : classDebugInfos)
+            {
+                classDebugInfo->Dump(codeFormatter);
+            }
+        }
+        public void AddFunctionDebugInfoToMap(CFunctionDebugInfo* functionDebugInfo)
+        {
+            functionDebugInfoMap[functionDebugInfo->MangledFunctionName()] = functionDebugInfo;
+        }
+        public CFunctionDebugInfo* GetFunctionDebugInfo(const string& mangledFunctionName) const
+        {
+            HashMap<string, CFunctionDebugInfo*>.ConstIterator i = functionDebugInfoMap.CFind(mangledFunctionName);
+            if (i != functionDebugInfoMap.CEnd())
+            {
+                return i->second;
+            }
+            return null;
+        }
+        public void AddClassDebugInfo(ClassDebugInfo* classDebugInfo)
+        {
+            classDebugInfos.Add(UniquePtr<ClassDebugInfo>(classDebugInfo));
+        }
+        public nothrow inline const List<UniquePtr<ClassDebugInfo>>& ClassDebugInfos() const
+        {
+            return classDebugInfos;
+        }
+        private List<UniquePtr<CFunctionDebugInfo>> functionDebugInfos;
+        private HashMap<string, CFunctionDebugInfo*> functionDebugInfoMap;
+        private List<UniquePtr<ClassDebugInfo>> classDebugInfos;
     }
 }

@@ -91,10 +91,6 @@ void Prebinder::Visit(Cm::Ast::NamespaceImportNode& namespaceImportNode)
 void Prebinder::BeginVisit(Cm::Ast::ClassNode& classNode)
 {
     Cm::Sym::ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, &classNode);
-    if (classTypeSymbol->Name() == "ParsingDomain")
-    {
-        int x = 0;
-    }
     if (classNode.TemplateParameters().Count() > 0)
     {
         classTypeSymbol->SetUsingNodes(usingNodes);

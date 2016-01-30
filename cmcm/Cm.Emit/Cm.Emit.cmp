@@ -3,3 +3,6 @@ target=library;
 assembly <Cm.Emit.cma>;
 reference <../Cm.Bind/Cm.Bind.cml>;
 source <Emitter.cm>;
+source <FunctionEmitter.cm>;
+source <LlvmEmitter.cm>;
+source <LlvmFunctionEmitter.cm>;
