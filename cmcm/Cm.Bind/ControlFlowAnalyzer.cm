@@ -1,0 +1,206 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Bind
+{
+    public class ControlFlowAnalyzer : Cm.BoundTree.Visitor
+    {
+        public nothrow ControlFlowAnalyzer() : base(false)
+        {
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundFunction& boundFunction)
+        {
+            if (boundFunction.HasGotos())
+            {
+                LabelCollector labelCollector;
+                boundFunction.Accept(labelCollector);
+                GotoResolver gotoResolver(labelCollector.GetLabelStatementMap());
+                boundFunction.Accept(gotoResolver);
+            }
+        }
+    }
+    
+    internal class LabelCollector : Cm.BoundTree.Visitor
+    {
+        public nothrow LabelCollector() : base(true)
+        {
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundCompoundStatement& boundCompoundStatement)
+        {
+            CollectLabel(boundCompoundStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundReceiveStatement& boundReceiveStatement)
+        {
+            CollectLabel(boundReceiveStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundInitClassObjectStatement& boundInitClassObjectStatement)
+        {
+            CollectLabel(boundInitClassObjectStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundInitVPtrStatement& boundInitVPtrStatement)
+        {
+            CollectLabel(boundInitVPtrStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
+        {
+            CollectLabel(boundInitMemberVariableStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundFunctionCallStatement& boundFunctionCallStatement)
+        {
+            CollectLabel(boundFunctionCallStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundReturnStatement& boundReturnStatement)
+        {
+            CollectLabel(boundReturnStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundConstructionStatement& boundConstructionStatement)
+        {
+            CollectLabel(boundConstructionStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundDestructionStatement& boundDestructionStatement)
+        {
+            CollectLabel(boundDestructionStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundAssignmentStatement& boundAssignmentStatement)
+        {
+            CollectLabel(boundAssignmentStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundSimpleStatement& boundSimpleStatement)
+        {
+            CollectLabel(boundSimpleStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundBreakStatement& boundBreakStatement)
+        {
+            CollectLabel(boundBreakStatement);
+        }
+        public override  void Visit(Cm.BoundTree.BoundContinueStatement& boundContinueStatement)
+        {
+            CollectLabel(boundContinueStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoStatement& boundGotoStatement)
+        {
+            CollectLabel(boundGotoStatement);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundConditionalStatement& boundConditionalStatement)
+        {
+            CollectLabel(boundConditionalStatement);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundWhileStatement& boundWhileStatement)
+        {
+            CollectLabel(boundWhileStatement);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
+        {
+            CollectLabel(boundDoStatement);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundForStatement& boundForStatement)
+        {
+            CollectLabel(boundForStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundSwitchStatement& boundSwitchStatement)
+        {
+            CollectLabel(boundSwitchStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundCaseStatement& boundCaseStatement)
+        {
+            CollectLabel(boundCaseStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundDefaultStatement& boundDefaultStatement)
+        {
+            CollectLabel(boundDefaultStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoCaseStatement& boundGotoCaseStatement)
+        {
+            CollectLabel(boundGotoCaseStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoDefaultStatement& boundGotoDefaultStatement)
+        {
+            CollectLabel(boundGotoDefaultStatement);
+        }
+        public HashMap<string, Cm.BoundTree.BoundStatement*>& GetLabelStatementMap() 
+        { 
+            return labelStatementMap; 
+        }
+        private HashMap<string, Cm.BoundTree.BoundStatement*> labelStatementMap;
+        private void CollectLabel(Cm.BoundTree.BoundStatement& statement)
+        {
+            const string& label = statement.Label();
+            if (!label.IsEmpty())
+            {
+                HashMap<string, Cm.BoundTree.BoundStatement*>.ConstIterator i = labelStatementMap.CFind(label);
+                if (i == labelStatementMap.CEnd())
+                {
+                    labelStatementMap[label] = &statement;
+                }
+                else
+                {
+                    Span refSpan(0, 0, 0, 0);
+                    if (i->second->SyntaxNode() != null)
+                    {
+                        refSpan = i->second->SyntaxNode()->GetSpan();
+                    }
+                    throw Cm.Core.Error("duplicate label '" + label + "'", statement.SyntaxNode()->GetSpan(), refSpan);
+                }
+            }
+        }
+    }
+    
+    internal class GotoResolver : Cm.BoundTree.Visitor
+    {
+        public nothrow GotoResolver(HashMap<string, Cm.BoundTree.BoundStatement*>& labelStatementMap_) : base(true), labelStatementMap(labelStatementMap_)
+        {
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoStatement& boundGotoStatement)
+        {
+            const string& targetLabel = boundGotoStatement.TargetLabel();
+            HashMap<string, Cm.BoundTree.BoundStatement*>.ConstIterator i = labelStatementMap.CFind(targetLabel);
+            if (i != labelStatementMap.CEnd())
+            {
+                Cm.BoundTree.BoundStatement* targetStatement = i->second;
+                Cm.BoundTree.BoundCompoundStatement* targetCompoundParent = targetStatement->CompoundParent();
+                if (targetCompoundParent == null)
+                {
+                    throw Exception("target statement has no compound parent");
+                }
+                boundGotoStatement.SetTargetStatement(targetStatement);
+                boundGotoStatement.SetTargetCompoundParent(targetCompoundParent);
+                if (!boundGotoStatement.IsExceptionHandlingGoto())
+                {
+                    Cm.BoundTree.BoundCompoundStatement* gotoCompoundParent = boundGotoStatement.CompoundParent();
+                    if (gotoCompoundParent == null)
+                    {
+                        throw Exception("goto statement has no compound parent");
+                    }
+                    while (gotoCompoundParent != null && gotoCompoundParent != targetCompoundParent)
+                    {
+                        gotoCompoundParent = gotoCompoundParent->CompoundParent();
+                    }
+                    if (gotoCompoundParent == null)
+                    {
+                        Span refSpan(0, 0, 0, 0);
+                        if (targetStatement->SyntaxNode() != null)
+                        {
+                            refSpan = targetStatement->SyntaxNode()->GetSpan();
+                        }
+                        throw Cm.Core.Error("goto target '" + targetLabel + "' not in enclosing block", boundGotoStatement.SyntaxNode()->GetSpan(), refSpan);
+                    }
+                }
+            }
+            else
+            {
+                throw Cm.Core.Error("goto target '" + targetLabel + "' not found", boundGotoStatement.SyntaxNode()->GetSpan());
+            }
+        }
+        private HashMap<string, Cm.BoundTree.BoundStatement*>& labelStatementMap;
+    }
+}

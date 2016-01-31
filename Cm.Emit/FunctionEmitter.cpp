@@ -2377,6 +2377,10 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundForStatement& boundForStateme
     if (GenerateDebugInfo())
     {
         node = boundForStatement.SyntaxNode();
+        if (!node)
+        {
+            throw std::runtime_error("syntax node not set");
+        }
         if (!node->IsStatementNode())
         {
             throw std::runtime_error("not statement node");

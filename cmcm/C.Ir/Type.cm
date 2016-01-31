@@ -522,6 +522,10 @@ namespace C
         {
             return baseType;
         }
+        public nothrow override Ir.Intf.Type* GetBaseType() const
+        {
+            return baseType;
+        }
         public nothrow override bool IsFunctionPointerType() const
         {
             return (baseType is FunctionType*) && numPointers == 1u;

@@ -454,8 +454,12 @@ namespace Llvm
     
     public class LoadInst : Ir.Intf.Instruction
     {
-        public nothrow LoadInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_) : base("load"), type(type_), result(result_), ptr(ptr_), alignment(0)
+        public nothrow LoadInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_) : base("load"), itemType(null), type(type_), result(result_), ptr(ptr_), alignment(0)
         {
+        }
+        public nothrow inline void SetItemType(Ir.Intf.Type* itemType_)
+        {
+            itemType = itemType_;
         }
         public nothrow override void SetAlignment(int alignment_)
         {
@@ -469,16 +473,28 @@ namespace Llvm
         {
             return result;
         }
+        public nothrow inline Ir.Intf.Type* Type() const
+        {
+            return type;
+        }
         public nothrow override string ToString() const
         {
             string s(result->Name());
-            s.Append(" = ").Append(Name()).Append(", ").Append(type->Name()).Append(' ').Append(ptr->Name());
+            if (itemType != null)
+            {
+                s.Append(" = ").Append(Name()).Append(' ').Append(itemType->Name()).Append(", ").Append(type->Name()).Append(' ').Append(ptr->Name());
+            }
+            else
+            {
+                s.Append(" = ").Append(Name()).Append(' ').Append(type->Name()).Append(' ').Append(ptr->Name());
+            }
             if (alignment > 0)
             {
                 s.Append(", align ").Append(ToString(alignment));
             }
             return s;
         }
+        private Ir.Intf.Type* itemType;
         private Ir.Intf.Type* type;
         private Ir.Intf.Object* result;
         private Ir.Intf.Object* ptr;
@@ -523,17 +539,21 @@ namespace Llvm
     public class GetElementPtrInst : Ir.Intf.Instruction
     {
         public nothrow GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_) :
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
+            base("getelementptr"), itemType(null), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
         {
         }
         public GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_, Ir.Intf.Object* index1_) : 
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
+            base("getelementptr"), itemType(null), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(), inbounds(false)
         {
             indeces.Add(index1_);
         }
         public nothrow GetElementPtrInst(Ir.Intf.Type* ptrType_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Object* index_, const List<Ir.Intf.Object*>& indeces_) : 
-            base("getelementptr"), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
+            base("getelementptr"), itemType(null), ptrType(ptrType_), result(result_), ptr(ptr_), index(index_), indeces(indeces_), inbounds(false)
         {
+        }
+        public nothrow inline void SetItemType(Ir.Intf.Type* itemType_)
+        {
+            itemType = itemType_;
         }
         public nothrow override bool ReturnsResult() const
         {
@@ -547,6 +567,10 @@ namespace Llvm
         {
             inbounds = true;
         }
+        public nothrow inline Ir.Intf.Type* PtrType() const
+        {
+            return ptrType;
+        }
         public nothrow override string ToString() const
         {
             string s(result->Name());
@@ -555,13 +579,21 @@ namespace Llvm
             {
                 s.Append("inbounds ");
             }
-            s.Append(ptrType->Name()).Append(' ').Append(ptr->Name()).Append(", ").Append(index->GetType()->Name()).Append(' ').Append(index->Name());
+            if (itemType != null)
+            {
+                s.Append(itemType->Name()).Append(", ").Append(ptrType->Name()).Append(' ').Append(ptr->Name()).Append(", ").Append(index->GetType()->Name()).Append(' ').Append(index->Name());
+            }
+            else
+            {
+                s.Append(ptrType->Name()).Append(' ').Append(ptr->Name()).Append(", ").Append(index->GetType()->Name()).Append(' ').Append(index->Name());
+            }            
             for (Ir.Intf.Object* idx : indeces)
             {
                 s.Append(", ").Append(idx->GetType()->Name()).Append(' ').Append(idx->Name());
             }
             return s;
         }
+        private Ir.Intf.Type* itemType;
         private Ir.Intf.Type* ptrType;
         private Ir.Intf.Object* result;
         private Ir.Intf.Object* ptr;
