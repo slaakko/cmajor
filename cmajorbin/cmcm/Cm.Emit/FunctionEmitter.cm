@@ -233,7 +233,7 @@ namespace Cm.Emit
     
     public abstract class FunctionEmitter : Cm.BoundTree.Visitor
     {
-        public nothrow FunctionEmitter(CodeFormatter& codeFormatter_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, 
+        public FunctionEmitter(CodeFormatter& codeFormatter_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, 
             Cm.Core.IrClassTypeRepository& irClassTypeRepository_, Cm.Core.StringRepository& stringRepository_, Cm.BoundTree.BoundClass* currentClass_, HashSet<string>& internalFunctionNames_, 
             HashSet<Ir.Intf.Function*>& externalFunctions_, Cm.Core.StaticMemberVariableRepository& staticMemberVariableRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_, 
             Cm.Ast.CompileUnitNode* currentCompileUnit_, Cm.Sym.FunctionSymbol* enterFrameFun_, Cm.Sym.FunctionSymbol* leaveFrameFun_, Cm.Sym.FunctionSymbol* enterTracedCallFun_, 
@@ -1353,6 +1353,1139 @@ namespace Cm.Emit
             GenerateCall(ctor, null, *result);
             resultStack.Push(result);
         }
+        public override void Visit(Cm.BoundTree.BoundInitClassObjectStatement& boundInitClassObjectStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            boundInitClassObjectStatement.FunctionCall()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> callResult = resultStack.Pop();
+            result->Merge(callResult);
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            int n = boundInitMemberVariableStatement.Arguments().Count();
+            Ir.Intf.LabelObject* resultLabel = null;
+            for (int i = 0; i < n; ++i)
+            {
+                const UniquePtr<Cm.BoundTree.BoundExpression>& arg = boundInitMemberVariableStatement.Arguments()[i];
+                arg->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> argResult = resultStack.Pop();
+                if (resultLabel == null)
+                {
+                    resultLabel = argResult->GetLabel();
+                }
+                result->Merge(argResult);
+            }
+            Cm.Sym.FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
+            result->SetMemberVar();
+            GenerateCall(ctor, null, *result);
+            if (boundInitMemberVariableStatement.RegisterDestructor())
+            {
+                RegisterDestructor(boundInitMemberVariableStatement.MemberVarSymbol());
+            }
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundFunctionCallStatement& boundFunctionCallStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            Cm.Sym.FunctionSymbol* function = boundFunctionCallStatement.Function();
+            if (!(function is Cm.Core.BasicTypeOp*) && !function->IsConstructorOrDestructorSymbol())
+            {
+                result->SetMainObject(function->GetReturnType(), typeRepository);
+            }
+            int n = boundFunctionCallStatement.Arguments().Count();
+            Ir.Intf.LabelObject* resultLabel = null;
+            for (int i = 0; i < n; ++i)
+            {
+                const UniquePtr<Cm.BoundTree.BoundExpression>& arg = boundFunctionCallStatement.Arguments()[i];
+                arg->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> argResult = resultStack.Pop();
+                if (resultLabel == null)
+                {
+                    resultLabel = argResult->GetLabel();
+                }
+                result->Merge(argResult);
+            }
+            GenerateCall(function, null, *result);
+            ExecutePostfixIncDecStatements(*result);
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundReturnStatement& boundReturnStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            SharedPtr<Cm.Core.GenResult> entryResult;
+            Ir.Intf.LabelObject* resultLabel = null;
+            if (generateDebugInfo)
+            {
+                if (boundReturnStatement.SyntaxNode() == null)
+                {
+                    throw Exception("return statement has no syntax node");
+                }
+                CreateEntryDebugNode(boundReturnStatement, boundReturnStatement.SyntaxNode()->GetSpan());
+                entryResult = resultStack.Pop();
+                resultLabel = entryResult->GetLabel();
+                compoundResult->Merge(entryResult);
+            }
+            if (boundReturnStatement.Expression() != null)
+            {
+                boundReturnStatement.Expression()->Accept(*this);
+            }
+            if (boundReturnStatement.ReturnsValue())
+            {
+                bool resultSet = false;
+                SharedPtr<Cm.Core.GenResult> retValResult = resultStack.Pop();
+                Cm.Sym.FunctionSymbol* ctor = boundReturnStatement.Constructor();
+                bool returnsClassObjectByValue = currentFunction->FunctionSymbol()->ReturnsClassObjectByValue();
+                if (returnsClassObjectByValue)
+                {
+                    result->SetMainObject(currentFunction->FunctionSymbol()->ClassObjectResultIrParam());
+                }
+                else if (boundReturnStatement.BoundTemporary() != null)
+                {
+                    SharedPtr<Cm.Core.GenResult> temporaryResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                    temporaryResult->SetMainObject(localVariableIrObjectRepository.GetLocalVariableIrObject(boundReturnStatement.BoundTemporary()->Symbol()));
+                    temporaryResult->Merge(retValResult);
+                    GenerateCall(ctor, boundReturnStatement.GetTraceCallInfo(), *temporaryResult);
+                    result->SetMainObject(boundReturnStatement.ReturnType(), typeRepository);
+                    result->Merge(temporaryResult);
+                }
+                else
+                {
+                    result->SetMainObject(boundReturnStatement.ReturnType(), typeRepository);
+                }
+                if (resultLabel == null)
+                {
+                    resultLabel = retValResult->GetLabel();
+                }
+                if (ctor is Cm.Bind.DelegateFromFunCtor*)
+                {
+                    result->SetMainObject(retValResult->MainObject());
+                    Cm.Bind.DelegateFromFunCtor* delegateFromFunCtor = cast<Cm.Bind.DelegateFromFunCtor*>(ctor);
+                    result->Objects()[0]->SetType(delegateFromFunCtor->DelegateType()->IrType());
+                    resultSet = true;
+                }
+                result->Merge(retValResult);
+                Ir.Intf.LabelObject* exprNext = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(exprNext);
+                emitter->AddNextInstructionLabel(exprNext);
+                if (resultLabel == null)
+                {
+                    resultLabel = exprNext;
+                }
+                if (!resultSet)
+                {
+                    GenerateCall(ctor, boundReturnStatement.GetTraceCallInfo(), *result);
+                }
+                ExecutePostfixIncDecStatements(*result);
+                ExitFunction(*result);
+                if (generateDebugInfo)
+                {
+                    if (currentFunction->Body()->SyntaxNode() == null)
+                    {
+                        throw Exception("current function body has no syntax node");
+                    }
+                    Cm.Ast.CompoundStatementNode* compoundStatementNode = cast<Cm.Ast.CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
+                    CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+                    SharedPtr<Cm.Core.GenResult> exitResult = resultStack.Pop();
+                    compoundResult->Merge(exitResult);
+                }
+                if (returnsClassObjectByValue)
+                {
+                    emitter->Emit(Cm.IrIntf.Ret());
+                }
+                else
+                {
+                    emitter->Emit(Cm.IrIntf.Ret(result->MainObject()));
+                }
+                if (resultLabel != null)
+                {
+                    result->SetLabel(resultLabel);
+                }
+            }
+            else
+            {
+                ExitFunction(*result);
+                if (generateDebugInfo)
+                {
+                    if (currentFunction->Body()->SyntaxNode() == null)
+                    {
+                        throw Exception("current function body has no syntax node");
+                    }
+                    Cm.Ast.CompoundStatementNode* compoundStatementNode = cast<Cm.Ast.CompoundStatementNode*>(currentFunction->Body()->SyntaxNode());
+                    CreateExitDebugNode(boundReturnStatement, compoundStatementNode->EndBraceSpan());
+                    SharedPtr<Cm.Core.GenResult> exitResult = resultStack.Pop();
+                    compoundResult->Merge(exitResult);
+                }
+                emitter->Emit(Cm.IrIntf.Ret());
+                if (resultLabel != null)
+                {
+                    result->SetLabel(resultLabel);
+                }
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundBeginTryStatement& boundBeginTryStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            catchIdStack.Push(currentCatchId);
+            currentCatchId = boundBeginTryStatement.FirstCatchId();
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundEndTryStatement& boundEndTryStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            currentCatchId = catchIdStack.Pop();
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundExitBlocksStatement& boundExitBlocksStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            Cm.BoundTree.BoundCompoundStatement* currentCompound = boundExitBlocksStatement.CompoundParent();
+            Cm.BoundTree.BoundCompoundStatement* targetCompound = boundExitBlocksStatement.TargetBlock();
+            ExitCompounds(currentCompound, targetCompound, *result);
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundBeginThrowStatement& boundBeginThrowStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
+            DoNothing(*result);
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundEndThrowStatement& boundEndThrowStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
+            DoNothing(*result);
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundConstructionStatement& boundConstructionStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundConstructionStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                Cm.Core.CfgNode* node = CreateDebugNode(boundConstructionStatement, boundConstructionStatement.SyntaxNode()->GetSpan(), true);
+                if (node == null)
+                {
+                    throw Exception("node is null");
+                }
+                int defNode = node->Id();
+                Cm.Sym.LocalVariableSymbol* variable = boundConstructionStatement.LocalVariable();
+                string irName;
+                Ir.Intf.Object* irObject = localVariableIrObjectRepository.GetLocalVariableIrObject(variable);
+                if (irObject != null)
+                {
+                    irName = irObject->Name();
+                }
+                else
+                {
+                    throw Exception("ir object is null");
+                }
+                string typeName = variable->GetType()->FullName();
+                Cm.Core.CFunctionDebugInfo* functionDebugInfo = GetFunctionDebugInfo();
+                if (functionDebugInfo != null)
+                {
+                    functionDebugInfo->Locals().AddLocal(new Cm.Core.Local(variable->Name(), irName, typeName, defNode));
+                }
+                else
+                {
+                    throw Exception("function debug info is null");
+                }
+            }
+            int n = boundConstructionStatement.Arguments().Count();
+            Ir.Intf.LabelObject* resultLabel = null;
+            Ir.Intf.Object* object = null;
+            for (int i = 0; i < n; ++i)
+            {
+                const UniquePtr<Cm.BoundTree.BoundExpression>& arg = boundConstructionStatement.Arguments()[i];
+                arg->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> argResult = resultStack.Pop();
+                if (i == 0)
+                {
+                    object = argResult->MainObject();
+                }
+                if (resultLabel == null)
+                {
+                    resultLabel = argResult->GetLabel();
+                }
+                result->Merge(argResult);
+            }
+            Cm.Sym.FunctionSymbol* ctor = boundConstructionStatement.Constructor();
+            Ir.Intf.LabelObject* exprNext = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(exprNext);
+            emitter->AddNextInstructionLabel(exprNext);
+            GenerateCall(ctor, boundConstructionStatement.GetTraceCallInfo(), *result);
+            ExecutePostfixIncDecStatements(*result);
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            Cm.Sym.TypeSymbol* variableType = boundConstructionStatement.LocalVariable()->GetType();
+            if (variableType is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* variableClassType = cast<Cm.Sym.ClassTypeSymbol*>(variableType);
+                if (variableClassType->Destructor() != null)
+                {
+                    currentCompoundDestructionStack.Push(new Cm.BoundTree.BoundDestructionStatement(null, object, variableClassType->Destructor()));
+                }
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundDestructionStatement& boundDestructionStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            result->SetMainObject(boundDestructionStatement.Object());
+            Cm.Sym.FunctionSymbol* dtor = boundDestructionStatement.Destructor();
+            GenerateCall(dtor, null, *result);
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundAssignmentStatement& boundAssignmentStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundAssignmentStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundAssignmentStatement, boundAssignmentStatement.SyntaxNode()->GetSpan(), true);
+            }
+            boundAssignmentStatement.Left()->Accept(*this);
+            boundAssignmentStatement.Right()->Accept(*this);
+            Cm.Sym.FunctionSymbol* assignment = boundAssignmentStatement.Assignment();
+            if (!(assignment is Cm.Core.BasicTypeOp*) && !assignment->IsArrayAssignment())
+            {
+                result->SetMainObject(assignment->GetReturnType(), typeRepository);
+            }
+            SharedPtr<Cm.Core.GenResult> sourceResult = resultStack.Pop();
+            SharedPtr<Cm.Core.GenResult> targetResult = resultStack.Pop();
+            Ir.Intf.LabelObject* resultLabel = targetResult->GetLabel();
+            if (resultLabel == null)
+            {
+                resultLabel = sourceResult->GetLabel();
+            }
+            result->Merge(targetResult);
+            result->Merge(sourceResult);
+            Ir.Intf.LabelObject* exprNext = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(exprNext);
+            emitter->AddNextInstructionLabel(exprNext);
+            GenerateCall(assignment, boundAssignmentStatement.GetTraceCallInfo(), *result);
+            ExecutePostfixIncDecStatements(*result);
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundSimpleStatement& boundSimpleStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundSimpleStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundSimpleStatement, boundSimpleStatement.SyntaxNode()->GetSpan(), true);
+            }
+            if (boundSimpleStatement.HasExpression())
+            {
+                boundSimpleStatement.Expression()->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> expressionResult = resultStack.Pop();
+                result->SetLabel(expressionResult->GetLabel());
+                result->Merge(expressionResult);
+                ExecutePostfixIncDecStatements(*result);
+            }
+            else
+            {
+                result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
+                DoNothing(*result);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundBreakStatement& boundBreakStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundBreakStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundBreakStatement, boundBreakStatement.SyntaxNode()->GetSpan(), false);
+            }
+            Ir.Intf.LabelObject* breakTargetLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(breakTargetLabel);
+            breakTargetStatement->AddBreakTargetLabel(breakTargetLabel);
+            ExitCompounds(boundBreakStatement.CompoundParent(), breakTargetStatement->CompoundParent(), *result);
+            if (generateDebugInfo)
+            {
+                breakTargetStatement->AddToBreakNextSet(boundBreakStatement.CfgNode());
+            }
+            emitter->UseCDebugNode(boundBreakStatement.CfgNode());
+            emitter->Emit(Cm.IrIntf.Br(breakTargetLabel));
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundContinueStatement& boundContinueStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundContinueStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundContinueStatement, boundContinueStatement.SyntaxNode()->GetSpan(), false);
+            }
+            Ir.Intf.LabelObject* continueTargetLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(continueTargetLabel);
+            continueTargetStatement->AddContinueTargetLabel(continueTargetLabel);
+            ExitCompounds(boundContinueStatement.CompoundParent(), continueTargetStatement->CompoundParent(), *result);
+            if (generateDebugInfo)
+            {
+                continueTargetStatement->AddToContinueNextSet(boundContinueStatement.CfgNode());
+            }
+            emitter->UseCDebugNode(boundContinueStatement.CfgNode());
+            emitter->Emit(Cm.IrIntf.Br(continueTargetLabel));
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoStatement& boundGotoStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundGotoStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundGotoStatement, boundGotoStatement.SyntaxNode()->GetSpan(), false);
+            }
+            if (!boundGotoStatement.IsExceptionHandlingGoto())
+            {
+                ExitCompounds(boundGotoStatement.CompoundParent(), boundGotoStatement.TargetCompoundParent(), *result);
+            }
+            Ir.Intf.LabelObject* gotoTargetLabel = Cm.IrIntf.CreateLabel(boundGotoStatement.TargetLabel());
+            emitter->Own(gotoTargetLabel);
+            if (generateDebugInfo)
+            {
+                if (boundGotoStatement.TargetStatement()->CfgNode() != null)
+                {
+                    AddDebugNodeTransition(boundGotoStatement, *boundGotoStatement.TargetStatement());
+                }
+                else
+                {
+                    boundGotoStatement.TargetStatement()->AddToPrevSet(boundGotoStatement.CfgNode());
+                }
+            }
+            emitter->Emit(Cm.IrIntf.Br(gotoTargetLabel));
+            resultStack.Push(result);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundConditionalStatement& boundConditionalStatement)
+        {
+            PushSkipContent();
+            if (generateDebugInfo)
+            {
+                if (boundConditionalStatement.SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundConditionalStatement, boundConditionalStatement.SyntaxNode()->GetSpan(), true);
+            }
+            functionDestructionStack.Push(Rvalue(currentCompoundDestructionStack));
+            currentCompoundDestructionStack = CompoundDestructionStack();
+        }
+        public override void EndVisit(Cm.BoundTree.BoundConditionalStatement& boundConditionalStatement)
+        {
+            PopSkipContent();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
+            Ir.Intf.LabelObject* resultLabel = conditionResult->GetLabel();
+            int debugNodeSetHandle = -1;
+            if (currentCompoundDestructionStack.IsEmpty())
+            {
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                Cm.BoundTree.BoundStatement* thenS = boundConditionalStatement.ThenS();
+                BeginVisitStatement(*thenS);
+                thenS->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    AddDebugNodeTransition(boundConditionalStatement, *thenS);
+                }
+                SharedPtr<Cm.Core.GenResult> thenResult = resultStack.Pop();
+                conditionResult->BackpatchTrueTargets(thenResult->GetLabel());
+                BackpatchNextTargets(thenResult->GetLabel());
+                Ir.Intf.LabelObject* next = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(next);
+                result->AddNextTarget(next);
+                emitter->Emit(Cm.IrIntf.Br(next));
+                result->Merge(thenResult);
+                Cm.BoundTree.BoundStatement* elseS = boundConditionalStatement.ElseS();
+                if (elseS != null)
+                {
+                    if (generateDebugInfo)
+                    {
+                        debugNodeSetHandle = RetrievePrevDebugNodes();
+                    }
+                    BeginVisitStatement(*elseS);
+                    elseS->Accept(*this);
+                    if (generateDebugInfo)
+                    {
+                        AddDebugNodeTransition(boundConditionalStatement, *elseS);
+                    }
+                    SharedPtr<Cm.Core.GenResult> elseResult = resultStack.Pop();
+                    conditionResult->BackpatchFalseTargets(elseResult->GetLabel());
+                    BackpatchNextTargets(elseResult->GetLabel());
+                    result->Merge(elseResult);
+                }
+                else
+                {
+                    result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+                    AddToPrevDebugNodes(boundConditionalStatement);
+                }
+            }
+            else
+            {
+                bool trueFirst = true;
+                SharedPtr<Cm.Core.GenResult> trueResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
+                CompoundDestructionStack tempCompoundDestructionStack = Rvalue(currentCompoundDestructionStack);
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                conditionResult->BackpatchTrueTargets(trueResult->GetLabel());
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(trueLabel);
+                emitter->Emit(Cm.IrIntf.Br(trueLabel));
+                Cm.BoundTree.BoundStatement* thenS = boundConditionalStatement.ThenS();
+                BeginVisitStatement(*thenS);
+                thenS->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    AddDebugNodeTransition(boundConditionalStatement, *thenS);
+                }
+                SharedPtr<Cm.Core.GenResult> thenResult = resultStack.Pop();
+                trueLabel->Set(thenResult->GetLabel());
+                BackpatchNextTargets(thenResult->GetLabel());
+                Ir.Intf.LabelObject* next = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(next);
+                result->AddNextTarget(next);
+                emitter->Emit(Cm.IrIntf.Br(next));
+                result->Merge(thenResult);
+                bool falseFirst = true;
+                SharedPtr<Cm.Core.GenResult> falseResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*falseResult, tempCompoundDestructionStack, falseFirst);
+                conditionResult->BackpatchFalseTargets(falseResult->GetLabel());
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(falseLabel);
+                emitter->Emit(Cm.IrIntf.Br(falseLabel));
+                Cm.BoundTree.BoundStatement* elseS = boundConditionalStatement.ElseS();
+                if (elseS != null)
+                {
+                    if (generateDebugInfo)
+                    {
+                        debugNodeSetHandle = RetrievePrevDebugNodes();
+                    }
+                    BeginVisitStatement(*elseS);
+                    elseS->Accept(*this);
+                    if (generateDebugInfo)
+                    {
+                        AddDebugNodeTransition(boundConditionalStatement, *elseS);
+                    }
+                    SharedPtr<Cm.Core.GenResult> elseResult = resultStack.Pop();
+                    falseLabel->Set(elseResult->GetLabel());
+                    BackpatchNextTargets(elseResult->GetLabel());
+                    result->Merge(elseResult);
+                }
+                else
+                {
+                    result->AddNextTarget(falseLabel);
+                    AddToPrevDebugNodes(boundConditionalStatement);
+                }
+            }
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            if (debugNodeSetHandle != -1)
+            {
+                AddToPrevDebugNodes(debugNodeSetHandle);
+            }
+            result->Merge(conditionResult, true);
+            resultStack.Push(result);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundWhileStatement& boundWhileStatement)
+        {
+            PushSkipContent();
+            if (generateDebugInfo)
+            {
+                if (boundWhileStatement.Condition()->SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundWhileStatement, boundWhileStatement.Condition()->SyntaxNode()->GetSpan(), true);
+            }
+            functionDestructionStack.Push(Rvalue(currentCompoundDestructionStack));
+            currentCompoundDestructionStack = CompoundDestructionStack();
+        }
+        public override void EndVisit(Cm.BoundTree.BoundWhileStatement& boundWhileStatement)
+        {
+            PopSkipContent();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
+            SharedPtr<Cm.Core.GenResult> statementResult;
+            if (currentCompoundDestructionStack.IsEmpty())
+            {
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                Cm.BoundTree.BoundStatement* statement = boundWhileStatement.Statement();
+                PushBreakTargetStatement(&boundWhileStatement);
+                PushContinueTargetStatement(&boundWhileStatement);
+                BeginVisitStatement(*statement);
+                statement->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    PatchPrevDebugNodes(boundWhileStatement);
+                    AddDebugNodeTransition(boundWhileStatement, *statement);
+                }
+                statementResult = resultStack.Pop();
+                emitter->Emit(Cm.IrIntf.Br(conditionResult->GetLabel()));
+                conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
+                statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+                BackpatchNextTargets(statementResult->GetLabel());
+                result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+                result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
+                Ir.Intf.Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+                PopContinueTargetStatement();
+                PopBreakTargetStatement();
+            }
+            else
+            {
+                bool trueFirst = true;
+                SharedPtr<Cm.Core.GenResult> trueResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
+                CompoundDestructionStack tempCompoundDestructionStack = Rvalue(currentCompoundDestructionStack);
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                conditionResult->BackpatchTrueTargets(trueResult->GetLabel());
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(trueLabel);
+                emitter->Emit(Cm.IrIntf.Br(trueLabel));
+                Cm.BoundTree.BoundStatement* statement = boundWhileStatement.Statement();
+                PushBreakTargetStatement(&boundWhileStatement);
+                PushContinueTargetStatement(&boundWhileStatement);
+                BeginVisitStatement(*statement);
+                statement->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    PatchPrevDebugNodes(boundWhileStatement);
+                    AddDebugNodeTransition(boundWhileStatement, *statement);
+                }
+                statementResult = resultStack.Pop();
+                emitter->Emit(Cm.IrIntf.Br(conditionResult->GetLabel()));
+                trueLabel->Set(statementResult->GetLabel());
+                statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+                BackpatchNextTargets(statementResult->GetLabel());
+                bool falseFirst = true;
+                SharedPtr<Cm.Core.GenResult> falseResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*falseResult, tempCompoundDestructionStack, falseFirst);
+                conditionResult->BackpatchFalseTargets(falseResult->GetLabel());
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(falseLabel);
+                emitter->Emit(Cm.IrIntf.Br(falseLabel));
+                result->AddNextTarget(falseLabel);
+                result->MergeTargets(result->NextTargets(), boundWhileStatement.BreakTargetLabels());
+                Ir.Intf.Backpatch(boundWhileStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+                PopContinueTargetStatement();
+                PopBreakTargetStatement();
+            }
+            if (generateDebugInfo)
+            {
+                AddToPrevDebugNodes(boundWhileStatement);
+                AddToPrevDebugNodes(boundWhileStatement.BreakNextSet());
+                PatchDebugNodes(boundWhileStatement.ContinueNextSet(), boundWhileStatement.CfgNode());
+            }
+            result->SetLabel(conditionResult->GetLabel());
+            result->Merge(conditionResult, true);
+            result->Merge(statementResult);
+            result->Merge(statementResult);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
+        {
+            PushSkipContent();
+        }
+        public override void EndVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
+        {
+            PopSkipContent();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            Cm.BoundTree.BoundStatement* statement = boundDoStatement.Statement();
+            PushBreakTargetStatement(&boundDoStatement);
+            PushContinueTargetStatement(&boundDoStatement);
+            BeginVisitStatement(*statement);
+            statement->Accept(*this);
+            if (generateDebugInfo)
+            {
+                SetCfgNode(*statement, boundDoStatement);
+            }
+            SharedPtr<Cm.Core.GenResult> statementResult = resultStack.Pop();
+            Cm.BoundTree.BoundExpression* condition = boundDoStatement.Condition();
+            if (generateDebugInfo)
+            {
+                if (condition->SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(*condition, condition->SyntaxNode()->GetSpan());
+                AddDebugNodeTransition(*condition, boundDoStatement);
+            }
+            functionDestructionStack.Push(Rvalue(currentCompoundDestructionStack));
+            currentCompoundDestructionStack = CompoundDestructionStack();
+            condition->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
+            statementResult->BackpatchNextTargets(conditionResult->GetLabel());
+            if (currentCompoundDestructionStack.IsEmpty())
+            {
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                conditionResult->BackpatchTrueTargets(statementResult->GetLabel());
+                BackpatchNextTargets(statementResult->GetLabel());
+                result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+                result->MergeTargets(result->NextTargets(), boundDoStatement.BreakTargetLabels());
+                Ir.Intf.Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+            }
+            else
+            {
+                bool trueFirst = true;
+                SharedPtr<Cm.Core.GenResult> trueResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*trueResult, currentCompoundDestructionStack, trueFirst);
+                CompoundDestructionStack tempCompoundDestructionStack = Rvalue(currentCompoundDestructionStack);
+                currentCompoundDestructionStack = functionDestructionStack.Pop();
+                conditionResult->BackpatchTrueTargets(trueResult->GetLabel());
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(trueLabel);
+                emitter->Emit(Cm.IrIntf.Br(statementResult->GetLabel()));
+                bool falseFirst = true;
+                SharedPtr<Cm.Core.GenResult> falseResult(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                ExitCompound(*falseResult, tempCompoundDestructionStack, falseFirst);
+                conditionResult->BackpatchFalseTargets(falseResult->GetLabel());
+                Ir.Intf.Backpatch(boundDoStatement.BreakTargetLabels(), falseResult->GetLabel());
+                Ir.Intf.Backpatch(boundDoStatement.ContinueTargetLabels(), conditionResult->GetLabel());
+            }
+            if (generateDebugInfo)
+            {
+                AddToPrevDebugNodes(*condition);
+                AddToPrevDebugNodes(boundDoStatement.BreakNextSet());
+                PatchDebugNodes(boundDoStatement.ContinueNextSet(), condition->CfgNode());
+            }
+            PopContinueTargetStatement();
+            PopBreakTargetStatement();
+            result->SetLabel(statementResult->GetLabel());
+            result->Merge(statementResult);
+            result->Merge(conditionResult);
+            resultStack.Push(result);
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundForStatement& boundForStatement)
+        {
+            PushSkipContent();
+        }
+        public override void EndVisit(Cm.BoundTree.BoundForStatement& boundForStatement)
+        {
+            PopSkipContent();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            PushBreakTargetStatement(&boundForStatement);
+            PushContinueTargetStatement(&boundForStatement);
+            Cm.Ast.Node* node = null;
+            Cm.Ast.ForStatementNode* forStatementNode = null;
+            if (generateDebugInfo)
+            {
+                node = boundForStatement.SyntaxNode();
+                if (node == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                if (!(node is Cm.Ast.StatementNode*))
+                {
+                    throw Exception("statement node expected");
+                }
+                Cm.Ast.StatementNode* statementNode = cast<Cm.Ast.StatementNode*>(node);
+                if (!(statementNode is Cm.Ast.ForStatementNode*))
+                {
+                    throw Exception("for statement node expected");
+                }
+                forStatementNode = cast<Cm.Ast.ForStatementNode*>(statementNode);
+            }
+            bool debugInfoDisabled = false;
+            if (generateDebugInfo && forStatementNode != null && forStatementNode->IsRangeForStatement())
+            {
+                PushGenDebugInfo(false);
+                debugInfoDisabled = true;
+            }
+            Cm.BoundTree.BoundStatement* initS = boundForStatement.InitS();
+            BeginVisitStatement(*initS);
+            initS->Accept(*this);
+            if (debugInfoDisabled)
+            {
+                PopGenDebugInfo();
+            }
+            if (generateDebugInfo)
+            {
+                if (!debugInfoDisabled)
+                {
+                    SetCfgNode(*initS, boundForStatement);
+                }
+                if (boundForStatement.Condition()->SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(*boundForStatement.Condition(), boundForStatement.Condition()->SyntaxNode()->GetSpan());
+            }
+            SharedPtr<Cm.Core.GenResult> initResult = resultStack.Pop();
+            Ir.Intf.LabelObject* initLabel = initResult->GetLabel();
+            Cm.BoundTree.BoundExpression* condition = boundForStatement.Condition();
+            condition->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
+            initResult->BackpatchNextTargets(conditionResult->GetLabel());
+            BackpatchNextTargets(initLabel);
+            Cm.BoundTree.BoundStatement* action = boundForStatement.Action();
+            BeginVisitStatement(*action);
+            action->Accept(*this);
+            if (generateDebugInfo)
+            {
+                AddDebugNodeTransition(*boundForStatement.Condition(), *action);
+            }
+            SharedPtr<Cm.Core.GenResult> actionResult = resultStack.Pop();
+            conditionResult->BackpatchTrueTargets(actionResult->GetLabel());
+            BackpatchNextTargets(actionResult->GetLabel());
+            result->MergeTargets(result->NextTargets(), conditionResult->FalseTargets());
+            Cm.BoundTree.BoundExpression* increment = boundForStatement.Increment();
+            if (generateDebugInfo)
+            {
+                if (increment->SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(*increment, increment->SyntaxNode()->GetSpan());
+            }
+            increment->Accept(*this);
+            if (generateDebugInfo)
+            {
+                AddDebugNodeTransition(*increment, *condition);
+            }
+            SharedPtr<Cm.Core.GenResult> incrementResult = resultStack.Pop();
+            actionResult->BackpatchNextTargets(incrementResult->GetLabel());
+            incrementResult->BackpatchNextTargets(conditionResult->GetLabel());
+            emitter->Emit(Cm.IrIntf.Br(conditionResult->GetLabel()));
+            result->MergeTargets(result->NextTargets(), boundForStatement.BreakTargetLabels());
+            Ir.Intf.Backpatch(boundForStatement.ContinueTargetLabels(), incrementResult->GetLabel());
+            PopContinueTargetStatement();
+            PopBreakTargetStatement();
+            if (generateDebugInfo)
+            {
+                AddToPrevDebugNodes(*condition);
+                AddToPrevDebugNodes(boundForStatement.BreakNextSet());
+                PatchDebugNodes(boundForStatement.ContinueNextSet(), increment->CfgNode());
+            }
+            result->Merge(initResult);
+            result->Merge(initResult);
+            result->Merge(actionResult);
+            result->Merge(incrementResult);
+            result->SetLabel(initLabel);
+            result->SetLabel(initLabel);
+        }
+        public override void Visit(Cm.BoundTree.BoundSwitchStatement& boundSwitchStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            if (generateDebugInfo)
+            {
+                if (boundSwitchStatement.Condition()->SyntaxNode() == null)
+                {
+                    throw Exception("syntax node not set");
+                }
+                CreateDebugNode(boundSwitchStatement, boundSwitchStatement.Condition()->SyntaxNode()->GetSpan(), false);
+            }
+            PushBreakTargetStatement(&boundSwitchStatement);
+            boundSwitchStatement.Condition()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
+            Ir.Intf.LabelObject* resultLabel = conditionResult->GetLabel();
+            result->Merge(conditionResult);
+            List<Ir.Intf.LabelObject*> caseLabels;
+            HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>> caseConstantMap;
+            HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>* caseConstantMapPtr = &caseConstantMap;
+            List<Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>> destinations;
+            switchEmitStateStack.Push(currentSwitchEmitState);
+            currentSwitchEmitState = SwitchEmitState.createSwitchTargets;
+            switchCaseConstantMapStack.Push(currentSwitchCaseConstantMap);
+            currentSwitchCaseConstantMap = caseConstantMapPtr;
+            for (const UniquePtr<Cm.BoundTree.BoundStatement>& caseStatement : boundSwitchStatement.CaseStatements())
+            {
+                switchCaseConstants.Clear();
+                caseStatement->Accept(*this);
+                Ir.Intf.LabelObject* caseLabel = switchCaseLabel;
+                for (Ir.Intf.Object* caseConstant : switchCaseConstants)
+                {
+                    destinations.Add(MakePair(caseConstant, caseLabel));
+                }
+                caseLabels.Add(caseLabel);
+            }
+            Ir.Intf.LabelObject* defaultDest = null;
+            if (boundSwitchStatement.DefaultStatement() != null)
+            {
+                boundSwitchStatement.DefaultStatement()->Accept(*this);
+                defaultDest = switchCaseLabel;
+            }
+            else
+            {
+                defaultDest = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(defaultDest);
+                result->AddNextTarget(defaultDest);
+                AddToPrevDebugNodes(boundSwitchStatement);
+            }
+            currentSwitchCaseConstantMap = switchCaseConstantMapStack.Pop();
+            currentSwitchEmitState = switchEmitStateStack.Pop();
+            Ir.Intf.Instruction* switchInst = Cm.IrIntf.Switch(result->MainObject()->GetType(), result->MainObject(), defaultDest, destinations);
+            emitter->Emit(switchInst);
+            List<int> prevDebugNodeHandles;
+            int index = 0;
+            for (UniquePtr<Cm.BoundTree.BoundStatement>& caseStatement : boundSwitchStatement.CaseStatements())
+            {
+                switchEmitStateStack.Push(currentSwitchEmitState);
+                currentSwitchEmitState = SwitchEmitState.emitStatements;
+                switchCaseConstantMapStack.Push(currentSwitchCaseConstantMap);
+                currentSwitchCaseConstantMap = caseConstantMapPtr;
+                switchCaseLabel = caseLabels[index];
+                caseStatement->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    AddDebugNodeTransition(boundSwitchStatement, *caseStatement);
+                    prevDebugNodeHandles.Add(RetrievePrevDebugNodes());
+                }
+                currentSwitchCaseConstantMap = switchCaseConstantMapStack.Pop();
+                currentSwitchEmitState = switchEmitStateStack.Pop();
+                SharedPtr<Cm.Core.GenResult> caseResult = resultStack.Pop();
+                result->Merge(caseResult);
+                ++index;
+            }
+            if (boundSwitchStatement.DefaultStatement() != null)
+            {
+                switchEmitStateStack.Push(currentSwitchEmitState);
+                currentSwitchEmitState = SwitchEmitState.emitStatements;
+                switchCaseConstantMapStack.Push(currentSwitchCaseConstantMap);
+                currentSwitchCaseConstantMap = caseConstantMapPtr;
+                switchCaseLabel = defaultDest;
+                boundSwitchStatement.DefaultStatement()->Accept(*this);
+                if (generateDebugInfo)
+                {
+                    AddDebugNodeTransition(boundSwitchStatement, *boundSwitchStatement.DefaultStatement());
+                    prevDebugNodeHandles.Add(RetrievePrevDebugNodes());
+                }
+                currentSwitchCaseConstantMap = switchCaseConstantMapStack.Pop();
+                currentSwitchEmitState = switchEmitStateStack.Pop();
+                SharedPtr<Cm.Core.GenResult> defaultResult = resultStack.Pop();
+                result->Merge(defaultResult);
+            }
+            result->MergeTargets(result->NextTargets(), boundSwitchStatement.BreakTargetLabels());
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            PopBreakTargetStatement();
+            if (generateDebugInfo)
+            {
+                for (int handle : prevDebugNodeHandles)
+                {
+                    AddToPrevDebugNodes(handle);
+                }
+                AddToPrevDebugNodes(boundSwitchStatement.BreakNextSet());
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundCaseStatement& boundCaseStatement)
+        {
+            if (currentSwitchEmitState == SwitchEmitState.createSwitchTargets)
+            {
+                Ir.Intf.LabelObject* label = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(label);
+                for (const UniquePtr<Cm.Sym.Value>& value : boundCaseStatement.Values())
+                {
+                    Ir.Intf.Object* caseConstant = value->CreateIrObject();
+                    emitter->Own(caseConstant);
+                    if (currentSwitchCaseConstantMap->CFind(caseConstant->Name()) != currentSwitchCaseConstantMap->CEnd())
+                    {
+                        Span span(0, 0, 0, 0);
+                        if (boundCaseStatement.SyntaxNode() != null)
+                        {
+                            span = boundCaseStatement.SyntaxNode()->GetSpan();
+                        }
+                        throw Cm.Core.Error("duplicate case constant '" + caseConstant->Name() + "'", span);
+                    }
+                    currentSwitchCaseConstantMap->Insert(MakePair(caseConstant->Name(), MakePair(label, cast<Cm.BoundTree.BoundStatement*>(&boundCaseStatement))));
+                    switchCaseConstants.Add(caseConstant);
+                }
+                switchCaseLabel = label;
+            }
+            else if (currentSwitchEmitState == SwitchEmitState.emitStatements)
+            {
+                SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                if (generateDebugInfo)
+                {
+                    if (boundCaseStatement.SyntaxNode() == null)
+                    {
+                        throw Exception("syntax node not set");
+                    }
+                    CreateEntryDebugNode(boundCaseStatement, boundCaseStatement.SyntaxNode()->GetSpan());
+                    SharedPtr<Cm.Core.GenResult> entryResult = resultStack.Pop();
+                    result->Merge(entryResult);
+                    result->SetLabel(entryResult->GetLabel());
+                    switchCaseLabel->Set(entryResult->GetLabel());
+                }
+                else
+                {
+                    emitter->AddNextInstructionLabel(switchCaseLabel);
+                }
+                for (const UniquePtr<Cm.BoundTree.BoundStatement>& statement : boundCaseStatement.Statements())
+                {
+                    statement->Accept(*this);
+                    SharedPtr<Cm.Core.GenResult> statementResult = resultStack.Pop();
+                    result->Merge(statementResult);
+                }
+                resultStack.Push(result);
+            }
+        }
+        public override void Visit(Cm.BoundTree.BoundDefaultStatement& boundDefaultStatement)
+        {
+            if (currentSwitchEmitState == SwitchEmitState.createSwitchTargets)
+            {
+                Ir.Intf.LabelObject* label = Cm.IrIntf.CreateNextLocalLabel();
+                emitter->Own(label);
+                switchCaseLabel = label;
+                currentSwitchCaseConstantMap->Insert(MakePair(string("@default"), MakePair(label, cast<Cm.BoundTree.BoundStatement*>(&boundDefaultStatement))));
+            }
+            else if (currentSwitchEmitState == SwitchEmitState.emitStatements)
+            {
+                SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                if (generateDebugInfo)
+                {
+                    if (boundDefaultStatement.SyntaxNode() == null)
+                    {
+                        throw Exception("syntax node not set");
+                    }
+                    CreateEntryDebugNode(boundDefaultStatement, boundDefaultStatement.SyntaxNode()->GetSpan());
+                    SharedPtr<Cm.Core.GenResult> entryResult = resultStack.Pop();
+                    result->Merge(entryResult);
+                    result->SetLabel(entryResult->GetLabel());
+                    switchCaseLabel->Set(entryResult->GetLabel());
+                }
+                else
+                {
+                    emitter->AddNextInstructionLabel(switchCaseLabel);
+                }
+                for (const UniquePtr<Cm.BoundTree.BoundStatement>& statement : boundDefaultStatement.Statements())
+                {
+                    statement->Accept(*this);
+                    SharedPtr<Cm.Core.GenResult> statementResult = resultStack.Pop();
+                    result->Merge(statementResult);
+                }
+                resultStack.Push(result);
+            }
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoCaseStatement& boundGotoCaseStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            Cm.Sym.Value* value = boundGotoCaseStatement.Value();
+            Ir.Intf.Object* caseConstant = value->CreateIrObject();
+            emitter->Own(caseConstant);
+            HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>.ConstIterator i = currentSwitchCaseConstantMap->CFind(caseConstant->Name());
+            if (i != currentSwitchCaseConstantMap->CEnd())
+            {
+                Ir.Intf.LabelObject* target = i->second.first;
+                Cm.BoundTree.BoundStatement* targetS = i->second.second;
+                ExitCompounds(boundGotoCaseStatement.CompoundParent(), targetS->CompoundParent(), *result);
+                if (generateDebugInfo)
+                {
+                    if (boundGotoCaseStatement.SyntaxNode() == null)
+                    {
+                        throw Exception("syntax node not set");
+                    }
+                    CreateDebugNode(boundGotoCaseStatement, boundGotoCaseStatement.SyntaxNode()->GetSpan(), false);
+                    if (targetS->CfgNode() != null)
+                    {
+                        AddDebugNodeTransition(boundGotoCaseStatement, *targetS);
+                    }
+                    else
+                    {
+                        targetS->AddToPrevSet(boundGotoCaseStatement.CfgNode());
+                    }
+                }
+                emitter->Emit(Cm.IrIntf.Br(target));
+            }
+            else
+            {
+                Span span(0, 0, 0, 0);
+                if (boundGotoCaseStatement.SyntaxNode() != null)
+                {
+                    span = boundGotoCaseStatement.SyntaxNode()->GetSpan();
+                }
+                throw Cm.Core.Error("goto case statement target not found", span);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundGotoDefaultStatement& boundGotoDefaultStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>.ConstIterator i = currentSwitchCaseConstantMap->CFind("@default");
+            if (i != currentSwitchCaseConstantMap->CEnd())
+            {
+                Ir.Intf.LabelObject* target = i->second.first;
+                Cm.BoundTree.BoundStatement* targetS = i->second.second;
+                ExitCompounds(boundGotoDefaultStatement.CompoundParent(), targetS->CompoundParent(), *result);
+                if (generateDebugInfo)
+                {
+                    if (boundGotoDefaultStatement.SyntaxNode() == null)
+                    {
+                        throw Exception("syntax node not set");
+                    }
+                    CreateDebugNode(boundGotoDefaultStatement, boundGotoDefaultStatement.SyntaxNode()->GetSpan(), false);
+                    if (targetS->CfgNode() != null)
+                    {
+                        AddDebugNodeTransition(boundGotoDefaultStatement, *targetS);
+                    }
+                    else
+                    {
+                        targetS->AddToPrevSet(boundGotoDefaultStatement.CfgNode());
+                    }
+                }
+                emitter->Emit(Cm.IrIntf.Br(target));
+            }
+            else
+            {
+                Span span(0, 0, 0, 0);
+                if (boundGotoDefaultStatement.SyntaxNode() != null)
+                {
+                    span = boundGotoDefaultStatement.SyntaxNode()->GetSpan();
+                }
+                throw Cm.Core.Error("goto default statement target not found", span);
+            }
+            resultStack.Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundPushGenDebugInfoStatement& boundPushGenDebugInfoStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            resultStack.Push(result);
+            PushGenDebugInfo(boundPushGenDebugInfoStatement.Generate());
+        }
+        public override void Visit(Cm.BoundTree.BoundPopGenDebugInfoStatement& boundPopGenDebugInfoStatement)
+        {
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            resultStack.Push(result);
+            PopGenDebugInfo();
+        }
         public virtual void MapIrFunToFun(Ir.Intf.Function* irFun, Cm.Sym.FunctionSymbol* fun)
         {
         }
@@ -1367,24 +2500,127 @@ namespace Cm.Emit
         {
             return null;
         }
+        public virtual void CreateDebugNode(Cm.BoundTree.BoundExpression& expr, const Span& span)
+        {
+        }
         public virtual void CreateEntryDebugNode(Cm.BoundTree.BoundStatement& statement, const Span& span)
         {
         }
         public virtual void CreateExitDebugNode(Cm.BoundTree.BoundStatement& statement, const Span& span)
         {
         }
+        public virtual void AddDebugNodeTransition(Cm.BoundTree.BoundStatement& fromStatement, Cm.BoundTree.BoundStatement& toStatement)
+        {
+        }
+        public virtual void AddDebugNodeTransition(Cm.BoundTree.BoundExpression& fromExpression, Cm.BoundTree.BoundStatement& toStatement)
+        {
+        }
+        public virtual void AddDebugNodeTransition(Cm.BoundTree.BoundExpression& fromExpression, Cm.BoundTree.BoundExpression& toExpression)
+        {
+        }
         public virtual Cm.Core.CFunctionDebugInfo* GetFunctionDebugInfo() const
         {
             return null;
         }
+        public virtual int RetrievePrevDebugNodes()
+        {
+            return -1;
+        }
+        public virtual void AddToPrevDebugNodes(int debugNodeSetHandle)
+        {
+        }
+        public virtual void AddToPrevDebugNodes(Cm.BoundTree.BoundStatement& statement)
+        {
+        }
+        public virtual void AddToPrevDebugNodes(Cm.BoundTree.BoundExpression& expr)
+        {
+        }
+        public virtual void AddToPrevDebugNodes(const HashSet<Cm.Core.CfgNode*>& nodeSet)
+        {
+        }
+        public virtual void PatchPrevDebugNodes(Cm.BoundTree.BoundStatement& statement)
+        {
+        }
+        public virtual void PatchDebugNodes(const HashSet<Cm.Core.CfgNode*>& nodeSet, Cm.Core.CfgNode* nextNode)
+        {
+        }
+        public virtual void SetCfgNode(Cm.BoundTree.BoundStatement& fromStatement, Cm.BoundTree.BoundStatement& toStatement)
+        {
+        }
+        public virtual void SetCallDebugInfoInfo(Ir.Intf.Instruction* callInst, Ir.Intf.Function* fun)
+        {
+        }
         public abstract void SetStringLiteralResult(Cm.Core.Emitter* emitter, Ir.Intf.Object* resultObject, Ir.Intf.Object* stringConstant, Ir.Intf.Object* stringObject);
         public abstract Ir.Intf.Object* MakeLocalVarIrObject(Cm.Sym.TypeSymbol* type, Ir.Intf.Object* source);
         public abstract void GenVirtualCall(Cm.Sym.FunctionSymbol* fun, Cm.Core.GenResult& memberFunctionResult);
-        public abstract void SetCallDebugInfoInfo(Ir.Intf.Instruction* callInst, Ir.Intf.Function* fun);
         public abstract void DoNothing(Cm.Core.GenResult& genResult);
+        public abstract void RegisterDestructor(Cm.Sym.MemberVariableSymbol* staticMemberVariableSymbol);
+        public abstract Ir.Intf.LabelObject* CreateLandingPadLabel(int landingPadId);
+        protected nothrow inline Cm.Core.Emitter* GetEmitter() const
+        {
+            return emitter.GetPtr();
+        }
+        protected nothrow inline Cm.Core.IrFunctionRepository& IrFunctionRepository()
+        {
+            return irFunctionRepository;
+        }
+        protected nothrow inline Cm.Core.StaticMemberVariableRepository& StaticMemberVariableRepository()
+        {
+            return staticMemberVariableRepository;
+        }
         private void GenerateLandingPadCode()
         {
-            // todo
+            const List<UniquePtr<Cm.BoundTree.LandingPad>>& landingPads = currentFunction->LandingPads();
+            for (const UniquePtr<Cm.BoundTree.LandingPad>& landingPad : landingPads)
+            {
+                Ir.Intf.LabelObject* landingPadLabel = CreateLandingPadLabel(landingPad->Id());
+                emitter->Own(landingPadLabel);
+                emitter->SetGotoTargetLabel(landingPadLabel);
+                SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+                result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
+                DoNothing(*result);
+                for (const UniquePtr<Cm.BoundTree.BoundDestructionStatement>& destructionStatement : landingPad->DestructionStatements())
+                {
+                    destructionStatement->Accept(*this);
+                }
+                int jumpToCatchId = landingPad->JumpToCatchId();
+                if (jumpToCatchId != -1)    // got handler to jump to...
+                {
+                    string continueLabelPrefix;
+                    Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+                    if (backend == Cm.IrIntf.Backend.llvm)
+                    {
+                        continueLabelPrefix = "$C";
+                    }
+                    else if (backend == Cm.IrIntf.Backend.c)
+                    {
+                        continueLabelPrefix = "_C_";
+                    }
+                    Ir.Intf.LabelObject* catchIdLabel = Cm.IrIntf.CreateLabel(continueLabelPrefix + ToString(jumpToCatchId));
+                    emitter->Own(catchIdLabel);
+                    emitter->Emit(Cm.IrIntf.Br(catchIdLabel));
+                }
+                else    // no handler to jump to...
+                {
+                    if (currentFunction->FunctionSymbol()->CanThrow()) // propagate exception to caller
+                    {
+                        Ir.Intf.Object* exCodeParam = irFunctionRepository.GetExceptionCodeParam();
+                        Ir.Intf.Object* exCodeVariable = localVariableIrObjectRepository.GetExceptionCodeVariable();
+                        Cm.IrIntf.Assign(*emitter, Ir.Intf.Factory.Instance()->GetI32(), exCodeVariable, exCodeParam);
+                    }
+                    Cm.Sym.TypeSymbol* returnType = currentFunction->FunctionSymbol()->GetReturnType();
+                    if (returnType == null || (returnType is Cm.Sym.VoidTypeSymbol*) || currentFunction->FunctionSymbol()->ReturnsClassObjectByValue())
+                    {
+                        emitter->Emit(Cm.IrIntf.Ret());
+                    }
+                    else
+                    {
+                        Ir.Intf.Object* retVal = returnType->IrType()->CreateDefaultValue();
+                        emitter->Own(retVal);
+                        emitter->Emit(Cm.IrIntf.Ret(retVal));
+                    }
+                }
+            }
         }
         private void GenJumpingBoolCode(Cm.Core.GenResult& result)
         {
@@ -1428,6 +2664,36 @@ namespace Cm.Emit
                 }
             }
         }
+        private void ExitCompounds(Cm.BoundTree.BoundCompoundStatement* fromCompound, Cm.BoundTree.BoundCompoundStatement* targetCompound, Cm.Core.GenResult& result)
+        {
+            bool first = true;
+            const CompoundDestructionStack* compoundDestructionStack = &currentCompoundDestructionStack;
+            Cm.BoundTree.BoundCompoundStatement* compound = fromCompound;
+            int n = functionDestructionStack.CompoundDestructionStacks().Count();
+            int i = n - 1;
+            while (compound != null && compound != targetCompound)
+            {
+                ExitCompound(result, *compoundDestructionStack, first);
+                compound = compound->CompoundParent();
+                if (i < 0)
+                {
+                    throw Exception("runaway compound destruction stack");
+                }
+                compoundDestructionStack = &functionDestructionStack.CompoundDestructionStacks()[i];
+                --i;
+            }
+        }
+        private void ExitFunction(Cm.Core.GenResult& result)
+        {
+            bool first = true;
+            ExitCompound(result,  currentCompoundDestructionStack, first);
+            int n = functionDestructionStack.CompoundDestructionStacks().Count();
+            for (int i = n - 1; i >= 0; --i)
+            {
+                const CompoundDestructionStack& compoundDestructionStack = functionDestructionStack.CompoundDestructionStacks()[i];
+                ExitCompound(result, compoundDestructionStack, first);
+            }
+        }
         private void BackpatchNextTargets(Ir.Intf.LabelObject* label)
         {
             List<Ir.Intf.LabelObject*> nextTargets = nextTargetsStack.Pop();
@@ -1448,6 +2714,24 @@ namespace Cm.Emit
         private void PopGenDebugInfo()
         {
             generateDebugInfo = generateDebugInfoStack.Pop();
+        }
+        private void PushBreakTargetStatement(Cm.BoundTree.BoundStatement* statement)
+        {
+            breakTargetStatementStack.Push(breakTargetStatement);
+            breakTargetStatement = statement;
+        }
+        private void PopBreakTargetStatement()
+        {
+            breakTargetStatement = breakTargetStatementStack.Pop();
+        }
+        private void PushContinueTargetStatement(Cm.BoundTree.BoundStatement* statement)
+        {
+            continueTargetStatementStack.Push(continueTargetStatement);
+            continueTargetStatement = statement;
+        }
+        private void PopContinueTargetStatement()
+        {
+            continueTargetStatement = continueTargetStatementStack.Pop();
         }
         private void ClearCompoundDestructionStack(Cm.Core.GenResult& result)
         {
@@ -1539,7 +2823,7 @@ namespace Cm.Emit
                 }
             }
         }
-        private void GenerateCall(Cm.Sym.FunctionSymbol* functionSymbol, Ir.Intf.Function* fun, Cm.BoundTree.TraceCallInfo* traceCallInfo, Cm.Core.GenResult& result, bool constructorOrDestructorCall)
+        protected void GenerateCall(Cm.Sym.FunctionSymbol* functionSymbol, Ir.Intf.Function* fun, Cm.BoundTree.TraceCallInfo* traceCallInfo, Cm.Core.GenResult& result, bool constructorOrDestructorCall)
         {
             if (traceCallInfo != null)
             {
@@ -1644,23 +2928,185 @@ namespace Cm.Emit
         }
         private void GenerateClassDelegateInitFromFun(Cm.Bind.ClassDelegateFromFunCtor* ctor, Cm.Core.GenResult& result)
         {
-            // todo
+            Cm.Sym.Symbol* objSymbol = ctor->ClassDelegateType()->GetContainerScope()->Lookup("obj");
+            if (!(objSymbol is Cm.Sym.MemberVariableSymbol*))
+            {
+                throw Exception("member variable symbol expected");
+            }
+            Cm.Sym.MemberVariableSymbol* objMemberVarSymbol = cast<Cm.Sym.MemberVariableSymbol*>(objSymbol);
+            UniquePtr<Cm.BoundTree.BoundMemberVariable> objMemberVar(new Cm.BoundTree.BoundMemberVariable(null, objMemberVarSymbol));
+            Ir.Intf.Object* obj = irObjectRepository.MakeMemberVariableIrObject(objMemberVar.GetPtr(), result.MainObject());
+            Cm.IrIntf.Init(*emitter, result.Arg1()->GetType(), result.Arg1(), obj);
+            Cm.Sym.Symbol* dlgSymbol = ctor->ClassDelegateType()->GetContainerScope()->Lookup("dlg");
+            if (!(dlgSymbol is Cm.Sym.MemberVariableSymbol*))
+            {
+                throw Exception("member variable symbol expected");
+            }
+            Cm.Sym.MemberVariableSymbol* dlgMemberVarSymbol = cast<Cm.Sym.MemberVariableSymbol*>(dlgSymbol);
+            UniquePtr<Cm.BoundTree.BoundMemberVariable> dlgMemberVar(new Cm.BoundTree.BoundMemberVariable(null, dlgMemberVarSymbol));
+            Ir.Intf.Object* dlg = irObjectRepository.MakeMemberVariableIrObject(dlgMemberVar.GetPtr(), result.MainObject());
+            Ir.Intf.Type* funPtrIrType = irFunctionRepository.GetFunPtrIrType(ctor->FunctionSymbol());
+            Ir.Intf.RegVar* delegatePtr = Cm.IrIntf.MakeTemporaryRegVar(ctor->DelegateType()->IrType());
+            emitter->Own(delegatePtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(funPtrIrType, delegatePtr, result.Arg2(), ctor->DelegateType()->IrType()));
+            Cm.IrIntf.Init(*emitter, ctor->DelegateType()->IrType(), delegatePtr, dlg);
         }
         private void GenerateClassDelegateAssignmentFromFun(Cm.Bind.ClassDelegateFromFunAssignment* assignment, Cm.Core.GenResult& result)
         {
-            // todo
+            Cm.Sym.Symbol* objSymbol = assignment->ClassDelegateType()->GetContainerScope()->Lookup("obj");
+            if (!(objSymbol is Cm.Sym.MemberVariableSymbol*))
+            {
+                throw Exception("member variable symbol expected");
+            }
+            Cm.Sym.MemberVariableSymbol* objMemberVarSymbol = cast<Cm.Sym.MemberVariableSymbol*>(objSymbol);
+            UniquePtr<Cm.BoundTree.BoundMemberVariable> objMemberVar(new Cm.BoundTree.BoundMemberVariable(null, objMemberVarSymbol));
+            Ir.Intf.Object* obj = irObjectRepository.MakeMemberVariableIrObject(objMemberVar.GetPtr(), result.MainObject());
+            Cm.IrIntf.Assign(*emitter, result.Arg1()->GetType(), result.Arg1(), obj);
+            Cm.Sym.Symbol* dlgSymbol = assignment->ClassDelegateType()->GetContainerScope()->Lookup("dlg");
+            if (!(dlgSymbol is Cm.Sym.MemberVariableSymbol*))
+            {
+                throw Exception("member variable symbol expected");
+            }
+            Cm.Sym.MemberVariableSymbol* dlgMemberVarSymbol = cast<Cm.Sym.MemberVariableSymbol*>(dlgSymbol);
+            UniquePtr<Cm.BoundTree.BoundMemberVariable> dlgMemberVar(new Cm.BoundTree.BoundMemberVariable(null, dlgMemberVarSymbol));
+            Ir.Intf.Object* dlg = irObjectRepository.MakeMemberVariableIrObject(dlgMemberVar.GetPtr(), result.MainObject());
+            Ir.Intf.Type* funPtrIrType = irFunctionRepository.GetFunPtrIrType(assignment->FunctionSymbol());
+            Ir.Intf.RegVar* delegatePtr = Cm.IrIntf.MakeTemporaryRegVar(assignment->DelegateType()->IrType());
+            emitter->Own(delegatePtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(funPtrIrType, delegatePtr, result.Arg2(), assignment->DelegateType()->IrType()));
+            Cm.IrIntf.Assign(*emitter, assignment->DelegateType()->IrType(), delegatePtr, dlg);
         }
         private void CallEnterFrame(Cm.BoundTree.TraceCallInfo* traceCallInfo)
         {
-            // todo
+            if (currentFunction->FunctionSymbol()->FullName() == "System.TracedFun.@constructor(System.TracedFun*, const char*, const char*, int)") return;
+            if (currentFunction->FunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)") return;
+            Ir.Intf.Function* enterFrameIrFun = irFunctionRepository.CreateIrFunction(enterFrameFun);
+            externalFunctions.Insert(enterFrameIrFun);
+            MapIrFunToFun(enterFrameIrFun, enterFrameFun);
+            List<Ir.Intf.Object*> args;
+            traceCallInfo->Fun()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> funResult = resultStack.Pop();
+            args.Add(funResult->MainObject());
+            traceCallInfo->File()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> fileResult = resultStack.Pop();
+            args.Add(fileResult->MainObject());
+            traceCallInfo->Line()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> lineResult = resultStack.Pop();
+            args.Add(lineResult->MainObject());
+            Ir.Intf.Instruction* callInst = Cm.IrIntf.Call(null, enterFrameIrFun, args);
+            emitter->Emit(callInst);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.trace))
+            {
+                Ir.Intf.Function* enterTracedCallIrFun = irFunctionRepository.CreateIrFunction(enterTracedCallFun);
+                externalFunctions.Insert(enterTracedCallIrFun);
+                MapIrFunToFun(enterTracedCallIrFun, enterTracedCallFun);
+                Ir.Intf.Instruction* enterTracedCallInst = Cm.IrIntf.Call(null, enterTracedCallIrFun, args);
+                emitter->Emit(enterTracedCallInst);
+            }
         }
         private void CallLeaveFrame(Cm.BoundTree.TraceCallInfo* traceCallInfo)
         {
-            // todo
+            if (currentFunction->FunctionSymbol()->FullName() == "System.TracedFun.@constructor(System.TracedFun*, const char*, const char*, int)") return;
+            if (currentFunction->FunctionSymbol()->FullName() == "System.TracedFun.@destructor(System.TracedFun*)") return;
+            Ir.Intf.Function* leaveFrameIrFun = irFunctionRepository.CreateIrFunction(leaveFrameFun);
+            List<Ir.Intf.Object*> args;
+            externalFunctions.Insert(leaveFrameIrFun);
+            MapIrFunToFun(leaveFrameIrFun, leaveFrameFun);
+            Ir.Intf.Instruction* callInst = Cm.IrIntf.Call(null, leaveFrameIrFun, args);
+            emitter->Emit(callInst);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.trace))
+            {
+                Ir.Intf.Function* leaveTracedCallIrFun = irFunctionRepository.CreateIrFunction(leaveTracedCallFun);
+                externalFunctions.Insert(leaveTracedCallIrFun);
+                MapIrFunToFun(leaveTracedCallIrFun, leaveTracedCallFun);
+                List<Ir.Intf.Object*> traceCallArgs;
+                traceCallInfo->Fun()->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> funResult = resultStack.Pop();
+                traceCallArgs.Add(funResult->MainObject());
+                traceCallInfo->File()->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> fileResult = resultStack.Pop();
+                traceCallArgs.Add(fileResult->MainObject());
+                traceCallInfo->Line()->Accept(*this);
+                SharedPtr<Cm.Core.GenResult> lineResult = resultStack.Pop();
+                traceCallArgs.Add(lineResult->MainObject());
+                Ir.Intf.Instruction* leaveTracedCallInst = Cm.IrIntf.Call(null, leaveTracedCallIrFun, traceCallArgs);
+                emitter->Emit(leaveTracedCallInst);
+            }
         }
         private void GenerateTestExceptionResult()
         {
-            // todo
+            if (currentFunction->IsRealMainFunction()) return;  // in real main() exception code is tested explicitly after call to user$main()
+            int landingPadId = currentFunction->GetNextLandingPadId();
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            string labelPrefix;
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                labelPrefix = "$P";
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                labelPrefix = "_P_";
+            }
+            Ir.Intf.LabelObject* landingPadLabel = Cm.IrIntf.CreateLabel(labelPrefix + ToString(landingPadId));
+            emitter->Own(landingPadLabel);
+            Ir.Intf.LabelObject* nextLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(nextLabel);
+            Ir.Intf.Object* exCodeVariable = localVariableIrObjectRepository.GetExceptionCodeVariable();
+            Ir.Intf.RegVar* exCodeReg = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI32());
+            emitter->Own(exCodeReg);
+            Cm.IrIntf.Assign(*emitter, Ir.Intf.Factory.Instance()->GetI32(), exCodeVariable, exCodeReg);
+            Ir.Intf.RegVar* resultReg = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter->Own(resultReg);
+            Ir.Intf.Object* zero = Ir.Intf.Factory.Instance()->GetI32()->CreateDefaultValue();
+            emitter->Own(zero);
+            emitter->Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetI32(), resultReg, Ir.Intf.IConditionCode.ne, exCodeReg, zero));
+            emitter->Emit(Cm.IrIntf.Br(resultReg, landingPadLabel, nextLabel));
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
+            result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
+            emitter->AddNextInstructionLabel(nextLabel);
+            DoNothing(*result);
+            CreateLandingPad(landingPadId);
+        }
+        private void CreateLandingPad(int landingPadId)
+        {
+            Cm.BoundTree.LandingPad* landingPad = new Cm.BoundTree.LandingPad(landingPadId, currentCatchId);
+            int n = currentCompoundDestructionStack.DestructionStatements().Count();
+            for (int i = n - 1; i >= 0; --i)
+            {
+                Cm.BoundTree.BoundDestructionStatement* destructionStatement = currentCompoundDestructionStack.DestructionStatements()[i].GetPtr();
+                landingPad->AddDestructionStatement(new Cm.BoundTree.BoundDestructionStatement(destructionStatement->SyntaxNode(), destructionStatement->Object(), destructionStatement->Destructor()));
+            }
+            if (currentCatchId == -1)
+            {
+                int n = functionDestructionStack.CompoundDestructionStacks().Count();
+                for (int i = n - 1; i >= 0; --i)
+                {
+                    const CompoundDestructionStack& compoundDestructionStack = functionDestructionStack.CompoundDestructionStacks()[i];
+                    int m = compoundDestructionStack.DestructionStatements().Count();
+                    for (int j = m - 1; j >= 0; --j)
+                    {
+                        Cm.BoundTree.BoundDestructionStatement* destructionStatement = compoundDestructionStack.DestructionStatements()[j].GetPtr();
+                        landingPad->AddDestructionStatement(new Cm.BoundTree.BoundDestructionStatement(destructionStatement->SyntaxNode(), destructionStatement->Object(), destructionStatement->Destructor()));
+                    }
+                }
+            }
+            currentFunction->AddLandingPad(landingPad);
+        }
+        private void ExecutePostfixIncDecStatements(Cm.Core.GenResult& result)
+        {
+            if (executingPostfixIncDecStatements) return;
+            if (!postfixIncDecStatements.IsEmpty())
+            {
+                executingPostfixIncDecStatements = true;
+                for (const UniquePtr<Cm.BoundTree.BoundStatement>& statement : postfixIncDecStatements)
+                {
+                    statement->Accept(*this);
+                    SharedPtr<Cm.Core.GenResult> statementResult = resultStack.Pop();
+                    result.Merge(statementResult);
+                }
+                postfixIncDecStatements.Clear();
+                executingPostfixIncDecStatements = false;
+            }
         }
         private bool generateDebugInfo;
         private Stack<bool> generateDebugInfoStack;
@@ -1700,7 +3146,7 @@ namespace Cm.Emit
         private Stack<SwitchEmitState> switchEmitStateStack;
         private int currentCatchId;
         private Stack<int> catchIdStack;
-        private Stack<HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>> switchCaseConstantMapStack;
+        private Stack<HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>*> switchCaseConstantMapStack;
         private HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>* currentSwitchCaseConstantMap;
         private Ir.Intf.LabelObject* switchCaseLabel;
         private List<Ir.Intf.Object*> switchCaseConstants;
@@ -1715,6 +3161,15 @@ namespace Cm.Emit
     
     internal void CheckRvalueArrayCall(Cm.Core.Emitter& emitter, Cm.Sym.FunctionSymbol* fun, Cm.Core.GenResult& result)
     {
-        // todo
+        if (fun->GroupName() != "Rvalue") return;
+        if (fun->Parameters().Count() != 1) return;
+        Cm.Sym.ParameterSymbol* param = fun->Parameters()[0];
+        if (!param->GetType()->IsArrayType()) return;
+        if (result.Objects().Count() < 2) return;
+        if (Cm.IrIntf.TypesEqual(result.Arg1()->GetType(), param->GetType()->IrType())) return;
+        Ir.Intf.Object* temp = Cm.IrIntf.MakeTemporaryRegVar(param->GetType()->IrType());
+        emitter.Own(temp);
+        emitter.Emit(Cm.IrIntf.Bitcast(result.Arg1()->GetType(), temp, result.Arg1(), temp->GetType()));
+        result.Objects()[1] = temp;
     }
 }

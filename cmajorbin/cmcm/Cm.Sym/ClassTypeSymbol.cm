@@ -503,6 +503,12 @@ namespace Cm.Sym
         {
             vptrIndex = vptrIndex_;
         }
+        public nothrow ClassTypeSymbol* VPtrContainerClass() const
+        {
+            if (vptrIndex != -1) return this;
+            if (baseClass != null) return baseClass->VPtrContainerClass();
+            return null;
+        }
         public void InitVtbl()
         {
             if (GetFlag(ClassTypeSymbolFlags.vtblInitialized)) return;

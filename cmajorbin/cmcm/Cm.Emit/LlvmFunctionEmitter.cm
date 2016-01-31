@@ -16,7 +16,7 @@ namespace Cm.Emit
 {
     public class LlvmFunctionEmitter : FunctionEmitter
     {
-        public nothrow LlvmFunctionEmitter(CodeFormatter& codeFormatter_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, 
+        public LlvmFunctionEmitter(CodeFormatter& codeFormatter_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, 
             Cm.Core.IrClassTypeRepository& irClassTypeRepository_, Cm.Core.StringRepository& stringRepository_, Cm.BoundTree.BoundClass* currentClass_, HashSet<string>& internalFunctionNames_, 
             HashSet<Ir.Intf.Function*>& externalFunctions_, Cm.Core.StaticMemberVariableRepository& staticMemberVariableRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_,
             Cm.Ast.CompileUnitNode* currentCompileUnit_, Cm.Sym.FunctionSymbol* enterFrameFun_, Cm.Sym.FunctionSymbol* leaveFrameFun_, Cm.Sym.FunctionSymbol* enterTracedCallFun_, 
@@ -39,15 +39,114 @@ namespace Cm.Emit
         }
         public override void GenVirtualCall(Cm.Sym.FunctionSymbol* fun, Cm.Core.GenResult& memberFunctionResult)
         {
-            // todo
-        }
-        public override void SetCallDebugInfoInfo(Ir.Intf.Instruction* callInst, Ir.Intf.Function* fun)
-        {
-            // todo
+            Cm.Core.Emitter* emitter = GetEmitter();
+            Ir.Intf.Object* objectPtr = memberFunctionResult.Arg1();
+            Cm.Sym.ClassTypeSymbol* classType = fun->Class();
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter->Own(i8Ptr);
+            Ir.Intf.Type* i8PtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u);
+            emitter->Own(i8PtrPtr);
+            Ir.Intf.Object* vptrContainerPtr = objectPtr;
+            short vptrIndex = classType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+                vptrIndex = vptrContainingType->VPtrIndex();
+                Ir.Intf.Type* vptrContainingPtrIrType = Cm.IrIntf.Pointer(vptrContainingType->IrType(), 1u);
+                emitter->Own(vptrContainingPtrIrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(vptrContainingPtrIrType);
+                emitter->Own(containerPtr);
+                Ir.Intf.Type* classTypePtrIrType = Cm.IrIntf.Pointer(classType->IrType(), 1u);
+                emitter->Own(classTypePtrIrType);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
+                vptrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vptrContainerPtr, vptrIndex, i8PtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter->Own(loadedVptr);
+            Cm.IrIntf.Assign(*emitter, i8PtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* functionI8PtrPtr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter->Own(functionI8PtrPtr);
+            Ir.Intf.Object* functionIndex = Cm.IrIntf.MakeI16Constant(fun->VtblIndex());
+            emitter->Own(functionIndex);
+            emitter->Emit(Cm.IrIntf.GetElementPtr(i8PtrPtr, functionI8PtrPtr, loadedVptr, functionIndex));
+            Ir.Intf.RegVar* loadedFunctionI8Ptr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter->Own(loadedFunctionI8Ptr);
+            Cm.IrIntf.Assign(*emitter, i8Ptr, functionI8PtrPtr, loadedFunctionI8Ptr);
+            Ir.Intf.Type* functionPtrType = IrFunctionRepository().GetFunPtrIrType(fun);
+            Ir.Intf.RegVar* loadedFunctionPtr = Cm.IrIntf.MakeTemporaryRegVar(functionPtrType);
+            emitter->Own(loadedFunctionPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(i8Ptr, loadedFunctionPtr, loadedFunctionI8Ptr, functionPtrType));
+            emitter->Emit(Cm.IrIntf.IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
         }
         public override void DoNothing(Cm.Core.GenResult& genResult)
         {
-            // todo
+            GenerateCall(null, IrFunctionRepository().GetDoNothingFunction(), null, genResult, false);
         }    
+        public override void RegisterDestructor(Cm.Sym.MemberVariableSymbol* staticMemberVariableSymbol)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            Ir.Intf.Object* irObject = StaticMemberVariableRepository().GetStaticMemberVariableIrObject(staticMemberVariableSymbol);
+            Ir.Intf.Object* destructionNode = StaticMemberVariableRepository().GetDestructionNode(staticMemberVariableSymbol);
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
+            emitter->Own(i8Ptr);
+            Ir.Intf.Type* i8PtrPtr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 2u);
+            emitter->Own(i8PtrPtr);
+            Ir.Intf.RegVar* objectFieldPtr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter->Own(objectFieldPtr);
+            Ir.Intf.Object* zero = Cm.IrIntf.MakeI32Constant(0);
+            emitter->Own(zero);
+            Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+            emitter->Own(one);
+            emitter->Emit(Cm.IrIntf.GetElementPtr(destructionNode->GetType(), objectFieldPtr, destructionNode, zero, one));
+            Ir.Intf.Object* irObjectAsI8Ptr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter->Own(irObjectAsI8Ptr);
+            emitter->Emit(Cm.IrIntf.Bitcast(irObject->GetType(), irObjectAsI8Ptr, irObject, i8Ptr));
+            emitter->Emit(Cm.IrIntf.Store(i8Ptr, irObjectAsI8Ptr, objectFieldPtr));
+            Cm.Sym.TypeSymbol* type = staticMemberVariableSymbol->GetType();
+            if (type is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(type);
+                if (classType->Destructor() != null)
+                {
+                    Cm.Sym.FunctionSymbol* destructor = classType->Destructor();
+                    Ir.Intf.Function* destructorIrFun = IrFunctionRepository().CreateIrFunction(destructor);
+                    Ir.Intf.Type* destructorPtrType = IrFunctionRepository().GetFunPtrIrType(destructor);
+                    List<Ir.Intf.Type*> dtorParamTypes1(1, i8Ptr->Clone());
+                    Ir.Intf.Type* destructorFieldType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeFunctionType(Cm.IrIntf.Void(), dtorParamTypes1), 1u);
+                    emitter->Own(destructorFieldType);
+                    List<Ir.Intf.Type*> dtorParamTypes2(1, i8Ptr->Clone());
+                    Ir.Intf.Type* destructorFieldPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeFunctionType(Cm.IrIntf.Void(), dtorParamTypes2), 2u);
+                    emitter->Own(destructorFieldPtrType);
+                    Ir.Intf.RegVar* destructorFieldPtr = Cm.IrIntf.MakeTemporaryRegVar(destructorFieldPtrType);
+                    emitter->Own(destructorFieldPtr);
+                    Ir.Intf.Object* two = Cm.IrIntf.MakeI32Constant(2);
+                    emitter->Own(two);
+                    emitter->Emit(Cm.IrIntf.GetElementPtr(destructionNode->GetType(), destructorFieldPtr, destructionNode, zero, two));
+                    Ir.Intf.Global* dtor = Cm.IrIntf.MakeGlobal(destructorIrFun->Name(), destructorPtrType);
+                    emitter->Own(dtor);
+                    Ir.Intf.RegVar* dtorPtr = Cm.IrIntf.MakeTemporaryRegVar(destructorFieldType);
+                    emitter->Own(dtorPtr);
+                    emitter->Emit(Cm.IrIntf.Bitcast(destructorPtrType, dtorPtr, dtor, destructorFieldType));
+                    emitter->Emit(Cm.IrIntf.Store(destructorFieldType, dtorPtr, destructorFieldPtr));
+                    List<Ir.Intf.Parameter*> registerFunParams;
+                    Ir.Intf.Parameter* param = Cm.IrIntf.MakeParameter("node", destructionNode->GetType()->Clone());
+                    emitter->Own(param);
+                    registerFunParams.Add(param);
+                    Ir.Intf.Function* registerFun = Cm.IrIntf.CreateFunction(Cm.IrIntf.GetRegisterDestructorFunctionName(), Ir.Intf.Factory.Instance()->GetVoid(), registerFunParams);
+                    emitter->Own(registerFun);
+                    List<Ir.Intf.Object*> registerFunArgs;
+                    registerFunArgs.Add(destructionNode);
+                    Ir.Intf.RegVar* result = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetVoid());
+                    emitter->Own(result);
+                    emitter->Emit(Cm.IrIntf.Call(result, registerFun, registerFunArgs));
+                }
+            }
+        }
+        public override Ir.Intf.LabelObject* CreateLandingPadLabel(int landingPadId)
+        {
+            return Cm.IrIntf.CreateLabel("$P" + ToString(landingPadId));
+        }
     }
 }

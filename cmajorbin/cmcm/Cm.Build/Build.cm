@@ -729,7 +729,25 @@ namespace Cm.Build
                 boundCompileUnit->SetArrayTypeOpRepository(new Cm.Bind.ArrayTypeOpRepository(*boundCompileUnit));
                 boundCompileUnit->AddFileScope(fileScopes[index].Release());
                 Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
+                if (boundCompileUnit->HasGotos())
+                {
+                    AnalyzeControlFlow(*boundCompileUnit);
+                }
+                if (Cm.Core.GetConfig() == "full")
+                {
+                    // todo
+                }
+                else
+                {
+                    Emit(symbolTable.GetTypeRepository(), *boundCompileUnit, null);
+                    objectCodeCompileUnits.Add(boundCompileUnit.GetPtr());
+                }
             }
+            else
+            {
+                Cm.Sym.ProcessExceptionIdFile(boundCompileUnit->IrFilePath(), symbolTable);
+            }
+            objectFilePaths.Add(boundCompileUnit->ObjectFilePath());
             ++index;
         }
         return changed;
@@ -740,6 +758,27 @@ namespace Cm.Build
         Cm.Sym.EraseExceptionIdFile(boundCompileUnit.IrFilePath());
         Cm.Bind.Binder binder(boundCompileUnit);
         compileUnit->Accept(binder);
+    }
+    
+    public void AnalyzeControlFlow(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.Bind.ControlFlowAnalyzer controlFlowAnalyzer;
+        boundCompileUnit.Accept(controlFlowAnalyzer);
+    }
+    
+    public void Emit(Cm.Sym.TypeRepository& typeRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, void* tpGraph)
+    {
+        if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+        {
+            Cm.Emit.LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository(),
+                boundCompileUnit.ExternalConstantRepository());
+            // emitter.SetTpGraph(tpGraph); todo
+            boundCompileUnit.Accept(emitter);
+        }
+        else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+        {
+            // todo
+        }
     }
     
     public bool Archive(const List<string>& objectFilePaths, const string& assemblyFilePath)

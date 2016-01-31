@@ -191,8 +191,12 @@ namespace Cm.Core
     
     public class Emitter : Ir.Intf.Emitter
     {
-        public nothrow Emitter() : base(), irFunction(null), gotoTargetLabel(null), cDebugNode(null), activeCfgNode(null), profilingHandler(null)
+        public Emitter() : base(), irFunction(null), gotoTargetLabel(null), cDebugNode(null), activeCfgNode(null), profilingHandler(null), newLlvmSyntax(false)
         {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && Cm.Core.GlobalSettings.Instance().GetLlvmVersion() >= Cm.Ast.ProgramVersion(3, 7, 0, 0, ""))
+            {
+                newLlvmSyntax = true;
+            }
         }
         public nothrow inline void SetIrFunction(Ir.Intf.Function* irFunction_)
         {
@@ -265,6 +269,41 @@ namespace Cm.Core
             {
                 profilingHandler->EmitEndProfiledFun(label);
             }
+            if (newLlvmSyntax && ((instruction is Llvm.LoadInst*) || (instruction is Llvm.GetElementPtrInst*)))
+            {
+                Ir.Intf.Type* ptrType = null;
+                Llvm.LoadInst* loadInst = null;
+                Llvm.GetElementPtrInst* getElementPtrInst = null;
+                if (instruction is Llvm.LoadInst*)
+                {
+                    loadInst = cast<Llvm.LoadInst*>(instruction);
+                    ptrType = loadInst->Type();
+                }
+                else if (instruction is Llvm.GetElementPtrInst*)
+                {
+                    getElementPtrInst = cast<Llvm.GetElementPtrInst*>(instruction);
+                    ptrType = getElementPtrInst->PtrType();
+                }
+                int numPointers = ptrType->NumPointers();
+                Ir.Intf.Type* itemType = null;
+                if (numPointers > 1)
+                {
+                    itemType = Cm.IrIntf.Pointer(ptrType->GetBaseType(), cast<byte>(numPointers - 1));
+                }
+                else
+                {
+                    itemType = ptrType->GetBaseType();
+                }
+                Own(itemType);
+                if (loadInst != null)
+                {
+                    loadInst->SetItemType(itemType);
+                }
+                else if (getElementPtrInst != null)
+                {
+                    getElementPtrInst->SetItemType(itemType);
+                }
+            }
             irFunction->AddInstruction(instruction);
             if (instruction->IsRet())
             {
@@ -327,6 +366,7 @@ namespace Cm.Core
         private Ir.Intf.CDebugNode* cDebugNode;
         private CfgNode* activeCfgNode;
         private ProfilingHandler* profilingHandler;
+        private bool newLlvmSyntax;
     }
     
     public class GenResult

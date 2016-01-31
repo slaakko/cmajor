@@ -46,83 +46,83 @@ namespace Cm.Emit
         }
         public abstract void WriteCompileUnitHeader(CodeFormatter& codeFormatter);
         public abstract Cm.Core.StaticMemberVariableRepository& GetStaticMemberVariableRepository();
-        protected const HashSet<Ir.Intf.Function*>& ExternalFunctions() const
+        protected nothrow inline const HashSet<Ir.Intf.Function*>& ExternalFunctions() const
         {
             return externalFunctions;
         }
-        protected HashSet<Ir.Intf.Function*>& ExternalFunctions()
+        protected nothrow inline HashSet<Ir.Intf.Function*>& ExternalFunctions()
         {
             return externalFunctions;
         }
-        protected const HashSet<string>& InternalFunctionNames() const
+        protected nothrow inline const HashSet<string>& InternalFunctionNames() const
         {
             return internalFunctionNames;
         }
-        protected HashSet<string>& InternalFunctionNames()
+        protected nothrow inline HashSet<string>& InternalFunctionNames()
         {
             return internalFunctionNames;
         }
-        protected CodeFormatter& GetCodeFormatter()
+        protected nothrow inline CodeFormatter& GetCodeFormatter()
         {
             return codeFormatter;
         }
-        protected Cm.Core.ExternalConstantRepository& ExternalConstantRepository()
+        protected nothrow inline Cm.Core.ExternalConstantRepository& ExternalConstantRepository()
         {
             return externalConstantRepository;
         }
-        protected Cm.BoundTree.BoundClass* CurrentClass()
+        protected nothrow inline Cm.BoundTree.BoundClass* CurrentClass()
         {
             return currentClass;
         }
-        protected void SetCurrentClass(Cm.BoundTree.BoundClass* currentClass_)
+        protected nothrow inline void SetCurrentClass(Cm.BoundTree.BoundClass* currentClass_)
         {
             currentClass = currentClass_;
         }
-        protected const HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses() const
+        protected nothrow inline const HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses() const
         {
             return processedClasses;
         }
-        protected HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses()
+        protected nothrow inline HashSet<Cm.Sym.ClassTypeSymbol*>& ProcessedClasses()
         {
             return processedClasses;
         }
-        protected Cm.Sym.TypeRepository& TypeRepository()
+        protected nothrow inline Cm.Sym.TypeRepository& TypeRepository()
         {
             return typeRepository;
         }
-        protected Cm.Core.IrFunctionRepository& IrFunctionRepository()
+        protected nothrow inline Cm.Core.IrFunctionRepository& IrFunctionRepository()
         {
             return irFunctionRepository;
         }
-        protected Cm.Core.IrClassTypeRepository& IrClassTypeRepository()
+        protected nothrow inline Cm.Core.IrClassTypeRepository& IrClassTypeRepository()
         {
             return irClassTypeRepository;
         }
-        protected Cm.Core.StringRepository& StringRepository()
+        protected nothrow inline Cm.Core.StringRepository& StringRepository()
         {
             return stringRepository;
         }
-        protected Cm.Ast.CompileUnitNode* CurrentCompileUnit()
+        protected nothrow inline Cm.Ast.CompileUnitNode* CurrentCompileUnit()
         {
             return currentCompileUnit;
         }
-        protected Cm.Sym.FunctionSymbol* EnterFrameFun()
+        protected nothrow inline Cm.Sym.FunctionSymbol* EnterFrameFun()
         {
             return enterFrameFun;
         }
-        protected Cm.Sym.FunctionSymbol* LeaveFrameFun()
+        protected nothrow inline Cm.Sym.FunctionSymbol* LeaveFrameFun()
         {
             return leaveFrameFun;
         }
-        protected Cm.Sym.FunctionSymbol* EnterTracedCallFun()
+        protected nothrow inline Cm.Sym.FunctionSymbol* EnterTracedCallFun()
         {
             return enterTracedCallFun;
         }
-        protected Cm.Sym.FunctionSymbol* LeaveTracedCallFun()
+        protected nothrow inline Cm.Sym.FunctionSymbol* LeaveTracedCallFun()
         {
             return leaveTracedCallFun;
         }
-        protected bool Profile() const
+        protected nothrow inline bool Profile() const
         {
             return profile;
         }
