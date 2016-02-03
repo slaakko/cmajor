@@ -64,6 +64,10 @@ TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& nam
 TemplateTypeSymbol::TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_) :
     ClassTypeSymbol(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_), primaryTemplateTypeSymbol(nullptr)
 {
+    if (subjectType->Name() == "ExDeleter")
+    {
+        int x = 0;
+    }
     subjectType->AddDependentType(this);
     for (TypeSymbol* typeArgument : typeArguments)
     {

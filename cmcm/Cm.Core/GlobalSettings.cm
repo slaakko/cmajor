@@ -94,7 +94,7 @@ namespace Cm.Core
         {
             return tpgDotFileName;
         }
-        public nothrow void SetVirtualCallFilename(const string& virtualCallFileName_)
+        public nothrow void SetVirtualCallFileName(const string& virtualCallFileName_)
         {
             virtualCallFileName = virtualCallFileName_;
         }

@@ -39,10 +39,20 @@ namespace Cm.Sym
             binaryReader.Read(typeId.Rep(), cast<ulong>(TypeId.count));
             return typeId;
         }
+        public Span ReadSpan()
+        {
+            Span span;
+            binaryReader.Read(&span, sizeof(span));
+            if (spanFileIndexOffset > 0)
+            {
+                span.SetFileIndex(span.FileIndex() + spanFileIndexOffset);
+            }
+            return span;
+        }
         public Symbol* ReadSymbol()
         {
             SymbolType symbolType = ReadSymbolType();
-            Span span = astReader.ReadSpan();
+            Span span = ReadSpan();
             string name = binaryReader.ReadString();
             Symbol* symbol = SymbolFactory.Instance().CreateSymbol(symbolType, span, name);
             if (markSymbolsBound)

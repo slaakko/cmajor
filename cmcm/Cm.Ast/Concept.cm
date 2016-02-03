@@ -137,6 +137,10 @@ namespace Cm.Ast
             constraint->Accept(visitor);
             visitor.EndVisit(*this);
         }
+        public override nothrow string ToString() const
+        {
+            return "where " + constraint->ToString();
+        }
         private UniquePtr<ConstraintNode> constraint;
     }
     

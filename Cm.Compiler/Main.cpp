@@ -446,7 +446,7 @@ int main(int argc, const char** argv)
                     Cm::Core::GetGlobalSettings()->SetTargetTriple(targetTriple);
                     if (!quiet)
                     {
-                        std::cout << "using LLVM target triple = \"" << targetTriple << "\"" << std::endl;;
+                        std::cout << "using LLVM target triple = \"" << targetTriple << "\"" << std::endl;
                     }
                 }
                 else
@@ -461,7 +461,7 @@ int main(int argc, const char** argv)
                     Cm::Core::GetGlobalSettings()->SetDatalayout(datalayout);
                     if (!quiet)
                     {
-                        std::cout << "using LLVM target datalayout = \"" << datalayout << "\"" << std::endl;;
+                        std::cout << "using LLVM target datalayout = \"" << datalayout << "\"" << std::endl;
                     }
                 }
                 else

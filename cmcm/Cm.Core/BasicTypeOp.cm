@@ -262,8 +262,8 @@ namespace Cm.Core
                 if (!Type()->IsSignedType())
                 {
                     condCode = Ir.Intf.IConditionCode.ult;
-                    emitter.Emit(Cm.IrIntf.ICmp(IrType(), result.MainObject(), condCode, arg1, arg2));
                 }                
+                emitter.Emit(Cm.IrIntf.ICmp(IrType(), result.MainObject(), condCode, arg1, arg2));
             }
             if (result.GenJumpingBoolCode())
             {

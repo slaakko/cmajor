@@ -64,15 +64,15 @@ namespace Cm.Sym
     public class ClassTypeSymbol : TypeSymbol
     {
         public nothrow ClassTypeSymbol(const Span& span_, const string& name_) : 
-            base(span_, name_, TypeId()), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
+            base(span_, name_, TypeId()), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null), vptrIndex(-1)
         {
         }
         public nothrow ClassTypeSymbol(const Span& span_, const string& name_, bool getNextId_, ulong cid_) : 
-            base(span_, name_, GetClassTypeId(getNextId_, cid_)), cid(cid_), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
+            base(span_, name_, GetClassTypeId(getNextId_, cid_)), cid(cid_), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null), vptrIndex(-1)
         {
         }
         public nothrow ClassTypeSymbol(const Span& span_, const string& name_, const TypeId& id_) :
-            base(span_, name_, id_), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null)
+            base(span_, name_, id_), cid(noCid), key(0u), level(0), priority(0), flags(ClassTypeSymbolFlags.none), baseClass(null), vptrIndex(-1)
         {
         }
         public nothrow override SymbolType GetSymbolType() const

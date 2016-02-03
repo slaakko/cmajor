@@ -31,7 +31,7 @@ namespace Llvm
         emitter.Own(null_);
         Ir.Intf.Object* one = MakeI64Constant(1);
         emitter.Own(one);
-        emitter.Emit(GetElementPtr(ptrType, ptrSize, null, one));
+        emitter.Emit(GetElementPtr(ptrType, ptrSize, null_, one));
         Ir.Intf.Object* size = MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
         emitter.Own(size);
         emitter.Emit(Ptrtoint(ptrType, size, ptrSize, Ir.Intf.Factory.Instance()->GetI64()));

@@ -40,6 +40,10 @@ namespace Cm.Sym
                 mangledName.Append("$$");
             }
             int n = parameters.Count();
+            if (n > 0)
+            {
+                mangledName.Append('$');
+            }
             for (int i = 0; i < n; ++i)
             {
                 Cm.Sym.ParameterSymbol* parameter = parameters[i];
