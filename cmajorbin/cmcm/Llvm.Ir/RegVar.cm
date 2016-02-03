@@ -58,7 +58,7 @@ namespace Llvm
                 Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
                 emitter.Own(value);
                 emitter.Emit(Load(ptrType, value, &regVar));
-                emitter.Emit(Load(ptrType, value, &regVar));
+                emitter.Emit(Store(type, value, this));
             }
             else if (regVar.GetType()->Name() == ptrType->Name())
             {
@@ -165,7 +165,7 @@ namespace Llvm
                 Ir.Intf.RegVar* value = MakeTemporaryRegVar(type);
                 emitter.Own(value);
                 emitter.Emit(Load(ptrType, value, &regVar));
-                emitter.Emit(Load(ptrType, value, &regVar));
+                emitter.Emit(Store(type, value, this));
             }
             else if (regVar.GetType()->Name() == ptrType->Name())
             {

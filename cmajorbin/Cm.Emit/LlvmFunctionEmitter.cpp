@@ -178,7 +178,7 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpress
     emitter->Own(resultRegVar);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
-        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
         emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
         Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
         emitter->Own(ui64Zero);
@@ -278,7 +278,7 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpress
     emitter->Own(resultRegVar);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
-        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
         emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
         Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
         emitter->Own(ui64Zero);
@@ -309,6 +309,7 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpress
     emitter->Emit(Cm::IrIntf::Store(boundAsExpression.GetType()->GetIrType(), exprAsRightOperand, temporaryResult->MainObject()));
     emitter->Emit(Cm::IrIntf::Br(exitLabel));
     Ir::Intf::Object* null = boundAsExpression.GetType()->GetIrType()->CreateDefaultValue();
+    emitter->Own(null);
     emitter->AddNextInstructionLabel(falseLabel);
     emitter->Emit(Cm::IrIntf::Store(boundAsExpression.GetType()->GetIrType(), null, temporaryResult->MainObject()));
     emitter->AddNextInstructionLabel(exitLabel);

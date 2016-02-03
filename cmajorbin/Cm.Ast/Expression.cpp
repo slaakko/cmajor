@@ -420,6 +420,14 @@ InvokeNode::InvokeNode(const Span& span_) : UnaryNode(span_)
 
 InvokeNode::InvokeNode(const Span& span_, Node* subject_) : UnaryNode(span_, subject_)
 {
+    if (subject_->IsIdentifierNode())
+    {
+        Cm::Ast::IdentifierNode* idNode = static_cast<Cm::Ast::IdentifierNode*>(subject_);
+        if (idNode->Str() == "reset_current_exception")
+        {
+            int x = 0;
+        }
+    }
 }
 
 Node* InvokeNode::Clone(CloneContext& cloneContext) const

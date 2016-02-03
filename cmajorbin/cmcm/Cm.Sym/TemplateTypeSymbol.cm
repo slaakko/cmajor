@@ -18,9 +18,14 @@ namespace Cm.Sym
         public nothrow TemplateTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), subjectType(null), primaryTemplateTypeSymbol(null)
         {
         }
-        public nothrow TemplateTypeSymbol(const Span& span_, const string& name_, TypeSymbol* subjectType_, const List<TypeSymbol*>& typeArguments_, const TypeId& id_) : 
+        public TemplateTypeSymbol(const Span& span_, const string& name_, TypeSymbol* subjectType_, const List<TypeSymbol*>& typeArguments_, const TypeId& id_) : 
             base(span_, name_, id_), subjectType(subjectType_), typeArguments(typeArguments_), primaryTemplateTypeSymbol(null)
         {
+            subjectType->AddDependentType(this);
+            for (TypeSymbol* typeArgument : typeArguments)
+            {
+                typeArgument->AddDependentType(this);
+            }
         }    
         public nothrow override SymbolType GetSymbolType() const
         {

@@ -481,7 +481,7 @@ namespace Cm.Emit
             Cm.Sym.TypeSymbol* type = boundParameter.Symbol()->GetType();
             bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
             bool byRef = boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.argByRef) || boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
-            if (boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.argByRef) || boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.lvalue) && typeIsReferenceType)
+            if ((boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.argByRef) || boundParameter.GetFlag(Cm.BoundTree.BoundNodeFlags.lvalue)) && typeIsReferenceType)
             {
                 byRef = false; // already reference type
             }
@@ -2016,7 +2016,7 @@ namespace Cm.Emit
             result->SetLabel(conditionResult->GetLabel());
             result->Merge(conditionResult, true);
             result->Merge(statementResult);
-            result->Merge(statementResult);
+            resultStack.Push(result);
         }
         public override void BeginVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
         {
@@ -2197,7 +2197,7 @@ namespace Cm.Emit
             result->Merge(actionResult);
             result->Merge(incrementResult);
             result->SetLabel(initLabel);
-            result->SetLabel(initLabel);
+            resultStack.Push(result);
         }
         public override void Visit(Cm.BoundTree.BoundSwitchStatement& boundSwitchStatement)
         {
@@ -2568,6 +2568,22 @@ namespace Cm.Emit
         {
             return staticMemberVariableRepository;
         }
+        protected nothrow inline Cm.Core.GenFlags GenFlags() const
+        {
+            return genFlags;
+        }
+        protected nothrow inline Stack<SharedPtr<Cm.Core.GenResult>>& ResultStack() 
+        {
+            return resultStack;
+        }
+        protected nothrow inline Cm.Sym.TypeRepository& TypeRepository() 
+        {
+            return typeRepository;
+        }
+        protected nothrow inline Cm.Sym.ParameterSymbol* ThisParam()
+        {
+            return thisParam;
+        }
         private void GenerateLandingPadCode()
         {
             const List<UniquePtr<Cm.BoundTree.LandingPad>>& landingPads = currentFunction->LandingPads();
@@ -2622,7 +2638,7 @@ namespace Cm.Emit
                 }
             }
         }
-        private void GenJumpingBoolCode(Cm.Core.GenResult& result)
+        protected void GenJumpingBoolCode(Cm.Core.GenResult& result)
         {
             Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
             emitter->Own(trueLabel);
@@ -2753,7 +2769,7 @@ namespace Cm.Emit
                 }
             }
         }
-        private void GenerateCall(Cm.Sym.FunctionSymbol* fun, Cm.BoundTree.TraceCallInfo* traceCallInfo, Cm.Core.GenResult& result)
+        protected void GenerateCall(Cm.Sym.FunctionSymbol* fun, Cm.BoundTree.TraceCallInfo* traceCallInfo, Cm.Core.GenResult& result)
         {
             Cm.Ast.CompileUnitNode* thisUnit = currentFunction->FunctionSymbol()->CompileUnit();
             if (thisUnit != null)

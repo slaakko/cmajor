@@ -76,6 +76,60 @@ internal string DurationStr(const Duration& duration)
     return durationStr;
 }
 
+internal string GetTargetTriple()
+{
+    string targetTriple;
+    char* cmTargetTriple = get_environment_variable("CM_TARGET_TRIPLE");
+    if (cmTargetTriple != null)
+    {
+        targetTriple = cmTargetTriple;
+    }
+    if (targetTriple.IsEmpty())
+    {
+#if (WINDOWS)
+    #if (BITS64)
+        targetTriple = "x86_64-w64-windows-gnu";
+    #else
+        targetTriple = "i686-pc-windows-gnu";
+    #endif
+#else    
+    #if (BITS64)
+        targetTriple = "x86_64-pc-linux-gnu";
+    #else
+        targetTriple = "i686-pc-linux-gnu";
+    #endif
+#endif
+    }
+    return targetTriple;
+}
+
+internal string GetDataLayout()
+{
+    string dataLayout;
+    char* cmDataLayout = get_environment_variable("CM_TARGET_DATALAYOUT");
+    if (cmDataLayout != null)
+    {
+        dataLayout = cmDataLayout;
+    }
+    if (dataLayout.IsEmpty())
+    {
+#if (WINDOWS)
+    #if (BITS64)
+        dataLayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
+    #else
+        dataLayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32";
+    #endif
+#else
+    #if (BITS64)
+        dataLayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128";
+    #else
+        dataLayout = "e-m:w-p:32:32-i64:64-f80:32-n8:16:32-S32";
+    #endif
+#endif
+    }
+    return dataLayout;
+}
+
 internal void ObtainLlvmVersion()
 {
     string llvmVersionFilePath;
@@ -128,6 +182,13 @@ int main(int argc, const char** argv)
         bool rebuild = false;
         bool prevWasCompile = false;
         bool prevWasDefine = false;
+        bool prevWasTargetTriple = false;
+        bool prevWasDatalayout = false;
+        bool emitNoTriple = false;
+        bool emitNoLayout = false;
+        ulong stackSizeOpt = 0u;
+        string targetTriple = GetTargetTriple();
+        string datalayout = GetDataLayout();
         if (argc < 2)
         {
             Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n" <<
@@ -143,12 +204,25 @@ int main(int argc, const char** argv)
             "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
             "-backend=llvm   : use LLVM backend (default)\n" <<
             "-backend=c      : use C backend\n" <<
+            "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
+            "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
+            "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
+            "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
             "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
             "-quiet          : write no output messages for successful compiles\n" <<
             "-trace          : instrument program/library with tracing enabled\n" <<
             "-debug_heap     : instrument program/library with debug heap enabled\n" <<
             "-no_call_stacks : do not generate call stack information for exceptions\n" << 
+            "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
+            "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
+            "-vcall_dbg      : debug virtual calls (only full config)\n" << 
+            "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
+            "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
             endl();
+            Console.Out() << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
+                "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << endl();
+            Console.Out() << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
+                "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << endl(); 
         }
         else
         {
@@ -199,6 +273,25 @@ int main(int argc, const char** argv)
                                         throw Exception("unknown backend '" + backendStr + "'");
                                     }
                                 }
+                                else if (v[0] == "-class_dot")
+                                {
+                                    string dotFileName = v[1];
+                                    Cm.Core.GlobalSettings.Instance().SetClassHierarchyDotFileName(dotFileName);
+                                }
+                                else if (v[0] == "-tpg_dot")
+                                {
+                                    string dotFileName = v[1];
+                                    Cm.Core.GlobalSettings.Instance().SetTpgDotFileName(dotFileName);
+                                }
+                                else if (v[0] == "-vcall_txt")
+                                {
+                                    string vCallFileName = v[1];
+                                    Cm.Core.GlobalSettings.Instance().SetVirtualCallFileName(vCallFileName);
+                                }
+                                else if (v[0] == "-stack")
+                                {
+                                    stackSizeOpt = ParseULong(v[1]);
+                                }
                                 else
                                 {
                                     throw Exception("unknown argument '" + arg + "'");
@@ -225,9 +318,25 @@ int main(int argc, const char** argv)
                         {
                             prevWasDefine = true;
                         }
+                        else if (arg == "-m")
+                        {
+                            prevWasTargetTriple = true;
+                        }
+                        else if (arg == "-d")
+                        {
+                            prevWasDatalayout = true;
+                        }
                         else if (arg == "-emit-opt")
                         {
                             Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt);
+                        }
+                        else if (arg == "-emit-no-triple")
+                        {
+                            emitNoTriple = true;
+                        }
+                        else if (arg == "-emit-no-layout")
+                        {
+                            emitNoLayout = true;
                         }
                         else if (arg == "-quiet")
                         {
@@ -249,6 +358,10 @@ int main(int argc, const char** argv)
                         {
                             Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.ide);
                         }
+                        else if (arg == "-vcall_dbg")
+                        {
+                            Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.debugVCalls);
+                        }
                         else
                         {
                             throw Exception("unknown argument '" + arg + "'");
@@ -266,6 +379,16 @@ int main(int argc, const char** argv)
                             defines.Insert(arg);
                             prevWasDefine = false;
                         }
+                        else if (prevWasTargetTriple)
+                        {
+                            targetTriple = arg;
+                            prevWasTargetTriple = false;
+                        }
+                        else if (prevWasDatalayout)
+                        {
+                            datalayout = arg;
+                            prevWasDatalayout = false;
+                        }
                         else
                         {
                             string ext = Path.GetExtension(arg);
@@ -279,7 +402,10 @@ int main(int argc, const char** argv)
                 }
             }
             Cm.IrIntf.SetBackend(backend);
-            // todo: debug info
+            if (Cm.Core.GetConfig() == "debug" && backend == Cm.IrIntf.Backend.c)
+            {
+                Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info);
+            }
             bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
             if (!quiet)
             {
@@ -295,6 +421,37 @@ int main(int argc, const char** argv)
             if (backend == Cm.IrIntf.Backend.llvm)
             {
                 ObtainLlvmVersion();
+                if (!emitNoTriple)
+                {
+                    Cm.Core.GlobalSettings.Instance().SetTargetTriple(targetTriple);
+                    if (!quiet)
+                    {
+                        Console.Out() << "using LLVM target triple = \"" << targetTriple << "\"" << endl();
+                    }
+                }
+                else
+                {
+                    if (!quiet)
+                    {
+                        Console.Out() << "emitting no LLVM target triple" << endl();
+                    }
+                }
+                if (!emitNoLayout)
+                {
+                    Cm.Core.GlobalSettings.Instance().SetDatalayout(datalayout);
+                    if (!quiet)
+                    {
+                        Console.Out() << "using LLVM target datalayout = \"" << datalayout << "\"" << endl();
+                    }
+                }
+                else
+                {
+                    if (!quiet)
+                    {
+                        Console.Out() << "emitting no LLVM target datalayout" << endl();
+                    }
+                }
+                
             }
             for (const string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {

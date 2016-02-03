@@ -497,12 +497,13 @@ namespace Cm.Bind
         {
         }
         public nothrow FunctionMatch(const FunctionMatch& that) : 
-            function(that.function), argumentMatches(), numConversions(that.numConversions), templateArguments(), constraint(that.constraint), containerScope(that.containerScope), 
+            function(that.function), argumentMatches(), numConversions(that.numConversions), conversions(), templateArguments(), constraint(that.constraint), containerScope(that.containerScope), 
             boundCompileUnit(that.boundCompileUnit), boundConstraint(that.boundConstraint)
         {
             try
             {
                 argumentMatches = that.argumentMatches;
+                conversions = that.conversions;
                 templateArguments = that.templateArguments;
             }
             catch (const Exception& ex)
@@ -516,6 +517,7 @@ namespace Cm.Bind
                 function = that.function;
                 argumentMatches = that.argumentMatches;
                 numConversions = that.numConversions;
+                conversions = that.conversions;
                 templateArguments = that.templateArguments;
                 constraint = that.constraint;
                 containerScope = that.containerScope;

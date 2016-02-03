@@ -350,7 +350,7 @@ namespace Llvm
     
     public class PointerType : Ir.Intf.Type
     {
-        public nothrow PointerType(Ir.Intf.Type* baseType_, byte numPointers_) : base(baseType_->Name() + string('*', numPointers)), baseType(baseType_), numPointers(numPointers_)
+        public nothrow PointerType(Ir.Intf.Type* baseType_, byte numPointers_) : base(baseType_->Name() + string('*', numPointers_)), baseType(baseType_), numPointers(numPointers_)
         {
             if (!baseType->Owned())
             {

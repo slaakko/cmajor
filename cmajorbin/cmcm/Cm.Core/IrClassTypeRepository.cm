@@ -172,8 +172,16 @@ namespace Cm.Core
             rttiIrType->SetOwned();
             UniquePtr<Ir.Intf.Object> rttiIrObject(Cm.IrIntf.MakeGlobal(classRttiName, rttiIrType.GetPtr()));
             rttiIrObject->SetOwned();
-            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + 
-                ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+            if (Cm.Core.GlobalSettings.Instance().GetLlvmVersion() < Cm.Ast.ProgramVersion(3, 7, 0, 0, ""))
+            {
+                codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + 
+                    ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+            }
+            else
+            {
+                codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
+                    classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+            }                
             string vtblHeader;
             vtblHeader.Append(vtblIrObject->Name()).Append(" = linkonce_odr unnamed_addr constant ").Append(vtblIrType->Name());
             codeFormatter.WriteLine(vtblHeader);
