@@ -122,10 +122,6 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     boundCompileUnit.AddFileScope(subjectFileScope);
     ++numAddedFileScopes;
     classTemplates.insert(subjectClassTypeSymbol);
-    if (subjectTypeSymbol->Name() == "ExDeleter")
-    {
-        int x = 0;
-    }
     Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(subjectTypeSymbol, false);
     if (!node)
     {
