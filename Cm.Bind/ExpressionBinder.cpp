@@ -1622,10 +1622,6 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
     }
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Support.ExDeleter<System.Exception>.@destructor(System.Support.ExDeleter<System.Exception>*)")
-    {
-        int x = 0;
-    }
     if (!fun->IsBasicTypeOp())
     {
         functionCall->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));

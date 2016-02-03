@@ -142,14 +142,6 @@ void TypeResolver::Visit(Cm::Ast::DoubleNode& doubleNode)
 
 void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
-    if (templateIdNode.Subject()->IsIdentifierNode())
-    {
-        Cm::Ast::IdentifierNode* idNode = static_cast<Cm::Ast::IdentifierNode*>(templateIdNode.Subject());
-        if (idNode->Str() == "System.Support.ExDeleter")
-        {
-            int x = 0;
-        }
-    }
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
     Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateIdNode.Subject(), flags);
     if (!subjectType)
