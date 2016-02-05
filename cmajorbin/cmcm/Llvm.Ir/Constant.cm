@@ -242,7 +242,7 @@ namespace Llvm
     
     public class FloatConstant : Constant
     {
-        public nothrow FloatConstant(float value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetFloat())
+        public nothrow FloatConstant(float value_) : base(ToString(value_, 1, 15), Ir.Intf.Factory.Instance()->GetFloat())
         {
         }
     }
@@ -254,7 +254,7 @@ namespace Llvm
 
     public class DoubleConstant : Constant
     {
-        public nothrow DoubleConstant(double value_) : base(ToString(value_), Ir.Intf.Factory.Instance()->GetDouble())
+        public nothrow DoubleConstant(double value_) : base(ToString(value_, 1, 15), Ir.Intf.Factory.Instance()->GetDouble())
         {
         }
     }

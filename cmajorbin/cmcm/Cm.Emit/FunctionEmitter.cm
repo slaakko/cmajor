@@ -139,7 +139,7 @@ namespace Cm.Emit
                 ++assemblyNameCounter;
                 assemblyName = name + Cm.IrIntf.GetPrivateSeparator() + ToString(assemblyNameCounter);
             }
-            assemblyNames.Insert(name);
+            assemblyNames.Insert(assemblyName);
             return assemblyName;
         }
         public void SetExceptionCodeVariable(Ir.Intf.Object* exceptionCodeVariable_)
@@ -253,7 +253,7 @@ namespace Cm.Emit
             Cm.IrIntf.ResetLocalLabelCounter();
             if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
             {
-                Llvm.Breaker.Set(1);
+                //Llvm.Breaker.Set(1);
             }
             Ir.Intf.Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->FunctionSymbol());
             externalFunctions.Insert(irFunction);
@@ -312,6 +312,7 @@ namespace Cm.Emit
                     localVariableIrType = localVariableType->GetBaseType()->IrType();
                     localVariableIrType = ReplaceFunctionPtrType(localVariableIrType);
                     emitter->Emit(Cm.IrIntf.Alloca(localVariableIrType, localVariableIrObject, Ir.Intf.Factory.Instance()->GetI32(), localVariableType->GetLastArrayDimension()));
+                    localVariableIrObject->SetType(Cm.IrIntf.Pointer(localVariableIrType, 1u));
                 }
                 else
                 {
@@ -521,10 +522,6 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundMemberVariable& boundMemberVariable)
         {
-            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
-            {
-                int x = 0;
-            }
             Llvm.Pusher x("BoundMemberVariable");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (boundMemberVariable.Symbol()->IsStatic())
@@ -1406,10 +1403,6 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
         {
-            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
-            {
-                int x = 0;
-            }
             Llvm.Pusher x("BoundInitMemberVariableStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             int n = boundInitMemberVariableStatement.Arguments().Count();
@@ -1424,7 +1417,6 @@ namespace Cm.Emit
                     resultLabel = argResult->GetLabel();
                 }
                 result->Merge(argResult);
-                Console.Out() << "use count: " << argResult.GetUseCount() << endl();
             }
             Cm.Sym.FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
             result->SetMemberVar();

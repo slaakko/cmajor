@@ -236,7 +236,7 @@ Ir::Intf::Object* CreateUI64Constant(uint64_t value)
     return new UI64Constant(value);
 }
 
-FloatConstant::FloatConstant(float value_) : Constant(std::to_string(value_), Ir::Intf::GetFactory()->GetFloat())
+FloatConstant::FloatConstant(float value_) : Constant(Cm::Util::ToString(value_, 1, 15), Ir::Intf::GetFactory()->GetFloat())
 {
 }
 
@@ -245,7 +245,7 @@ Ir::Intf::Object* CreateFloatConstant(float value)
     return new FloatConstant(value);
 }
 
-DoubleConstant::DoubleConstant(double value_) : Constant(std::to_string(value_), Ir::Intf::GetFactory()->GetDouble())
+DoubleConstant::DoubleConstant(double value_) : Constant(Cm::Util::ToString(value_, 1, 15), Ir::Intf::GetFactory()->GetDouble())
 {
 }
 

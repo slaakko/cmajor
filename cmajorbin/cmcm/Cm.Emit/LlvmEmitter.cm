@@ -27,6 +27,14 @@ namespace Cm.Emit
         return t;
     }
     
+    public class FunctionNameLess : Rel<Ir.Intf.Function*>
+    {
+        public nothrow inline bool operator()(Ir.Intf.Function* left, Ir.Intf.Function* right) const
+        {
+            return left->Name() < right->Name();
+        }
+    }
+    
     public class LlvmEmitter : Emitter
     {
         public nothrow LlvmEmitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
@@ -43,7 +51,13 @@ namespace Cm.Emit
         public override void EndVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
         {
             IrClassTypeRepository().Write(GetCodeFormatter(), ExternalFunctions(), IrFunctionRepository(), List<Ir.Intf.Type*>());
+            List<Ir.Intf.Function*> ef;
             for (Ir.Intf.Function* function : ExternalFunctions())
+            {
+                ef.Add(function);
+            }
+            Sort(ef, FunctionNameLess());
+            for (Ir.Intf.Function* function : ef)
             {
                 if (InternalFunctionNames().CFind(function->Name()) == InternalFunctionNames().CEnd())
                 {

@@ -265,7 +265,7 @@ std::string NarrowString(const char* str, int length)
 std::string ToUpper(const std::string& s)
 {
     std::string result;
-    int n = s.size();
+    int n = int(s.size());
     result.reserve(n);
     for (int i = 0; i < n; ++i)
     {
@@ -277,11 +277,45 @@ std::string ToUpper(const std::string& s)
 std::string ToLower(const std::string& s)
 {
     std::string result;
-    int n = s.size();
+    int n = int(s.size());
     result.reserve(n);
     for (int i = 0; i < n; ++i)
     {
         result.append(1, std::tolower(s[i]));
+    }
+    return result;
+}
+
+std::string ToString(double x)
+{
+    return ToString(x, 15);
+}
+
+std::string ToString(double x, int maxNumDecimals)
+{
+    return ToString(x, 0, maxNumDecimals);
+}
+
+std::string ToString(double x, int minNumDecimals, int maxNumDecimals)
+{
+    std::string result;
+    if (x < 0)
+    {
+        x = -x;
+        result.append(1, '-');
+    }
+    result.append(std::to_string(static_cast<int>(x)));
+    double d = x - static_cast<int>(x);
+    if (d > 0 || minNumDecimals > 0)
+    {
+        result.append(1, '.');
+        for (int i = 0; (d > 0 || i < minNumDecimals) && i < maxNumDecimals; ++i)
+        {
+            d = 10 * d;
+            int digit = static_cast<int>(d) % 10;
+            result.append(1, static_cast<char>(static_cast<int>('0') + digit));
+            d = d - static_cast<int>(d);
+        }
     }
     return result;
 }

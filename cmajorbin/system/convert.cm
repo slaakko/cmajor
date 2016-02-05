@@ -124,8 +124,13 @@ namespace System
     {
         return ToString(x, 15);
     }
-
+    
     public nothrow string ToString(double x, int maxNumDecimals)
+    {
+        return ToString(x, 0, maxNumDecimals);
+    }    
+
+    public nothrow string ToString(double x, int minNumDecimals, int maxNumDecimals)
     {
         string result;
         if (x < 0)
@@ -135,10 +140,10 @@ namespace System
         }
         result.Append(ToString(cast<int>(x)));
         double d = x - cast<int>(x);
-        if (d > 0)
+        if (d > 0 || minNumDecimals > 0)
         {
             result.Append('.');
-            for (int i = 0; d > 0 && i < maxNumDecimals; ++i)
+            for (int i = 0; (d > 0 || i < minNumDecimals) && i < maxNumDecimals; ++i)
             {
                 d = 10 * d;
                 int digit = cast<int>(d) % 10;

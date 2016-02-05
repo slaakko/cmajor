@@ -248,7 +248,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     currentFunction = &boundFunction;
     if (currentFunction->GetFunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
     {
-        Llvm::SetBreaker(1);
+        //Llvm::SetBreaker(1);
     }
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
@@ -330,7 +330,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     if (currentFunction->GetFunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
     {
-        Llvm::SetBreaker(0);
+        //Llvm::SetBreaker(0);
     }
     Ir::Intf::Function* irFunction = emitter->GetIrFunction();
     std::shared_ptr<Cm::Core::GenResult> result = resultStack.Pop();
@@ -902,6 +902,13 @@ Cm::Sym::FunctionSymbol* ResolveVirtualCall(Cm::Sym::TypeRepository& typeReposit
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
+    if (currentFunction->GetFunctionSymbol()->FullName() == "System.IO.ByteStream.CopyTo(System.IO.ByteStream*, System.IO.ByteStream&, int)")
+    {
+        if (functionCall.GetFunction()->GroupName() == "Write")
+        {
+            int x = 0;
+        }
+    }
     Llvm::Pusher x("BoundFunctionCall");
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();

@@ -30,6 +30,9 @@ bool EndsWith(const std::string& s, const std::string& suffix);
 std::string NarrowString(const char* str, int length);
 std::string ToUpper(const std::string& s);
 std::string ToLower(const std::string& s);
+std::string ToString(double x);
+std::string ToString(double x, int maxNumDecimals);
+std::string ToString(double x, int minNumDecimals, int maxNumDecimals);
 
 } } // namespace Cm::Util
 

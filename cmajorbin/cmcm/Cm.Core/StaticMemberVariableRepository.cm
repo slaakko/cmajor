@@ -124,11 +124,25 @@ namespace Cm.Core
         private List<UniquePtr<Ir.Intf.Type>> ownedIrTypes;
     }
     
+    public class MemberVarNameLess : Rel<Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>>
+    {
+        public nothrow inline bool operator()(const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& left, const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& right) const
+        {
+            return left.first->FullName() < right.first->FullName();
+        }
+    }
+    
     public class LlvmStaticMemberVariableRepository : StaticMemberVariableRepository
     {
         public override void Write(CodeFormatter& codeFormatter)
         {
+            List<Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>> mp;
             for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetStaticMemberVariableMap())
+            {
+                mp.Add(p);
+            }
+            Sort(mp, MemberVarNameLess());
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : mp)
             {
                 Cm.Sym.MemberVariableSymbol* staticMemberVariable = p.first;
                 Ir.Intf.Object* irObject = p.second;
@@ -155,7 +169,13 @@ namespace Cm.Core
                 }
                 codeFormatter.WriteLine(declaration);
             }
+            List<Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>> dn;
             for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : GetDestructionNodeMap())
+            {
+                dn.Add(p);
+            }
+            Sort(dn, MemberVarNameLess());
+            for (const Pair<Cm.Sym.MemberVariableSymbol*, Ir.Intf.Object*>& p : dn)
             {
                 Ir.Intf.Object* destructionNode = p.second;
                 string destructionNodeDeclaration = destructionNode->Name();

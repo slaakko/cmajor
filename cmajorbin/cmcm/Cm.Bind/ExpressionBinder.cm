@@ -112,7 +112,7 @@ namespace Cm.Bind
                 {
                     argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
                 }
-                else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonConstReferenceType())
+                else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
                 {
                     argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
                 }
