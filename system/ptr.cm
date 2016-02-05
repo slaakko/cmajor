@@ -208,6 +208,10 @@ namespace System
                 counter->AddReference();
             }
         }
+        public nothrow SharedCount(Self&& that) : counter(that.counter)
+        {
+            that.counter = null;
+        }
         public nothrow SharedCount(const WeakCount<T>& that): counter(that.GetCounter())
         {
             #assert(counter != null);
@@ -226,6 +230,7 @@ namespace System
             }
             counter = otherCounter;
         }
+        public default void operator=(Self&&);
         public nothrow ~SharedCount()
         {
             if (counter != null)
@@ -288,6 +293,10 @@ namespace System
                 counter->WeakAddReference();
             }
         }
+        public nothrow WeakCount(Self&& that) : counter(that.counter)
+        {
+            that.counter = null;
+        }
         public nothrow WeakCount(const SharedCount<T>& that): counter(that.GetCounter())
         {
             if (counter != null)
@@ -328,6 +337,7 @@ namespace System
             }
             counter = otherCounter;
         }
+        default nothrow void operator=(Self&&);
         public nothrow void Swap(Self& that)
         {
             CounterPtrType otherCounter = that.counter;
@@ -377,6 +387,10 @@ namespace System
         public nothrow SharedPtr(const Self& that): ptr(that.ptr), count(that.count)
         {
         }
+        public nothrow SharedPtr(Self&& that) : ptr(that.ptr), count(Rvalue(that.count))
+        {
+            that.ptr = null;
+        }
         public nothrow SharedPtr(const WeakPtr<T>& that): ptr(), count(that.GetCount())
         {
             ptr = that.GetPtr();
@@ -394,6 +408,7 @@ namespace System
             ptr = that.ptr;
             count = that.count;
         }
+        public default nothrow void operator=(Self&&);
         public nothrow inline T* operator->() const
         {
             #assert(ptr != null);

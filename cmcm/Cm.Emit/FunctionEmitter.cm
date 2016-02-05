@@ -251,6 +251,10 @@ namespace Cm.Emit
         {
             currentFunction = &boundFunction;
             Cm.IrIntf.ResetLocalLabelCounter();
+            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            {
+                Llvm.Breaker.Set(1);
+            }
             Ir.Intf.Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->FunctionSymbol());
             externalFunctions.Insert(irFunction);
             MapIrFunToFun(irFunction, boundFunction.FunctionSymbol());
@@ -321,6 +325,10 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundFunction& boundFunction)
         {
+            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            {
+                Llvm.Breaker.Set(0);
+            }
             Ir.Intf.Function* irFunction = emitter->IrFunction();
             SharedPtr<Cm.Core.GenResult> result = resultStack.Pop();
             if (!irFunction->LastInstructionIsRet())
@@ -364,6 +372,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundLiteral& boundLiteral)
         {
+            Llvm.Pusher x("BoundLiteral");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Ir.Intf.Object* literalValue = boundLiteral.Value()->CreateIrObject();
             emitter->Own(literalValue);
@@ -376,6 +385,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundStringLiteral& boundStringLiteral)
         {
+            Llvm.Pusher x("BoundStringLiteral");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(boundStringLiteral.Type(), typeRepository);
             Ir.Intf.Object* stringConstant = stringRepository.GetStringConstant(boundStringLiteral.Id());
@@ -385,6 +395,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundConstant& boundConstant)
         {
+            Llvm.Pusher x("BoundConstant");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (&boundConstant is Cm.BoundTree.BoundExceptionTableConstant*)
             {
@@ -417,6 +428,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundEnumConstant& boundEnumConstant)
         {
+            Llvm.Pusher x("BoundEnumConstant");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Ir.Intf.Object* enumConstantValue = boundEnumConstant.Symbol()->GetValue()->CreateIrObject();
             emitter->Own(enumConstantValue);
@@ -425,6 +437,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundLocalVariable& boundLocalVariable)
         {
+            Llvm.Pusher x("BoundLocalVariable");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (&boundLocalVariable is Cm.BoundTree.BoundExceptionCodeVariable*)
             {
@@ -471,6 +484,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundParameter& boundParameter)
         {
+            Llvm.Pusher x("BoundParameter");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (&boundParameter is Cm.BoundTree.BoundExceptionCodeParameter*)
             {
@@ -507,6 +521,11 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundMemberVariable& boundMemberVariable)
         {
+            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            {
+                int x = 0;
+            }
+            Llvm.Pusher x("BoundMemberVariable");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (boundMemberVariable.Symbol()->IsStatic())
             {
@@ -574,12 +593,14 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundFunctionId& boundFunctionId)
         {
+            Llvm.Pusher x("BoundFunctionId");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(irFunctionRepository.GetFunctionId(boundFunctionId.Symbol(), boundFunctionId.Type()));
             resultStack.Push(result);
         }
         public override void Visit(Cm.BoundTree.BoundConversion& boundConversion)
         {
+            Llvm.Pusher x("BoundConversion");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Ir.Intf.Object* temporary = null;
             Cm.Sym.FunctionSymbol* conversionFun = boundConversion.ConversionFun();
@@ -664,6 +685,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundCast& boundCast)
         {
+            Llvm.Pusher x("BoundCast");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(boundCast.Type(), typeRepository);
             if (boundCast.GetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode))
@@ -688,12 +710,14 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundSizeOfExpression& boundSizeOfExpr)
         {
+            Llvm.Pusher x("BoundSizeOfExpression");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(Cm.IrIntf.SizeOf(*emitter, boundSizeOfExpr.Type()->IrType()));
             resultStack.Push(result);
         }
         public override void Visit(Cm.BoundTree.BoundUnaryOp& boundUnaryOp)
         {
+            Llvm.Pusher x("BoundUnaryOp");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Cm.Sym.FunctionSymbol* op = boundUnaryOp.Fun();
             bool functionReturnsClassObjectByValue = op->ReturnsClassObjectByValue() && !(op is Cm.Core.BasicTypeOp*);
@@ -747,6 +771,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundBinaryOp& boundBinaryOp)
         {
+            Llvm.Pusher x("BoundBinaryOp");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             SharedPtr<Cm.Core.GenResult> right = resultStack.Pop();
             SharedPtr<Cm.Core.GenResult> left = resultStack.Pop();
@@ -802,6 +827,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundFunctionCall& boundFunctionCall)
         {
+            Llvm.Pusher x("BoundFunctionCall");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             bool functionReturnsClassObjectByValue = boundFunctionCall.Fun()->ReturnsClassObjectByValue();
             if (functionReturnsClassObjectByValue)
@@ -878,6 +904,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundDelegateCall& boundDelegateCall)
         {
+            Llvm.Pusher x("BoundDelegateCall");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(boundDelegateCall.Type(), typeRepository);
             boundDelegateCall.Subject()->Accept(*this);
@@ -913,6 +940,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundClassDelegateCall& boundClassDelegateCall)
         {
+            Llvm.Pusher x("BoundClassDelegateCall");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(boundClassDelegateCall.Type(), typeRepository);
             boundClassDelegateCall.Subject()->Accept(*this);
@@ -956,6 +984,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundDisjunction& boundDisjunction)
         {
+            Llvm.Pusher x("BoundDisjunction");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Ir.Intf.LabelObject* next = null;
             if (boundDisjunction.GetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode))
@@ -1083,6 +1112,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundConjunction& boundConjunction)
         {
+            Llvm.Pusher x("BoundConjunction");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Ir.Intf.LabelObject* next = null;
             if (boundConjunction.GetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode))
@@ -1209,6 +1239,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundPostfixIncDecExpr& boundPostfixIncDecExpr)
         {
+            Llvm.Pusher x("BoundPostfixIncDecExpr");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             boundPostfixIncDecExpr.Value()->Accept(*this);
             SharedPtr<Cm.Core.GenResult> valueResult = resultStack.Pop();
@@ -1253,6 +1284,7 @@ namespace Cm.Emit
         }
         public override void BeginVisit(Cm.BoundTree.BoundCompoundStatement& boundCompoundStatement)
         {
+            Llvm.Pusher x("BeginBoundCompoundStatement");
             if (boundCompoundStatement.Parent() == null)
             {
                 bool gen = generateDebugInfo && boundCompoundStatement.SyntaxNode() != null;
@@ -1287,6 +1319,7 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundCompoundStatement& boundCompoundStatement)
         {
+            Llvm.Pusher x("EndBoundCompoundStatement");
             ClearCompoundDestructionStack(*compoundResult);
             if (generateDebugInfo)
             {
@@ -1309,6 +1342,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundReceiveStatement& boundReceiveStatement)
         {
+            Llvm.Pusher x("BoundReceiveStatement");
             Cm.Sym.ParameterSymbol* parameterSymbol = boundReceiveStatement.ParameterSymbol();
             if (generateDebugInfo)
             {
@@ -1351,10 +1385,19 @@ namespace Cm.Emit
             result->AddObject(irParameter);
             Cm.Sym.FunctionSymbol* ctor = boundReceiveStatement.Constructor();
             GenerateCall(ctor, null, *result);
+            if ((parameterSymbol->GetType() is Cm.Sym.ClassTypeSymbol*) && !(parameterSymbol->GetType() is Cm.Sym.ClassDelegateTypeSymbol*))
+            {
+                Cm.Sym.ClassTypeSymbol* parameterClassType = cast<Cm.Sym.ClassTypeSymbol*>(parameterSymbol->GetType());
+                if (parameterClassType->Destructor() != null)
+                {
+                    currentCompoundDestructionStack.Push(new Cm.BoundTree.BoundDestructionStatement(boundReceiveStatement.SyntaxNode(), result->MainObject(), parameterClassType->Destructor()));
+                }
+            }
             resultStack.Push(result);
         }
         public override void Visit(Cm.BoundTree.BoundInitClassObjectStatement& boundInitClassObjectStatement)
         {
+            Llvm.Pusher x("BoundInitClassObjectStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             boundInitClassObjectStatement.FunctionCall()->Accept(*this);
             SharedPtr<Cm.Core.GenResult> callResult = resultStack.Pop();
@@ -1363,6 +1406,11 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundInitMemberVariableStatement& boundInitMemberVariableStatement)
         {
+            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            {
+                int x = 0;
+            }
+            Llvm.Pusher x("BoundInitMemberVariableStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             int n = boundInitMemberVariableStatement.Arguments().Count();
             Ir.Intf.LabelObject* resultLabel = null;
@@ -1376,6 +1424,7 @@ namespace Cm.Emit
                     resultLabel = argResult->GetLabel();
                 }
                 result->Merge(argResult);
+                Console.Out() << "use count: " << argResult.GetUseCount() << endl();
             }
             Cm.Sym.FunctionSymbol* ctor = boundInitMemberVariableStatement.Constructor();
             result->SetMemberVar();
@@ -1392,6 +1441,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundFunctionCallStatement& boundFunctionCallStatement)
         {
+            Llvm.Pusher x("BoundFunctionCallStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Cm.Sym.FunctionSymbol* function = boundFunctionCallStatement.Function();
             if (!(function is Cm.Core.BasicTypeOp*) && !function->IsConstructorOrDestructorSymbol())
@@ -1421,6 +1471,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundReturnStatement& boundReturnStatement)
         {
+            Llvm.Pusher x("BoundReturnStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             SharedPtr<Cm.Core.GenResult> entryResult;
             Ir.Intf.LabelObject* resultLabel = null;
@@ -1535,6 +1586,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundBeginTryStatement& boundBeginTryStatement)
         {
+            Llvm.Pusher x("BoundBeginTryStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             catchIdStack.Push(currentCatchId);
             currentCatchId = boundBeginTryStatement.FirstCatchId();
@@ -1542,12 +1594,14 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundEndTryStatement& boundEndTryStatement)
         {
+            Llvm.Pusher x("BoundEndTryStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             currentCatchId = catchIdStack.Pop();
             resultStack.Push(result);
         }
         public override void Visit(Cm.BoundTree.BoundExitBlocksStatement& boundExitBlocksStatement)
         {
+            Llvm.Pusher x("BoundExitBlocksStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Cm.BoundTree.BoundCompoundStatement* currentCompound = boundExitBlocksStatement.CompoundParent();
             Cm.BoundTree.BoundCompoundStatement* targetCompound = boundExitBlocksStatement.TargetBlock();
@@ -1556,6 +1610,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundBeginThrowStatement& boundBeginThrowStatement)
         {
+            Llvm.Pusher x("BoundBeginThrowStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
             DoNothing(*result);
@@ -1563,6 +1618,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundEndThrowStatement& boundEndThrowStatement)
         {
+            Llvm.Pusher x("BoundEndThrowStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), typeRepository);
             DoNothing(*result);
@@ -1570,6 +1626,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundConstructionStatement& boundConstructionStatement)
         {
+            Llvm.Pusher x("BoundConstructionStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1646,6 +1703,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundDestructionStatement& boundDestructionStatement)
         {
+            Llvm.Pusher x("BoundDestructionStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             result->SetMainObject(boundDestructionStatement.Object());
             Cm.Sym.FunctionSymbol* dtor = boundDestructionStatement.Destructor();
@@ -1654,6 +1712,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundAssignmentStatement& boundAssignmentStatement)
         {
+            Llvm.Pusher x("BoundAssignmentStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1692,6 +1751,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundSimpleStatement& boundSimpleStatement)
         {
+            Llvm.Pusher x("BoundSimpleStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1718,6 +1778,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundBreakStatement& boundBreakStatement)
         {
+            Llvm.Pusher x("BoundBreakStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1741,6 +1802,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundContinueStatement& boundContinueStatement)
         {
+            Llvm.Pusher x("BoundContinueStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1764,6 +1826,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundGotoStatement& boundGotoStatement)
         {
+            Llvm.Pusher x("BoundGotoStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -1795,6 +1858,7 @@ namespace Cm.Emit
         }
         public override void BeginVisit(Cm.BoundTree.BoundConditionalStatement& boundConditionalStatement)
         {
+            Llvm.Pusher x("BeginBoundConditionalStatement");
             PushSkipContent();
             if (generateDebugInfo)
             {
@@ -1809,6 +1873,7 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundConditionalStatement& boundConditionalStatement)
         {
+            Llvm.Pusher x("EndBoundConditionalStatement");
             PopSkipContent();
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
@@ -1926,6 +1991,7 @@ namespace Cm.Emit
         }
         public override void BeginVisit(Cm.BoundTree.BoundWhileStatement& boundWhileStatement)
         {
+            Llvm.Pusher x("BeginBoundWhileStatement");
             PushSkipContent();
             if (generateDebugInfo)
             {
@@ -1940,6 +2006,7 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundWhileStatement& boundWhileStatement)
         {
+            Llvm.Pusher x("EndBoundWhileStatement");
             PopSkipContent();
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             SharedPtr<Cm.Core.GenResult> conditionResult = resultStack.Pop();
@@ -2020,10 +2087,12 @@ namespace Cm.Emit
         }
         public override void BeginVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
         {
+            Llvm.Pusher x("BeginBoundDoStatement");
             PushSkipContent();
         }
         public override void EndVisit(Cm.BoundTree.BoundDoStatement& boundDoStatement)
         {
+            Llvm.Pusher x("EndBoundDoStatement");
             PopSkipContent();
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Cm.BoundTree.BoundStatement* statement = boundDoStatement.Statement();
@@ -2093,10 +2162,12 @@ namespace Cm.Emit
         }
         public override void BeginVisit(Cm.BoundTree.BoundForStatement& boundForStatement)
         {
+            Llvm.Pusher x("BeginBoundForStatement");
             PushSkipContent();
         }
         public override void EndVisit(Cm.BoundTree.BoundForStatement& boundForStatement)
         {
+            Llvm.Pusher x("EndBoundForStatement");
             PopSkipContent();
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             PushBreakTargetStatement(&boundForStatement);
@@ -2201,6 +2272,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundSwitchStatement& boundSwitchStatement)
         {
+            Llvm.Pusher x("BoundSwitchStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             if (generateDebugInfo)
             {
@@ -2308,6 +2380,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundCaseStatement& boundCaseStatement)
         {
+            Llvm.Pusher x("BoundCaseStatement");
             if (currentSwitchEmitState == SwitchEmitState.createSwitchTargets)
             {
                 Ir.Intf.LabelObject* label = Cm.IrIntf.CreateNextLocalLabel();
@@ -2360,6 +2433,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundDefaultStatement& boundDefaultStatement)
         {
+            Llvm.Pusher x("BoundDefaultStatement");
             if (currentSwitchEmitState == SwitchEmitState.createSwitchTargets)
             {
                 Ir.Intf.LabelObject* label = Cm.IrIntf.CreateNextLocalLabel();
@@ -2397,6 +2471,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundGotoCaseStatement& boundGotoCaseStatement)
         {
+            Llvm.Pusher x("BoundGotoCaseStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             Cm.Sym.Value* value = boundGotoCaseStatement.Value();
             Ir.Intf.Object* caseConstant = value->CreateIrObject();
@@ -2438,6 +2513,7 @@ namespace Cm.Emit
         }
         public override void Visit(Cm.BoundTree.BoundGotoDefaultStatement& boundGotoDefaultStatement)
         {
+            Llvm.Pusher x("BoundGotoDefaultStatement");
             SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter.GetPtr(), genFlags));
             HashMap<string, Pair<Ir.Intf.LabelObject*, Cm.BoundTree.BoundStatement*>>.ConstIterator i = currentSwitchCaseConstantMap->CFind("@default");
             if (i != currentSwitchCaseConstantMap->CEnd())

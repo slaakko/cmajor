@@ -43,6 +43,23 @@ Ir::Intf::LabelObject* CreateLabel(const std::string& label);
 Ir::Intf::LabelObject* CreateNextLocalLabel();
 void ResetLocalLabelCounter();
 
+void SetBreaker(int x);
+void PushString(const std::string& s);
+void PopString();
+
+class Pusher
+{
+public:
+    Pusher(const std::string& s)
+    {
+        PushString(s);
+    }
+    ~Pusher()
+    {
+        PopString();
+    }
+};
+
 } // namespace Llvm
 
 #endif // LLVM_IR_LABEL_INCLUDED
