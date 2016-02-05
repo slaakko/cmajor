@@ -379,6 +379,13 @@ namespace Cm.Core
             if (emitter != null)
             {
                 emitter->RemoveLabelRequestFor(genData);
+                try
+                {
+                    Console.Out() << ToHexString(cast<ulong>(cast<void*>(this))) << " : " << ToHexString(cast<ulong>(cast<void*>(genData.GetPtr()))) << endl();
+                }
+                catch (const Exception& ex)
+                {
+                }
             }
         }
         public GenResult(Emitter* emitter_, GenFlags flags_) : emitter(emitter_), flags(flags_), genData(new GenData())
