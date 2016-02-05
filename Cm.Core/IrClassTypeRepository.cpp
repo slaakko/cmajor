@@ -105,13 +105,27 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
     classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
 }
 
+struct ClassNameLess
+{
+    inline bool operator()(Cm::Sym::ClassTypeSymbol* left, Cm::Sym::ClassTypeSymbol* right) const
+    {
+        return left->FullName() < right->FullName();
+    }
+};
+
 void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, 
     const std::vector<Ir::Intf::Type*>& tdfs)
 {
     WriteDestructionNodeDef(codeFormatter);
+    std::vector<Cm::Sym::ClassTypeSymbol*> cm;
     for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
-        Cm::Sym::ClassTypeSymbol* classType = p.second;
+        cm.push_back(p.second);
+    }
+    std::sort(cm.begin(), cm.end(), ClassNameLess());
+    for (Cm::Sym::ClassTypeSymbol* p : cm)
+    {
+        Cm::Sym::ClassTypeSymbol* classType = p;
         if (!classType->IrTypeMade())
         {
             classType->MakeIrType();

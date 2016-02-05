@@ -61,14 +61,28 @@ namespace Cm.Core
         private HashMap<string, Cm.Sym.ClassTypeSymbol*> classTypeMap;
     }
     
+    public class ClassNameLess : Rel<Cm.Sym.ClassTypeSymbol*>
+    {
+        public nothrow inline bool operator()(Cm.Sym.ClassTypeSymbol* left, Cm.Sym.ClassTypeSymbol* right) const
+        {
+            return left->FullName() < right->FullName();
+        }
+    }
+    
     public class LlvmIrClassTypeRepository : IrClassTypeRepository
     {
         public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs)
         {
             WriteDestructionNodeDef(codeFormatter);
+            List<Cm.Sym.ClassTypeSymbol*> cm;
             for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
             {
-                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                cm.Add(p.second);
+            }
+            Sort(cm, ClassNameLess());
+            for (Cm.Sym.ClassTypeSymbol* p : cm)
+            {
+                Cm.Sym.ClassTypeSymbol* classType = p;
                 if (!classType->IrTypeMade())
                 {
                     classType->MakeIrType();
@@ -216,7 +230,7 @@ namespace Cm.Core
                         line.Append("bitcast (").Append(irFunPtrType->Name()).Append(" @").Append(irFun->Name()).Append(" to ").Append(i8PtrType->Name()).Append(")");
                     }
                 }
-                codeFormatter.WriteLine(line);
+                codeFormatter.Write(line);
             }
             codeFormatter.WriteLine();
             codeFormatter.DecIndent();

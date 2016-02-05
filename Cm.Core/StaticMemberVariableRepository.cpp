@@ -12,6 +12,7 @@
 #include <Cm.Sym/ClassTypeSymbol.hpp>
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.IrIntf/Rep.hpp>
+#include <algorithm>
 
 namespace Cm { namespace Core {
 
@@ -108,9 +109,23 @@ void StaticMemberVariableRepository::Own(Ir::Intf::Type* type)
     ownedIrTypes.push_back(std::unique_ptr<Ir::Intf::Type>(type));
 }
 
+struct MemVarNameLess
+{
+    inline bool operator()(const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& left, const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& right) const
+    {
+        return left.first->FullName() < right.first->FullName();
+    }
+};
+
 void LlvmStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeFormatter)
 {
+    std::vector<std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>> mp;
     for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetStaticMemberVariableMap())
+    {
+        mp.push_back(p);
+    }
+    std::sort(mp.begin(), mp.end(), MemVarNameLess());
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : mp)
     {
         Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol = p.first;
         Ir::Intf::Object* irObject = p.second;
@@ -137,7 +152,13 @@ void LlvmStaticMemberVariableRepository::Write(Cm::Util::CodeFormatter& codeForm
         }
         codeFormatter.WriteLine(declaration);
     }
+    std::vector<std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>> dn;
     for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : GetDestructionNodeMap())
+    {
+        dn.push_back(p);
+    }
+    std::sort(dn.begin(), dn.end(), MemVarNameLess());
+    for (const std::pair<Cm::Sym::MemberVariableSymbol*, Ir::Intf::Object*>& p : dn)
     {
         Ir::Intf::Object* destructionNode = p.second;
         std::string destructionNodeDeclaration(destructionNode->Name());

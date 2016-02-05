@@ -183,6 +183,8 @@ void ObtainLlvmVersion()
 
 int main(int argc, const char** argv)
 {
+    double z = 0;
+    std::string s = std::to_string(z);
 #if defined(_MSC_VER) && !defined(NDEBUG)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;

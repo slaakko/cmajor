@@ -1592,6 +1592,13 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     }
     else
     {
+        if (currentFunction->GetFunctionSymbol()->FullName() == "System.IO.ByteStream.CopyTo(System.IO.ByteStream*, System.IO.ByteStream&, int)")
+        {
+            if (fun->GroupName() == "Write")
+            {
+                int x = 0;
+            }
+        }
         PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), 
             boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
     }

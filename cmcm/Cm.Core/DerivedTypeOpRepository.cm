@@ -467,7 +467,7 @@ namespace Cm.Core
                 Ir.Intf.Object* resultI64 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI64());
                 emitter.Own(resultI64);
                 emitter.Emit(Cm.IrIntf.UDiv(Ir.Intf.Factory.Instance()->GetI64(), resultI64, subResult, size));
-                emitter.Emit(Cm.IrIntf.Trunc(Ir.Intf.Factory.Instance()->GetI64(), result.MainObject(), resultI64, Ir.Intf.Factory.Instance()->GetI64()));
+                emitter.Emit(Cm.IrIntf.Trunc(Ir.Intf.Factory.Instance()->GetI64(), result.MainObject(), resultI64, Ir.Intf.Factory.Instance()->GetI32()));
             }            
             else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
             {

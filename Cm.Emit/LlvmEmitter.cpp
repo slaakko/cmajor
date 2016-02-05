@@ -59,10 +59,24 @@ void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     codeFormatter.WriteLine("%rtti = type { i8*, i64 }");
 }
 
+struct FunctionNameLess
+{
+    inline bool operator()(Ir::Intf::Function* left, Ir::Intf::Function* right) const
+    {
+        return left->Name() < right->Name();
+    }
+};
+
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), std::vector<Ir::Intf::Type*>());
+    std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())
+    {
+        ef.push_back(function);
+    }
+    std::sort(ef.begin(), ef.end(), FunctionNameLess());
+    for (Ir::Intf::Function* function : ef)
     {
         if (InternalFunctionNames().find(function->Name()) == InternalFunctionNames().end())
         {
