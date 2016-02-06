@@ -246,10 +246,6 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     currentFunction = &boundFunction;
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
-    {
-        //Llvm::SetBreaker(1);
-    }
     Cm::IrIntf::ResetLocalLabelCounter();
     Ir::Intf::Function* irFunction = irFunctionRepository.CreateIrFunction(currentFunction->GetFunctionSymbol());
     externalFunctions.insert(irFunction);
@@ -328,10 +324,6 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
-    {
-        //Llvm::SetBreaker(0);
-    }
     Ir::Intf::Function* irFunction = emitter->GetIrFunction();
     std::shared_ptr<Cm::Core::GenResult> result = resultStack.Pop();
     if (!irFunction->LastInstructionIsRet())
