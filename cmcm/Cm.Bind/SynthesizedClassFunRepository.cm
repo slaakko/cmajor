@@ -463,6 +463,7 @@ namespace Cm.Bind
                 memberVariableSymbol, arguments, "cannot generate default constructor", exception);
             if (initMemberVariableStatement != null)
             {
+                defaultConstructor->Body()->AddStatement(initMemberVariableStatement);
                 if (initMemberVariableStatement->Constructor()->CanThrow())
                 {
                     defaultConstructorSymbol->ResetNothrow();

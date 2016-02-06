@@ -588,7 +588,12 @@ void GenerateOptimizedLlvmCodeFile(Cm::BoundTree::BoundCompileUnit& boundCompile
 {
     std::string optllErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".opt.ll.error").generic_string());
     std::string command = "opt";
-    command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
+    int optimizationLevel = Cm::Core::GetGlobalSettings()->OptimizationLevel();
+    if (optimizationLevel == 0)
+    {
+        optimizationLevel = 1;
+    }
+    command.append(" -O").append(std::to_string(optimizationLevel));
     command.append(" -S").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.OptIrFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try
     {
@@ -620,7 +625,12 @@ void GenerateOptimizedLlvmCodeFileConcurrently(Cm::BoundTree::BoundCompileUnit& 
     std::string optllErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(boundCompileUnit.IrFilePath()).replace_extension(".opt.ll.error").generic_string());
     std::string command = "stdhandle_redirector -2 ";
     command.append(optllErrorFilePath).append(" ").append("opt");
-    command.append(" -O").append(std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel()));
+    int optimizationLevel = Cm::Core::GetGlobalSettings()->OptimizationLevel();
+    if (optimizationLevel == 0)
+    {
+        optimizationLevel = 1;
+    }
+    command.append(" -O").append(std::to_string(optimizationLevel));
     command.append(" -S").append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.OptIrFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try
     {
