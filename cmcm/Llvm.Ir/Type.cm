@@ -343,7 +343,7 @@ namespace Llvm
         private List<UniquePtr<Ir.Intf.Type>> elementTypes;
     }
     
-    public inline Ir.Intf.Type* MakeStructureType(const List<Ir.Intf.Type*>& elementTypes)
+    public Ir.Intf.Type* MakeStructureType(const List<Ir.Intf.Type*>& elementTypes)
     {
         return new StructureType(elementTypes);
     }

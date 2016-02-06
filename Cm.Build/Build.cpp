@@ -501,6 +501,10 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
         {
             command.append(" -g");
         }
+        else
+        {
+            command.append(" -g"); // todo remove this
+        }
     }
     command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try
@@ -548,6 +552,10 @@ void GenerateObjectCodeConcurrently(Cm::BoundTree::BoundCompileUnit& boundCompil
         if (Cm::Core::GetGlobalSettings()->Config() == "debug")
         {
             command.append(" -g");
+        }
+        else
+        {
+            command.append(" -g"); // todo remove this
         }
     }
     command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));

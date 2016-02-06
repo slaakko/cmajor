@@ -104,7 +104,7 @@ namespace Cm.IrIntf
     {
         return GetBackendImpl()->Pointer(baseType, numPointers);
     }
-    public inline Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
+    public Ir.Intf.Type* Structure(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
     {
         return GetBackendImpl()->Structure(tagName, elementTypes, elementNames);
     }

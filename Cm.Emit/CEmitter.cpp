@@ -74,6 +74,7 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
         tdfsTypes.push_back(tdf.get());
     }
     IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
+    std::unordered_set<std::string> externalFunctionNames;
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
         std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>::iterator i = functionMap.find(function);
@@ -86,7 +87,11 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
                 isInline = fun->IsInline();
             }
         }
-        function->WriteDeclaration(CodeFormatter(), false, isInline);
+        if (externalFunctionNames.find(function->Name()) == externalFunctionNames.cend())
+        {
+            externalFunctionNames.insert(function->Name());
+            function->WriteDeclaration(CodeFormatter(), false, isInline);
+        }
     }
     staticMemberVariableRepository.Write(CodeFormatter());
     ExternalConstantRepository().Write(CodeFormatter());
