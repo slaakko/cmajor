@@ -425,6 +425,7 @@ namespace Cm.Bind
                 falseLiteral->SetValue(new Cm.Sym.BoolValue(false));
                 falseLiteral->SetType(boolType);
                 returnFalse->SetExpression(falseLiteral);
+                returnFalse->SetReturnType(boolType);
                 returnFalse->SetConstructor(boolCopyCtor);
                 ifNotEqReturnFalse->SetCondition(notEq);
                 ifNotEqReturnFalse->AddStatement(returnFalse);

@@ -292,6 +292,7 @@ namespace Cm.Sym
                 return typeSymbol;
             }
             UniquePtr<TemplateTypeSymbol> templateTypeSymbol(new TemplateTypeSymbol(subjectType->GetSpan(), MakeTemplateTypeSymbolName(subjectType, typeArguments), subjectType, typeArguments, typeId));
+            templateTypeSymbol->SetCid(ClassCounter.Instance()->GetCid());
             symbolTable.SetSidAndAddSymbol(templateTypeSymbol.GetPtr());
             templateTypeSymbol->SetParent(subjectType->Ns());
             templateTypeSymbol->MakeIrType();
