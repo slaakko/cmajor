@@ -156,9 +156,14 @@ namespace Cm.BoundTree
         }
         public nothrow inline Cm.Ast.TryStatementNode* GetParentTry() const
         {
+            Cm.Ast.TryStatementNode* parentTry = null;
             if (!tryNodeStack.IsEmpty())
             {
-                return tryNodeStack.Back();
+                parentTry = tryNodeStack.Back();
+            }
+            if (parentTry != null)
+            {
+                return parentTry;
             }
             return currentTry;
         }

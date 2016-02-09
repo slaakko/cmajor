@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <DevEnv.SolutionConfig>
-    <activeConfig>release.llvm</activeConfig>
+    <activeConfig>release.c</activeConfig>
     <configurations>
         <configuration>
             <name>debug.llvm</name>

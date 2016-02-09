@@ -251,7 +251,7 @@ namespace Cm.Emit
         {
             currentFunction = &boundFunction;
             Cm.IrIntf.ResetLocalLabelCounter();
-            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            if (currentFunction->FunctionSymbol()->FullName() == "main()")
             {
                 //Llvm.Breaker.Set(1);
             }
@@ -326,9 +326,9 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundFunction& boundFunction)
         {
-            if (currentFunction->FunctionSymbol()->FullName() == "System.Collections.List<ulong>.@constructor(System.Collections.List<ulong>*, const System.Collections.List<ulong>&) where T is Copyable")
+            if (currentFunction->FunctionSymbol()->FullName() == "main()")
             {
-                Llvm.Breaker.Set(0);
+                //Llvm.Breaker.Set(0);
             }
             Ir.Intf.Function* irFunction = emitter->IrFunction();
             SharedPtr<Cm.Core.GenResult> result = resultStack.Pop();
