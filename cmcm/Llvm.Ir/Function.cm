@@ -178,11 +178,11 @@ namespace Llvm
     {
         List<Ir.Intf.Parameter*> parameters;
         parameters.Add(new Parameter("dest", i8Ptr));
-        parameters.Add(new Parameter("value", Ir.Intf.Factory.Instance()->GetI8()));
+        parameters.Add(new Parameter("source", i8Ptr));
         parameters.Add(new Parameter("len", Ir.Intf.Factory.Instance()->GetI64()));
         parameters.Add(new Parameter("align", Ir.Intf.Factory.Instance()->GetI32()));
         parameters.Add(new Parameter("isVolatile", Ir.Intf.Factory.Instance()->GetI1()));
-        Function* memCopyFun(new Function("llvm.memcpy.p0i8.i64", Ir.Intf.Factory.Instance()->GetVoid(), parameters));
+        Function* memCopyFun(new Function("llvm.memcpy.p0i8.p0i8.i64", Ir.Intf.Factory.Instance()->GetVoid(), parameters));
         return memCopyFun;
     }
 }

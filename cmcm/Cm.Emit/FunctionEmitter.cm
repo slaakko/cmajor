@@ -251,7 +251,7 @@ namespace Cm.Emit
         {
             currentFunction = &boundFunction;
             Cm.IrIntf.ResetLocalLabelCounter();
-            if (currentFunction->FunctionSymbol()->FullName() == "main()")
+            if (currentFunction->FunctionSymbol()->FullName() == "Llvm.CreateMemSetFunction(Ir.Intf.Type*)")
             {
                 //Llvm.Breaker.Set(1);
             }
@@ -326,7 +326,7 @@ namespace Cm.Emit
         }
         public override void EndVisit(Cm.BoundTree.BoundFunction& boundFunction)
         {
-            if (currentFunction->FunctionSymbol()->FullName() == "main()")
+            if (currentFunction->FunctionSymbol()->FullName() == "Llvm.CreateMemSetFunction(Ir.Intf.Type*)")
             {
                 //Llvm.Breaker.Set(0);
             }
