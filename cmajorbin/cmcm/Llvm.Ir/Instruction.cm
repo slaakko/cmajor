@@ -1059,8 +1059,8 @@ namespace Llvm
         }
         public nothrow override string ToString() const
         {
-            string s("call void @llvm.memcpy.p0i8.i64(i8* ");
-            s.Append(dest->Name()).Append(", i8 ").Append(source->Name()).Append(", i64 ").Append(len->Name()).Append(", i32 ").Append(ToString(align)).Append(", i1 ");
+            string s("call void @llvm.memcpy.p0i8.p0i8.i64(i8* ");
+            s.Append(dest->Name()).Append(", i8* ").Append(source->Name()).Append(", i64 ").Append(len->Name()).Append(", i32 ").Append(ToString(align)).Append(", i1 ");
             if (isVolatile)
             {
                 s.Append("true");

@@ -213,8 +213,9 @@ namespace Cm.Bind
             Cm.BoundTree.BoundExpression* boundTemporary = new Cm.BoundTree.BoundLocalVariable(argument->SyntaxNode(), temporary);
             boundTemporary->SetType(argument->Type());
             Cm.BoundTree.BoundConversion* constRefConversion = new Cm.BoundTree.BoundConversion(argument->SyntaxNode(), argument, copyCtor);            
-            constRefConversion->SetBoundTemporary(boundTemporary);
             constRefConversion->SetType(pointerType);
+            boundTemporary->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            constRefConversion->SetBoundTemporary(boundTemporary);
             conversion->ResetOperand(constRefConversion);
             constRefConversion->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
             conversion->SetType(conversionFun->GetTargetType());

@@ -878,7 +878,7 @@ namespace Cm.Ast
         }
         public nothrow override string ToString() const
         {
-            string s = Child()->ToString();
+            string s;
             bool parenthesize = Child()->GetRank() > GetRank();
             if (parenthesize)
             {

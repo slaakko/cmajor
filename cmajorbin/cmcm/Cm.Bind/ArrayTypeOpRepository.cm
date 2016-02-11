@@ -506,14 +506,14 @@ namespace Cm.Bind
                 Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI8(), 1u);
                 emitter.Own(i8Ptr);
                 Ir.Intf.Object* dest = arrayObject;
-                if (arrayObjectType->Name() == "i8*")
+                if (arrayObjectType->Name() != "i8*")
                 {
                     dest = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
                     emitter.Own(dest);
                     emitter.Emit(Cm.IrIntf.Bitcast(arrayObjectType, dest, arrayObject, i8Ptr));
                 }
                 Ir.Intf.Object* source = arg1;
-                if (arg1->GetType()->Name() == "i8*")
+                if (arg1->GetType()->Name() != "i8*")
                 {
                     source = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
                     emitter.Own(source);

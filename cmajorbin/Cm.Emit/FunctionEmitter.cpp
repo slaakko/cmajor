@@ -246,7 +246,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
     currentFunction = &boundFunction;
-    if (currentFunction->GetFunctionSymbol()->FullName() == "main()")
+    if (currentFunction->GetFunctionSymbol()->FullName() == "Llvm.CreateMemSetFunction(Ir.Intf.Type*)")
     {
         //Llvm::SetBreaker(1);
     }
@@ -328,7 +328,7 @@ void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
 
 void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "main()")
+    if (currentFunction->GetFunctionSymbol()->FullName() == "Llvm.CreateMemSetFunction(Ir.Intf.Type*)")
     {
         //Llvm::SetBreaker(0);
     }
@@ -902,13 +902,6 @@ Cm::Sym::FunctionSymbol* ResolveVirtualCall(Cm::Sym::TypeRepository& typeReposit
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
-    if (currentFunction->GetFunctionSymbol()->FullName() == "System.IO.ByteStream.CopyTo(System.IO.ByteStream*, System.IO.ByteStream&, int)")
-    {
-        if (functionCall.GetFunction()->GroupName() == "Write")
-        {
-            int x = 0;
-        }
-    }
     Llvm::Pusher x("BoundFunctionCall");
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();

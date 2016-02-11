@@ -59,10 +59,6 @@ void ConstructionStatementBinder::BeginVisit(Cm::Ast::ConstructionStatementNode&
     Cm::Sym::LocalVariableSymbol* localVariable = BindLocalVariable(SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), &constructionStatementNode);
     constructionStatement->SetLocalVariable(localVariable);
     CurrentFunction()->AddLocalVariable(localVariable);
-    if (localVariable->Name() == "p0")
-    {
-        int x = 0;
-    }
 }
 
 void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode)
