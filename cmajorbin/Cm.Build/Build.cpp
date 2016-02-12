@@ -496,15 +496,7 @@ void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
     }
     else if (backend == Cm::IrIntf::BackEnd::c)
     {
-        command.append(" -c");
-        if (Cm::Core::GetGlobalSettings()->Config() == "debug")
-        {
-            command.append(" -g");
-        }
-        else
-        {
-            command.append(" -g"); // todo remove this
-        }
+        command.append(" -g -c");
     }
     command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try
@@ -548,15 +540,7 @@ void GenerateObjectCodeConcurrently(Cm::BoundTree::BoundCompileUnit& boundCompil
     }
     else if (backend == Cm::IrIntf::BackEnd::c)
     {
-        command.append(" -c");
-        if (Cm::Core::GetGlobalSettings()->Config() == "debug")
-        {
-            command.append(" -g");
-        }
-        else
-        {
-            command.append(" -g"); // todo remove this
-        }
+        command.append(" -g -c");
     }
     command.append(" -o ").append(Cm::Util::QuotedPath(boundCompileUnit.ObjectFilePath())).append(" ").append(Cm::Util::QuotedPath(boundCompileUnit.IrFilePath()));
     try

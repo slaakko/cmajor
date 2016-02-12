@@ -1,0 +1,825 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using CodeFormatter = System.Text.CodeFormatter;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Emit
+{
+    public class CFunctionEmitter : FunctionEmitter
+    {
+        public CFunctionEmitter(CodeFormatter& codeFormatter_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
+            Cm.Core.StringRepository& stringRepository_, Cm.BoundTree.BoundClass* currentClass_, HashSet<string>& internalFunctionNames_, HashSet<Ir.Intf.Function*>& externalFunctions_, 
+            Cm.Core.StaticMemberVariableRepository& staticMemberVariableRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_, Cm.Ast.CompileUnitNode* currentCompileUnit_, 
+            Cm.Sym.FunctionSymbol* enterFrameFun_, Cm.Sym.FunctionSymbol* leaveFrameFun_, Cm.Sym.FunctionSymbol* enterTracedCallFun_, Cm.Sym.FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_,
+            bool generateDebugInfo_, bool profile_, HashMap<Ir.Intf.Function*, Cm.Sym.FunctionSymbol*>* functionMap_, const string& cFilePath_) :
+            base(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_, internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_,
+            externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCallFun_,leaveTracedCallFun_, generateDebugInfo_, profile_), functionMap(functionMap_), 
+            cFilePath(cFilePath_), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
+        {
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundFunction& boundFunction)
+        {
+            base->BeginVisit(boundFunction);
+            if (GenerateDebugInfo())
+            {
+                Cm.Sym.FunctionSymbol* currentFunctionSymbol = boundFunction.FunctionSymbol();
+                functionDebugInfo.Reset(new Cm.Core.CFunctionDebugInfo(IrFunctionRepository().CreateIrFunction(currentFunctionSymbol)->Name()));
+                functionDebugInfo->SetFunctionDisplayName(currentFunctionSymbol->FullName());
+                functionDebugInfo->SetCFilePath(cFilePath);
+                if (currentFunctionSymbol->GroupName() == "main")
+                {
+                    functionDebugInfo->SetMain();
+                }
+                if (!currentFunctionSymbol->IsReplicated())
+                {
+                    functionDebugInfo->SetUnique();
+                }
+                if (currentFunctionSymbol->Parent() != null && (currentFunctionSymbol->Parent() is Cm.Sym.TemplateTypeSymbol*))
+                {
+                    Cm.Sym.TemplateTypeSymbol* templateTypeSymbol = cast<Cm.Sym.TemplateTypeSymbol*>(currentFunctionSymbol->Parent());
+                    Cm.Sym.TypeSymbol* subjectType = templateTypeSymbol->SubjectType();
+                    if (!(subjectType is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        throw Exception("class type symbol expected");
+                    }
+                    Cm.Sym.ClassTypeSymbol* subjectClassType = cast<Cm.Sym.ClassTypeSymbol*>(subjectType);
+                    const string& sourceFilePath = subjectClassType->SourceFilePath();
+                    if (sourceFilePath.IsEmpty())
+                    {
+                        throw Exception("template type symbol source file path not set");
+                    }
+                    functionDebugInfo->SetSourceFilePath(sourceFilePath);
+                    SourceFile& sourceFile = SourceFileCache.Instance().GetSourceFile(sourceFilePath);
+                    start = sourceFile.Begin();
+                    end = sourceFile.End();
+                }
+                else if (currentFunctionSymbol->CompileUnit() != null)
+                {
+                    functionDebugInfo->SetSourceFilePath(currentFunctionSymbol->CompileUnit()->FilePath());
+                }
+                else
+                {
+                    int fileIndex = currentFunctionSymbol->GetSpan().FileIndex();
+                    const string& sourceFilePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(fileIndex);
+                    functionDebugInfo->SetSourceFilePath(sourceFilePath);
+                    SourceFile& sourceFile = SourceFileCache.Instance().GetSourceFile(sourceFilePath);
+                    start = sourceFile.Begin();
+                    end = sourceFile.End();
+                }
+            }
+            HashSet<Ir.Intf.Type*> functionPtrTypes;
+            HashMap<Ir.Intf.Type*, Ir.Intf.Type*> tdfMap;
+            GetLocalVariableIrObjectRepository().GetFunctionPtrTypes(functionPtrTypes);
+            if (!functionPtrTypes.IsEmpty())
+            {
+                for (Ir.Intf.Type* functionPtrType : functionPtrTypes)
+                {
+                    UniquePtr<C.Typedef> tdf(new C.Typedef(C.CurrentTempTypedefProvider.Instance()->GetNextTempTypedefName(), functionPtrType->Clone()));
+                    tdfMap[functionPtrType] = tdf.GetPtr();
+                    tdfs.Add(Rvalue(tdf));
+                }
+                GetLocalVariableIrObjectRepository().ReplaceFunctionPtrTypes(tdfMap);
+            }
+        }
+        public override void EndVisit(Cm.BoundTree.BoundFunction& boundFunction)
+        {
+            base->EndVisit(boundFunction);
+            C.Function* function = cast<C.Function*>(GetEmitter()->IrFunction());
+            List<UniquePtr<C.Typedef>> funTdfs = Rvalue(function->Tdfs());
+            for (UniquePtr<C.Typedef>& tdf : funTdfs)
+            {
+                tdfs.Add(Rvalue(tdf));
+            }
+        }
+        public override Cm.Core.CFunctionDebugInfo* GetFunctionDebugInfo() const
+        {
+            return functionDebugInfo.GetPtr();
+        }
+        public override void EmitDummyVar(Cm.Core.Emitter* emitter)
+        {
+            Ir.Intf.Object* dummyVariable = Cm.IrIntf.MakeStackVar("_X_dummy", Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetI1(), 1u));
+            emitter->Own(dummyVariable);
+            emitter->Emit(Cm.IrIntf.Alloca(Ir.Intf.Factory.Instance()->GetI1(), dummyVariable));
+        }    
+        public override Ir.Intf.Type* ReplaceFunctionPtrType(Ir.Intf.Type* localVariableIrType)
+        {
+            HashSet<Ir.Intf.Type*> functionPtrTypes;
+            HashMap<Ir.Intf.Type*, Ir.Intf.Type*> tdfMap;
+            localVariableIrType->GetFunctionPtrTypes(functionPtrTypes);
+            if (!functionPtrTypes.IsEmpty())
+            {
+                for (Ir.Intf.Type* functionPtrType : functionPtrTypes)
+                {
+                    UniquePtr<C.Typedef> tdf(new C.Typedef(C.CurrentTempTypedefProvider.Instance()->GetNextTempTypedefName(), functionPtrType->Clone()));
+                    tdfMap[functionPtrType] = tdf.GetPtr();
+                    tdfs.Add(Rvalue(tdf));
+                }
+                localVariableIrType->ReplaceFunctionPtrTypes(tdfMap);
+            }
+            return localVariableIrType;
+        }
+        public override void Visit(Cm.BoundTree.BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter, GenFlags()));
+            boundDynamicTypeNameExpression.Subject()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> subjectResult = ResultStack().Pop();
+            Ir.Intf.LabelObject* resultLabel = subjectResult->GetLabel();
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            Cm.Sym.ClassTypeSymbol* classType = boundDynamicTypeNameExpression.ClassType();
+            Ir.Intf.Type* classTypePtrType = Cm.IrIntf.Pointer(classType->IrType(), 1u);
+            emitter->Own(classTypePtrType);
+            Ir.Intf.Object* objectPtr = subjectResult->MainObject();
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter->Own(voidPtrPtr);
+            Ir.Intf.Object* vtblPtrContainerPtr = objectPtr;
+            int vptrIndex = classType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainerClass = classType->VPtrContainerClass();
+                vptrIndex = vptrContainerClass->VPtrIndex();
+                Ir.Intf.Type* containerPtrType = Cm.IrIntf.Pointer(vptrContainerClass->IrType(), 1u);
+                emitter->Own(containerPtrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(containerPtrType);
+                emitter->Own(containerPtr);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+                vtblPtrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(loadedVptr);
+            Cm.IrIntf.Assign(*emitter, voidPtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* voidrttiPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter->Own(voidrttiPtr);
+            Cm.IrIntf.Assign(*emitter, voidPtr, loadedVptr, voidrttiPtr);
+            Ir.Intf.Type* rttiPtrIrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("rtti", false), 1u);
+            emitter->Own(rttiPtrIrType);
+            Ir.Intf.RegVar* rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(rttiPtrIrType);
+            emitter->Own(rttiPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(voidPtr, rttiPtr, voidrttiPtr, rttiPtrIrType));
+            Ir.Intf.Type* charPtrPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.Char(), 2u);
+            emitter->Own(charPtrPtrType);
+            Ir.Intf.RegVar* typenameCharPtrPtr = Cm.IrIntf.MakeTemporaryRegVar(charPtrPtrType);
+            emitter->Own(typenameCharPtrPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(voidPtrPtr, typenameCharPtrPtr, rttiPtr, charPtrPtrType));
+            Ir.Intf.Type* charPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.Char(), 1u);
+            emitter->Own(charPtrType);
+            Ir.Intf.RegVar* loadedTypenameCharPtr = Cm.IrIntf.MakeTemporaryRegVar(charPtrType);
+            emitter->Own(loadedTypenameCharPtr);
+            Cm.IrIntf.Assign(*emitter, charPtrType, typenameCharPtrPtr, loadedTypenameCharPtr);
+            result->SetMainObject(loadedTypenameCharPtr);
+            result->Merge(subjectResult);
+            ResultStack().Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundIsExpression& boundIsExpression)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter, GenFlags()));
+            boundIsExpression.Expr()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> exprResult = ResultStack().Pop();
+            Ir.Intf.LabelObject* resultLabel = exprResult->GetLabel();
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            Cm.Sym.ClassTypeSymbol* leftClassType = boundIsExpression.LeftClassType();
+            Ir.Intf.Type* classTypePtrType = Cm.IrIntf.Pointer(leftClassType->IrType(), 1u);
+            emitter->Own(classTypePtrType);
+            Ir.Intf.Object* objectPtr = exprResult->MainObject();
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter->Own(voidPtrPtr);
+            Ir.Intf.Object* vtblPtrContainerPtr = objectPtr;
+            int vptrIndex = leftClassType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainerClass = leftClassType->VPtrContainerClass();
+                vptrIndex = vptrContainerClass->VPtrIndex();
+                Ir.Intf.Type* containerPtrType = Cm.IrIntf.Pointer(vptrContainerClass->IrType(), 1u);
+                emitter->Own(containerPtrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(containerPtrType);
+                emitter->Own(containerPtr);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+                vtblPtrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(loadedVptr);
+            Cm.IrIntf.Assign(*emitter, voidPtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* voidrttiPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter->Own(voidrttiPtr);
+            Cm.IrIntf.Assign(*emitter, voidPtr, loadedVptr, voidrttiPtr);
+            Ir.Intf.Type* rttiPtrIrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("rtti", false), 1u);
+            emitter->Own(rttiPtrIrType);
+            Ir.Intf.RegVar* rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(rttiPtrIrType);
+            emitter->Own(rttiPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(voidPtr, rttiPtr, voidrttiPtr, rttiPtrIrType));
+            Ir.Intf.Type* cidPtrType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetUI64(), 1u);
+            emitter->Own(cidPtrType);
+            Ir.Intf.MemberVar* cidMemberVar = Cm.IrIntf.MakeMemberVar("class_id", rttiPtr, 1, cidPtrType);
+            emitter->Own(cidMemberVar);
+            Ir.Intf.RegVar* leftCid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter->Own(leftCid);
+            Cm.IrIntf.Assign(*emitter, Ir.Intf.Factory.Instance()->GetUI64(), cidMemberVar, leftCid);
+            Cm.Sym.ClassTypeSymbol* rightClassType = boundIsExpression.RightClassType();
+            Cm.BoundTree.BoundLiteral rightCidLiteral(boundIsExpression.SyntaxNode());
+            rightCidLiteral.SetValue(new Cm.Sym.ULongValue(rightClassType->Cid()));
+            Cm.Sym.TypeSymbol* ulongType = TypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+            rightCidLiteral.SetType(ulongType);
+            rightCidLiteral.Accept(*this);
+            SharedPtr<Cm.Core.GenResult> rightCidResult = ResultStack().Pop();
+            Ir.Intf.Object* rightCid = rightCidResult->MainObject();
+            Ir.Intf.RegVar* resultRegVar = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter->Own(resultRegVar);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.fullConfig))
+            {
+                Ir.Intf.RegVar* remainderResult = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+                emitter->Emit(Cm.IrIntf.URem(Ir.Intf.Factory.Instance()->GetUI64(), remainderResult, leftCid, rightCid));
+                Ir.Intf.Object* ui64zero = Ir.Intf.Factory.Instance()->GetUI64()->CreateDefaultValue();
+                emitter->Own(ui64zero);
+                emitter->Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), resultRegVar, Ir.Intf.IConditionCode.eq, remainderResult, ui64zero));
+            }
+            else
+            {
+                Cm.Sym.FunctionSymbol* fun = TypeRepository().GetSymbolTable().GetOverload("is_class_same_or_derived_from");
+                SharedPtr<Cm.Core.GenResult> funCallResult(new Cm.Core.GenResult(emitter, GenFlags()));
+                funCallResult->SetMainObject(resultRegVar);
+                funCallResult->AddObject(leftCid);
+                funCallResult->AddObject(rightCid);
+                GenerateCall(fun, null, *funCallResult);
+            }
+            result->SetMainObject(resultRegVar);
+            result->Merge(exprResult);
+            result->Merge(rightCidResult);
+            if (boundIsExpression.GetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode))
+            {
+                GenJumpingBoolCode(*result);
+            }
+            ResultStack().Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundAsExpression& boundAsExpression)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter, GenFlags()));
+            boundAsExpression.Expr()->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> exprResult = ResultStack().Pop();
+            Ir.Intf.LabelObject* resultLabel = exprResult->GetLabel();
+            if (resultLabel != null)
+            {
+                result->SetLabel(resultLabel);
+            }
+            Cm.Sym.ClassTypeSymbol* leftClassType = boundAsExpression.LeftClassType();
+            Ir.Intf.Type* classTypePtrType = Cm.IrIntf.Pointer(leftClassType->IrType(), 1u);
+            emitter->Own(classTypePtrType);
+            Ir.Intf.Object* objectPtr = exprResult->MainObject();
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter->Own(voidPtrPtr);
+            Ir.Intf.Object* vtblPtrContainerPtr = objectPtr;
+            int vptrIndex = leftClassType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainerClass = leftClassType->VPtrContainerClass();
+                vptrIndex = vptrContainerClass->VPtrIndex();
+                Ir.Intf.Type* containerPtrType = Cm.IrIntf.Pointer(vptrContainerClass->IrType(), 1u);
+                emitter->Own(containerPtrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(containerPtrType);
+                emitter->Own(containerPtr);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrType, containerPtr, objectPtr, containerPtrType));
+                vtblPtrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vtblPtrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(loadedVptr);
+            Cm.IrIntf.Assign(*emitter, voidPtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* voidrttiPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter->Own(voidrttiPtr);
+            Cm.IrIntf.Assign(*emitter, voidPtr, loadedVptr, voidrttiPtr);
+            Ir.Intf.Type* rttiPtrIrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("rtti", false), 1u);
+            emitter->Own(rttiPtrIrType);
+            Ir.Intf.RegVar* rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(rttiPtrIrType);
+            emitter->Own(rttiPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(voidPtr, rttiPtr, voidrttiPtr, rttiPtrIrType));
+            Ir.Intf.Type* cidPtrType = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetUI64(), 1u);
+            emitter->Own(cidPtrType);
+            Ir.Intf.MemberVar* cidMemberVar = Cm.IrIntf.MakeMemberVar("class_id", rttiPtr, 1, cidPtrType);
+            emitter->Own(cidMemberVar);
+            Ir.Intf.RegVar* leftCid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter->Own(leftCid);
+            Cm.IrIntf.Assign(*emitter, Ir.Intf.Factory.Instance()->GetUI64(), cidMemberVar, leftCid);
+            Cm.Sym.ClassTypeSymbol* rightClassType = boundAsExpression.RightClassType();
+            Cm.BoundTree.BoundLiteral rightCidLiteral(boundAsExpression.SyntaxNode());
+            rightCidLiteral.SetValue(new Cm.Sym.ULongValue(rightClassType->Cid()));
+            Cm.Sym.TypeSymbol* ulongType = TypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+            rightCidLiteral.SetType(ulongType);
+            rightCidLiteral.Accept(*this);
+            SharedPtr<Cm.Core.GenResult> rightCidResult = ResultStack().Pop();
+            Ir.Intf.Object* rightCid = rightCidResult->MainObject();
+            Ir.Intf.RegVar* resultRegVar = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter->Own(resultRegVar);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.fullConfig))
+            {
+                Ir.Intf.RegVar* remainderResult = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+                emitter->Emit(Cm.IrIntf.URem(Ir.Intf.Factory.Instance()->GetUI64(), remainderResult, leftCid, rightCid));
+                Ir.Intf.Object* ui64zero = Ir.Intf.Factory.Instance()->GetUI64()->CreateDefaultValue();
+                emitter->Own(ui64zero);
+                emitter->Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), resultRegVar, Ir.Intf.IConditionCode.eq, remainderResult, ui64zero));
+            }
+            else
+            {
+                Cm.Sym.FunctionSymbol* fun = TypeRepository().GetSymbolTable().GetOverload("is_class_same_or_derived_from");
+                SharedPtr<Cm.Core.GenResult> funCallResult(new Cm.Core.GenResult(emitter, GenFlags()));
+                funCallResult->SetMainObject(resultRegVar);
+                funCallResult->AddObject(leftCid);
+                funCallResult->AddObject(rightCid);
+                GenerateCall(fun, null, *funCallResult);
+            }
+            Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(trueLabel);
+            Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(falseLabel);
+            Ir.Intf.LabelObject* exitLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter->Own(exitLabel);
+            emitter->Emit(Cm.IrIntf.Br(resultRegVar, trueLabel, falseLabel));
+            Cm.BoundTree.BoundExpression* temporary = boundAsExpression.BoundTemporary();
+            temporary->Accept(*this);
+            SharedPtr<Cm.Core.GenResult> temporaryResult = ResultStack().Pop();
+            emitter->AddNextInstructionLabel(trueLabel);
+            Ir.Intf.Object* exprAsRightOperand = Cm.IrIntf.MakeTemporaryRegVar(boundAsExpression.Type()->IrType());
+            emitter->Emit(Cm.IrIntf.Bitcast(exprResult->MainObject()->GetType(), exprAsRightOperand, exprResult->MainObject(), boundAsExpression.Type()->IrType()));
+            emitter->Emit(Cm.IrIntf.Store(boundAsExpression.Type()->IrType(), exprAsRightOperand, temporaryResult->MainObject()));
+            emitter->Emit(Cm.IrIntf.Br(exitLabel));
+            Ir.Intf.Object* null_ = boundAsExpression.Type()->IrType()->CreateDefaultValue();
+            emitter->AddNextInstructionLabel(falseLabel);
+            emitter->Emit(Cm.IrIntf.Store(boundAsExpression.Type()->IrType(), null_, temporaryResult->MainObject()));
+            emitter->AddNextInstructionLabel(exitLabel);
+            result->SetMainObject(TypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId)), TypeRepository());
+            DoNothing(*result);
+            result->SetMainObject(temporaryResult->MainObject());
+            result->Merge(exprResult);
+            result->Merge(rightCidResult);
+            result->Merge(temporaryResult);
+            ResultStack().Push(result);
+        }
+        public override void Visit(Cm.BoundTree.BoundInitVPtrStatement& boundInitVPtrStatement)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter, GenFlags()));
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter->Own(voidPtrPtr);
+            Cm.Sym.ClassTypeSymbol* classType = boundInitVPtrStatement.ClassType();
+            Cm.BoundTree.BoundParameter boundThisParam(null, ThisParam());
+            boundThisParam.Accept(*this);
+            SharedPtr<Cm.Core.GenResult> thisResult = ResultStack().Pop();
+            short vptrIndex = classType->VPtrIndex();
+            Ir.Intf.Object* vptrContainerPtr = thisResult->MainObject();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+                vptrIndex = vptrContainingType->VPtrIndex();
+                Ir.Intf.Type* vptrContainingTypeIrType = vptrContainingType->IrType();
+                Ir.Intf.Type* vptrContainingTypePtrType = Cm.IrIntf.Pointer(vptrContainingTypeIrType, 1u);
+                emitter->Own(vptrContainingTypePtrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(vptrContainingTypePtrType);
+                emitter->Own(containerPtr);
+                Ir.Intf.Type* classTypeIrType = classType->IrType();
+                Ir.Intf.Type* classTypePtrType = Cm.IrIntf.Pointer(classTypeIrType, 1u); 
+                emitter->Own(classTypePtrType);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrType, containerPtr, thisResult->MainObject(), vptrContainingTypePtrType));
+                vptrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vptrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* vtblAsVoidPtrPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(vtblAsVoidPtrPtr);
+            Ir.Intf.Type* vtblAddrType = Cm.IrIntf.Pointer(Cm.IrIntf.Array(voidPtr->Clone(), classType->Vtbl().Count()), 1u);
+            emitter->Own(vtblAddrType);
+            string vtblName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "vtbl");
+            Ir.Intf.Object* vtblObject = Cm.IrIntf.MakeGlobal(vtblName, vtblAddrType);
+            emitter->Own(vtblObject);
+            emitter->Emit(Cm.IrIntf.Bitcast(vtblAddrType, vtblAsVoidPtrPtr, vtblObject, voidPtrPtr));
+            Cm.IrIntf.Assign(*emitter, voidPtrPtr, vtblAsVoidPtrPtr, vptr);
+            result->Merge(thisResult);
+            ResultStack().Push(result);
+        }
+        public override void SetStringLiteralResult(Cm.Core.Emitter* emitter, Ir.Intf.Object* resultObject, Ir.Intf.Object* stringConstant, Ir.Intf.Object* stringObject)
+        {
+            Cm.IrIntf.Assign(*emitter, stringConstant->GetType(), stringObject, resultObject);
+        }
+        public override Ir.Intf.Object* MakeLocalVarIrObject(Cm.Sym.TypeSymbol* type, Ir.Intf.Object* source)
+        {
+            if (type is Cm.Sym.ClassTypeSymbol*)
+            {
+                Ir.Intf.Object* target = Cm.IrIntf.MakeTemporaryRegVar(Cm.IrIntf.Pointer(type->IrType(), 1u));
+                Cm.Core.Emitter* emitter = GetEmitter();
+                emitter->Own(target);
+                Cm.IrIntf.Init(*emitter, type->IrType(), source, target);
+                return target;
+            }
+            return source;
+        }
+        public override void GenVirtualCall(Cm.Sym.FunctionSymbol* fun, Cm.Core.GenResult& memberFunctionResult)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            Ir.Intf.Object* objectPtr = memberFunctionResult.Arg1();
+            Cm.Sym.ClassTypeSymbol* classType = fun->Class();
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter->Own(voidPtrPtr);
+            Ir.Intf.Object* vptrContainerPtr = objectPtr;
+            short vptrIndex = classType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+                vptrIndex = vptrContainingType->VPtrIndex();
+                Ir.Intf.Type* vptrContainingPtrIrType = Cm.IrIntf.Pointer(vptrContainingType->IrType(), 1u);
+                emitter->Own(vptrContainingPtrIrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(vptrContainingPtrIrType);
+                emitter->Own(containerPtr);
+                Ir.Intf.Type* classTypePtrIrType = Cm.IrIntf.Pointer(classType->IrType(), 1u);
+                emitter->Own(classTypePtrIrType);
+                emitter->Emit(Cm.IrIntf.Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
+                vptrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vptrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter->Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(loadedVptr);
+            Cm.IrIntf.Assign(*emitter, voidPtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* functionVoidPtrPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter->Own(functionVoidPtrPtr);
+            Ir.Intf.Object* functionIndex = Cm.IrIntf.MakeI16Constant(fun->VtblIndex());
+            emitter->Own(functionIndex);
+            emitter->Emit(Cm.IrIntf.Add(voidPtrPtr, functionVoidPtrPtr, loadedVptr, functionIndex));
+            Ir.Intf.RegVar* loadedFunctionVoidPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter->Own(loadedFunctionVoidPtr);
+            Cm.IrIntf.Assign(*emitter, voidPtr, functionVoidPtrPtr, loadedFunctionVoidPtr);
+            Ir.Intf.Type* functionPtrType = IrFunctionRepository().GetFunPtrIrType(fun);
+            Ir.Intf.RegVar* loadedFunctionPtr = Cm.IrIntf.MakeTemporaryRegVar(functionPtrType);
+            emitter->Own(loadedFunctionPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(voidPtr, loadedFunctionPtr, loadedFunctionVoidPtr, functionPtrType));
+            Ir.Intf.Instruction* callInst = Cm.IrIntf.IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args());
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.CfgNode* activeCfgNode = emitter->GetActiveCfgNode();
+                if (activeCfgNode != null)
+                {
+                    List<string> funNames;
+                    funNames.Add(IrFunctionRepository().CreateIrFunction(fun)->Name());
+                    for (Cm.Sym.FunctionSymbol* overrideFun : fun->OverrideSet())
+                    {
+                        funNames.Add(IrFunctionRepository().CreateIrFunction(overrideFun)->Name());
+                    }
+                    Cm.Core.CFunCall* cFunCall = new Cm.Core.CFunCall(funNames);
+                    activeCfgNode->AddCFunCall(cFunCall);
+                    callInst->SetFunCallNode(cFunCall);
+                }
+            }
+            emitter->Emit(callInst);
+        }
+        public override void DoNothing(Cm.Core.GenResult& genResult)
+        {
+            GetEmitter()->Emit(Cm.IrIntf.DoNothing());
+        }
+        public override void RegisterDestructor(Cm.Sym.MemberVariableSymbol* staticMemberVariableSymbol)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            Ir.Intf.Object* irObject = StaticMemberVariableRepository().GetStaticMemberVariableIrObject(staticMemberVariableSymbol);
+            Ir.Intf.Object* destructionNode = StaticMemberVariableRepository().GetDestructionNode(staticMemberVariableSymbol);
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Ir.Intf.Factory.Instance()->GetVoid(), 1u);
+            emitter->Own(voidPtr);
+            Ir.Intf.MemberVar* objectField = Cm.IrIntf.MakeMemberVar("cls", destructionNode, 1, voidPtr);
+            objectField->SetDotMember();
+            emitter->Own(objectField);
+            emitter->Emit(Cm.IrIntf.Store(voidPtr, irObject, objectField, Ir.Intf.Indirection.addr, Ir.Intf.Indirection.none));
+            Cm.Sym.TypeSymbol* type = staticMemberVariableSymbol->GetType();
+            if (type is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(type);
+                if (classType->Destructor() != null)
+                {
+                    Cm.Sym.FunctionSymbol* destructor = classType->Destructor();
+                    Ir.Intf.Function* destructorIrFun = IrFunctionRepository().CreateIrFunction(destructor);
+                    Ir.Intf.Type* destructorPtrType = IrFunctionRepository().GetFunPtrIrType(destructor);
+                    List<Ir.Intf.Type*> dtorParamTypes1(1, voidPtr->Clone());
+                    Ir.Intf.Type* destructorFieldType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeFunctionType(Cm.IrIntf.Void(), dtorParamTypes1), 1u);
+                    emitter->Own(destructorFieldType);
+                    List<Ir.Intf.Type*> dtorParamTypes2(1, voidPtr->Clone());
+                    Ir.Intf.Type* destructorFieldPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeFunctionType(Cm.IrIntf.Void(), dtorParamTypes2), 2u);
+                    emitter->Own(destructorFieldPtrType);
+                    Ir.Intf.MemberVar* destructorField = Cm.IrIntf.MakeMemberVar("destructor", destructionNode, 2, destructorFieldPtrType);
+                    destructorField->SetDotMember();
+                    emitter->Own(destructorField);
+                    Ir.Intf.RegVar* destructorPtr = Cm.IrIntf.MakeTemporaryRegVar(destructorPtrType);
+                    emitter->Own(destructorPtr);
+                    Ir.Intf.Object* destructorIrObject = Cm.IrIntf.MakeGlobal(destructorIrFun->Name(), destructorPtrType);
+                    emitter->Own(destructorIrObject);
+                    emitter->Emit(Cm.IrIntf.Load(destructorPtrType, destructorPtr, destructorIrObject, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+                    Ir.Intf.Object* destructorFunPtr = Cm.IrIntf.MakeTemporaryRegVar(destructorFieldType);
+                    emitter->Own(destructorFunPtr);
+                    emitter->Emit(Cm.IrIntf.Bitcast(destructorPtrType, destructorFunPtr, destructorPtr, destructorFieldType));
+                    emitter->Emit(Cm.IrIntf.Store(destructorFieldPtrType, destructorFunPtr, destructorField, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none));
+                    List<Ir.Intf.Parameter*> registerFunParams;
+                    Ir.Intf.Parameter* param = Cm.IrIntf.MakeParameter("node", destructionNode->GetType()->Clone());
+                    emitter->Own(param);
+                    registerFunParams.Add(param);
+                    Ir.Intf.Function* registerFun = Cm.IrIntf.CreateFunction(Cm.IrIntf.GetRegisterDestructorFunctionName(), Ir.Intf.Factory.Instance()->GetVoid(), registerFunParams);
+                    emitter->Own(registerFun);
+                    List<Ir.Intf.Object*> registerFunArgs;
+                    registerFunArgs.Add(destructionNode);
+                    Ir.Intf.RegVar* result = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetVoid());
+                    emitter->Own(result);
+                    emitter->Emit(Cm.IrIntf.Call(result, registerFun, registerFunArgs));
+                }
+            }
+        }
+        public override Ir.Intf.LabelObject* CreateLandingPadLabel(int landingPadId)
+        {
+            return Cm.IrIntf.CreateLabel("_P_" + ToString(landingPadId));
+        }
+        public override void SetCallDebugInfoInfo(Ir.Intf.Instruction* callInst, Ir.Intf.Function* fun)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.CfgNode* activeCfgNode = GetEmitter()->GetActiveCfgNode();
+                if (activeCfgNode != null)
+                {
+                    List<string> funNames;
+                    funNames.Add(fun->Name());
+                    Cm.Core.CFunCall* cFunCall = new Cm.Core.CFunCall(funNames);
+                    activeCfgNode->AddCFunCall(cFunCall);
+                    callInst->SetFunCallNode(cFunCall);
+                }
+            }
+        }
+        public override void MapIrFunToFun(Ir.Intf.Function* irFun, Cm.Sym.FunctionSymbol* fun)
+        {
+            (*functionMap)[irFun] = fun;
+        }
+        public override void Visit(Cm.BoundTree.BoundBeginThrowStatement& boundBeginThrowStatement)
+        {
+            base->Visit(boundBeginThrowStatement);
+            if (GenerateDebugInfo())
+            {
+                if (boundBeginThrowStatement.SyntaxNode() == null)
+                {
+                    throw Exception("no syntax node");
+                }
+                CreateDebugNode(boundBeginThrowStatement, boundBeginThrowStatement.SyntaxNode()->GetSpan(), false);
+                boundBeginThrowStatement.CfgNode()->SetKind(Cm.Core.CfgNodeKind.throwNode);
+            }
+            PushGenDebugInfo(false);
+        }
+        public override void Visit(Cm.BoundTree.BoundEndThrowStatement& boundEndThrowStatement)
+        {
+            PopGenDebugInfo();
+            if (GenerateDebugInfo())
+            {
+                if (boundEndThrowStatement.SyntaxNode() == null)
+                {
+                    throw Exception("no syntax node");
+                }
+                CreateDebugNode(boundEndThrowStatement, boundEndThrowStatement.SyntaxNode()->GetSpan(), false);
+            }
+            base->Visit(boundEndThrowStatement);
+        }
+        public override void Visit(Cm.BoundTree.BoundBeginCatchStatement& boundBeginCatchStatement)
+        {
+            PopGenDebugInfo();
+            if (GenerateDebugInfo())
+            {
+                if (boundBeginCatchStatement.SyntaxNode() == null)
+                {
+                    throw Exception("no syntax node");
+                }
+                CreateDebugNode(boundBeginCatchStatement, boundBeginCatchStatement.SyntaxNode()->GetSpan(), true);
+                boundBeginCatchStatement.CfgNode()->SetKind(Cm.Core.CfgNodeKind.catchNode);
+            }
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(GetEmitter(), GenFlags()));
+            DoNothing(*result);
+            ResultStack().Push(result);
+        }
+        public override Cm.Core.CfgNode* CreateDebugNode(Cm.BoundTree.BoundStatement& statement, const Span& span, bool addToPrevNodes)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+                Cm.Core.CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+                statement.SetCfgNode(cfgNode);
+                cfg.PatchPrevNodes(cfgNode);
+                GetEmitter()->UseCDebugNode(cfgNode);
+                GetEmitter()->SetActiveCfgNode(cfgNode);
+                if (addToPrevNodes)
+                {
+                    cfg.AddToPrevNodes(cfgNode);
+                }
+                return cfgNode;
+            }
+            return null;
+        }
+        public override void CreateDebugNode(Cm.BoundTree.BoundExpression& expr, const Span& span)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+                Cm.Core.CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+                expr.SetCfgNode(cfgNode);
+                cfg.PatchPrevNodes(cfgNode);
+                GetEmitter()->UseCDebugNode(cfgNode);
+                GetEmitter()->SetActiveCfgNode(cfgNode);
+            }
+        }
+        public override void AddDebugNodeTransition(Cm.BoundTree.BoundStatement& fromStatement, Cm.BoundTree.BoundStatement& toStatement)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.CfgNode* fromCfgNode = fromStatement.CfgNode();
+                if (fromCfgNode == null)
+                {
+                    throw Exception("from cfg node not set");
+                }
+                Cm.Core.CfgNode* toCfgNode = toStatement.CfgNode();
+                if (toCfgNode == null)
+                {
+                    throw Exception("to cfg node not set");
+                }
+                fromCfgNode->AddNext(toCfgNode->Id());
+            }
+        }
+        public override void AddDebugNodeTransition(Cm.BoundTree.BoundExpression& fromExpression, Cm.BoundTree.BoundStatement& toStatement)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.CfgNode* fromCfgNode = fromExpression.CfgNode();
+                if (fromCfgNode == null)
+                {
+                    throw Exception("from cfg node not set");
+                }
+                Cm.Core.CfgNode* toCfgNode = toStatement.CfgNode();
+                if (toCfgNode == null)
+                {
+                    throw Exception("to cfg node not set");
+                }
+                fromCfgNode->AddNext(toCfgNode->Id());
+            }
+        }
+        public override void AddDebugNodeTransition(Cm.BoundTree.BoundExpression& fromExpression, Cm.BoundTree.BoundExpression& toExpression)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.CfgNode* fromCfgNode = fromExpression.CfgNode();
+                if (fromCfgNode == null)
+                {
+                    throw Exception("from cfg node not set");
+                }
+                Cm.Core.CfgNode* toCfgNode = toExpression.CfgNode();
+                if (toCfgNode == null)
+                {
+                    throw Exception("to cfg node not set");
+                }
+                fromCfgNode->AddNext(toCfgNode->Id());
+            }
+        }
+        public override int RetrievePrevDebugNodes()
+        {
+            if (GenerateDebugInfo())
+            {
+                int debugNodeSetHandle = debugNodeSets.Count();
+                debugNodeSets.Add(Rvalue(functionDebugInfo->Cfg().RetrievePrevNodes()));
+                return debugNodeSetHandle;
+            }
+            return -1;
+        }
+        public override void AddToPrevDebugNodes(int debugNodeSetHandle)
+        {
+            if (GenerateDebugInfo())
+            {
+                if (debugNodeSetHandle < 0 || debugNodeSetHandle >= debugNodeSets.Count())
+                {
+                    throw Exception("invalid debug node set handle");
+                }
+                HashSet<Cm.Core.CfgNode*> prevDebugNodes = Rvalue(debugNodeSets[debugNodeSetHandle]);
+                functionDebugInfo->Cfg().AddToPrevNodes(prevDebugNodes);
+            }
+        }
+        public override void AddToPrevDebugNodes(Cm.BoundTree.BoundStatement& statement)
+        {
+            if (GenerateDebugInfo())
+            {
+                functionDebugInfo->Cfg().AddToPrevNodes(statement.CfgNode());
+            }
+        }
+        public override void AddToPrevDebugNodes(Cm.BoundTree.BoundExpression& expr)
+        {
+            if (GenerateDebugInfo())
+            {
+                functionDebugInfo->Cfg().AddToPrevNodes(expr.CfgNode());
+            }
+        }
+        public override void AddToPrevDebugNodes(const HashSet<Cm.Core.CfgNode*>& nodeSet)
+        {
+            if (GenerateDebugInfo())
+            {
+                functionDebugInfo->Cfg().AddToPrevNodes(nodeSet);
+            }
+        }
+        public override void CreateEntryDebugNode(Cm.BoundTree.BoundStatement& statement, const Span& span)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+                Cm.Core.CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+                cfg.PatchPrevNodes(cfgNode);
+                statement.SetCfgNode(cfgNode);
+                GetEmitter()->UseCDebugNode(cfgNode);
+                SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(GetEmitter(), GenFlags()));
+                Ir.Intf.LabelObject* entryLabel = Cm.IrIntf.CreateNextLocalLabel();
+                GetEmitter()->Own(entryLabel);
+                GetEmitter()->AddNextInstructionLabel(entryLabel);
+                DoNothing(*result);
+                cfg.AddToPrevNodes(cfgNode);
+                GetEmitter()->SetActiveCfgNode(cfgNode);
+                ResultStack().Push(result);
+            }
+        }
+        public override void CreateExitDebugNode(Cm.BoundTree.BoundStatement& statement, const Span& span)
+        {
+            if (GenerateDebugInfo())
+            {
+                Cm.Core.ControlFlowGraph& cfg = functionDebugInfo->Cfg();
+                Cm.Core.CfgNode* cfgNode = cfg.CreateNode(span, start, end);
+                cfg.PatchPrevNodes(cfgNode);
+                GetEmitter()->UseCDebugNode(cfgNode);
+                SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(GetEmitter(), GenFlags()));
+                Ir.Intf.LabelObject* exitLabel = Cm.IrIntf.CreateNextLocalLabel();
+                GetEmitter()->Own(exitLabel);
+                GetEmitter()->AddNextInstructionLabel(exitLabel);
+                DoNothing(*result);
+                CompoundResult()->BackpatchNextTargets(result->GetLabel());
+                cfg.AddToPrevNodes(cfgNode);
+                GetEmitter()->SetActiveCfgNode(cfgNode);
+                ResultStack().Push(result);
+            }
+        }
+        public override void PatchPrevDebugNodes(Cm.BoundTree.BoundStatement& statement)
+        {
+            if (GenerateDebugInfo())
+            {
+                functionDebugInfo->Cfg().PatchPrevNodes(statement.CfgNode());
+            }
+        }
+        public override void SetCfgNode(Cm.BoundTree.BoundStatement& fromStatement, Cm.BoundTree.BoundStatement& toStatement)
+        {
+            if (GenerateDebugInfo())
+            {
+                toStatement.SetCfgNode(fromStatement.CfgNode());
+            }
+        }
+        public override void PatchDebugNodes(const HashSet<Cm.Core.CfgNode*>& nodeSet, Cm.Core.CfgNode* nextNode)
+        {
+            if (GenerateDebugInfo())
+            {
+                functionDebugInfo->Cfg().Patch(nodeSet, nextNode);
+            }
+        }
+        public List<UniquePtr<C.Typedef>> Tdfs() 
+        {
+            return Rvalue(tdfs);
+        }
+        public nothrow Cm.Core.CFunctionDebugInfo* ReleaseFunctionDebugInfo()
+        {
+            return functionDebugInfo.Release();
+        }
+        private HashMap<Ir.Intf.Function*, Cm.Sym.FunctionSymbol*>* functionMap;
+        private bool generateDebugInfo;
+        private UniquePtr<Cm.Core.CFunctionDebugInfo> functionDebugInfo;
+        private const char* start;
+        private const char* end;
+        private List<HashSet<Cm.Core.CfgNode*>> debugNodeSets;
+        private string cFilePath;
+        private List<UniquePtr<C.Typedef>> tdfs;
+    }
+}

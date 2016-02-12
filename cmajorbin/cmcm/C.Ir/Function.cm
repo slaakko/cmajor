@@ -13,6 +13,21 @@ using CodeFormatter = System.Text.CodeFormatter;
 
 namespace C
 {
+    public abstract class CurrentTempTypedefProvider
+    {
+        public static nothrow CurrentTempTypedefProvider* Instance()
+        {
+            #assert(instance != null);
+            return instance;
+        }
+        public static nothrow void SetInstance(CurrentTempTypedefProvider* instance_)
+        {
+            instance = instance_;
+        }
+        public abstract nothrow string GetNextTempTypedefName();
+        private static CurrentTempTypedefProvider* instance;
+    }
+    
     public nothrow const char* ExceptionCodeParamName()
     {
         return "_X_ex_p";
@@ -25,8 +40,50 @@ namespace C
     
     public class Function : Ir.Intf.Function
     {
-        public Function(const string& name_, Ir.Intf.Type* returnType_, const List<Ir.Intf.Parameter*>& parameters_) : base(name_, returnType_, parameters_)
+        public Function(const string& name_, Ir.Intf.Type* returnType_, const List<Ir.Intf.Parameter*>& parameters_) : base(name_, returnType_, parameters_), functionPtrTypesReplaced(false)
         {
+        }
+        public List<UniquePtr<C.Typedef>> Tdfs()
+        {
+            return Rvalue(tdfs);
+        }
+        public override void ReplaceFunctionPtrTypes()
+        {
+            if (functionPtrTypesReplaced) return;
+            functionPtrTypesReplaced = true;
+            Ir.Intf.Type* returnType = GetReturnType();
+            HashSet<Ir.Intf.Type*> functionPtrTypes;
+            returnType->GetFunctionPtrTypes(functionPtrTypes);
+            for (Ir.Intf.Parameter* parameter : Parameters())
+            {
+                Ir.Intf.Type* paramType = parameter->GetType();
+                paramType->GetFunctionPtrTypes(functionPtrTypes);
+            }
+            for (Ir.Intf.Object* r : registers)
+            {
+                Ir.Intf.Type* regType = r->GetType();
+                regType->GetFunctionPtrTypes(functionPtrTypes);
+            }
+            if (!functionPtrTypes.IsEmpty())
+            {
+                for (Ir.Intf.Type* functionPtrType : functionPtrTypes)
+                {
+                    UniquePtr<Typedef> tdf(new Typedef(CurrentTempTypedefProvider.Instance()->GetNextTempTypedefName(), functionPtrType->Clone()));
+                    tdfMap[functionPtrType] = tdf.GetPtr();
+                    tdfs.Add(Rvalue(tdf));
+                }
+                returnType->ReplaceFunctionPtrTypes(tdfMap);
+                for (Ir.Intf.Parameter* parameter : Parameters())
+                {
+                    Ir.Intf.Type* paramType = parameter->GetType();
+                    paramType->ReplaceFunctionPtrTypes(tdfMap);
+                }
+                for (Ir.Intf.Object* r : registers)
+                {
+                    Ir.Intf.Type* regType = r->GetType();
+                    regType->ReplaceFunctionPtrTypes(tdfMap);
+                }
+            }
         }
         public override nothrow string ParameterListStr() const
         {
@@ -47,14 +104,7 @@ namespace C
                     parameterListStr.Append(", ");
                 }
                 Ir.Intf.Type* paramType = parameter->GetType();
-                if (paramType->IsFunctionPointerType() || paramType->IsFunctionPtrPtrType())
-                {
-                    parameterListStr.Append(paramType->Prefix()).Append(parameter->Name()).Append(paramType->Suffix());
-                }
-                else
-                {
-                    parameterListStr.Append(paramType->Name()).Append(' ').Append(parameter->Name());
-                }
+                parameterListStr.Append(paramType->Name()).Append(' ').Append(parameter->Name());
             }
             parameterListStr.Append(')');
             return parameterListStr;
@@ -72,6 +122,7 @@ namespace C
                 {
                     result->SetName("_R_" + ToString(GetNextInstNumber()));
                     registers.Add(result);
+                    Break.Set();
                 }
             }
             DoAddInstruction(instruction);
@@ -79,6 +130,7 @@ namespace C
         }
         public override void WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inline_)
         {
+            ReplaceFunctionPtrTypes();
             formatter.WriteLine();
             const string& comment = Comment();
             if (!comment.IsEmpty())
@@ -88,7 +140,7 @@ namespace C
             string define;
             if (inline_)
             {
-                define.Append("static inline ");
+                define.Append("inline ");
             }
             define.Append(GetReturnType()->Name()).Append(' ').Append(Name()).Append(ParameterListStr());
             formatter.WriteLine(define);
@@ -97,14 +149,7 @@ namespace C
             for (Ir.Intf.Object* r : registers)
             {
                 Ir.Intf.Type* regType = r->GetType();
-                if (regType->IsFunctionPointerType() || regType->IsFunctionPtrPtrType())
-                {
-                    formatter.WriteLine(regType->Prefix() + r->Name() + regType->Suffix() + ";");
-                }
-                else
-                {
-                    formatter.WriteLine(regType->Name() + " " + r->Name() + ";");
-                }
+                formatter.WriteLine(regType->Name() + " " + r->Name() + ";");
             }
             Ir.Intf.Instruction* prev = null;
             for (Ir.Intf.Instruction* inst : Instructions())
@@ -135,6 +180,7 @@ namespace C
                     formatter.IncIndent();
                 }
                 string s = inst->ToString();
+                s.Append(';');
                 const string& comment = inst->Comment();
                 if (!comment.IsEmpty())
                 {
@@ -159,10 +205,11 @@ namespace C
         }
         public override void WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inline_) 
         {
+            ReplaceFunctionPtrTypes();
             string declaration;
             if (inline_)
             {
-                declaration.Append("static inline ");
+                declaration.Append("inline ");
             }
             declaration.Append(GetReturnType()->Name()).Append(' ').Append(Name()).Append(ParameterListStr()).Append(';');
             formatter.WriteLine(declaration);
@@ -172,6 +219,9 @@ namespace C
             return !Parameters().IsEmpty() && Parameters().Back()->Name() == string("%") + ExceptionCodeParamName();
         }
         private List<Ir.Intf.Object*> registers;
+        private List<UniquePtr<C.Typedef>> tdfs;
+        private HashMap<Ir.Intf.Type*, Ir.Intf.Type*> tdfMap;
+        private bool functionPtrTypesReplaced;
     }
 
     public Ir.Intf.Function* CreateMemSetFunction(Ir.Intf.Type* i8Ptr)
@@ -190,7 +240,7 @@ namespace C
     {
         List<Ir.Intf.Parameter*> parameters;
         parameters.Add(new Parameter("dest", i8Ptr));
-        parameters.Add(new Parameter("value", Ir.Intf.Factory.Instance()->GetI8()));
+        parameters.Add(new Parameter("source", i8Ptr));
         parameters.Add(new Parameter("len", Ir.Intf.Factory.Instance()->GetI64()));
         parameters.Add(new Parameter("align", Ir.Intf.Factory.Instance()->GetI32()));
         parameters.Add(new Parameter("isVolatile", Ir.Intf.Factory.Instance()->GetI1()));

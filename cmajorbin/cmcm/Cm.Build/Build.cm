@@ -777,7 +777,10 @@ namespace Cm.Build
         }
         else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
         {
-            // todo
+            Cm.Emit.CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository(),
+                boundCompileUnit.ExternalConstantRepository());
+            // emitter.SetTpGraph(tpGraph); todo
+            boundCompileUnit.Accept(emitter);
         }
     }
     

@@ -161,7 +161,7 @@ public:
     void AddToPrevNodes(const std::unordered_set<CfgNode*>& nodes);
     void PatchPrevNodes(CfgNode* nextNode);
     std::unordered_set<CfgNode*> RetrievePrevNodes();
-    void Patch(std::unordered_set<CfgNode*> set, CfgNode* nextNode);
+    void Patch(const std::unordered_set<CfgNode*>& set, CfgNode* nextNode);
     void FixCLines(int32_t offset);
     void Read(Cm::Ser::BinaryReader& reader);
     void Write(Cm::Ser::BinaryWriter& writer);

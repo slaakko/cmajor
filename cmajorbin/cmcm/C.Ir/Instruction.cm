@@ -401,7 +401,7 @@ namespace C
             s.Append('(').Append(value->Name()).Append(") { ");
             for (const Pair<Ir.Intf.Object*, Ir.Intf.LabelObject*>& dest : destinations)
             {
-                s.Append("case ").Append(dest.first->Name()).Append(": goto ").Append(dest.second->Name()).Append("; break;");
+                s.Append("case ").Append(dest.first->Name()).Append(": goto ").Append(dest.second->Name()).Append("; break; ");
             }
             s.Append("default: goto ").Append(defaultDest->Name()).Append("; break; }");
             return s;
@@ -434,17 +434,10 @@ namespace C
         public nothrow override string ToString() const
         {
             string s;
-            if (type->IsFunctionPointerType() || type->IsFunctionPtrPtrType())
+            s.Append(type->Name()).Append(' ').Append(result->Name());
+            if (numElements > 0)
             {
-                s.Append(type->Prefix()).Append(result->Name()).Append(type->Suffix());
-            }
-            else
-            {
-                s.Append(type->Name()).Append(' ').Append(result->Name());
-                if (numElements > 0)
-                {
-                    s.Append('[').Append(ToString(numElements)).Append(']');
-                }
+                s.Append('[').Append(ToString(numElements)).Append(']');
             }
             return s;
         }
@@ -468,7 +461,7 @@ namespace C
     public class LoadInst : Ir.Intf.Instruction
     {
         public nothrow LoadInst(Ir.Intf.Type* type_, Ir.Intf.Object* result_, Ir.Intf.Object* ptr_, Ir.Intf.Indirection leftIndirection_, Ir.Intf.Indirection rightIndirection_) :
-            base("load"), type(type_), result(result_), ptr(ptr_), alignment(0)
+            base("load"), type(type_), result(result_), ptr(ptr_), alignment(0), leftIndirection(leftIndirection_), rightIndirection(rightIndirection_)
         {
         }
         public nothrow override void SetAlignment(int alignment_)
@@ -522,7 +515,7 @@ namespace C
     public class StoreInst : Ir.Intf.Instruction
     {
         public nothrow StoreInst(Ir.Intf.Type* type_, Ir.Intf.Object* value_, Ir.Intf.Object* ptr_, Ir.Intf.Indirection leftIndirection_, Ir.Intf.Indirection rightIndirection_) :
-            base("store"), type(type_), value(value_), ptr(ptr_), alignment(0)
+            base("store"), type(type_), value(value_), ptr(ptr_), alignment(0), leftIndirection(leftIndirection_), rightIndirection(rightIndirection_)
         {
         }
         public nothrow override void SetAlignment(int alignment_)

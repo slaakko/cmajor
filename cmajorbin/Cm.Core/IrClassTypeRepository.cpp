@@ -291,15 +291,15 @@ void LlvmIrClassTypeRepository::WriteDestructionNodeDef(Cm::Util::CodeFormatter&
     codeFormatter.WriteLine("declare void @register$destructor(%destruction$node*)");
 }
 
-void Visit(std::vector<std::string>& classOrder, const std::string& classTypeName, std::unordered_set<std::string>& visited,
-    std::unordered_set<std::string>& tempVisit, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
+void Visit(std::vector<std::string>& classOrder, const std::string& classTypeName, std::set<std::string>& visited,
+    std::set<std::string>& tempVisit, std::map<std::string, std::vector<std::string>>& dependencyMap)
 {
     if (tempVisit.find(classTypeName) == tempVisit.end())
     {
         if (visited.find(classTypeName) == visited.end())
         {
             tempVisit.insert(classTypeName);
-            std::unordered_map<std::string, std::vector<std::string>>::const_iterator i = dependencyMap.find(classTypeName);
+            std::map<std::string, std::vector<std::string>>::const_iterator i = dependencyMap.find(classTypeName);
             if (i != dependencyMap.end())
             {
                 const std::vector<std::string>& dependents = i->second;
@@ -323,11 +323,11 @@ void Visit(std::vector<std::string>& classOrder, const std::string& classTypeNam
     }
 }
 
-std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classMap, std::unordered_map<std::string, std::vector<std::string>>& dependencyMap)
+std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::map<std::string, Cm::Sym::ClassTypeSymbol*>& classMap, std::map<std::string, std::vector<std::string>>& dependencyMap)
 {
     std::vector<std::string> classNameOrder;
-    std::unordered_set<std::string> visited;
-    std::unordered_set<std::string> tempVisit;
+    std::set<std::string> visited;
+    std::set<std::string> tempVisit;
     for (const std::pair<std::string, std::vector<std::string>>& p : dependencyMap)
     {
         std::string classTypeName = p.first;
@@ -339,7 +339,7 @@ std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::unordered_map
     std::vector<Cm::Sym::ClassTypeSymbol*> classOrder;
     for (const std::string& className : classNameOrder)
     {
-        std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>::const_iterator i = classMap.find(className);
+        std::map<std::string, Cm::Sym::ClassTypeSymbol*>::const_iterator i = classMap.find(className);
         if (i != classMap.cend())
         {
             classOrder.push_back(i->second);
@@ -355,20 +355,24 @@ std::vector<Cm::Sym::ClassTypeSymbol*> CreateClassOrder(const std::unordered_map
 void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const std::vector<Ir::Intf::Type*>& tdfs)
 {
     WriteDestructionNodeDef(codeFormatter);
-    std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classMap;
+    std::vector<Cm::Sym::ClassTypeSymbol*> cm;
     for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
     {
-        Cm::Sym::ClassTypeSymbol* classType = p.second;
+        cm.push_back(p.second);
+    }
+    std::sort(cm.begin(), cm.end(), ClassNameLess());
+    std::map<std::string, Cm::Sym::ClassTypeSymbol*> classMap;
+    for (Cm::Sym::ClassTypeSymbol* classType : cm)
+    {
         if (!classType->IrTypeMade())
         {
             classType->MakeIrType();
         }
         classMap[classType->FullName()] = classType;
     }
-    std::unordered_map<std::string, std::vector<std::string>> dependencyMap;
-    for (const std::pair<std::string, Cm::Sym::ClassTypeSymbol*>& p : ClassTypeMap())
+    std::map<std::string, std::vector<std::string>> dependencyMap;
+    for (Cm::Sym::ClassTypeSymbol* classType : cm)
     {
-        Cm::Sym::ClassTypeSymbol* classType = p.second;
         std::unordered_set<std::string> added;
         std::vector<std::string>& dependencies = dependencyMap[classType->FullName()];
         if (classType->BaseClass())

@@ -2628,13 +2628,17 @@ namespace Cm.Emit
         {
             return emitter.GetPtr();
         }
-        protected nothrow inline Cm.Core.IrFunctionRepository& IrFunctionRepository()
+        protected nothrow Cm.Core.IrFunctionRepository& IrFunctionRepository()
         {
             return irFunctionRepository;
         }
         protected nothrow inline Cm.Core.StaticMemberVariableRepository& StaticMemberVariableRepository()
         {
             return staticMemberVariableRepository;
+        }
+        protected nothrow inline LocalVariableIrObjectRepository& GetLocalVariableIrObjectRepository() 
+        {
+            return localVariableIrObjectRepository;
         }
         protected nothrow inline Cm.Core.GenFlags GenFlags() const
         {
@@ -2651,6 +2655,10 @@ namespace Cm.Emit
         protected nothrow inline Cm.Sym.ParameterSymbol* ThisParam()
         {
             return thisParam;
+        }
+        protected nothrow inline bool GenerateDebugInfo() const
+        {
+            return generateDebugInfo;
         }
         private void GenerateLandingPadCode()
         {
@@ -2790,14 +2798,18 @@ namespace Cm.Emit
                 compoundResult->MergeTargets(compoundResult->NextTargets(), nextTargets);
             }
         }
-        private void PushGenDebugInfo(bool generate)
+        protected void PushGenDebugInfo(bool generate)
         {
             generateDebugInfoStack.Push(generateDebugInfo);
             generateDebugInfo = generate;
         }
-        private void PopGenDebugInfo()
+        protected void PopGenDebugInfo()
         {
             generateDebugInfo = generateDebugInfoStack.Pop();
+        }
+        protected SharedPtr<Cm.Core.GenResult> CompoundResult() const
+        {
+            return compoundResult;
         }
         private void PushBreakTargetStatement(Cm.BoundTree.BoundStatement* statement)
         {

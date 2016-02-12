@@ -1,0 +1,116 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+
+namespace Cm.Emit
+{
+    public class SourceFile
+    {
+        public SourceFile() : used(Now()), index(-1)
+        {
+        }
+        public SourceFile(const string& filePath_) : filePath(filePath_), file(new FileMapping(filePath)), used(Now()), index(-1)
+        {
+        }
+        public nothrow inline int Index() const
+        {
+            return index;
+        }
+        public nothrow void SetIndex(int index_)
+        {
+            index = index_;
+        }
+        public void Use()
+        {
+            used = Now();
+        }
+        public nothrow TimePoint Used() const 
+        { 
+            return used; 
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow inline const char* Begin() const
+        {
+            return file->Begin();
+        }
+        public nothrow inline const char* End() const
+        {
+            return file->End();
+        }
+        private string filePath;
+        private UniquePtr<FileMapping> file;
+        private TimePoint used;
+        private int index;
+    }
+    
+    public class SourceFileCache
+    {
+        static nothrow SourceFileCache() : instance(new SourceFileCache())
+        {
+        }
+        public static nothrow SourceFileCache& Instance()
+        {
+            return *instance;
+        }
+        private nothrow SourceFileCache() : maxCachedFiles(64)
+        {
+        }
+        public SourceFile& GetSourceFile(const string& filePath)
+        {
+            HashMap<string, SourceFile*>.ConstIterator i = fileMap.CFind(filePath);
+            if (i != fileMap.CEnd())
+            {
+                SourceFile& sourceFile = *i->second;
+                sourceFile.Use();
+                return sourceFile;
+            }
+            if (fileMap.Count() >= maxCachedFiles)
+            {
+                TimePoint minTp = TimePoint(MaxValue<long>());
+                HashMap<string, SourceFile*>.Iterator leastRecentlyUsed = fileMap.End();
+                HashMap<string, SourceFile*>.Iterator e = fileMap.End();
+                for (HashMap<string, SourceFile*>.Iterator i = fileMap.Begin(); i != e; ++i)
+                {
+                    SourceFile* sourceFile = i->second;
+                    if (sourceFile->Used() < minTp)
+                    {
+                        minTp = sourceFile->Used();
+                        leastRecentlyUsed = i;
+                    }
+                }
+                SourceFile* lru = leastRecentlyUsed->second;
+                fileMap.Remove(leastRecentlyUsed);
+                files[lru->Index()].Reset();
+            }    
+            SourceFile* sourceFile = new SourceFile(filePath);
+            sourceFile->SetIndex(files.Count());
+            files.Add(UniquePtr<SourceFile>(sourceFile));
+            fileMap[filePath] = sourceFile;
+            return *sourceFile;
+        }
+        public nothrow inline int MaxCachedFiles() const
+        {
+            return maxCachedFiles;
+        }
+        public nothrow inline void SetMaxCachedFiles(int maxCachedFiles_)
+        {
+            maxCachedFiles = maxCachedFiles_;
+        }
+        private int maxCachedFiles;
+        private HashMap<string, SourceFile*> fileMap;
+        private List<UniquePtr<SourceFile>> files;
+        private static UniquePtr<SourceFileCache> instance;
+    }
+}

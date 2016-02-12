@@ -422,7 +422,7 @@ std::unordered_set<CfgNode*> ControlFlowGraph::RetrievePrevNodes()
     return copy;
 }
 
-void ControlFlowGraph::Patch(std::unordered_set<CfgNode*> set, CfgNode* nextNode)
+void ControlFlowGraph::Patch(const std::unordered_set<CfgNode*>& set, CfgNode* nextNode)
 {
     for (CfgNode* prevNode : set)
     {

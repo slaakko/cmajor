@@ -14,14 +14,27 @@ using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Emit
 {
+    public class TempTypedefProvider : C.CurrentTempTypedefProvider
+    {
+        public nothrow TempTypedefProvider(Emitter* emitter_) : emitter(emitter_)
+        {
+        }
+        public override nothrow string GetNextTempTypedefName()
+        {
+            return emitter->GetNextTempTypedefName();
+        }
+        private Emitter* emitter;
+    }
+    
     public abstract class Emitter : Cm.BoundTree.Visitor
     {
         public nothrow Emitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_,
             Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) :
             base(false), typeRepository(typeRepository_), irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), 
             externalConstantRepository(externalConstantRepository_), irFile(irFilePath_), codeFormatter(irFile), currentClass(null), currentCompileUnit(null), enterFrameFun(null), leaveFrameFun(null),
-            enterTracedCallFun(null), leaveTracedCallFun(null), profile(false), nextTempTypedefNumber(0)
+            enterTracedCallFun(null), leaveTracedCallFun(null), profile(false), nextTempTypedefNumber(0), tempTypedefProvider(this)
         {
+            C.CurrentTempTypedefProvider.SetInstance(&tempTypedefProvider);
         }
         public override void BeginVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
         {
@@ -126,6 +139,10 @@ namespace Cm.Emit
         {
             return profile;
         }
+        public nothrow string GetNextTempTypedefName() 
+        {
+            return "__tdf_X_" + ToString(nextTempTypedefNumber++);
+        }
         private Cm.Sym.TypeRepository& typeRepository;
         private Cm.Core.IrFunctionRepository& irFunctionRepository;
         private Cm.Core.IrClassTypeRepository& irClassTypeRepository;
@@ -144,5 +161,6 @@ namespace Cm.Emit
         private HashSet<Cm.Sym.ClassTypeSymbol*> processedClasses;
         private bool profile;
         private int nextTempTypedefNumber;
+        private TempTypedefProvider tempTypedefProvider;
     }
 }

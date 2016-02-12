@@ -1,0 +1,221 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using System.IO;
+using CodeFormatter = System.Text.CodeFormatter;
+
+namespace Cm.Emit
+{
+    public class CEmitter : Emitter
+    {
+        public CEmitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_, 
+            Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) : 
+            base(irFilePath_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
+        {
+        }
+        public override void WriteCompileUnitHeader(CodeFormatter& codeFormatter)
+        {
+            codeFormatter.WriteLine("#include <stdint.h>");
+            codeFormatter.WriteLine("#define null 0");
+            codeFormatter.WriteLine("#define true 1");
+            codeFormatter.WriteLine("#define false 0");
+            codeFormatter.WriteLine("typedef _Bool i1;");
+            codeFormatter.WriteLine("typedef int8_t i8;");
+            codeFormatter.WriteLine("typedef uint8_t ui8;");
+            codeFormatter.WriteLine("typedef int16_t i16;");
+            codeFormatter.WriteLine("typedef uint16_t ui16;");
+            codeFormatter.WriteLine("typedef int32_t i32;");
+            codeFormatter.WriteLine("typedef uint32_t ui32;");
+            codeFormatter.WriteLine("typedef int64_t i64;");
+            codeFormatter.WriteLine("typedef uint64_t ui64;");
+            codeFormatter.WriteLine("struct rtti_ { const char* class_name; ui64 class_id; };");
+            codeFormatter.WriteLine("typedef struct rtti_ rtti;");
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
+        {
+            base->BeginVisit(compileUnit);
+            funFilePath = GetFullPath(Path.ChangeExtension(compileUnit.IrFilePath(), ".fun"));
+            funFile.Open(funFilePath);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info) && !compileUnit.IsMainUnit())
+            {
+                debugInfoFile.Reset(new Cm.Core.CDebugInfoFile());
+                currentSourceFile.Reset(new FileMapping(compileUnit.SyntaxUnit()->FilePath()));
+            }
+            cFilePath = compileUnit.IrFilePath();
+        }
+        public override void EndVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
+        {
+            List<Ir.Intf.Type*> tdfsTypes;
+            for (Ir.Intf.Function* function : ExternalFunctions())
+            {
+                function->ReplaceFunctionPtrTypes();
+                C.Function* fun = cast<C.Function*>(function);
+                List<UniquePtr<C.Typedef>> funTdfs = fun->Tdfs();
+                for (UniquePtr<C.Typedef>& tdf : funTdfs)
+                {
+                    tdfs.Add(Rvalue(tdf));
+                }
+            }
+            for (const UniquePtr<C.Typedef>& tdf : tdfs)
+            {
+                tdfsTypes.Add(tdf.GetPtr());
+            }
+            IrClassTypeRepository().Write(GetCodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
+            List<Ir.Intf.Function*> ef;
+            for (Ir.Intf.Function* function : ExternalFunctions())
+            {
+                ef.Add(function);
+            }
+            Sort(ef, FunctionNameLess());
+            for (Ir.Intf.Function* function : ef)
+            {
+                HashMap<Ir.Intf.Function*, Cm.Sym.FunctionSymbol*>.ConstIterator i = functionMap.CFind(function);
+                bool isInline = false;
+                if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
+                {
+                    if (i != functionMap.CEnd())
+                    {
+                        Cm.Sym.FunctionSymbol* fun = i->second;
+                        isInline = fun->IsInline();
+                    }
+                }
+                if (externalFunctionNames.CFind(function->Name()) == externalFunctionNames.CEnd())
+                {
+                    externalFunctionNames.Insert(function->Name());
+                    function->WriteDeclaration(GetCodeFormatter(), false, isInline);
+                }
+            }
+            staticMemberVariableRepository.Write(GetCodeFormatter());
+            ExternalConstantRepository().Write(GetCodeFormatter());
+            funFile.Close();
+            if (!debugInfoFile.IsNull())
+            {
+                debugInfoFile->FixCLines(GetCodeFormatter().Line() - 1);
+            }
+            string funFileContent = ReadFile(funFilePath);
+            GetCodeFormatter().WriteLine(funFileContent);
+            RemoveFile(funFilePath);
+            if (!debugInfoFile.IsNull())
+            {
+                Cm.Ser.BinaryWriter writer(compileUnit.CDebugInfoFilePath());
+                debugInfoFile->Write(writer);
+            }
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundClass& boundClass)
+        {
+            SetCurrentClass(&boundClass);
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = boundClass.Symbol();
+            if (ProcessedClasses().CFind(classTypeSymbol) != ProcessedClasses().CEnd()) return;
+            ProcessedClasses().Insert(classTypeSymbol);
+            GenerateDebugInfo(classTypeSymbol);
+            for (Cm.Sym.MemberVariableSymbol* staticMemberVarSymbol : classTypeSymbol->StaticMemberVariables())
+            {
+                staticMemberVariableRepository.Add(staticMemberVarSymbol);
+            }
+            if (classTypeSymbol->InitializedVar() != null)
+            {
+                staticMemberVariableRepository.Add(classTypeSymbol->InitializedVar());
+            }
+        }
+        public override void BeginVisit(Cm.BoundTree.BoundFunction& boundFunction)
+        {
+            if (boundFunction.FunctionSymbol()->IsExternal()) return;
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.fullConfig))
+            {
+                if (generatedFunctions.CFind(boundFunction.FunctionSymbol()->FullName()) != generatedFunctions.CEnd()) return;
+                generatedFunctions.Insert(boundFunction.FunctionSymbol()->FullName());
+            }
+            CodeFormatter funFormatter(funFile);
+            funFormatter.SetLine(funLine);
+            const char* start = null;
+            const char* end = null;
+            if (!debugInfoFile.IsNull())
+            {
+                if (currentSourceFile.IsNull())
+                {
+                    throw Exception("current source file not set");
+                }
+                start = currentSourceFile->Begin();
+                end = currentSourceFile->End();
+            }
+            CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), ExternalFunctions(),
+                staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), start, end, 
+                !debugInfoFile.IsNull(), Profile(), &functionMap, cFilePath);
+            boundFunction.Accept(functionEmitter);
+            List<UniquePtr<C.Typedef>> funTdfs = functionEmitter.Tdfs();
+            for (UniquePtr<C.Typedef>& tdf : funTdfs)
+            {
+                tdfs.Add(Rvalue(tdf));
+            }
+            funLine = funFormatter.Line();
+            if (!debugInfoFile.IsNull())
+            {
+                Cm.Core.CFunctionDebugInfo* functionDebugInfo = functionEmitter.ReleaseFunctionDebugInfo();
+                if (functionDebugInfo != null)
+                {
+                    debugInfoFile->AddFunctionDebugInfo(functionDebugInfo);
+                }
+                else
+                {
+                    throw Exception("no function debug info");
+                }
+            }
+        }
+        public override Cm.Core.StaticMemberVariableRepository& GetStaticMemberVariableRepository()
+        {
+            return staticMemberVariableRepository;
+        }
+        private void GenerateDebugInfo(Cm.Sym.ClassTypeSymbol* classTypeSymbol)
+        {
+            if (debugInfoFile.IsNull()) return;
+            if (classTypeSymbol->DebugInfoGenerated()) return;
+            classTypeSymbol->SetDebugInfoGenerated();
+            Cm.Sym.ClassTypeSymbol* baseClass = classTypeSymbol->BaseClass();
+            string baseClassFullName;
+            if (baseClass != null)
+            {
+                GenerateDebugInfo(baseClass);
+                baseClassFullName = baseClass->FullName();
+            }
+            string irTypeName = "struct " + classTypeSymbol->GetMangleId() + "_";
+            Cm.Core.ClassDebugInfo* classDebugInfo = new Cm.Core.ClassDebugInfo(classTypeSymbol->FullName(), baseClassFullName, irTypeName);
+            if (classTypeSymbol->IsVirtual())
+            {
+                classDebugInfo->SetVirtual();
+                if (classTypeSymbol->VPtrIndex() != -1)
+                {
+                    classDebugInfo->SetHasVptr();
+                }
+            }
+            for (Cm.Sym.MemberVariableSymbol* memberVar : classTypeSymbol->MemberVariables())
+            {
+                classDebugInfo->AddMemberVariable(Cm.Core.MemberVariableDebugInfo(memberVar->Name(), memberVar->GetType()->FullName()));
+                if (memberVar->GetType()->GetBaseType() is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVar->GetType()->GetBaseType());
+                    GenerateDebugInfo(memberVarClassType);
+                }
+            }
+            debugInfoFile->AddClassDebugInfo(classDebugInfo);
+        }
+        private Cm.Core.CStaticMemberVariableRepository staticMemberVariableRepository;
+        private string funFilePath;
+        private OutputFileStream funFile;
+        private HashMap<Ir.Intf.Function*, Cm.Sym.FunctionSymbol*> functionMap;
+        private UniquePtr<Cm.Core.CDebugInfoFile> debugInfoFile;
+        private UniquePtr<FileMapping> currentSourceFile;
+        private int funLine;
+        private string cFilePath;
+        private HashSet<string> generatedFunctions;
+        private HashSet<string> externalFunctionNames;
+        private List<UniquePtr<C.Typedef>> tdfs;
+    }
+}
