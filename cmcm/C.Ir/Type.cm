@@ -282,7 +282,7 @@ namespace C
         }
         public override Ir.Intf.Object* CreateMinusOne() const
         {
-            return MakeUI64Constant(cast<uint>(-1));
+            return MakeUI64Constant(cast<ulong>(-1));
         }
         public override Ir.Intf.Object* CreatePlusOne() const
         {
@@ -440,7 +440,7 @@ namespace C
                 }
                 elementType->SetOwned();
                 elementTypes.Add(UniquePtr<Ir.Intf.Type>(elementType));
-                if (elementType->IsFunctionPointerType() || elementType->IsFunctionPtrPtrType())
+                if (elementType->GetBaseType() is FunctionType*)
                 {
                     name.Append(elementType->Prefix()).Append(elementNames[i]).Append(elementType->Suffix()).Append(";");
                 }
@@ -499,7 +499,7 @@ namespace C
         private List<string> elementNames;
     }
     
-    public inline Ir.Intf.Type* MakeStructureType(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
+    public Ir.Intf.Type* MakeStructureType(const string& tagName, const List<Ir.Intf.Type*>& elementTypes, const List<string>& elementNames)
     {
         return new StructureType(tagName, elementTypes, elementNames);
     }
@@ -513,7 +513,7 @@ namespace C
                 baseType->SetOwned();
                 ownedBaseType.Reset(baseType);
             }
-            if (IsFunctionPointerType() || IsFunctionPtrPtrType())
+            if (GetBaseType() is FunctionType*)
             {
                 SetName(Prefix() + Suffix());
             }
@@ -567,15 +567,10 @@ namespace C
         }
         public override nothrow string Prefix() const
         {
-            if (IsFunctionPointerType())
+            if (GetBaseType() is FunctionType*)
             {
-                FunctionType* funType = cast<FunctionType*>(baseType);
-                return funType->ReturnType()->Name() + " (*";
-            }
-            else if (IsFunctionPtrPtrType())
-            {
-                FunctionType* funType = cast<FunctionType*>(baseType);
-                return funType->ReturnType()->Name() + " (**";
+                FunctionType* funType = cast<FunctionType*>(GetBaseType());
+                return funType->ReturnType()->Name() + " (" + string('*', numPointers);
             }
             return base->Prefix();
         }
@@ -727,6 +722,11 @@ namespace C
     {
         public nothrow Typedef(const string& name_, Ir.Intf.Type* type_) : base("typedef " + type_->Prefix() + name_ + type_->Suffix()), baseName(name_), type(type_)
         {
+            if (!type->Owned())
+            {
+                type->SetOwned();
+                ownedType.Reset(type);
+            }
         }
         public override Ir.Intf.Type* Clone() const
         {
@@ -738,6 +738,7 @@ namespace C
         }
         private string baseName;
         private Ir.Intf.Type* type;
+        private UniquePtr<Ir.Intf.Type> ownedType;
     }
     
     public inline nothrow Ir.Intf.Type* MakeTypedef(const string& name, Ir.Intf.Type* type)

@@ -250,6 +250,14 @@ int main(int argc, const char** argv)
                                     {
                                         Cm.Sym.SetGlobalFlag(Cm.Sym.GlobalFlags.optimize);
                                     }
+                                    if (config == "profile")
+                                    {
+                                        throw Exception("profile configuration not supported by cmcm yet");
+                                    }
+                                    if (config == "full")
+                                    {
+                                        throw Exception("full configuration not supported by cmcm yet");
+                                    }
                                 }
                                 else if (v[0] == "-O")
                                 {

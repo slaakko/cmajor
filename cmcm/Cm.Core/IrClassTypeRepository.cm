@@ -30,7 +30,7 @@ namespace Cm.Core
         public abstract void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter);
         public abstract void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
         public abstract void WriteDestructionNodeDef(CodeFormatter& codeFormatter);
-        public nothrow inline const HashMap<string, Cm.Sym.ClassTypeSymbol*>& ClassTypeMap() const
+        public nothrow const HashMap<string, Cm.Sym.ClassTypeSymbol*>& ClassTypeMap() const
         {
             return classTypeMap;
         }
@@ -80,9 +80,8 @@ namespace Cm.Core
                 cm.Add(p.second);
             }
             Sort(cm, ClassNameLess());
-            for (Cm.Sym.ClassTypeSymbol* p : cm)
+            for (Cm.Sym.ClassTypeSymbol* classType : cm)
             {
-                Cm.Sym.ClassTypeSymbol* classType = p;
                 if (!classType->IrTypeMade())
                 {
                     classType->MakeIrType();
@@ -243,14 +242,14 @@ namespace Cm.Core
         }
     }
     
-    public void Visit(List<string>& classOrder, const string& classTypeName, HashSet<string>& visited, HashSet<string>& tempVisit, HashMap<string, List<string>>& dependencyMap)
+    public void Visit(List<string>& classOrder, const string& classTypeName, Set<string>& visited, Set<string>& tempVisit, Map<string, List<string>>& dependencyMap)
     {
         if (tempVisit.CFind(classTypeName) == tempVisit.CEnd())
         {
             if (visited.CFind(classTypeName) == visited.CEnd())
             {
                 tempVisit.Insert(classTypeName);
-                HashMap<string, List<string>>.ConstIterator i = dependencyMap.CFind(classTypeName);
+                Map<string, List<string>>.ConstIterator i = dependencyMap.CFind(classTypeName);
                 if (i != dependencyMap.CEnd())
                 {
                     const List<string>& dependents = i->second;
@@ -274,11 +273,11 @@ namespace Cm.Core
         }
     }
     
-    public List<Cm.Sym.ClassTypeSymbol*> CreateClassOrder(const HashMap<string, Cm.Sym.ClassTypeSymbol*>& classMap, HashMap<string, List<string>>& dependencyMap)
+    public List<Cm.Sym.ClassTypeSymbol*> CreateClassOrder(const Map<string, Cm.Sym.ClassTypeSymbol*>& classMap, Map<string, List<string>>& dependencyMap)
     {
         List<string> classNameOrder;
-        HashSet<string> visited;
-        HashSet<string> tempVisit;
+        Set<string> visited;
+        Set<string> tempVisit;
         for (const Pair<string, List<string>>& p : dependencyMap)
         {
             string classTypeName = p.first;
@@ -290,7 +289,7 @@ namespace Cm.Core
         List<Cm.Sym.ClassTypeSymbol*> classOrder;
         for (const string& className : classNameOrder)
         {
-            HashMap<string, Cm.Sym.ClassTypeSymbol*>.ConstIterator i = classMap.CFind(className);
+            Map<string, Cm.Sym.ClassTypeSymbol*>.ConstIterator i = classMap.CFind(className);
             if (i != classMap.CEnd())
             {
                 classOrder.Add(i->second);
@@ -308,20 +307,24 @@ namespace Cm.Core
         public override void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs)
         {
             WriteDestructionNodeDef(codeFormatter);
-            HashMap<string, Cm.Sym.ClassTypeSymbol*> classMap;
+            List<Cm.Sym.ClassTypeSymbol*> cm;
             for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
             {
-                Cm.Sym.ClassTypeSymbol* classType = p.second;
+                cm.Add(p.second);
+            }
+            Sort(cm, ClassNameLess());
+            Map<string, Cm.Sym.ClassTypeSymbol*> classMap;
+            for (Cm.Sym.ClassTypeSymbol* classType : cm)
+            {
                 if (!classType->IrTypeMade())
                 {
                     classType->MakeIrType();
                 }
                 classMap[classType->FullName()] = classType;
             }
-            HashMap<string, List<string>> dependencyMap;
-            for (const Pair<string, Cm.Sym.ClassTypeSymbol*>& p : ClassTypeMap())
+            Map<string, List<string>> dependencyMap;
+            for (Cm.Sym.ClassTypeSymbol* classType : cm)
             {
-                Cm.Sym.ClassTypeSymbol* classType = p.second;
                 HashSet<string> added;
                 List<string>& dependencies = dependencyMap[classType->FullName()];
                 if (classType->BaseClass() != null)
@@ -381,7 +384,7 @@ namespace Cm.Core
             {
                 if (classType->VPtrIndex() != -1)
                 {
-                    memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                    memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u));
                     memberNames.Add("__vptr");
                 }
                 else if (classType->BaseClass() == null)
@@ -396,7 +399,7 @@ namespace Cm.Core
                 {
                     if (index == classType->VPtrIndex())
                     {
-                        memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u));
+                        memberTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u));
                         memberNames.Add("__vptr");
                         ++index;
                     }

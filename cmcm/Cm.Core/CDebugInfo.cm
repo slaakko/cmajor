@@ -764,7 +764,7 @@ namespace Cm.Core
         {
             prevNodes.Insert(node);
         }
-        public void AddToPrevNodes(HashSet<CfgNode*>& nodes)
+        public void AddToPrevNodes(const HashSet<CfgNode*>& nodes)
         {
             for (CfgNode* node : nodes)
             {
@@ -785,7 +785,7 @@ namespace Cm.Core
             prevNodes.Clear();
             return moved;
         }
-        public void Patch(HashSet<CfgNode*>& set, CfgNode* nextNode)
+        public void Patch(const HashSet<CfgNode*>& set, CfgNode* nextNode)
         {
             for (CfgNode* prevNode : set)
             {

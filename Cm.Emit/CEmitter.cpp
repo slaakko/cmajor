@@ -56,6 +56,14 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     cFilePath = compileUnit.IrFilePath();
 }
 
+struct FunctionNameLess
+{
+    inline bool operator()(Ir::Intf::Function* left, Ir::Intf::Function* right) const
+    {
+        return left->Name() < right->Name();
+    }
+};
+
 void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     std::vector<Ir::Intf::Type*> tdfsTypes;
@@ -75,7 +83,13 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     }
     IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
     std::unordered_set<std::string> externalFunctionNames;
+    std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())
+    {
+        ef.push_back(function);
+    }
+    std::sort(ef.begin(), ef.end(), FunctionNameLess());
+    for (Ir::Intf::Function* function : ef)
     {
         std::unordered_map<Ir::Intf::Function*, Cm::Sym::FunctionSymbol*>::iterator i = functionMap.find(function);
         bool isInline = false;

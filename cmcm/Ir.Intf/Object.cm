@@ -11,6 +11,19 @@ using System;
 
 namespace Ir.Intf
 {
+    public class Break
+    {
+        public static nothrow void Set()
+        {
+            set = true;
+        }
+        public static nothrow bool IsSet() 
+        {
+            return set;
+        }
+        private static bool set;
+    }
+    
     public abstract class Object
     {
         public nothrow Object(const string& name_, Type* type_) : name(name_), type(type_), owned(false)
@@ -23,6 +36,10 @@ namespace Ir.Intf
         }
         public virtual ~Object()
         {
+            if (Break.IsSet() && name.Find("_R_") != -1)
+            {
+                int x = 0;
+            }
         }
         public nothrow inline const string& Name() const
         {

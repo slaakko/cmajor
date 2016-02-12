@@ -40,6 +40,9 @@ namespace Ir.Intf
         public virtual ~Function()
         {
         }
+        public virtual void ReplaceFunctionPtrTypes() 
+        {
+        }
         public inline nothrow const string& Name() const
         {
             return name;

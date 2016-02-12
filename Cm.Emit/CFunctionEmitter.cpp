@@ -260,7 +260,7 @@ void CFunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpression
     emitter->Own(resultRegVar);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
-        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
         emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
         Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
         emitter->Own(ui64Zero);
@@ -349,7 +349,7 @@ void CFunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpression
     emitter->Own(resultRegVar);
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::fullConfig))
     {
-        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetI64());
+        Ir::Intf::RegVar* remainderResult = Cm::IrIntf::CreateTemporaryRegVar(Ir::Intf::GetFactory()->GetUI64());
         emitter->Emit(Cm::IrIntf::URem(Ir::Intf::GetFactory()->GetUI64(), remainderResult, leftCid, rightCid));
         Ir::Intf::Object* ui64Zero = Ir::Intf::GetFactory()->GetUI64()->CreateDefaultValue();
         emitter->Own(ui64Zero);

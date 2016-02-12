@@ -671,6 +671,10 @@ namespace Cm.Sym
                 overriddenFunction->AddToOverrideSet(overrideFun);
             }
         }
+        public nothrow inline const HashSet<FunctionSymbol*>& OverrideSet() const
+        {
+            return overrideSet;
+        }
         public nothrow inline const List<ParameterSymbol*>& Parameters() const
         {
             return parameters;

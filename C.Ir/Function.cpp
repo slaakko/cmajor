@@ -119,7 +119,7 @@ void Function::WriteDeclaration(CodeFormatter& formatter, bool weakOdr, bool inl
     std::string declaration;
     if (inline_)
     {
-        declaration.append("static inline ");
+        declaration.append("inline ");
     }
     declaration.append(GetReturnType()->Name()).append(" ").append(Name()).append(ParameterListStr()).append(";");
     formatter.WriteLine(declaration);
@@ -136,7 +136,7 @@ void Function::WriteDefinition(CodeFormatter& formatter, bool weakOdr, bool inli
     std::string define;
     if (inline_)
     {
-        define.append("static inline ");
+        define.append("inline ");
     }
     define.append(GetReturnType()->Name()).append(" ").append(Name()).append(ParameterListStr());
     formatter.WriteLine(define);
