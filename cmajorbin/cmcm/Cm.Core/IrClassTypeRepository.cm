@@ -463,7 +463,7 @@ namespace Cm.Core
             codeFormatter.WriteLine("rtti " + classRttiName + " = {" + System.Text.MakeStringLiteral(classType->FullName()) + ", " + ToString(classType->Cid()) + "};");
             
             string vtblHeader = "static void* ";
-            vtblHeader.Append(vtblIrObject->Name()).Append("[").Append(ToString(classType->Vtbl().Count())).Append("] = ");
+            vtblHeader.Append(vtblIrObject->Name()).Append("[").Append(ToString(classType->Vtbl().Count())).Append("] =");
             codeFormatter.WriteLine(vtblHeader);
             codeFormatter.WriteLine("{");
             codeFormatter.IncIndent();

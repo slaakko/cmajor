@@ -13,8 +13,8 @@ namespace C
 {
     public class Factory : Ir.Intf.Factory
     {
-        public nothrow Factory() : labelType(MakeLabelType()), i1Type(MakeI1Type()), i8Type(MakeI8Type()), i16Type(MakeI16Type()), i32Type(MakeI32Type()), i64Type(MakeI64Type()), 
-            floatType(MakeFloatType()), doubleType(MakeDoubleType()), voidType(MakeVoidType())
+        public nothrow Factory() : labelType(MakeLabelType()), i1Type(MakeI1Type()), i8Type(MakeI8Type()), ui8Type(MakeUI8Type()), i16Type(MakeI16Type()), ui16Type(MakeUI16Type()), 
+            i32Type(MakeI32Type()), ui32Type(MakeUI32Type()), i64Type(MakeI64Type()), ui64Type(MakeUI64Type()), floatType(MakeFloatType()), doubleType(MakeDoubleType()), voidType(MakeVoidType())
         {
             labelType->SetOwned();
             i1Type->SetOwned();
@@ -40,7 +40,7 @@ namespace C
         }
         public nothrow override Ir.Intf.Type* GetUI8() const
         {
-            return i8Type.GetPtr();
+            return ui8Type.GetPtr();
         }
         public nothrow override Ir.Intf.Type* GetI16() const
         {
@@ -48,7 +48,7 @@ namespace C
         }
         public nothrow override Ir.Intf.Type* GetUI16() const
         {
-            return i16Type.GetPtr();
+            return ui16Type.GetPtr();
         }
         public nothrow override Ir.Intf.Type* GetI32() const
         {
@@ -56,7 +56,7 @@ namespace C
         }
         public nothrow override Ir.Intf.Type* GetUI32() const
         {
-            return i32Type.GetPtr();
+            return ui32Type.GetPtr();
         }
         public nothrow override Ir.Intf.Type* GetI64() const
         {
@@ -64,7 +64,7 @@ namespace C
         }
         public nothrow override Ir.Intf.Type* GetUI64() const
         {
-            return i64Type.GetPtr();
+            return ui64Type.GetPtr();
         }
         public nothrow override Ir.Intf.Type* GetFloat() const
         {
@@ -81,9 +81,13 @@ namespace C
         private UniquePtr<Ir.Intf.Type> labelType;
         private UniquePtr<Ir.Intf.Type> i1Type;
         private UniquePtr<Ir.Intf.Type> i8Type;
+        private UniquePtr<Ir.Intf.Type> ui8Type;
         private UniquePtr<Ir.Intf.Type> i16Type;
+        private UniquePtr<Ir.Intf.Type> ui16Type;
         private UniquePtr<Ir.Intf.Type> i32Type;
+        private UniquePtr<Ir.Intf.Type> ui32Type;
         private UniquePtr<Ir.Intf.Type> i64Type;
+        private UniquePtr<Ir.Intf.Type> ui64Type;
         private UniquePtr<Ir.Intf.Type> floatType;
         private UniquePtr<Ir.Intf.Type> doubleType;
         private UniquePtr<Ir.Intf.Type> voidType;

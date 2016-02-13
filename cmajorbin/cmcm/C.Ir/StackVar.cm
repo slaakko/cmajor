@@ -45,7 +45,7 @@ namespace C
         {
             PointerType* ptrType = MakePointerType(stackVar.GetType());
             emitter.Own(ptrType);
-            if (stackVar.GetType()->Name() == ptrType->Name())
+            if (GetType()->Name() == ptrType->Name())
             {
                 emitter.Emit(Load(type, this, &stackVar, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
             }

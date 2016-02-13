@@ -2,7 +2,7 @@ This subdirectory (cmcm) contains Cmajor compiler written in Cmajor.
 
 It is manually translated from C++ code to Cmajor code so that the
 algorithms and data structures of the compiler are the same.
-Hopefully I'm not making any new bugs.
+Hopefully I'm not making many new bugs.
 
 The performance of the Cmajor version is much poorer compared to C++ version,
 but at least it's a starting point.
