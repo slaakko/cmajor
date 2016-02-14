@@ -654,6 +654,14 @@ namespace Cm.Sym
             }
             return null;
         }
+        public nothrow inline FunctionSymbol* UserMainFunction() const
+        {
+            return userMainFunction;
+        }
+        public nothrow inline void SetUserMainFunction(FunctionSymbol* userMainFunction_)
+        {
+            userMainFunction = userMainFunction_;
+        }
         private NamespaceSymbol globalNs;
         private HashMap<Symbol*, Cm.Ast.Node*> symbolNodeMap;
         private HashMap<Cm.Ast.Node*, ContainerScope*> nodeScopeMap;
