@@ -10,16 +10,416 @@
 using System;
 using System.Collections;
 using System.IO;
+using Span = System.Text.Parsing.Span;
 
 namespace Cm.Build
 {
-/*    
-    public bool CreateMainCompileUnit(Cm.Sym.SymbolTable& symbolTable, const string& outputBasePath, List<string>& objectFilePaths, bool changed)
+    public bool CreateMainCompileUnit(Cm.Sym.SymbolTable& symbolTable, const string& outputBasePath, const string& profDataFilePath, List<string>& objectFilePaths, int numClassHierarchyTableEntries, 
+        ulong stackSize, bool changed)
     {
-        // todo
-        if (!changed) return false;
-        // todo
+        Cm.Sym.FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
+        if (userMainFunction == null)
+        {
+            throw Cm.Core.Error("program has no main() function");
+        }
+        Span span;
+        Cm.Ast.CompileUnitNode syntaxUnit(span);
+        string ext;
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            ext = ".ll0";
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            ext = ".c0";
+        }
+        string mainCompileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, "__main__" + ext));
+        Cm.BoundTree.BoundCompileUnit mainCompileUnit(symbolTable, &syntaxUnit, mainCompileUnitIrFilePath);
+        mainCompileUnit.SetMainUnit();
+        mainCompileUnit.SetClassTemplateRepository(new Cm.Bind.ClassTemplateRepository(mainCompileUnit));
+        mainCompileUnit.SetInlineFunctionRepository(new Cm.Bind.InlineFunctionRepository(mainCompileUnit));
+        mainCompileUnit.SetSynthesizedClassFunRepository(new Cm.Bind.SynthesizedClassFunRepository(mainCompileUnit));
+        mainCompileUnit.SetDelegateTypeOpRepository(new Cm.Bind.DelegateTypeOpRepository(mainCompileUnit));
+        mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm.Bind.ClassDelegateTypeOpRepository(mainCompileUnit));
+        mainCompileUnit.SetArrayTypeOpRepository(new Cm.Bind.ArrayTypeOpRepository(mainCompileUnit));
+        objectFilePaths.Add(mainCompileUnit.ObjectFilePath());
+        if (!changed) 
+        {
+            if (!FileExists(mainCompileUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+            else if (!FileExists(mainCompileUnit.ObjectFilePath()))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(mainCompileUnit.ObjectFilePath(), mainCompileUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+        }
+        if (!changed)
+        {
+            return false;
+        }
+        UniquePtr<Cm.Sym.FunctionSymbol> mainFunctionSymbol(new Cm.Sym.FunctionSymbol(Span(), "main"));
+        mainFunctionSymbol->SetCDecl();
+        Cm.Sym.TypeSymbol* intType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+        Cm.Sym.ParameterSymbol* argcParam = null;
+        Cm.Sym.ParameterSymbol* argvParam = null;
+        Cm.Sym.TypeSymbol* boolType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        if (!userMainFunction->Parameters().IsEmpty())
+        {
+            if (userMainFunction->Parameters().Count() != 2)
+            {
+                throw Cm.Core.Error("main() function must have either zero or two parameters", userMainFunction->GetSpan());
+            }
+            Cm.Sym.ParameterSymbol* firstParam = userMainFunction->Parameters()[0];
+            if (!Cm.Sym.TypesEqual(firstParam->GetType(), intType))
+            {
+                throw Cm.Core.Error("type of first parameter of main() function must be int", userMainFunction->GetSpan());
+            }
+            Cm.Sym.ParameterSymbol* secondParam = userMainFunction->Parameters()[1];
+            Cm.Sym.TypeSymbol* constCharPtrPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrPtrType(userMainFunction->GetSpan());
+            if (!Cm.Sym.TypesEqual(secondParam->GetType(), constCharPtrPtrType))
+            {
+                throw Cm.Core.Error("type of second parameter of main() function must be const char**", userMainFunction->GetSpan());
+            }
+            argcParam = new Cm.Sym.ParameterSymbol(userMainFunction->GetSpan(), "argc");
+            argcParam->SetType(intType);
+            symbolTable.SetSidAndAddSymbol(argcParam);
+            mainFunctionSymbol->AddSymbol(argcParam);
+            argvParam = new Cm.Sym.ParameterSymbol(userMainFunction->GetSpan(), "argv");
+            argvParam->SetType(constCharPtrPtrType);
+            symbolTable.SetSidAndAddSymbol(argvParam);
+            mainFunctionSymbol->AddSymbol(argvParam);
+        }
+        if (userMainFunction->GetReturnType() == null || !(userMainFunction->GetReturnType() is Cm.Sym.VoidTypeSymbol*) && !Cm.Sym.TypesEqual(userMainFunction->GetReturnType(), intType))
+        {
+            throw Cm.Core.Error("return type of main() function must be void or int", userMainFunction->GetSpan());
+        }
+        mainFunctionSymbol->SetReturnType(intType);
+        Cm.BoundTree.BoundFunction* mainFunction = new Cm.BoundTree.BoundFunction(null, mainFunctionSymbol.GetPtr());
+        mainFunction->SetRealMainFunction();
+        Cm.BoundTree.BoundCompoundStatement* mainBody = new Cm.BoundTree.BoundCompoundStatement(null);
+        mainFunction->SetBody(mainBody);
+        Cm.Bind.GenerateReceives(null, mainCompileUnit, mainFunction);
+        Cm.Sym.LocalVariableSymbol* returnValueVariable = new Cm.Sym.LocalVariableSymbol(userMainFunction->GetSpan(), "returnValue");
+        returnValueVariable->SetType(intType);
+        mainFunctionSymbol->AddSymbol(returnValueVariable);
+        mainFunction->AddLocalVariable(returnValueVariable);
+        UniquePtr<Cm.Sym.FunctionSymbol> intAssignment;    
+        if (userMainFunction->GetReturnType() is Cm.Sym.VoidTypeSymbol*)
+        {
+            if (stackSize != 0u)
+            {
+                Cm.Sym.FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
+                if (setStackSizeFun == null)
+                {
+                    throw Exception("set_stack_size function not found");
+                }
+                Cm.BoundTree.BoundExpressionList setStackSizeArgs;
+                Cm.BoundTree.BoundLiteral* stackSizeArg = new Cm.BoundTree.BoundLiteral(null);
+                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize));
+                Cm.Sym.TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+                stackSizeArg->SetType(ulongType);
+                setStackSizeArgs.Add(stackSizeArg);
+                Cm.BoundTree.BoundFunctionCallStatement* setStackSizeStatement = new Cm.BoundTree.BoundFunctionCallStatement(setStackSizeFun, Rvalue(setStackSizeArgs));
+                mainBody->AddStatement(setStackSizeStatement);
+            }
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap))
+            {
+                Cm.Sym.FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");
+                Cm.BoundTree.BoundExpressionList dbgHeapInitArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapInit, Rvalue(dbgHeapInitArgs));
+                mainBody->AddStatement(dbgHeapInitStatement);
+            }
+            Cm.Sym.ExceptionTable* exceptionTable = Cm.Sym.ExceptionTable.Instance();
+            Cm.Sym.FunctionSymbol* threadTblInit = symbolTable.GetOverload("threadtbl_init");
+            Cm.BoundTree.BoundExpressionList threadTblInitArguments;
+            Cm.BoundTree.BoundLiteral* numExceptions = new Cm.BoundTree.BoundLiteral(null);
+            numExceptions->SetValue(new Cm.Sym.IntValue(exceptionTable->GetNumberOfExceptions()));
+            numExceptions->SetType(intType);
+            threadTblInitArguments.Add(numExceptions);
+            Cm.BoundTree.BoundFunctionCallStatement* callThreadTblInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(threadTblInit, Rvalue(threadTblInitArguments));
+            mainBody->AddStatement(callThreadTblInitStatement);
+            Cm.Sym.MutexTable* mutexTable = Cm.Sym.MutexTable.Instance();
+            Cm.Sym.FunctionSymbol* mutexTableInit = symbolTable.GetOverload("mutextbl_init");
+            Cm.BoundTree.BoundExpressionList mutexTblInitArguments;
+            Cm.BoundTree.BoundLiteral* numMutexes = new Cm.BoundTree.BoundLiteral(null);
+            numMutexes->SetValue(new Cm.Sym.IntValue(mutexTable->GetNumberOfMutexes()));
+            numMutexes->SetType(intType);
+            mutexTblInitArguments.Add(numMutexes);
+            Cm.BoundTree.BoundFunctionCallStatement* callMutexTblInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(mutexTableInit, Rvalue(mutexTblInitArguments));
+            mainBody->AddStatement(callMutexTblInitStatement);
+            if (Cm.Core.GetConfig() != "full")
+            {
+                Cm.Sym.FunctionSymbol* initClassHierarchy = symbolTable.GetOverload("init_class_hierarchy");
+                Cm.BoundTree.BoundExpressionList initClassHierarchyArguments;
+                Cm.BoundTree.BoundClassHierarchyTableConstant* classHierarchyTableConstant = new Cm.BoundTree.BoundClassHierarchyTableConstant();
+                classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId)),
+                    userMainFunction->GetSpan()));
+                initClassHierarchyArguments.Add(classHierarchyTableConstant);
+                Cm.BoundTree.BoundLiteral* numEntries = new Cm.BoundTree.BoundLiteral(null);
+                numEntries->SetValue(new Cm.Sym.IntValue(numClassHierarchyTableEntries));
+                numEntries->SetType(intType);
+                initClassHierarchyArguments.Add(numEntries);
+                Cm.BoundTree.BoundFunctionCallStatement* callInitClassHierarchyStatement = new Cm.BoundTree.BoundFunctionCallStatement(initClassHierarchy, Rvalue(initClassHierarchyArguments));
+                mainBody->AddStatement(callInitClassHierarchyStatement);
+            }
+            if (Cm.Core.GetConfig() == "profile")
+            {
+                Cm.Sym.FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
+                Cm.BoundTree.BoundExpressionList startProfilingArguments;
+                int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+                Cm.BoundTree.BoundStringLiteral* profDataFileArg = new Cm.BoundTree.BoundStringLiteral(null, profDataFileId);
+                Cm.Sym.TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
+                profDataFileArg->SetType(constCharPtrType);
+                startProfilingArguments.Add(profDataFileArg);
+                Cm.BoundTree.BoundFunctionCallStatement* startProfilingStatement = new Cm.BoundTree.BoundFunctionCallStatement(startProfiling, Rvalue(startProfilingArguments));
+                mainBody->AddStatement(startProfilingStatement);
+            }
+            Cm.BoundTree.BoundExpressionList arguments;
+            if (argcParam != null && argvParam != null)
+            {
+                arguments.Add(new Cm.BoundTree.BoundParameter(null, argcParam));
+                arguments.Add(new Cm.BoundTree.BoundParameter(null, argvParam));
+            }
+            Cm.BoundTree.BoundFunctionCall* callUserMainExpr = new Cm.BoundTree.BoundFunctionCall(null, Rvalue(arguments));
+            callUserMainExpr->SetFun(userMainFunction);
+            callUserMainExpr->SetType(userMainFunction->GetReturnType());
+            Cm.BoundTree.BoundSimpleStatement* callUserMainStatement = new Cm.BoundTree.BoundSimpleStatement(null);
+            callUserMainStatement->SetExpression(callUserMainExpr);
+            mainBody->AddStatement(callUserMainStatement);
+            Cm.BoundTree.BoundLiteral* zeroExCode = new Cm.BoundTree.BoundLiteral(null);
+            zeroExCode->SetValue(new Cm.Sym.IntValue(0));
+            zeroExCode->SetType(intType);
+            Cm.BoundTree.BoundConditionalStatement* testExceptionVarStatement = new Cm.BoundTree.BoundConditionalStatement(null);
+            Cm.BoundTree.BoundExceptionCodeVariable* exceptionCodeVariable = new Cm.BoundTree.BoundExceptionCodeVariable();
+            exceptionCodeVariable->SetType(intType);
+            Cm.BoundTree.BoundBinaryOp* exCodeEqualToZero = new Cm.BoundTree.BoundBinaryOp(null, exceptionCodeVariable, zeroExCode);
+            exCodeEqualToZero->SetType(boolType);
+            List<Cm.Core.Argument> equalIntArgs;
+            equalIntArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
+            equalIntArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
+            Cm.Sym.FunctionLookupSet equalIntLookups;
+            equalIntLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, symbolTable.GlobalScope()));
+            List<Cm.Sym.FunctionSymbol*> equalIntConversions;
+            Cm.Sym.FunctionSymbol* equalInt = Cm.Bind.ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator==", equalIntArgs, equalIntLookups, span, equalIntConversions);
+            exCodeEqualToZero->SetFun(equalInt);
+            Cm.BoundTree.BoundUnaryOp* exCodeNotEqualToZero = new Cm.BoundTree.BoundUnaryOp(null, exCodeEqualToZero);
+            exCodeNotEqualToZero->SetType(boolType);
+            List<Cm.Core.Argument> notBoolArgs;
+            notBoolArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+            Cm.Sym.FunctionLookupSet notBoolLookups;
+            notBoolLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, symbolTable.GlobalScope()));
+            List<Cm.Sym.FunctionSymbol*> notBoolConversions;
+            Cm.Sym.FunctionSymbol* notBool = Cm.Bind.ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator!", notBoolArgs, notBoolLookups, span, notBoolConversions);
+            exCodeNotEqualToZero->SetFun(notBool);
+            exCodeNotEqualToZero->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            testExceptionVarStatement->SetCondition(exCodeNotEqualToZero);
+            Cm.Sym.FunctionSymbol* mainUnhandledException = symbolTable.GetOverload("System.Support.MainUnhandledException");
+            Cm.BoundTree.BoundExpressionList mainUnhandledExceptionArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callMainUnhandledExceptionStatement = new Cm.BoundTree.BoundFunctionCallStatement(mainUnhandledException, Rvalue(mainUnhandledExceptionArguments));
+            testExceptionVarStatement->AddStatement(callMainUnhandledExceptionStatement);
+            mainBody->AddStatement(testExceptionVarStatement);
+            if (Cm.Core.GetConfig() == "profile")
+            {
+                Cm.Sym.FunctionSymbol* endProfiling = symbolTable.GetOverload("end_profiling");
+                Cm.BoundTree.BoundExpressionList endProfilingArguments;
+                Cm.BoundTree.BoundFunctionCallStatement* endProfilingStatement = new Cm.BoundTree.BoundFunctionCallStatement(endProfiling, Rvalue(endProfilingArguments));
+                mainBody->AddStatement(endProfilingStatement);
+            }
+            Cm.Sym.FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
+            Cm.BoundTree.BoundExpressionList cmExitArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callCmExitStatement = new Cm.BoundTree.BoundFunctionCallStatement(cmExit, Rvalue(cmExitArguments));
+            mainBody->AddStatement(callCmExitStatement);
+            Cm.Sym.FunctionSymbol* mutexTblDone = symbolTable.GetOverload("mutextbl_done");
+            Cm.BoundTree.BoundExpressionList mutexTblDoneArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callMutexTblDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(mutexTblDone, Rvalue(mutexTblDoneArguments));
+            mainBody->AddStatement(callMutexTblDoneStatement);
+            Cm.Sym.FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
+            Cm.BoundTree.BoundExpressionList threadTblDoneArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(threadTblDone, Rvalue(threadTblDoneArguments));
+            mainBody->AddStatement(callThreadTblDoneStatement);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap))
+            {
+                Cm.Sym.FunctionSymbol* dbgHeapReport = symbolTable.GetOverload("dbgheap_report");
+                Cm.BoundTree.BoundExpressionList dbgHeapReportArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapReportStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapReport, Rvalue(dbgHeapReportArgs));
+                mainBody->AddStatement(dbgHeapReportStatement);
+                Cm.Sym.FunctionSymbol* dbgHeapDone = symbolTable.GetOverload("dbgheap_done");
+                Cm.BoundTree.BoundExpressionList dbgHeapDoneArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapDone, Rvalue(dbgHeapDoneArgs));
+                mainBody->AddStatement(dbgHeapDoneStatement);
+            }
+            Cm.BoundTree.BoundLiteral* zero = new Cm.BoundTree.BoundLiteral(null);
+            zero->SetValue(new Cm.Sym.IntValue(0));
+            zero->SetType(intType);
+            Cm.BoundTree.BoundLocalVariable* returnValue = new Cm.BoundTree.BoundLocalVariable(null, returnValueVariable);
+            returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+            intAssignment.Reset(new Cm.Core.CopyAssignment(symbolTable.GetTypeRepository(), intType));
+            Cm.BoundTree.BoundAssignmentStatement* assignmentStatement = new Cm.BoundTree.BoundAssignmentStatement(null, returnValue, zero, intAssignment.GetPtr());
+            mainBody->AddStatement(assignmentStatement);
+        }
+        else
+        {
+            Cm.BoundTree.BoundExpressionList arguments;
+            if (argcParam != null && argvParam != null)
+            {
+                arguments.Add(new Cm.BoundTree.BoundParameter(null, argcParam));
+                arguments.Add(new Cm.BoundTree.BoundParameter(null, argvParam));
+            }
+            if (stackSize != 0u)
+            {
+                Cm.Sym.FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
+                if (setStackSizeFun == null)
+                {
+                    throw Exception("set_stack_size function not found");
+                }
+                Cm.BoundTree.BoundExpressionList setStackSizeArgs;
+                Cm.BoundTree.BoundLiteral* stackSizeArg = new Cm.BoundTree.BoundLiteral(null);
+                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize));
+                Cm.Sym.TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+                stackSizeArg->SetType(ulongType);
+                setStackSizeArgs.Add(stackSizeArg);
+                Cm.BoundTree.BoundFunctionCallStatement* setStackSizeStatement = new Cm.BoundTree.BoundFunctionCallStatement(setStackSizeFun, Rvalue(setStackSizeArgs));
+                mainBody->AddStatement(setStackSizeStatement);
+            }
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap))
+            {
+                Cm.Sym.FunctionSymbol* dbgHeapInit = symbolTable.GetOverload("dbgheap_init");
+                Cm.BoundTree.BoundExpressionList dbgHeapInitArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapInit, Rvalue(dbgHeapInitArgs));
+                mainBody->AddStatement(dbgHeapInitStatement);
+            }
+            Cm.Sym.ExceptionTable* exceptionTable = Cm.Sym.ExceptionTable.Instance();
+            Cm.Sym.FunctionSymbol* threadTblInit = symbolTable.GetOverload("threadtbl_init");
+            Cm.BoundTree.BoundExpressionList threadTblInitArguments;
+            Cm.BoundTree.BoundLiteral* numExceptions = new Cm.BoundTree.BoundLiteral(null);
+            numExceptions->SetValue(new Cm.Sym.IntValue(exceptionTable->GetNumberOfExceptions()));
+            numExceptions->SetType(intType);
+            threadTblInitArguments.Add(numExceptions);
+            Cm.BoundTree.BoundFunctionCallStatement* callThreadTblInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(threadTblInit, Rvalue(threadTblInitArguments));
+            mainBody->AddStatement(callThreadTblInitStatement);
+            Cm.Sym.MutexTable* mutexTable = Cm.Sym.MutexTable.Instance();
+            Cm.Sym.FunctionSymbol* mutexTableInit = symbolTable.GetOverload("mutextbl_init");
+            Cm.BoundTree.BoundExpressionList mutexTblInitArguments;
+            Cm.BoundTree.BoundLiteral* numMutexes = new Cm.BoundTree.BoundLiteral(null);
+            numMutexes->SetValue(new Cm.Sym.IntValue(mutexTable->GetNumberOfMutexes()));
+            numMutexes->SetType(intType);
+            mutexTblInitArguments.Add(numMutexes);
+            Cm.BoundTree.BoundFunctionCallStatement* callMutexTblInitStatement = new Cm.BoundTree.BoundFunctionCallStatement(mutexTableInit, Rvalue(mutexTblInitArguments));
+            mainBody->AddStatement(callMutexTblInitStatement);
+            if (Cm.Core.GetConfig() != "full")
+            {
+                Cm.Sym.FunctionSymbol* initClassHierarchy = symbolTable.GetOverload("init_class_hierarchy");
+                Cm.BoundTree.BoundExpressionList initClassHierarchyArguments;
+                Cm.BoundTree.BoundClassHierarchyTableConstant* classHierarchyTableConstant = new Cm.BoundTree.BoundClassHierarchyTableConstant();
+                classHierarchyTableConstant->SetType(symbolTable.GetTypeRepository().MakePointerType(symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId)),
+                    userMainFunction->GetSpan()));
+                initClassHierarchyArguments.Add(classHierarchyTableConstant);
+                Cm.BoundTree.BoundLiteral* numEntries = new Cm.BoundTree.BoundLiteral(null);
+                numEntries->SetValue(new Cm.Sym.IntValue(numClassHierarchyTableEntries));
+                numEntries->SetType(intType);
+                initClassHierarchyArguments.Add(numEntries);
+                Cm.BoundTree.BoundFunctionCallStatement* callInitClassHierarchyStatement = new Cm.BoundTree.BoundFunctionCallStatement(initClassHierarchy, Rvalue(initClassHierarchyArguments));
+                mainBody->AddStatement(callInitClassHierarchyStatement);
+            }
+            if (Cm.Core.GetConfig() == "profile")
+            {
+                Cm.Sym.FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
+                Cm.BoundTree.BoundExpressionList startProfilingArguments;
+                int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+                Cm.BoundTree.BoundStringLiteral* profDataFileArg = new Cm.BoundTree.BoundStringLiteral(null, profDataFileId);
+                Cm.Sym.TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
+                profDataFileArg->SetType(constCharPtrType);
+                startProfilingArguments.Add(profDataFileArg);
+                Cm.BoundTree.BoundFunctionCallStatement* startProfilingStatement = new Cm.BoundTree.BoundFunctionCallStatement(startProfiling, Rvalue(startProfilingArguments));
+                mainBody->AddStatement(startProfilingStatement);
+            }
+            Cm.BoundTree.BoundFunctionCall* callUserMainExpr = new Cm.BoundTree.BoundFunctionCall(null, Rvalue(arguments));
+            callUserMainExpr->SetFun(userMainFunction);
+            callUserMainExpr->SetType(userMainFunction->GetReturnType());
+            Cm.BoundTree.BoundLocalVariable* returnValue = new Cm.BoundTree.BoundLocalVariable(null, returnValueVariable);
+            returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+            intAssignment.Reset(new Cm.Core.CopyAssignment(symbolTable.GetTypeRepository(), intType));
+            Cm.BoundTree.BoundAssignmentStatement* assignmentStatement = new Cm.BoundTree.BoundAssignmentStatement(null, returnValue, callUserMainExpr, intAssignment.GetPtr());
+            mainBody->AddStatement(assignmentStatement);
+            Cm.BoundTree.BoundLiteral* zeroExCode = new Cm.BoundTree.BoundLiteral(null);
+            zeroExCode->SetValue(new Cm.Sym.IntValue(0));
+            zeroExCode->SetType(intType);
+            Cm.BoundTree.BoundConditionalStatement* testExceptionVarStatement = new Cm.BoundTree.BoundConditionalStatement(null);
+            Cm.BoundTree.BoundExceptionCodeVariable* exceptionCodeVariable = new Cm.BoundTree.BoundExceptionCodeVariable();
+            exceptionCodeVariable->SetType(intType);
+            Cm.BoundTree.BoundBinaryOp* exCodeEqualToZero = new Cm.BoundTree.BoundBinaryOp(null, exceptionCodeVariable, zeroExCode);
+            exCodeEqualToZero->SetType(boolType);
+            List<Cm.Core.Argument> equalIntArgs;
+            equalIntArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
+            equalIntArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
+            Cm.Sym.FunctionLookupSet equalIntLookups;
+            equalIntLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, symbolTable.GlobalScope()));
+            List<Cm.Sym.FunctionSymbol*> equalIntConversions;
+            Cm.Sym.FunctionSymbol* equalInt = Cm.Bind.ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator==", equalIntArgs, equalIntLookups, span, equalIntConversions);
+            exCodeEqualToZero->SetFun(equalInt);
+            Cm.BoundTree.BoundUnaryOp* exCodeNotEqualToZero = new Cm.BoundTree.BoundUnaryOp(null, exCodeEqualToZero);
+            exCodeNotEqualToZero->SetType(boolType);
+            List<Cm.Core.Argument> notBoolArgs;
+            notBoolArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+            Cm.Sym.FunctionLookupSet notBoolLookups;
+            notBoolLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, symbolTable.GlobalScope()));
+            List<Cm.Sym.FunctionSymbol*> notBoolConversions;
+            Cm.Sym.FunctionSymbol* notBool = Cm.Bind.ResolveOverload(symbolTable.GlobalScope(), mainCompileUnit, "operator!", notBoolArgs, notBoolLookups, span, notBoolConversions);
+            exCodeNotEqualToZero->SetFun(notBool);
+            exCodeNotEqualToZero->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            testExceptionVarStatement->SetCondition(exCodeNotEqualToZero);
+            Cm.Sym.FunctionSymbol* mainUnhandledException = symbolTable.GetOverload("System.Support.MainUnhandledException");
+            Cm.BoundTree.BoundExpressionList mainUnhandledExceptionArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callMainUnhandledExceptionStatement = new Cm.BoundTree.BoundFunctionCallStatement(mainUnhandledException, Rvalue(mainUnhandledExceptionArguments));
+            testExceptionVarStatement->AddStatement(callMainUnhandledExceptionStatement);
+            mainBody->AddStatement(testExceptionVarStatement);
+            if (Cm.Core.GetConfig() == "profile")
+            {
+                Cm.Sym.FunctionSymbol* endProfiling = symbolTable.GetOverload("end_profiling");
+                Cm.BoundTree.BoundExpressionList endProfilingArguments;
+                Cm.BoundTree.BoundFunctionCallStatement* endProfilingStatement = new Cm.BoundTree.BoundFunctionCallStatement(endProfiling, Rvalue(endProfilingArguments));
+                mainBody->AddStatement(endProfilingStatement);
+            }
+            Cm.Sym.FunctionSymbol* cmExit = symbolTable.GetOverload("cm_exit");
+            Cm.BoundTree.BoundExpressionList cmExitArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callCmExitStatement = new Cm.BoundTree.BoundFunctionCallStatement(cmExit, Rvalue(cmExitArguments));
+            mainBody->AddStatement(callCmExitStatement);
+            Cm.Sym.FunctionSymbol* mutexTblDone = symbolTable.GetOverload("mutextbl_done");
+            Cm.BoundTree.BoundExpressionList mutexTblDoneArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callMutexTblDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(mutexTblDone, Rvalue(mutexTblDoneArguments));
+            mainBody->AddStatement(callMutexTblDoneStatement);
+            Cm.Sym.FunctionSymbol* threadTblDone = symbolTable.GetOverload("threadtbl_done");
+            Cm.BoundTree.BoundExpressionList threadTblDoneArguments;
+            Cm.BoundTree.BoundFunctionCallStatement* callThreadTblDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(threadTblDone, Rvalue(threadTblDoneArguments));
+            mainBody->AddStatement(callThreadTblDoneStatement);
+            if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.debug_heap))
+            {
+                Cm.Sym.FunctionSymbol* dbgHeapReport = symbolTable.GetOverload("dbgheap_report");
+                Cm.BoundTree.BoundExpressionList dbgHeapReportArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapReportStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapReport, Rvalue(dbgHeapReportArgs));
+                mainBody->AddStatement(dbgHeapReportStatement);
+                Cm.Sym.FunctionSymbol* dbgHeapDone = symbolTable.GetOverload("dbgheap_done");
+                Cm.BoundTree.BoundExpressionList dbgHeapDoneArgs;
+                Cm.BoundTree.BoundFunctionCallStatement* dbgHeapDoneStatement = new Cm.BoundTree.BoundFunctionCallStatement(dbgHeapDone, Rvalue(dbgHeapDoneArgs));
+                mainBody->AddStatement(dbgHeapDoneStatement);
+            }
+        }
+        Cm.BoundTree.BoundReturnStatement* returnStatement = new Cm.BoundTree.BoundReturnStatement(null);
+        UniquePtr<Cm.Sym.FunctionSymbol> intCopyCtor = new Cm.Core.CopyCtor(symbolTable.GetTypeRepository(), intType);
+        returnStatement->SetConstructor(intCopyCtor.GetPtr());
+        returnStatement->SetExpression(new Cm.BoundTree.BoundLocalVariable(null, returnValueVariable));
+        returnStatement->SetReturnType(intType);
+        mainBody->AddStatement(returnStatement);
+        mainCompileUnit.AddBoundNode(mainFunction);
+        mainFunctionSymbol->SetParent(userMainFunction->Parent());
+        Emit(symbolTable.GetTypeRepository(), mainCompileUnit, null);
+        //GenerateObjectCode(mainCompileUnit);
         return true;
     }
-*/    
 }

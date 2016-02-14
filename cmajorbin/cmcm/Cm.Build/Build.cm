@@ -80,7 +80,7 @@ namespace Cm.Build
         private static UniquePtr<GlobalVersionParser> globalInstance;
     }
     
-    public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
+    public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
     {
         GlobalVersionParser.Create();
         int built = 0;
@@ -134,7 +134,7 @@ namespace Cm.Build
             }
             else
             {
-                bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines);
+                bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, stackSizeOpt);
                 if (projectChanged)
                 {
                     rebuild = true;
@@ -170,7 +170,7 @@ namespace Cm.Build
         }
     }
     
-    public void BuildProject(const string& projectFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
+    public void BuildProject(const string& projectFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
     {
         if (!FileExists(projectFilePath))
         {
@@ -192,11 +192,11 @@ namespace Cm.Build
         }
         else
         {
-            BuildProject(project.GetPtr(), rebuild, compileFileNames, defines);
+            BuildProject(project.GetPtr(), rebuild, compileFileNames, defines, stackSizeOpt);
         }
     }
     
-    public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines)
+    public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
     {
         bool changed = false;
         Cm.Core.GlobalSettings.Instance().SetCurrentProjectName(project->Name());
@@ -278,15 +278,31 @@ namespace Cm.Build
         {
             changed = true;
         }
-        if (project->GetTarget() == Cm.Ast.Target.program)
+        ulong stackSize = 0u;
+        ulong stackSizeEnv = StackSizeEnvValue();
+        ulong projectStackSize = project->StackSize();
+        if (stackSizeOpt != 0u)
         {
-/*            
-            bool mainCompileUnitGenerated = CreateMainCompileUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changed || rebuild);
+            stackSize = stackSizeOpt;
+        }
+        else if (projectStackSize != 0u)
+        {
+            stackSize = projectStackSize;
+        } 
+        else if (stackSizeEnv != 0u)
+        {
+            stackSize = stackSizeEnv;
+        }
+        bool full = false;
+        if (project->GetTarget() == Cm.Ast.Target.program && !full)
+        {
+            string profDataFilePath = Path.ChangeExtension(project->AssemblyFilePath(), ".profdata");
+            bool changedOrRebuilt = changed || rebuild;
+            bool mainCompileUnitGenerated = CreateMainCompileUnit(symbolTable, project->OutputBasePath(), profDataFilePath, objectFilePaths, classHierarchyTable.Count(), stackSize, changedOrRebuilt);
             if (!changed)
             {
                 changed = mainCompileUnitGenerated;
             }
-*/            
 /*            
             bool exceptionTableUnitGenerated = CreateExceptionTableUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changed || rebuild);
             if (!changed)
@@ -858,6 +874,17 @@ namespace Cm.Build
         return 64;
     #endif
         return 32;
+    }
+    
+    public ulong StackSizeEnvValue()
+    {
+        char* stackSizeEnv = get_environment_variable("CM_STACK_SIZE");
+        if (stackSizeEnv == null)
+        {
+            return 0u;
+        }
+        string stackSizeEnvStr = stackSizeEnv;
+        return ParseULong(stackSizeEnvStr);
     }
     
     public nothrow const Cm.Ast.ProgramVersion& GetLlvmVersion()

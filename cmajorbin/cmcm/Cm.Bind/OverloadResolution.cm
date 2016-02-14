@@ -13,7 +13,7 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
-    internal enum OverloadResolutionFlags : byte
+    public enum OverloadResolutionFlags : byte
     {
         none = 0u,
         nothrow_ = 1u << 0u,
@@ -21,13 +21,13 @@ namespace Cm.Bind
         dontInstantiate = 1u << 2u
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions)
     {
         return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, OverloadResolutionFlags.none);
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, OverloadResolutionFlags flags, FunctionMatch& bestMatch, 
         UniquePtr<Cm.Core.Error>& error)
     {
@@ -35,20 +35,20 @@ namespace Cm.Bind
         return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, boundTemplateArguments, flags, bestMatch, error);
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments, 
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, OverloadResolutionFlags flags)
     {
         return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, Cm.Sym.ConversionType.implicit, flags);
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, OverloadResolutionFlags flags)
     {
         List<Cm.Sym.TypeSymbol*> boundTemplateArguments;
         return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, conversionType, boundTemplateArguments, flags);
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments,
         OverloadResolutionFlags flags)
     {
@@ -57,7 +57,7 @@ namespace Cm.Bind
         return ResolveOverload(containerScope, boundCompileUnit, groupName, arguments, functionLookups, span, conversions, conversionType, boundTemplateArguments, flags, bestMatch, error);
     }
     
-    internal Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
+    public Cm.Sym.FunctionSymbol* ResolveOverload(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, const string& groupName, List<Cm.Core.Argument>& arguments,
         const Cm.Sym.FunctionLookupSet& functionLookups, const Span& span, List<Cm.Sym.FunctionSymbol*>& conversions, Cm.Sym.ConversionType conversionType, const List<Cm.Sym.TypeSymbol*>& boundTemplateArguments,
         OverloadResolutionFlags flags, FunctionMatch& bestMatch, UniquePtr<Cm.Core.Error>& error)
     {

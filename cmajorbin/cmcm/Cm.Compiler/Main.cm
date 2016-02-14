@@ -466,11 +466,11 @@ int main(int argc, const char** argv)
                 string ext = Path.GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm.Build.BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                    Cm.Build.BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, stackSizeOpt);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm.Build.BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines);
+                    Cm.Build.BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, stackSizeOpt);
                 }
                 else
                 {

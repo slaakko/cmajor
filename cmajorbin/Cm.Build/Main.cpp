@@ -250,10 +250,10 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         exCodeNotEqualToZero->SetFunction(notBool);
         exCodeNotEqualToZero->SetFlag(Cm::BoundTree::BoundNodeFlags::genJumpingBoolCode);
         testExceptionVarStatement->SetCondition(exCodeNotEqualToZero);
-        Cm::Sym::FunctionSymbol* mainUnhandlerException = symbolTable.GetOverload("System.Support.MainUnhandledException");
-        Cm::BoundTree::BoundExpressionList mainUnhandlerExceptionArguments;
-        Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandlerExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandlerException, std::move(mainUnhandlerExceptionArguments));
-        testExceptionVarStatement->AddStatement(callMainUnhandlerExceptionStatement);
+        Cm::Sym::FunctionSymbol* mainUnhandledException = symbolTable.GetOverload("System.Support.MainUnhandledException");
+        Cm::BoundTree::BoundExpressionList mainUnhandledExceptionArguments;
+        Cm::BoundTree::BoundFunctionCallStatement* callMainUnhandledExceptionStatement = new Cm::BoundTree::BoundFunctionCallStatement(mainUnhandledException, std::move(mainUnhandledExceptionArguments));
+        testExceptionVarStatement->AddStatement(callMainUnhandledExceptionStatement);
         mainBody->AddStatement(testExceptionVarStatement);
 
         if (Cm::Core::GetGlobalSettings()->Config() == "profile")

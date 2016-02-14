@@ -52,7 +52,7 @@ namespace Cm.Bind
         }
     }
     
-    internal void GenerateReceives(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.BoundTree.BoundFunction* boundFunction)
+    public void GenerateReceives(Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.BoundTree.BoundFunction* boundFunction)
     {
         Cm.Sym.FunctionSymbol* functionSymbol = boundFunction->FunctionSymbol();
         if (functionSymbol->IsExternal()) return;
