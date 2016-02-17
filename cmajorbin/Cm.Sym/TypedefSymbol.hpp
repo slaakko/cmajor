@@ -27,7 +27,7 @@ public:
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type_) { type = type_; }
     void SetType(TypeSymbol* type_, int index) override;
-    TypeSymbol* GetType() const { return type; }
+    TypeSymbol* GetType() const override { return type; }
     bool Evaluating() const { return evaluating; }
     void SetEvaluating() { evaluating = true; }
     void ResetEvaluating() { evaluating = false; }

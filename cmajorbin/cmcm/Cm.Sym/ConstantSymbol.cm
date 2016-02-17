@@ -37,7 +37,7 @@ namespace Cm.Sym
             writer.Write(type->Id());
             writer.Write(value.GetPtr());
         }
-        public nothrow inline TypeSymbol* GetType() const
+        public override nothrow TypeSymbol* GetType() const
         {
             return type;
         }

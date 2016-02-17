@@ -105,6 +105,7 @@ namespace Cm.Sym
     {
         public nothrow Symbol(const Span& span_, const string& name_) : span(span_), name(name_), flags(SymbolFlags.none), parent(null), sid(noSid)
         {
+            SetSource(SymbolSource.project);
         }
         public virtual nothrow ~Symbol()
         {
@@ -263,7 +264,7 @@ namespace Cm.Sym
         }
         public virtual nothrow bool IsExportSymbol() const
         {
-            return Source() == SymbolSource.project && IsPublic();
+            return Source() == SymbolSource.project && (IsPublic() || Serialize());
         }
         public virtual nothrow bool IsClassTemplateSymbol() const 
         { 
@@ -288,6 +289,10 @@ namespace Cm.Sym
         public virtual void SetType(TypeSymbol* typeSymbol, int index)
         {
             throw Exception("member function not implemented");
+        }
+        public virtual nothrow TypeSymbol* GetType() const
+        {
+            return null;
         }
         public virtual nothrow ContainerScope* GetContainerScope() const
         {

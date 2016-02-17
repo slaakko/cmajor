@@ -46,6 +46,8 @@ source <Statement.cm>;
 text <Statement.parser>;
 source <Template.cm>;
 text <Template.parser>;
+source <ToolError.cm>;
+text <ToolError.parser>;
 source <Typedef.cm>;
 text <Typedef.parser>;
 source <TypeExpr.cm>;

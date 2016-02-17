@@ -33,7 +33,16 @@ namespace Cm.Sym
         }
         public nothrow override bool IsExportSymbol() const
         {
-            return baseType->IsPublic() && !baseType->IsReplica();
+            if (baseType is TypeParameterSymbol*) return false;
+            if (baseType is TemplateTypeSymbol*)
+            {
+                TemplateTypeSymbol* baseTemplateType = cast<TemplateTypeSymbol*>(baseType);
+                for (TypeSymbol* typeArgument : baseTemplateType->TypeArguments())
+                {
+                    if (typeArgument is TypeParameterSymbol*) return false;
+                }
+            }
+            return (baseType->IsPublic() || baseType->Serialize()) && !baseType->IsReplica();
         }
         public override string GetMangleId() const
         {

@@ -28,11 +28,11 @@ namespace Cm.Build
         Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
         if (backend == Cm.IrIntf.Backend.llvm)
         {
-            ext = ".ll0";
+            ext = ".ll";
         }
         else if (backend == Cm.IrIntf.Backend.c)
         {
-            ext = ".c0";
+            ext = ".c";
         }
         string mainCompileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, "__main__" + ext));
         Cm.BoundTree.BoundCompileUnit mainCompileUnit(symbolTable, &syntaxUnit, mainCompileUnitIrFilePath);
@@ -419,7 +419,7 @@ namespace Cm.Build
         mainCompileUnit.AddBoundNode(mainFunction);
         mainFunctionSymbol->SetParent(userMainFunction->Parent());
         Emit(symbolTable.GetTypeRepository(), mainCompileUnit, null);
-        //GenerateObjectCode(mainCompileUnit);
+        GenerateObjectCode(mainCompileUnit);
         return true;
     }
 }

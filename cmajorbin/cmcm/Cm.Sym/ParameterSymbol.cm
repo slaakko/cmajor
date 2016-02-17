@@ -59,6 +59,7 @@ namespace Cm.Sym
         
         public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
         {
+            TypeSymbol* type = GetType();
             if (type == null) return;
             if (type is DerivedTypeSymbol*)
             {
@@ -71,6 +72,7 @@ namespace Cm.Sym
         }
         public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
         {
+            TypeSymbol* type = GetType();
             if (type == null) return;
             if (type is TemplateTypeSymbol* || type is DerivedTypeSymbol*)
             {
@@ -83,6 +85,7 @@ namespace Cm.Sym
         }
         public nothrow override void ReplaceReplicaTypes()
         {
+            TypeSymbol* type = GetType();
             if (type->IsReplica() && type is TemplateTypeSymbol*)
             {
                 TemplateTypeSymbol* replica = cast<TemplateTypeSymbol*>(type);
@@ -93,7 +96,6 @@ namespace Cm.Sym
         {
             return ownedParameterNode.GetPtr();
         }
-        private TypeSymbol* type;
         private UniquePtr<Cm.Ast.ParameterNode> ownedParameterNode;
     }
 }

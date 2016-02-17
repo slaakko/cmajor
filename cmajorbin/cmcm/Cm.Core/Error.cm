@@ -73,4 +73,16 @@ namespace Cm.Core
         {
         }
     }
+    
+    public class ToolError : Exception
+    {
+        public nothrow ToolError(const Cm.Ast.ToolError& error_) : error(error_)
+        {
+        }
+        public nothrow inline const Cm.Ast.ToolError& Error() const
+        {
+            return error;
+        }
+        private Cm.Ast.ToolError error;
+    }
 }

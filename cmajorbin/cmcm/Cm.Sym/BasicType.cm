@@ -21,6 +21,9 @@ namespace Cm.Sym
     {
         public nothrow BasicTypeSymbol(const string& name_, ShortBasicTypeId id_) : base(Span(), name_, TypeId(id_))
         {
+            SetBound();
+            SetSource(SymbolSource.library);
+            SetPublic();
         }
         public nothrow override const char* TypeString() const
         {

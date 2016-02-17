@@ -918,6 +918,39 @@ namespace Cm.Sym
                 throw Error("not converting constructor or conversion function", GetSpan());
             }
         }
+        public override void CollectExportedDerivedTypes(HashSet<Symbol*>& collected, HashSet<TypeSymbol*>& exportedDerivedTypes)
+        {
+            if (returnType != null)
+            {
+                if (returnType is DerivedTypeSymbol*)
+                {
+                    if (collected.CFind(returnType) == collected.CEnd())
+                    {
+                        collected.Insert(returnType);
+                        returnType->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+                    }
+                }
+            }
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedDerivedTypes(collected, exportedDerivedTypes);
+            }
+        }
+        public override void CollectExportedTemplateTypes(HashSet<Symbol*>& collected, HashMap<TypeId, TemplateTypeSymbol*>& exportedTemplateTypes)
+        {
+            if (returnType != null)
+            {
+                if (collected.CFind(returnType) == collected.CEnd())
+                {
+                    collected.Insert(returnType);
+                    returnType->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+                }
+            }
+            for (ParameterSymbol* parameter : parameters)
+            {
+                parameter->CollectExportedTemplateTypes(collected, exportedTemplateTypes);
+            }
+        }
         public nothrow override void ReplaceReplicaTypes()
         {
             if (IsFunctionTemplate()) return;

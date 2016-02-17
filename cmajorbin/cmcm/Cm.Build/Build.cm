@@ -10,6 +10,8 @@
 using System;
 using System.Collections;
 using System.IO;
+using Span = System.Text.Parsing.Span;
+using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Build
 {
@@ -53,12 +55,21 @@ namespace Cm.Build
             }
             return versionNumberGrammar;
         }
+        public Cm.Parser.ToolErrorGrammar* GetToolErrorGrammar()
+        {
+            if (toolErrorGrammar == null)
+            {
+                toolErrorGrammar = Cm.Parser.ToolErrorGrammar.Create();
+            }
+            return toolErrorGrammar;
+        }
         private static UniquePtr<Grammars> instance;
         private Cm.Parser.SolutionGrammar* solutionGrammar;
         private Cm.Parser.ProjectGrammar* projectGrammar;
         private Cm.Parser.CompileUnitGrammar* compileUnitGrammar;
         private Cm.Parser.LlvmVersionGrammar* llvmVersionGrammar;
         private Cm.Parser.VersionNumberGrammar* versionNumberGrammar;
+        private Cm.Parser.ToolErrorGrammar* toolErrorGrammar;
     }
     
     public class GlobalVersionParser : Cm.Ast.VersionParser
@@ -260,12 +271,17 @@ namespace Cm.Build
             classHierarchyTable, allLibrarySearchPaths);
         CreateDirectories(project->OutputBasePath());
         List<string> objectFilePaths;
-        bool cFilesChanged = CompileCFiles(project, objectFilePaths);
+        bool cFilesChanged = CompileCFiles(project, objectFilePaths, rebuild);
         if (!changed)
         {
             changed = cFilesChanged;
         }
-        bool asmSouresChanged = CompileAsmSources(project, objectFilePaths);
+        bool cppFilesChanged = CompileCppFiles(project, objectFilePaths, rebuild);
+        if (!changed)
+        {
+            changed = cppFilesChanged;
+        }
+        bool asmSouresChanged = CompileAsmSources(project, objectFilePaths, rebuild);
         if (!changed)
         {
             changed = asmSouresChanged;
@@ -273,7 +289,6 @@ namespace Cm.Build
         List<string> nativeObjectFilePaths = objectFilePaths;
         List<string> debugInfoFilePaths;
         List<string> bcuPaths;
-        changed = true; // todo: remove this
         if (Compile(project, symbolTable, syntaxTree, project->OutputBasePath(), objectFilePaths, rebuild, compileFileNames, debugInfoFilePaths, bcuPaths))
         {
             changed = true;
@@ -296,20 +311,25 @@ namespace Cm.Build
         bool full = false;
         if (project->GetTarget() == Cm.Ast.Target.program && !full)
         {
-            string profDataFilePath = Path.ChangeExtension(project->AssemblyFilePath(), ".profdata");
-            bool changedOrRebuilt = changed || rebuild;
-            bool mainCompileUnitGenerated = CreateMainCompileUnit(symbolTable, project->OutputBasePath(), profDataFilePath, objectFilePaths, classHierarchyTable.Count(), stackSize, changedOrRebuilt);
-            if (!changed)
-            {
-                changed = mainCompileUnitGenerated;
-            }
-/*            
-            bool exceptionTableUnitGenerated = CreateExceptionTableUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changed || rebuild);
+            bool changedOrRebuilt0 = changed || rebuild;
+            bool exceptionTableUnitGenerated = CreateExceptionTableUnit(symbolTable, project->OutputBasePath(), objectFilePaths, changedOrRebuilt0);
             if (!changed)
             {
                 changed = exceptionTableUnitGenerated;
             }
-*/            
+            bool changedOrRebuilt1 = changed || rebuild;
+            bool classHierarchyUnitGenerated = GenerateClassHierarchyUnit(symbolTable, classHierarchyTable, project->OutputBasePath(), objectFilePaths, changedOrRebuilt1);
+            if (!changed)
+            {
+                changed = classHierarchyUnitGenerated;
+            }
+            string profDataFilePath = Path.ChangeExtension(project->AssemblyFilePath(), ".profdata");
+            bool changedOrRebuilt2 = changed || rebuild;
+            bool mainCompileUnitGenerated = CreateMainCompileUnit(symbolTable, project->OutputBasePath(), profDataFilePath, objectFilePaths, classHierarchyTable.Count(), stackSize, changedOrRebuilt2);
+            if (!changed)
+            {
+                changed = mainCompileUnitGenerated;
+            }
         }
         bool objectFilesChanged = Archive(objectFilePaths, project->AssemblyFilePath());
         if (!changed)
@@ -318,7 +338,7 @@ namespace Cm.Build
         }
         if (project->GetTarget() == Cm.Ast.Target.program)
         {
-            bool linked = Link(assemblyFilePaths, cLibraryFilePaths, project->ExecutableFilePath());
+            bool linked = Link(assemblyFilePaths, cLibraryFilePaths, allLibrarySearchPaths, project->ExecutableFilePath(), stackSize);
             if (!changed)
             {
                 changed = linked;
@@ -340,7 +360,7 @@ namespace Cm.Build
             projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
             projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
             projectModule.SetBcuPaths(bcuPaths);
-            //projectModule.Export(symbolTable);
+            projectModule.Export(symbolTable);
         }
         if (project->GetTarget() == Cm.Ast.Target.program && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_debug_info))
         {
@@ -571,21 +591,209 @@ namespace Cm.Build
         throw Exception("library reference '" + libraryReferencePath + "' not found (seached: " + s + ")");
     }
     
-    public bool CompileCFiles(Cm.Ast.Project* project, List<string>& objectFilePaths)
+    public string QuotedPath(const string& path)
+    {
+        if (path.Find(' ') != -1)
+        {
+            return "\"" + path + "\"";
+        }
+        return path;
+    }
+    
+    public bool CompileCFiles(Cm.Ast.Project* project, List<string>& objectFilePaths, bool rebuild)
     {
         bool changed = false;
-        // todo
+        if (rebuild)
+        {
+            changed = true;
+        }
+        for (const string& cSourceFilePath : project->CSourceFilePaths())
+        {
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(cSourceFilePath), ".o")));
+            objectFilePaths.Add(objectFilePath);
+            if (!FileExists(objectFilePath))
+            {
+                changed = true;
+            }
+            else if (!FileExists(cSourceFilePath))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(objectFilePath, cSourceFilePath))
+            {
+                changed = true;
+            }
+        }
         if (!changed) return false;
-        // todo
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !project->CSourceFilePaths().IsEmpty())
+        {
+            Console.Out() << "Compiling C files..." << endl();
+        }
+        for (const string& cSourceFilePath : project->CSourceFilePaths())
+        {
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(cSourceFilePath), ".o")));
+            string ccCommand = "gcc -g -O";
+            ccCommand.Append(ToString(Cm.Core.GlobalSettings.Instance().OptimizationLevel())).Append(" -pthread -c ").Append(QuotedPath(cSourceFilePath)).Append(" -o ").Append(QuotedPath(objectFilePath));
+            string ccErrorFilePath = GetFullPath(Path.ChangeExtension(objectFilePath, ".c.error"));
+            try
+            {
+                if (!quiet)
+                {
+                    Console.Out() << "> " << GetFullPath(cSourceFilePath) << endl();
+                }
+                Execute(ccCommand, 2, ccErrorFilePath);
+            }
+            catch (const Exception& ex)
+            {
+                FileMapping file(ccErrorFilePath);
+                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+                Cm.Ast.ToolError toolError;
+                try
+                {
+                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, ccErrorFilePath);
+                }                
+                catch (const Exception& ex)
+                {
+                    string errorText(file.Begin(), file.End());
+                    throw Cm.Core.Error(errorText);
+                }
+                throw Cm.Core.ToolError(toolError);
+            }
+            RemoveFile(ccErrorFilePath);
+        }
         return true;
     }
     
-    public bool CompileAsmSources(Cm.Ast.Project* project, List<string>& objectFilePaths)
+    public bool CompileCppFiles(Cm.Ast.Project* project, List<string>& objectFilePaths, bool rebuild)
     {
         bool changed = false;
-        // todo
+        if (rebuild)
+        {
+            changed = true;
+        }
+        for (const string& cppSourceFilePath : project->CppSourceFilePaths())
+        {
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(cppSourceFilePath), ".o")));
+            objectFilePaths.Add(objectFilePath);
+            if (!FileExists(objectFilePath))
+            {
+                changed = true;
+            }
+            else if (!FileExists(cppSourceFilePath))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(objectFilePath, cppSourceFilePath))
+            {
+                changed = true;
+            }
+        }
         if (!changed) return false;
-        // todo
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !project->CSourceFilePaths().IsEmpty())
+        {
+            Console.Out() << "Compiling C++ files..." << endl();
+        }
+        for (const string& cppSourceFilePath : project->CppSourceFilePaths())
+        {
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(cppSourceFilePath), ".o")));
+            string cxxCommand = "g++ -g -O";
+            cxxCommand.Append(ToString(Cm.Core.GlobalSettings.Instance().OptimizationLevel())).Append(" -std=c++11 -pthread -c ").Append(QuotedPath(cppSourceFilePath));
+            cxxCommand.Append(" -o ").Append(QuotedPath(objectFilePath));
+            string cxxErrorFilePath = GetFullPath(Path.ChangeExtension(objectFilePath, ".cpp.error"));
+            try
+            {
+                if (!quiet)
+                {
+                    Console.Out() << "> " << GetFullPath(cppSourceFilePath) << endl();
+                }
+                Execute(cxxCommand, 2, cxxErrorFilePath);
+            }
+            catch (const Exception& ex)
+            {
+                FileMapping file(cxxErrorFilePath);
+                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+                Cm.Ast.ToolError toolError;
+                try
+                {
+                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, cxxErrorFilePath);
+                }                
+                catch (const Exception& ex)
+                {
+                    string errorText(file.Begin(), file.End());
+                    throw Cm.Core.Error(errorText);
+                }
+                throw Cm.Core.ToolError(toolError);
+            }
+            RemoveFile(cxxErrorFilePath);
+        }
+        return true;
+    }
+    
+    public bool CompileAsmSources(Cm.Ast.Project* project, List<string>& objectFilePaths, bool rebuild)
+    {
+        bool changed = false;
+        if (rebuild)
+        {
+            changed = true;
+        }
+        for (const string& asmSourceFilePath : project->AsmSourceFilePaths())
+        {
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(asmSourceFilePath), ".o")));
+            objectFilePaths.Add(objectFilePath);
+            if (!FileExists(objectFilePath))
+            {
+                changed = true;
+            }
+            else if (!FileExists(asmSourceFilePath))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(objectFilePath, asmSourceFilePath))
+            {
+                changed = true;
+            }
+        }
+        if (!changed) return false;
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !project->AsmSourceFilePaths().IsEmpty())
+        {
+            Console.Out() << "Compiling assembly sources..." << endl();
+        }
+        for (const string& asmSourceFilePath : project->AsmSourceFilePaths())
+        {
+            string llErrorFilePath = GetFullPath(Path.ChangeExtension(asmSourceFilePath, ".ll.error"));
+            string objectFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(asmSourceFilePath), ".o")));
+            string command = "llc";
+            command.Append(" -O").Append(ToString(Cm.Core.GlobalSettings.Instance().OptimizationLevel()));
+            command.Append(" -filetype=obj").Append(" -o ").Append(QuotedPath(objectFilePath)).Append(' ').Append(QuotedPath(asmSourceFilePath));
+            try
+            {
+                if (!quiet)
+                {
+                    Console.Out() << "> " << GetFullPath(asmSourceFilePath) << endl();
+                }
+                Execute(command, 2, llErrorFilePath);
+            }
+            catch (const Exception& ex)
+            {
+                FileMapping file(llErrorFilePath);
+                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+                Cm.Ast.ToolError toolError;
+                try
+                {
+                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
+                }                
+                catch (const Exception& ex)
+                {
+                    string errorText(file.Begin(), file.End());
+                    throw Cm.Core.Error(errorText);
+                }
+                throw Cm.Core.ToolError(toolError);
+            }
+            RemoveFile(llErrorFilePath);
+        }
         return true;
     }
     
@@ -656,11 +864,11 @@ namespace Cm.Build
             string ext;
             if (backend == Cm.IrIntf.Backend.llvm)
             {
-                ext = ".ll0";
+                ext = ".ll";
             }
             else if (backend == Cm.IrIntf.Backend.c)
             {
-                ext = ".c0";
+                ext = ".c";
             }
             string fileName = Path.GetFileNameWithoutExtension(compileUnit->FilePath());
             string compileUnitIrFilePath = GetFullPath(Path.Combine(outputBasePath, fileName) + ext);
@@ -766,6 +974,14 @@ namespace Cm.Build
             objectFilePaths.Add(boundCompileUnit->ObjectFilePath());
             ++index;
         }
+        for (Cm.BoundTree.BoundCompileUnit* objectCodeCompileUnit : objectCodeCompileUnits)
+        {
+            GenerateObjectCode(*objectCodeCompileUnit);
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt))
+            {
+                GenerateOptimizedLlvmCodeFile(*objectCodeCompileUnit);   
+            }
+        }
         return changed;
     }
     
@@ -800,21 +1016,260 @@ namespace Cm.Build
         }
     }
     
+    public void GenerateObjectCode(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        string errorFilePath;
+        string command;
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            errorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".ll.error"));
+            command = "llc";
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            errorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".c.error"));
+            command = "gcc";
+        }
+        command.Append(" -O").Append(ToString(Cm.Core.GlobalSettings.Instance().OptimizationLevel()));
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            command.Append(" -filetype=obj");
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            command.Append(" -g -c");
+        }
+        command.Append(" -o ").Append(QuotedPath(boundCompileUnit.ObjectFilePath())).Append(' ').Append(QuotedPath(boundCompileUnit.IrFilePath()));
+        try
+        {
+            Execute(command, 2, errorFilePath);
+        }
+        catch (const Exception& ex)
+        {
+            FileMapping file(errorFilePath);
+            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+            Cm.Ast.ToolError toolError;
+            try
+            {
+                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, errorFilePath);
+            }                
+            catch (const Exception& ex)
+            {
+                string errorText(file.Begin(), file.End());
+                throw Cm.Core.Error(errorText);
+            }
+            throw Cm.Core.ToolError(toolError);
+        }
+        RemoveFile(errorFilePath);
+    }
+    
+    public void GenerateOptimizedLlvmCodeFile(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        string optllErrorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".opt.ll.error"));
+        string command = "opt";
+        int optimizationLevel = Cm.Core.GlobalSettings.Instance().OptimizationLevel();
+        if (optimizationLevel == 0)
+        {
+            optimizationLevel = 1;
+        }
+        command.Append(" -O").Append(ToString(optimizationLevel));
+        command.Append(" -S").Append(" -o ").Append(QuotedPath(boundCompileUnit.OptIrFilePath())).Append(' ').Append(QuotedPath(boundCompileUnit.IrFilePath()));
+        try
+        {
+            Execute(command, 2, optllErrorFilePath);
+        }
+        catch (const Exception& ex)
+        {
+            FileMapping file(optllErrorFilePath);
+            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+            Cm.Ast.ToolError toolError;
+            try
+            {
+                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, optllErrorFilePath);
+            }                
+            catch (const Exception& ex)
+            {
+                string errorText(file.Begin(), file.End());
+                throw Cm.Core.Error(errorText);
+            }
+            throw Cm.Core.ToolError(toolError);
+        }
+        RemoveFile(optllErrorFilePath);
+    }
+    
     public bool Archive(const List<string>& objectFilePaths, const string& assemblyFilePath)
     {
         bool changed = false;
-        // todo
+        if (!FileExists(assemblyFilePath))
+        {
+            changed = true;
+        }
+        else 
+        {
+            for (const string& objectFilePath : objectFilePaths)
+            {
+                if (!FileExists(objectFilePath))
+                {
+                    changed = true;
+                }
+                else if (LastWriteTimeLess(assemblyFilePath, objectFilePath))
+                {
+                    changed = true;
+                } 
+            }
+        }        
         if (!changed) return false;
-        // todo
+        RemoveFile(assemblyFilePath);
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !objectFilePaths.IsEmpty())
+        {
+            Console.Out() << "Archiving..." << endl();
+        }
+        string arErrorFilePath = GetFullPath(Path.ChangeExtension(assemblyFilePath, ".ar.error"));
+        int i = 0; 
+        int n = objectFilePaths.Count();
+        while (i < n)
+        {
+            string command = "ar";
+            command.Append(" q ").Append(QuotedPath(assemblyFilePath));
+            bool stop = false;
+            while (i < n && !stop)
+            {
+                string objectFilePath = QuotedPath(objectFilePaths[i]);
+                if (command.Length() + objectFilePath.Length() + 1 < 2047)
+                {
+                    if (!quiet)
+                    {
+                        Console.Out() << "> " << GetFullPath(objectFilePaths[i]) << endl();
+                    }
+                    command.Append(' ').Append(objectFilePath);
+                    ++i;
+                }
+                else
+                {
+                    stop = true;
+                }
+            }
+            try
+            {
+                Execute(command, 2, arErrorFilePath);
+            }
+            catch (const Exception& ex)
+            {
+                FileMapping file(arErrorFilePath);
+                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+                Cm.Ast.ToolError toolError;
+                try
+                {
+                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
+                }                
+                catch (const Exception& ex)
+                {
+                    string errorText(file.Begin(), file.End());
+                    throw Cm.Core.Error(errorText);
+                }
+                throw Cm.Core.ToolError(toolError);
+            }
+            RemoveFile(arErrorFilePath);
+        }
+        if (!quiet && !objectFilePaths.IsEmpty())
+        {
+            Console.Out() << "=> " << GetFullPath(assemblyFilePath) << endl();   
+        }
         return true;
     }
     
-    public bool Link(const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, const string& executableFilePath)
+    public bool Link(const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, const List<string>& allLibrarySearchPaths, const string& executableFilePath, ulong stackSize)
     {
         bool changed = false;
-        // todo
+        string exePath;
+#if (WINDOWS)
+        exePath = GetFullPath(Path.ChangeExtension(executableFilePath, ".exe"));
+#else
+        exePath = GetFullPath(executableFilePath);
+#endif
+        if (!FileExists(exePath))
+        {
+            changed = true;
+        }
+        else 
+        {
+            for (const string& assemblyFilePath : assemblyFilePaths)
+            {
+                if (!FileExists(assemblyFilePath))
+                {
+                    changed = true;
+                }
+                else if (LastWriteTimeLess(exePath, assemblyFilePath))
+                {
+                    changed =  true;
+                }
+            }
+        }
         if (!changed) return false;
-        // todo
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet && !assemblyFilePaths.IsEmpty())
+        {
+            Console.Out() << "Linking..." << endl();
+        }
+        string command = "gcc";
+#if (WINDOWS)
+        if (stackSize != 0u)
+        {
+            command.Append(" -Wl,--stack," + ToString(stackSize));
+        }
+#endif
+        for (const string& librarySearchPath : allLibrarySearchPaths)
+        {
+            command.Append(" -L").Append(QuotedPath(librarySearchPath));
+        }
+        command.Append(" -pthread -Xlinker --allow-multiple-definition");
+        command.Append(" -Xlinker --start-group");
+        for (const string& assemblyFilePath : assemblyFilePaths)
+        {
+            command.Append(' ').Append(QuotedPath(assemblyFilePath));
+            if (!quiet)
+            {
+                Console.Out() << "> " << GetFullPath(assemblyFilePath) << endl();
+            }
+        }
+        for (const string& clib : cLibraryFilePaths)
+        {
+            command.Append(" -l").Append(clib);
+            if (!quiet)
+            {
+                Console.Out() << "> " << clib << endl();
+            }
+        }
+        command.Append(" -Xlinker --end-group");
+        command.Append(" -o ").Append(QuotedPath(executableFilePath));
+        string exeErrorFilePath = GetFullPath(Path.ChangeExtension(executableFilePath, ".exe.error"));
+        try
+        {
+            Execute(command, 2, exeErrorFilePath);
+        }
+        catch (const Exception& ex)
+        {
+            FileMapping file(exeErrorFilePath);
+            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+            Cm.Ast.ToolError toolError;
+            try
+            {
+                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, exeErrorFilePath);
+            }                
+            catch (const Exception& ex)
+            {
+                string errorText(file.Begin(), file.End());
+                throw Cm.Core.Error(errorText);
+            }
+            throw Cm.Core.ToolError(toolError);
+        }
+        RemoveFile(exeErrorFilePath);
+        if (!quiet)
+        {
+            Console.Out() << "=> " << exePath << endl();
+        }
         return true;
     }
     
@@ -827,15 +1282,161 @@ namespace Cm.Build
         return true;
     }
     
-/*    
     public bool CreateExceptionTableUnit(Cm.Sym.SymbolTable& symbolTable, const string& projectOutputBasePath, List<string>& objectFilePaths, bool changed)
     {
-        // todo
+        Span span;
+        Cm.Ast.CompileUnitNode syntaxUnit(span);
+        string ext;
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            ext = ".ll";
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            ext = ".c";
+        }
+        string exceptionTableUnitIrFilePath = GetFullPath(Path.Combine(projectOutputBasePath, "__exception_table__" + ext));
+        Cm.BoundTree.BoundCompileUnit exceptionTableCompileUnit(symbolTable, &syntaxUnit, exceptionTableUnitIrFilePath );
+        objectFilePaths.Add(exceptionTableCompileUnit.ObjectFilePath());
+        if (!changed)
+        {
+            if (!FileExists(exceptionTableCompileUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+            else if (!FileExists(exceptionTableCompileUnit.ObjectFilePath()))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(exceptionTableCompileUnit.ObjectFilePath(), exceptionTableCompileUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+        }
         if (!changed) return false;
-        // todo
+        Cm.Sym.ExceptionTable.Instance()->GenerateExceptionTableUnit(exceptionTableUnitIrFilePath);
+        GenerateObjectCode(exceptionTableCompileUnit);
         return true;
     }
-*/
+    
+    public bool GenerateClassHierarchyUnit(Cm.Sym.SymbolTable& symbolTable, List<ulong>& classHierarchyTable, const string& projectOutputBasePath, List<string>& objectFilePaths, bool changed)
+    {
+        if (!symbolTable.ProjectClasses().IsEmpty())
+        {
+            changed = true;
+        }
+        for (Cm.Sym.ClassTypeSymbol* projectClass : symbolTable.ProjectClasses())
+        {
+            if (projectClass->IsVirtual())
+            {
+                classHierarchyTable.Add(projectClass->Cid());
+                if (projectClass->BaseClass() != null)
+                {
+                    classHierarchyTable.Add(projectClass->BaseClass()->Cid());
+                }
+                else
+                {
+                    classHierarchyTable.Add(Cm.Sym.noCid);
+                }
+            }            
+        }
+        int n = classHierarchyTable.Count();
+        if ((n & 1) != 0)
+        {
+            throw Exception("invalid class hierarachy table (not even number of entries)");
+        }
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        Span span;
+        Cm.Ast.CompileUnitNode syntaxUnit(span);
+        string ext;
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            ext = ".ll";
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            ext = ".c";
+        }
+        string classHierarchyUnitIrFilePath = GetFullPath(Path.Combine(projectOutputBasePath, "__class_hierarchy__" + ext));
+        Cm.BoundTree.BoundCompileUnit classHierarchyUnit(symbolTable, &syntaxUnit, classHierarchyUnitIrFilePath);
+        objectFilePaths.Add(classHierarchyUnit.ObjectFilePath());
+        if (!changed)
+        {
+            if (!FileExists(classHierarchyUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+            else if (!FileExists(classHierarchyUnit.ObjectFilePath()))
+            {
+                changed = true;
+            }
+            else if (LastWriteTimeLess(classHierarchyUnit.ObjectFilePath(), classHierarchyUnit.IrFilePath()))
+            {
+                changed = true;
+            }
+        }
+        if (!changed) return false;
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            OutputFileStream classHierarachyFile(classHierarchyUnitIrFilePath);
+            CodeFormatter formatter(classHierarachyFile);
+            UniquePtr<Ir.Intf.Type> classHierarchyArrayType(Cm.IrIntf.Array(Cm.IrIntf.I64(), n));
+            classHierarchyArrayType->SetOwned();
+            formatter.WriteLine("@class$hierarchy = constant " + classHierarchyArrayType->Name());
+            formatter.WriteLine("[");
+            formatter.IncIndent();
+            for (int i = 0; i < n; ++i)
+            {
+                ulong entry = classHierarchyTable[i];
+                string entryStr;
+                entryStr.Append(Ir.Intf.Factory.Instance()->GetUI64()->Name()).Append(' ').Append(ToString(entry));
+                if (i < n - 1)
+                {
+                    entryStr.Append(", ");
+                }
+                formatter.Write(entryStr);
+                if ((i & 1) == 1)
+                {
+                    formatter.WriteLine();
+                }
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("]");
+            UniquePtr<Ir.Intf.Type> pointerToClassHierarchyTable(Cm.IrIntf.Pointer(classHierarchyArrayType.GetPtr(), 1u));
+            pointerToClassHierarchyTable->SetOwned();
+            formatter.WriteLine("@class$hierarchy$table$addr = constant i64* bitcast (" + pointerToClassHierarchyTable->Name() + " @class$hierarchy to i64*)");
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            OutputFileStream classHierarachyFile(classHierarchyUnitIrFilePath);
+            CodeFormatter formatter(classHierarachyFile);
+            formatter.WriteLine("#include <stdint.h>");
+            formatter.WriteLine("int64_t class_X_hierarchy[" + ToString(n) + "] =");
+            formatter.WriteLine("{");
+            formatter.IncIndent();
+            for (int i = 0; i < n; ++i)
+            {
+                ulong entry = classHierarchyTable[i];
+                string entryStr;
+                entryStr.Append(ToString(entry));
+                if (i < n - 1)
+                {
+                    entryStr.Append(", ");
+                }
+                formatter.Write(entryStr);
+                if ((i & 1) == 1)
+                {
+                    formatter.WriteLine();
+                }
+            }
+            formatter.DecIndent();
+            formatter.WriteLine("};");
+            formatter.WriteLine("int64_t* class_X_hierarchy_table_addr = class_X_hierarchy;");
+        }
+        GenerateObjectCode(classHierarchyUnit);
+        return true;
+    }
     
     public void GetLibraryDirectories(List<string>& libraryDirectories)
     {

@@ -471,6 +471,7 @@ void Module::Dump()
     ReadCLibraryFilePaths(reader);
     ReadLibrarySearchPaths(reader);
     ReadDebugInfoFilePaths(reader);
+    ReadNativeObjectFilePaths(reader);
     ReadBcuPaths(reader);
     std::unordered_set<std::string> importedModules;
     std::vector<std::string> assemblyFilePaths;

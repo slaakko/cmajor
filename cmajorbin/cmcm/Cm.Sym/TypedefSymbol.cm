@@ -32,7 +32,7 @@ namespace Cm.Sym
             if (Parent() is TemplateTypeSymbol*) return false;
             return base->IsExportSymbol();
         }
-        public nothrow inline TypeSymbol* GetType() const
+        public nothrow override TypeSymbol* GetType() const
         {
             return type;
         }

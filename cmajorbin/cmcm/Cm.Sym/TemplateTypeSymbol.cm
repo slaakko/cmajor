@@ -50,7 +50,8 @@ namespace Cm.Sym
             if (IsReplica()) return false;
             for (TypeSymbol* typeArgument : typeArguments)
             {
-                if (!typeArgument->IsPublic()) return false;
+                if (!typeArgument->IsPublic() && !typeArgument->Serialize()) return false;
+                if (typeArgument is TypeParameterSymbol*) return false;
             }
             return true;
         }
