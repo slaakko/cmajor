@@ -17,11 +17,11 @@ namespace Cm.Sym
         public nothrow VariableSymbol(const Span& span_, const string& name_) : base(span_, name_), type(null), hasType(false)
         {
         }
-        public nothrow inline TypeSymbol* GetType() const
+        public override nothrow TypeSymbol* GetType() const
         {
             return type;
         }
-        public nothrow inline void SetType(TypeSymbol* type_)
+        public nothrow void SetType(TypeSymbol* type_)
         {
             type = type_;
         }

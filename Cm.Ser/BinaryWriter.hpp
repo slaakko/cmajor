@@ -36,7 +36,7 @@ public:
     void Write(const std::string& s);
     void Write(const void* data, int size);
     uint64_t Pos() const { return pos; }
-    void Seek(uint64_t pos);
+    void Seek(uint64_t pos_);
 private:
     std::string fileName;
     FILE* file;

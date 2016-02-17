@@ -42,7 +42,7 @@ public:
     bool IsBoundTypeParameterSymbol() const override { return true; }
     std::string TypeString() const override { return "bound type parameter"; };
     bool IsExportSymbol() const override { return false; }
-    TypeSymbol* GetType() const { return type; }
+    TypeSymbol* GetType() const override { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }
     void Dump(CodeFormatter& formatter) override;
 private:

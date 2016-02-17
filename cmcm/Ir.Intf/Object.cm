@@ -36,10 +36,6 @@ namespace Ir.Intf
         }
         public virtual ~Object()
         {
-            if (Break.IsSet() && name.Find("_R_") != -1)
-            {
-                int x = 0;
-            }
         }
         public nothrow inline const string& Name() const
         {

@@ -30,7 +30,7 @@ namespace Cm.Parser
             ;
 
         Drive
-            ::= letter ':'
+            ::= token(letter ':')
             ;
 
         Line: int

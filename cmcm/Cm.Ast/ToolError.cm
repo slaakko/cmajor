@@ -1,0 +1,53 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+
+namespace Cm.Ast
+{
+    public class ToolError
+    {
+        public nothrow ToolError() : toolName(), filePath(), line(0), column(0), message()
+        {
+        }
+        public nothrow ToolError(const string& toolName_, const string& filePath_, int line_, int column_, const string& message_) : toolName(toolName_), filePath(filePath_), line(line_), column(column_), 
+            message(message_)
+        {
+        }
+        public nothrow inline const string& ToolName() const
+        {
+            return toolName;
+        }
+        public nothrow inline const string& FilePath() const
+        {
+            return filePath;
+        }
+        public nothrow inline int Line() const
+        {
+            return line;
+        }
+        public nothrow inline int Column() const
+        {
+            return column;
+        }
+        public nothrow inline const string& Message() const
+        {
+            return message;
+        }
+        public nothrow bool ContainsErrorKeyword() const
+        {
+            return message.Find("error") != -1;
+        }
+        private string toolName;
+        private string filePath;
+        private int line;
+        private int column;
+        private string message;
+    }
+}

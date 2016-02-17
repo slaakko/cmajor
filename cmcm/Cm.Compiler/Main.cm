@@ -170,6 +170,42 @@ internal void ObtainLlvmVersion()
     }
 }
 
+void PrintHelp()
+{    
+    Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n" <<
+    "Usage: cmcm [options] {file.cms | file.cmp}\n" <<
+    "Compile Cmajor solution file.cms or project file.cmp\n" <<
+    "options:\n" <<
+    "-R              : rebuild project or solution\n" <<
+    "-clean          : clean project or solution\n" <<
+    "-c FILENAME     : compile only FILENAME, do not link\n" <<
+    "-config=debug   : use debug configuration (default)\n" <<
+    "-config=release : use release configuration\n" <<
+    "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
+    "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
+    "-backend=llvm   : use LLVM backend (default)\n" <<
+    "-backend=c      : use C backend\n" <<
+    "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
+    "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
+    "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
+    "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
+    "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
+    "-quiet          : write no output messages for successful compiles\n" <<
+    "-trace          : instrument program/library with tracing enabled\n" <<
+    "-debug_heap     : instrument program/library with debug heap enabled\n" <<
+    "-no_call_stacks : do not generate call stack information for exceptions\n" << 
+    "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
+    "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
+    "-vcall_dbg      : debug virtual calls (only full config)\n" << 
+    "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
+    "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
+    endl();
+    Console.Out() << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
+        "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << endl();
+    Console.Out() << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
+        "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << endl(); 
+}
+
 int main(int argc, const char** argv)
 {
     try
@@ -191,38 +227,7 @@ int main(int argc, const char** argv)
         string datalayout = GetDataLayout();
         if (argc < 2)
         {
-            Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n" <<
-            "Usage: cmcm [options] {file.cms | file.cmp}\n" <<
-            "Compile Cmajor solution file.cms or project file.cmp\n" <<
-            "options:\n" <<
-            "-R              : rebuild project or solution\n" <<
-            "-clean          : clean project or solution\n" <<
-            "-c FILENAME     : compile only FILENAME, do not link\n" <<
-            "-config=debug   : use debug configuration (default)\n" <<
-            "-config=release : use release configuration\n" <<
-            "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
-            "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, release:3)\n" <<
-            "-backend=llvm   : use LLVM backend (default)\n" <<
-            "-backend=c      : use C backend\n" <<
-            "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
-            "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
-            "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
-            "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
-            "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
-            "-quiet          : write no output messages for successful compiles\n" <<
-            "-trace          : instrument program/library with tracing enabled\n" <<
-            "-debug_heap     : instrument program/library with debug heap enabled\n" <<
-            "-no_call_stacks : do not generate call stack information for exceptions\n" << 
-            "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
-            "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
-            "-vcall_dbg      : debug virtual calls (only full config)\n" << 
-            "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
-            "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
-            endl();
-            Console.Out() << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
-                "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << endl();
-            Console.Out() << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
-                "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << endl(); 
+            PrintHelp();
         }
         else
         {
@@ -309,6 +314,11 @@ int main(int argc, const char** argv)
                             {
                                 throw Exception("unknown argument '" + arg + "'");
                             }
+                        }
+                        else if (arg == "-help" || arg == "--help")
+                        {
+                            PrintHelp();
+                            return 0;
                         }
                         else if (arg == "-R")
                         {

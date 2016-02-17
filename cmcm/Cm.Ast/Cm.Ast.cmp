@@ -29,6 +29,7 @@ source <Specifier.cm>;
 source <Statement.cm>;
 source <SyntaxTree.cm>;
 source <Template.cm>;
+source <ToolError.cm>;
 source <Typedef.cm>;
 source <TypeExpr.cm>;
 source <Visitor.cm>;

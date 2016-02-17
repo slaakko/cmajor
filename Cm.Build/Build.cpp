@@ -641,25 +641,32 @@ void GenerateOptimizedLlvmCodeFileConcurrently(Cm::BoundTree::BoundCompileUnit& 
     boost::filesystem::remove(optllErrorFilePath);
 }
 
-bool CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+bool CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths, bool rebuild)
 {
     bool changed = false;
+    if (rebuild)
+    {
+        changed = true;
+    }
     for (const std::string& asmSourceFilePath : project->AsmSourceFilePaths())
     {
         std::string objectFilePath = Cm::Util::GetFullPath((project->OutputBasePath() / boost::filesystem::path(asmSourceFilePath).filename().replace_extension(".o")).generic_string());
         boost::filesystem::path ofp = objectFilePath;
+        boost::filesystem::path afp = asmSourceFilePath;
         objectFilePaths.push_back(objectFilePath);
         if (!boost::filesystem::exists(ofp))
         {
             changed = true;
         }
+        else if (!boost::filesystem::exists(afp))
+        {
+            changed = true;
+        }
         else
         {
-            boost::filesystem::path afp = asmSourceFilePath;
             if (boost::filesystem::last_write_time(afp) > boost::filesystem::last_write_time(ofp))
             {
                 changed = true;
-                break;
             }
         }
     }
@@ -707,25 +714,32 @@ bool CompileAsmSources(Cm::Ast::Project* project, std::vector<std::string>& obje
     return true;
 }
 
-bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths, bool rebuild)
 {
     bool changed = false;
+    if (rebuild)
+    {
+        changed = true;
+    }
     for (const std::string& cSourceFilePath : project->CSourceFilePaths())
     {
         std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
         objectFilePaths.push_back(objectFilePath);
         boost::filesystem::path ofp = objectFilePath;
+        boost::filesystem::path cfp = cSourceFilePath;
         if (!boost::filesystem::exists(ofp))
+        {
+            changed = true;
+        }
+        else if (!boost::filesystem::exists(cfp))
         {
             changed = true;
         }
         else
         {
-            boost::filesystem::path cfp = cSourceFilePath;
             if (boost::filesystem::last_write_time(cfp) > boost::filesystem::last_write_time(ofp))
             {
                 changed = true;
-                break;
             }
         }
     }
@@ -735,15 +749,10 @@ bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     {
         std::cout << "Compiling C files..." << std::endl;
     }
-    std::string gFlag;
-    if (Cm::Core::GetGlobalSettings()->Config() == "debug")
-    {
-        gFlag = "-g ";
-    }
     for (const std::string& cSourceFilePath : project->CSourceFilePaths())
     {
         std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cSourceFilePath).filename().replace_extension(".o")).generic_string());
-        std::string ccCommand = "gcc " + gFlag + "-O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
+        std::string ccCommand = "gcc -g -O" + std::to_string(Cm::Core::GetGlobalSettings()->OptimizationLevel());
         ccCommand.append(" -pthread -c ").append(Cm::Util::QuotedPath(cSourceFilePath)).append(" -o ").append(Cm::Util::QuotedPath(objectFilePath));
         std::string ccErrorFilePath = Cm::Util::GetFullPath(boost::filesystem::path(objectFilePath).replace_extension(".c.error").generic_string());
         try
@@ -777,26 +786,30 @@ bool CompileCFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFi
     return true;
 }
 
-bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths)
+bool CompileCppFiles(Cm::Ast::Project* project, std::vector<std::string>& objectFilePaths, bool rebuild)
 {
     bool changed = false;
+    if (rebuild)
+    {
+        changed = true;
+    }
     for (const std::string& cppSourceFilePath : project->CppSourceFilePaths())
     {
         std::string objectFilePath = Cm::Util::GetFullPath((boost::filesystem::path(project->OutputBasePath()) / boost::filesystem::path(cppSourceFilePath).filename().replace_extension(".o")).generic_string());
         objectFilePaths.push_back(objectFilePath);
         boost::filesystem::path ofp = objectFilePath;
+        boost::filesystem::path cfp = cppSourceFilePath;
         if (!boost::filesystem::exists(ofp))
         {
             changed = true;
         }
-        else
+        else if (!boost::filesystem::exists(cfp))
         {
-            boost::filesystem::path cfp = cppSourceFilePath;
-            if (boost::filesystem::last_write_time(cfp) > boost::filesystem::last_write_time(ofp))
-            {
-                changed = true;
-                break;
-            }
+            changed = true;
+        }
+        else if (boost::filesystem::last_write_time(cfp) > boost::filesystem::last_write_time(ofp))
+        {
+            changed = true;
         }
     }
     if (!changed) return false;
@@ -1126,7 +1139,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
         for (Cm::BoundTree::BoundCompileUnit* objectCodeCompileUnit : objectCodeCompileUnits)
         {
             GenerateObjectCode(*objectCodeCompileUnit);
-            if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
+            if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::emitOpt))
             {
                 GenerateOptimizedLlvmCodeFile(*objectCodeCompileUnit);
             }
@@ -1153,10 +1166,13 @@ bool Archive(const std::vector<std::string>& objectFilePaths, const std::string&
         for (const std::string& objectFilePath : objectFilePaths)
         {
             boost::filesystem::path ofp = objectFilePath;
-            if (boost::filesystem::last_write_time(ofp) > boost::filesystem::last_write_time(afp))
+            if (!boost::filesystem::exists(ofp))
             {
                 changed = true;
-                break;
+            }
+            else if (boost::filesystem::last_write_time(ofp) > boost::filesystem::last_write_time(afp))
+            {
+                changed = true;
             }
         }
     }
@@ -1241,10 +1257,13 @@ bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
         for (const std::string& assemblyFilePath : assemblyFilePaths)
         {
             boost::filesystem::path afp = assemblyFilePath;
-            if (boost::filesystem::last_write_time(afp) > boost::filesystem::last_write_time(efp))
+            if (!boost::filesystem::exists(afp))
             {
                 changed = true;
-                break;
+            }
+            else if (boost::filesystem::last_write_time(afp) > boost::filesystem::last_write_time(efp))
+            {
+                changed = true;
             }
         }
     }
@@ -1494,7 +1513,7 @@ bool GenerateClassHierarchyUnit(Cm::Sym::SymbolTable& symbolTable, std::vector<u
     {
         std::ofstream classHierarachyFile(classHierarchyUnitIrFilePath);
         Cm::Util::CodeFormatter formatter(classHierarachyFile);
-        std::unique_ptr<Ir::Intf::Type> classHierarchyArrayType(Cm::IrIntf::Array(Cm::IrIntf::I64(), n)); 
+        std::unique_ptr<Ir::Intf::Type> classHierarchyArrayType(Cm::IrIntf::Array(Cm::IrIntf::UI64(), n)); 
         classHierarchyArrayType->SetOwned();
         formatter.WriteLine("@class$hierarchy = constant " + classHierarchyArrayType->Name());
         formatter.WriteLine("[");
@@ -1503,7 +1522,7 @@ bool GenerateClassHierarchyUnit(Cm::Sym::SymbolTable& symbolTable, std::vector<u
         {
             uint64_t entry = classHierarchyTable[i];
             std::string entryStr;
-            entryStr.append(Ir::Intf::GetFactory()->GetI64()->Name()).append(" ").append(std::to_string(entry));
+            entryStr.append(Ir::Intf::GetFactory()->GetUI64()->Name()).append(" ").append(std::to_string(entry));
             if (i < n - 1)
             {
                 entryStr.append(", ");
@@ -1907,17 +1926,17 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     }
     boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
-    bool cFilesChanged = CompileCFiles(project, objectFilePaths);
+    bool cFilesChanged = CompileCFiles(project, objectFilePaths, rebuild);
     if (!changed)
     {
         changed = cFilesChanged;
     }
-    bool cppFilesChanged = CompileCppFiles(project, objectFilePaths);
+    bool cppFilesChanged = CompileCppFiles(project, objectFilePaths, rebuild);
     if (!changed)
     {
         changed = cppFilesChanged;
     }
-    bool asmSourcesChanged = CompileAsmSources(project, objectFilePaths);
+    bool asmSourcesChanged = CompileAsmSources(project, objectFilePaths, rebuild);
     if (!changed)
     {
         changed = asmSourcesChanged;

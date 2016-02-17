@@ -21,9 +21,10 @@ namespace Cm.Ser
         {
             return pos;
         }
-        public void Seek(ulong pos)
+        public void Seek(ulong pos_)
         {
-            pos = cast<ulong>(file.Seek(cast<long>(pos), SEEK_SET));
+            file.Seek(cast<long>(pos_), SEEK_SET);
+            pos = pos_;
         }
         public void Write(bool x)
         {

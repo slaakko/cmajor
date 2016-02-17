@@ -232,6 +232,16 @@ namespace Cm.Parser
         TemplateParameter(ParsingContext* ctx): TemplateParameterNode*;
         TemplateParameterList(ParsingContext* ctx, Node* owner);
     }
+    grammar ToolErrorGrammar
+    {
+        ToolError: Cm.Ast.ToolError;
+        ToolName: string;
+        FilePath: string;
+        Drive;
+        Line: int;
+        Column: int;
+        Message: string;
+    }
     grammar TypeExprGrammar
     {
         TypeExpr(ParsingContext* ctx, var UniquePtr<DerivedTypeExprNode> node): Node*;

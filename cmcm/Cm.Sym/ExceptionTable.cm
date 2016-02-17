@@ -10,6 +10,7 @@
 using System;
 using System.Collections;
 using System.IO;
+using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Sym
 {
@@ -88,7 +89,79 @@ namespace Cm.Sym
         }
         public void GenerateExceptionTableUnit(const string& exceptionTableFilePath)
         {
-            // todo
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                OutputFileStream exceptionTableFile(exceptionTableFilePath);
+                CodeFormatter formatter(exceptionTableFile);
+                int n = exceptions.Count();
+                UniquePtr<Ir.Intf.Type> exceptionBaseIdArrayType(Cm.IrIntf.Array(Cm.IrIntf.I32(), n));
+                exceptionBaseIdArrayType->SetOwned();
+                formatter.WriteLine("@$exception$base$id$table = constant " + exceptionBaseIdArrayType->Name());
+                formatter.WriteLine("[");
+                formatter.IncIndent();
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Sym.TypeSymbol* exceptionType = exceptions[i].ExceptionType();
+                    if (!(exceptionType is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        throw Exception("exception type is not class type");
+                    }
+                    Cm.Sym.ClassTypeSymbol* exceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(exceptionType);
+                    int baseId = 0;
+                    Cm.Sym.ClassTypeSymbol* baseClassType = exceptionClassType->BaseClass();
+                    if (baseClassType != null)
+                    {
+                        baseId = GetExceptionId(baseClassType);
+                    }
+                    string baseIdStr;
+                    baseIdStr.Append(Ir.Intf.Factory.Instance()->GetI32()->Name()).Append(' ').Append(ToString(baseId));
+                    if (i < n - 1)
+                    {
+                        baseIdStr.Append(',');
+                    }
+                    formatter.WriteLine(baseIdStr);
+                }
+                formatter.DecIndent();
+                formatter.WriteLine("]");
+                UniquePtr<Ir.Intf.Type> pointerToExceptionTable(Cm.IrIntf.Pointer(exceptionBaseIdArrayType.GetPtr(), 1u));
+                pointerToExceptionTable->SetOwned();
+                formatter.WriteLine("@$exception$base$id$table$addr = constant i32* bitcast (" + pointerToExceptionTable->Name() + " @$exception$base$id$table to i32*)");
+            }
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                OutputFileStream exceptionTableFile(exceptionTableFilePath);
+                CodeFormatter formatter(exceptionTableFile);
+                int n = exceptions.Count();
+                formatter.WriteLine("int _X_exception_X_base_X_id_X_table[" + ToString(n) + "] =");
+                formatter.WriteLine("{");
+                formatter.IncIndent();
+                for (int i = 0; i < n; ++i)
+                {
+                    Cm.Sym.TypeSymbol* exceptionType = exceptions[i].ExceptionType();
+                    if (!(exceptionType is Cm.Sym.ClassTypeSymbol*))
+                    {
+                        throw Exception("exception type is not class type");
+                    }
+                    Cm.Sym.ClassTypeSymbol* exceptionClassType = cast<Cm.Sym.ClassTypeSymbol*>(exceptionType);
+                    int baseId = 0;
+                    Cm.Sym.ClassTypeSymbol* baseClassType = exceptionClassType->BaseClass();
+                    if (baseClassType != null)
+                    {
+                        baseId = GetExceptionId(baseClassType);
+                    }
+                    string baseIdStr;
+                    baseIdStr.Append(ToString(baseId));
+                    if (i < n - 1)
+                    {
+                        baseIdStr.Append(',');
+                    }
+                    formatter.WriteLine(baseIdStr);
+                }
+                formatter.DecIndent();
+                formatter.WriteLine("};");
+                formatter.WriteLine("int* _X_exception_X_base_X_id_X_table_X_addr = _X_exception_X_base_X_id_X_table;");
+            }
         }
         private static ExceptionTable* instance;
         private HashMap<TypeSymbol*, int> exceptionMap;

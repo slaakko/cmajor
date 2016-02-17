@@ -34,7 +34,7 @@ namespace Cm.Ast
         }
         public void Write(const Span& span)
         {
-            binaryWriter.Write(&span, sizeof(span));
+            binaryWriter.Write(&span, sizeof(Span));
         }
         public void Write(Derivation derivation)
         {

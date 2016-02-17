@@ -35,7 +35,7 @@
     #include <crtdbg.h>
 #endif
 
-const char* version = "1.3.0-beta-0";
+const char* version = "1.3.0";
 
 struct InitDone
 {
@@ -181,6 +181,45 @@ void ObtainLlvmVersion()
     }
 }
 
+void PrintHelp()
+{
+    std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
+    std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
+    std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
+    std::cout <<
+        "options:\n" <<
+        "-R              : rebuild project or solution\n" <<
+        "-clean          : clean project or solution\n" <<
+        "-c FILENAME     : compile only FILENAME, do not link\n" <<
+        "-config=debug   : use debug configuration (default)\n" <<
+        "-config=release : use release configuration\n" <<
+        "-config=profile : instrument program/library for profiling\n" <<
+        "-config=full    : do full optimizations (whole-program analysis) (experimental)\n"
+        "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
+        "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, others:3)\n" <<
+        "-backend=llvm   : use LLVM backend (default)\n" <<
+        "-backend=c      : use C backend\n" <<
+        "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" <<
+        "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
+        "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
+        "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
+        "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
+        "-quiet          : write no output messages for successful compiles\n" <<
+        "-trace          : instrument program/library with tracing enabled\n" <<
+        "-debug_heap     : instrument program/library with debug heap enabled\n" <<
+        "-no_call_stacks : do not generate call stack information for exceptions\n" <<
+        "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
+        "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
+        "-vcall_dbg      : debug virtual calls (only full config)\n" <<
+        "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" <<
+        "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
+        std::endl;
+    std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " <<
+        "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
+    std::cout << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " <<
+        "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << std::endl;
+}
+
 int main(int argc, const char** argv)
 {
     double z = 0;
@@ -213,41 +252,7 @@ int main(int argc, const char** argv)
         std::string datalayout = GetDataLayout();
         if (argc < 2)
         {
-            std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
-            std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
-            std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
-            std::cout <<
-                "options:\n" <<
-                "-R              : rebuild project or solution\n" <<
-                "-clean          : clean project or solution\n" <<
-                "-c FILENAME     : compile only FILENAME, do not link\n" <<
-                "-config=debug   : use debug configuration (default)\n" <<
-                "-config=release : use release configuration\n" <<
-                "-config=profile : instrument program/library for profiling\n" <<
-                "-config=full    : do full optimizations (whole-program analysis) (experimental)\n"
-                "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" << 
-                "-O=<n> (n=0-3)  : set optimization level to <n> (default: debug:0, others:3)\n" <<
-                "-backend=llvm   : use LLVM backend (default)\n" <<
-                "-backend=c      : use C backend\n" <<
-                "-m TRIPLE       : override LLVM target triple to emit to .ll files\n" << 
-                "-emit-no-triple : do not emit any LLVM target triple to .ll files\n" <<
-                "-d DATALAYOUT   : override LLVM target datalayout to emit to .ll files\n" <<
-                "-emit-no-layout : do not emit any LLVM datalayout to .ll files\n" <<
-                "-emit-opt       : generate optimized LLVM code to <file>.opt.ll\n" <<
-                "-quiet          : write no output messages for successful compiles\n" << 
-                "-trace          : instrument program/library with tracing enabled\n" <<
-                "-debug_heap     : instrument program/library with debug heap enabled\n" <<
-                "-no_call_stacks : do not generate call stack information for exceptions\n" <<
-                "-class_dot=FILE : generate class hierarchy graph to FILE.dot (only full config)\n" <<
-                "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
-                "-vcall_dbg      : debug virtual calls (only full config)\n" << 
-                "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
-                "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
-                std::endl;
-            std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
-                "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
-            std::cout << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
-                "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << std::endl; 
+            PrintHelp();
         }
         else
         {
@@ -330,6 +335,11 @@ int main(int argc, const char** argv)
                             {
                                 throw std::runtime_error("unknown argument '" + arg + "'");
                             }
+                        }
+                        else if (arg == "-help" || arg == "--help")
+                        {
+                            PrintHelp();
+                            return 0;
                         }
                         else if (arg == "-R")
                         {
