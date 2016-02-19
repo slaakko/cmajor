@@ -1842,6 +1842,7 @@ void BuildProgram(Cm::Ast::Project* project, uint64_t stackSizeOpt)
 bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
     CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt)
 {
+    boost::filesystem::create_directories(project->OutputBasePath());
     Cm::Sym::FunctionTable functionTable;
     if (Cm::Core::GetGlobalSettings()->Config() == "profile")
     {
@@ -1924,7 +1925,6 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     {
         ImportFunctionTables(allReferenceFilePaths);
     }
-    boost::filesystem::create_directories(project->OutputBasePath());
     std::vector<std::string> objectFilePaths;
     bool cFilesChanged = CompileCFiles(project, objectFilePaths, rebuild);
     if (!changed)

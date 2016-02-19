@@ -147,6 +147,7 @@ namespace Cm.Ast
         }
         public override void Write(Writer& writer)
         {
+            base->Write(writer);
             bool hasExpr = !expr.IsNull();
             writer.GetBinaryWriter().Write(hasExpr);
             if (hasExpr)
@@ -209,6 +210,7 @@ namespace Cm.Ast
         }
         public override void Write(Writer& writer)
         {
+            base->Write(writer);
             bool hasExpr = !expr.IsNull();
             writer.GetBinaryWriter().Write(hasExpr);
             if (hasExpr)

@@ -82,7 +82,7 @@ namespace Cm.Parser
             ;
 
         AssemblyFileDeclaration(Project* project) : ProjectDeclaration*
-            ::= (keyword("assembly") FilePath! Properties? ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->BasePath(), Properties); }
+            ::= (keyword("assembly") FilePath! Properties? ';'!){ value = new AssemblyFileDeclaration(span, FilePath, project->OutputBasePath(), Properties); }
             ;
 
         ExecutableFileDeclaration(Project* project) : ProjectDeclaration*

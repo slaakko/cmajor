@@ -209,6 +209,7 @@ namespace Cm.Build
     
     public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
     {
+        CreateDirectories(project->OutputBasePath());
         bool changed = false;
         Cm.Core.GlobalSettings.Instance().SetCurrentProjectName(project->Name());
         bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
@@ -252,7 +253,12 @@ namespace Cm.Build
         ReadNextCid();
         List<string> assemblyFilePaths;
         assemblyFilePaths.Add(project->AssemblyFilePath());
+        List<string> clibs;
         List<string> cLibraryFilePaths = project->CLibraryFilePaths();
+        for (const string& clib : cLibraryFilePaths)
+        {
+            clibs.Add(clib);
+        }
         List<string> libraryDirectories;
         GetLibraryDirectories(libraryDirectories);
         List<string> allReferenceFilePaths;
@@ -267,9 +273,8 @@ namespace Cm.Build
             Cm.Sym.Module module(libraryFilePath);
             module.CheckFileVersion();
         }
-        BuildSymbolTable(symbolTable, rebuild, syntaxTree, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
+        BuildSymbolTable(symbolTable, rebuild, syntaxTree, project, libraryDirectories, assemblyFilePaths, clibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
             classHierarchyTable, allLibrarySearchPaths);
-        CreateDirectories(project->OutputBasePath());
         List<string> objectFilePaths;
         bool cFilesChanged = CompileCFiles(project, objectFilePaths, rebuild);
         if (!changed)
@@ -338,7 +343,7 @@ namespace Cm.Build
         }
         if (project->GetTarget() == Cm.Ast.Target.program)
         {
-            bool linked = Link(assemblyFilePaths, cLibraryFilePaths, allLibrarySearchPaths, project->ExecutableFilePath(), stackSize);
+            bool linked = Link(assemblyFilePaths, clibs, allLibrarySearchPaths, project->ExecutableFilePath(), stackSize);
             if (!changed)
             {
                 changed = linked;
@@ -646,19 +651,7 @@ namespace Cm.Build
             }
             catch (const Exception& ex)
             {
-                FileMapping file(ccErrorFilePath);
-                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-                Cm.Ast.ToolError toolError;
-                try
-                {
-                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, ccErrorFilePath);
-                }                
-                catch (const Exception& ex)
-                {
-                    string errorText(file.Begin(), file.End());
-                    throw Cm.Core.Error(errorText);
-                }
-                throw Cm.Core.ToolError(toolError);
+                ThrowToolError(ccErrorFilePath);
             }
             RemoveFile(ccErrorFilePath);
         }
@@ -712,19 +705,7 @@ namespace Cm.Build
             }
             catch (const Exception& ex)
             {
-                FileMapping file(cxxErrorFilePath);
-                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-                Cm.Ast.ToolError toolError;
-                try
-                {
-                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, cxxErrorFilePath);
-                }                
-                catch (const Exception& ex)
-                {
-                    string errorText(file.Begin(), file.End());
-                    throw Cm.Core.Error(errorText);
-                }
-                throw Cm.Core.ToolError(toolError);
+                ThrowToolError(cxxErrorFilePath);
             }
             RemoveFile(cxxErrorFilePath);
         }
@@ -778,19 +759,7 @@ namespace Cm.Build
             }
             catch (const Exception& ex)
             {
-                FileMapping file(llErrorFilePath);
-                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-                Cm.Ast.ToolError toolError;
-                try
-                {
-                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, llErrorFilePath);
-                }                
-                catch (const Exception& ex)
-                {
-                    string errorText(file.Begin(), file.End());
-                    throw Cm.Core.Error(errorText);
-                }
-                throw Cm.Core.ToolError(toolError);
+                ThrowToolError(llErrorFilePath);
             }
             RemoveFile(llErrorFilePath);
         }
@@ -1016,6 +985,28 @@ namespace Cm.Build
         }
     }
     
+    public Cm.Core.ToolError ParseToolError(const string& filePath)
+    {
+        FileMapping file(filePath);
+        Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
+        return Cm.Core.ToolError(toolErrorGrammar->Parse(file.Begin(), file.End(), 0, filePath));
+    }
+    
+    public void ThrowToolError(const string& filePath)
+    {
+        Cm.Core.ToolError toolError;
+        try
+        {
+            toolError = ParseToolError(filePath);
+        }                
+        catch (const Exception& ex)
+        {
+            string errorText = ReadFile(filePath);
+            throw Cm.Core.Error(errorText);
+        }
+        throw toolError;
+    }
+   
     public void GenerateObjectCode(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
     {
         Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
@@ -1047,19 +1038,7 @@ namespace Cm.Build
         }
         catch (const Exception& ex)
         {
-            FileMapping file(errorFilePath);
-            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-            Cm.Ast.ToolError toolError;
-            try
-            {
-                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, errorFilePath);
-            }                
-            catch (const Exception& ex)
-            {
-                string errorText(file.Begin(), file.End());
-                throw Cm.Core.Error(errorText);
-            }
-            throw Cm.Core.ToolError(toolError);
+            ThrowToolError(errorFilePath);
         }
         RemoveFile(errorFilePath);
     }
@@ -1081,19 +1060,7 @@ namespace Cm.Build
         }
         catch (const Exception& ex)
         {
-            FileMapping file(optllErrorFilePath);
-            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-            Cm.Ast.ToolError toolError;
-            try
-            {
-                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, optllErrorFilePath);
-            }                
-            catch (const Exception& ex)
-            {
-                string errorText(file.Begin(), file.End());
-                throw Cm.Core.Error(errorText);
-            }
-            throw Cm.Core.ToolError(toolError);
+            ThrowToolError(optllErrorFilePath);
         }
         RemoveFile(optllErrorFilePath);
     }
@@ -1120,7 +1087,10 @@ namespace Cm.Build
             }
         }        
         if (!changed) return false;
-        RemoveFile(assemblyFilePath);
+        if (FileExists(assemblyFilePath))
+        {
+            RemoveFile(assemblyFilePath);
+        }        
         bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
         if (!quiet && !objectFilePaths.IsEmpty())
         {
@@ -1157,19 +1127,7 @@ namespace Cm.Build
             }
             catch (const Exception& ex)
             {
-                FileMapping file(arErrorFilePath);
-                Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-                Cm.Ast.ToolError toolError;
-                try
-                {
-                    toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, arErrorFilePath);
-                }                
-                catch (const Exception& ex)
-                {
-                    string errorText(file.Begin(), file.End());
-                    throw Cm.Core.Error(errorText);
-                }
-                throw Cm.Core.ToolError(toolError);
+                ThrowToolError(arErrorFilePath);
             }
             RemoveFile(arErrorFilePath);
         }
@@ -1185,7 +1143,7 @@ namespace Cm.Build
         bool changed = false;
         string exePath;
 #if (WINDOWS)
-        exePath = GetFullPath(Path.ChangeExtension(executableFilePath, ".exe"));
+        exePath = GetFullPath(executableFilePath + ".exe");
 #else
         exePath = GetFullPath(executableFilePath);
 #endif
@@ -1244,26 +1202,14 @@ namespace Cm.Build
         }
         command.Append(" -Xlinker --end-group");
         command.Append(" -o ").Append(QuotedPath(executableFilePath));
-        string exeErrorFilePath = GetFullPath(Path.ChangeExtension(executableFilePath, ".exe.error"));
+        string exeErrorFilePath = GetFullPath(executableFilePath + ".exe.error");
         try
         {
             Execute(command, 2, exeErrorFilePath);
         }
         catch (const Exception& ex)
         {
-            FileMapping file(exeErrorFilePath);
-            Cm.Parser.ToolErrorGrammar* toolErrorGrammar = Grammars.Instance().GetToolErrorGrammar();
-            Cm.Ast.ToolError toolError;
-            try
-            {
-                toolError = toolErrorGrammar->Parse(file.Begin(), file.End(), 0, exeErrorFilePath);
-            }                
-            catch (const Exception& ex)
-            {
-                string errorText(file.Begin(), file.End());
-                throw Cm.Core.Error(errorText);
-            }
-            throw Cm.Core.ToolError(toolError);
+            ThrowToolError(exeErrorFilePath);
         }
         RemoveFile(exeErrorFilePath);
         if (!quiet)

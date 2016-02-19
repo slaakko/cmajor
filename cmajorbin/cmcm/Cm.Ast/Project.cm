@@ -404,7 +404,7 @@ namespace Cm.Ast
                 {
                     if (!Compare(bits, declBits)) continue;
                 }
-                Pair<RelOp, string> declLlvmVersion = properties.GetProperty("llvm-version");
+                Pair<RelOp, string> declLlvmVersion = properties.GetProperty("llvm_version");
                 if (!declLlvmVersion.second.IsEmpty())
                 {
                     if (!Compare(llvmVersion, declLlvmVersion)) continue;
