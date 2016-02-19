@@ -88,10 +88,10 @@ namespace System.IO
     {
         string path = GetFullPath(directoryPath);
         List<string> directoriesToCreate;
-        while (!DirectoryExists(path))
+        while (!path.IsEmpty() && !DirectoryExists(path))
         {
             directoriesToCreate.Add(path);
-            path = Path.GetParent(directoryPath);
+            path = Path.GetParent(path);
         }
         int n = directoriesToCreate.Count();
         for (int i = n - 1; i >= 0; --i)
@@ -367,6 +367,7 @@ namespace System.IO
         {
             string fullPath = GetFullPath(path);
             int lastSlashPos = fullPath.RFind('/');
+            if (lastSlashPos == -1) return string();
             return fullPath.Substring(0, lastSlashPos);
         }
     }

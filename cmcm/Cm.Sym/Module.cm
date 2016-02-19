@@ -157,7 +157,7 @@ namespace Cm.Sym
                 {
                     importedModules.Insert(referenceFilePath);
                     Module referencedModule(referenceFilePath);
-                    referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
+                    referencedModule.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, 
                         classHierarchyTable, allLibrarySearchPaths);
                     referencedModule.CheckUpToDate();
                 }

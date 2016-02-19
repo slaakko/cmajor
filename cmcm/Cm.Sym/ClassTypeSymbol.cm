@@ -397,6 +397,10 @@ namespace Cm.Sym
         }
         public override void Write(Writer& writer)
         {
+            if (Name() == "ExDeleter")
+            {
+                int x = 0;
+            }
             base->Write(writer);
             writer.GetBinaryWriter().Write(cid);
             uint outputFlags = flags & ~ClassTypeSymbolFlags.vtblInitialized;

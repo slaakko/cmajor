@@ -79,7 +79,7 @@ namespace Cm.Core
         public nothrow ToolError(const Cm.Ast.ToolError& error_) : error(error_)
         {
         }
-        public nothrow inline const Cm.Ast.ToolError& Error() const
+        public nothrow inline const Cm.Ast.ToolError& GetError() const
         {
             return error;
         }
