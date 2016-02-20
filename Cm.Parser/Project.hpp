@@ -1,5 +1,5 @@
-#ifndef Project_hpp_6577
-#define Project_hpp_6577
+#ifndef Project_hpp_1942
+#define Project_hpp_1942
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -40,4 +40,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Project_hpp_6577
+#endif // Project_hpp_1942

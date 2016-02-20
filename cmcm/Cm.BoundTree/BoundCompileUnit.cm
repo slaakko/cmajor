@@ -37,7 +37,7 @@ namespace Cm.BoundTree
             optIrFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".opt.ll"));
             dependencyFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".dep"));
             changedFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".chg"));
-            debugInfoFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".cdi0"));
+            debugInfoFilePath = GetFullPath(Path.ChangeExtension(irFilePath, ".cdi"));
             bcuPath = GetFullPath(Path.ChangeExtension(irFilePath, ".bcu"));
             if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
             {

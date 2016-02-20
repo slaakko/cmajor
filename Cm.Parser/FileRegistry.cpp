@@ -9,11 +9,15 @@
 
 #include <Cm.Parser/FileRegistry.hpp>
 #include <iostream>
+#include <mutex>
 
 namespace Cm { namespace Parser {
 
+std::mutex mtx;
+
 int FileRegistry::RegisterParsedFile(const std::string& filePath)
 {
+    std::lock_guard<std::mutex> lock(mtx);
     int fileIndex = int(parsedFiles.size());
     parsedFiles.push_back(filePath);
     return fileIndex;
@@ -21,12 +25,19 @@ int FileRegistry::RegisterParsedFile(const std::string& filePath)
 
 const std::string& FileRegistry::GetParsedFileName(int parsedFileIndex) const
 {
+    std::lock_guard<std::mutex> lock(mtx);
     static std::string emptyFileName;
     if (parsedFileIndex >= 0 && parsedFileIndex < int(parsedFiles.size()))
     {
         return parsedFiles[parsedFileIndex];
     }
     return emptyFileName;
+}
+
+int FileRegistry::GetNumberOfParsedFiles() const
+{
+    std::lock_guard<std::mutex> lock(mtx);
+    return int(parsedFiles.size());
 }
 
 void FileRegistry::Init()

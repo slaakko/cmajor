@@ -71,7 +71,8 @@ TargetDeclaration::TargetDeclaration(const Span& span_, Target target_) : Projec
 {
 }
 
-StackSizeDeclaration::StackSizeDeclaration(const Span& span_, uint64_t stackSize_) : ProjectDeclaration(span_, Properties()), stackSize(stackSize_)
+StackSizeDeclaration::StackSizeDeclaration(const Span& span_, uint64_t stackReserveSize_, uint64_t stackCommitSize_) : ProjectDeclaration(span_, Properties()), 
+    stackReserveSize(stackReserveSize_), stackCommitSize(stackCommitSize_)
 {
 }
 
@@ -138,7 +139,7 @@ bool Compare(const ProgramVersion& propertyValue, const std::pair<RelOp, std::st
 }
 
 Project::Project(const std::string& name_, const std::string& filePath_, const std::string& config_, const std::string& backend_, const std::string& os_, int bits_, const ProgramVersion& llvmVersion_) :
-    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target::none), stackSize(0)
+    name(name_), filePath(filePath_), basePath(filePath), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target::none), stackSize(0, 0)
 {
     basePath.remove_filename();
     outputBasePath = basePath;
@@ -282,7 +283,7 @@ void Project::ResolveDeclarations()
         else if (declaration->IsStackSizeDeclaration())
         {
             StackSizeDeclaration* s = static_cast<StackSizeDeclaration*>(declaration.get());
-            stackSize = s->StackSize();
+            stackSize = std::make_pair(s->StackReserveSize(), s->StackCommitSize());
         }
         else if (declaration->IsAssemblyFileDeclaration())
         {

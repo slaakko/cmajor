@@ -48,6 +48,7 @@ namespace System.Text
         {
             stream << endl();
             atBeginningOfLine = true;
+            ++line;
         }
         public inline nothrow void IncIndent()
         {

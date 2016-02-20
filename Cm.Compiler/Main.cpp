@@ -181,9 +181,14 @@ void ObtainLlvmVersion()
     }
 }
 
-void PrintHelp()
+void PrintVersion()
 {
     std::cout << "Cmajor " << CompilerMode() << " mode compiler version " << version << std::endl;
+}
+
+void PrintHelp()
+{
+    PrintVersion();
     std::cout << "Usage: " << CompilerName() << " [options] {file.cms | file.cmp}" << std::endl;
     std::cout << "Compile Cmajor solution file.cms or project file.cmp" << std::endl;
     std::cout <<
@@ -212,7 +217,7 @@ void PrintHelp()
         "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
         "-vcall_dbg      : debug virtual calls (only full config)\n" <<
         "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" <<
-        "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
+        "-stack=R[,C]    : set stack size reserved to R and committed to C bytes\n" <<
         std::endl;
     std::cout << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " <<
         "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << std::endl;
@@ -220,10 +225,9 @@ void PrintHelp()
         "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << std::endl;
 }
 
+
 int main(int argc, const char** argv)
 {
-    double z = 0;
-    std::string s = std::to_string(z);
 #if defined(_MSC_VER) && !defined(NDEBUG)
     int dbgFlags = _CrtSetDbgFlag(_CRTDBG_REPORT_FLAG);
     dbgFlags |= _CRTDBG_LEAK_CHECK_DF;
@@ -247,7 +251,7 @@ int main(int argc, const char** argv)
         bool prevWasDatalayout = false;
         bool emitNoTriple = false;
         bool emitNoLayout = false;
-        uint64_t stackSizeOpt = 0;
+        std::pair<uint64_t, uint64_t> stackSizeOpt(0, 0);
         std::string targetTriple = GetTargetTriple();
         std::string datalayout = GetDataLayout();
         if (argc < 2)
@@ -324,7 +328,20 @@ int main(int argc, const char** argv)
                                 }
                                 else if (v[0] == "-stack")
                                 {
-                                    stackSizeOpt = std::stoi(v[1]);
+                                    uint64_t reserve = 0;
+                                    uint64_t commit = 0;
+                                    std::string value = v[1];
+                                    if (value.find(',') != std::string::npos)
+                                    {
+                                        std::vector<std::string> rc = Cm::Util::Split(value, ',');
+                                        reserve = std::stoi(rc[0]);
+                                        commit = std::stoi(rc[1]);
+                                    }
+                                    else
+                                    {
+                                        reserve = std::stoi(value);
+                                    }
+                                    stackSizeOpt = std::make_pair(reserve, commit);
                                 }
                                 else
                                 {
@@ -339,6 +356,11 @@ int main(int argc, const char** argv)
                         else if (arg == "-help" || arg == "--help")
                         {
                             PrintHelp();
+                            return 0;
+                        }
+                        else if (arg == "-version" || arg == "--version")
+                        {
+                            PrintVersion();
                             return 0;
                         }
                         else if (arg == "-R")

@@ -295,20 +295,21 @@ namespace Cm.Ast
     
     public class StackSizeDeclaration : ProjectDeclaration
     {
-        public StackSizeDeclaration(const Span& span_, ulong stackSize_) : base(span_, Properties()), stackSize(stackSize_)
+        public StackSizeDeclaration(const Span& span_, ulong reserve_, ulong commit_) : base(span_, Properties()), stackSize(MakePair(reserve_, commit_))
         {
         }
-        public nothrow inline ulong StackSize() const
+        public nothrow const Pair<ulong, ulong>& StackSize() const
         {
             return stackSize;
         }
-        private ulong stackSize;
+        private Pair<ulong, ulong> stackSize;
     }
     
     public class Project
     {
         public Project(const string& name_, const string& filePath_, const string& config_, const string& backend_, const string& os_, int bits_, const ProgramVersion& llvmVersion_) :
-            name(name_), filePath(filePath_), basePath(Path.GetParent(filePath)), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target.none), stackSize(0u)
+            name(name_), filePath(filePath_), basePath(Path.GetParent(filePath)), config(config_), backend(backend_), os(os_), bits(bits_), llvmVersion(llvmVersion_), target(Target.none), 
+            stackSize(0u, 0u)
         {
             outputBasePath = Path.Combine(Path.Combine(basePath, config), backend);
         }
@@ -380,7 +381,7 @@ namespace Cm.Ast
         {
             return executableFilePath;
         }
-        public nothrow inline ulong StackSize() const
+        public nothrow const Pair<ulong, ulong>& StackSize() const
         {
             return stackSize;
         }
@@ -569,7 +570,7 @@ namespace Cm.Ast
         private int bits;
         private ProgramVersion llvmVersion;
         private Target target;
-        private ulong stackSize;
+        private Pair<ulong, ulong> stackSize;
         private List<UniquePtr<ProjectDeclaration>> declarations;
         private List<string> sourceFilePaths;
         private List<string> asmSourceFilePaths;

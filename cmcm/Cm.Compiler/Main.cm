@@ -13,7 +13,7 @@ using System.IO;
 
 internal nothrow const char* Version()
 {
-    return "1.3.0";
+    return "1.3.0-m";
 }
 
 internal nothrow const char* Mode() 
@@ -170,9 +170,15 @@ internal void ObtainLlvmVersion()
     }
 }
 
-void PrintHelp()
+internal void PrintVersion()
+{
+    Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n";
+}
+
+internal void PrintHelp()
 {    
-    Console.Out() << "Cmajor " << Mode() << " mode compiler version " << Version() << "\n" <<
+    PrintVersion();
+    Console.Out() << 
     "Usage: cmcm [options] {file.cms | file.cmp}\n" <<
     "Compile Cmajor solution file.cms or project file.cmp\n" <<
     "options:\n" <<
@@ -198,12 +204,24 @@ void PrintHelp()
     "-tpg_dot=FILE   : generate type propagation graph to FILE.dot (only full config)\n" <<
     "-vcall_dbg      : debug virtual calls (only full config)\n" << 
     "-vcall_txt=FILE : print devirtualized virtual calls to FILE.txt (only full config)\n" << 
-    "-stack=SIZE     : set stack size to SIZE in bytes\n" <<
+    "-stack=R[,C]    : set stack size reserved to R and commit C bytes\n" <<
     endl();
     Console.Out() << "If no -m option is given, LLVM target triple is obtained from environment variable CM_TARGET_TRIPLE. " << 
         "If there is no CM_TARGET_TRIPLE environment variable, default target triple is used unless option -emit-no-triple is given." << endl();
     Console.Out() << "If no -d option is given, LLVM target datalayout is obtained from environment variable CM_TARGET_DATALAYOUT. " << 
         "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << endl(); 
+}
+
+internal nothrow void SaveExceptionMessage(const string& message)
+{
+    try
+    {
+        OutputFileStream s("error.txt");
+        s << message << endl();
+    }
+    catch (const Exception& ex)
+    {
+    }
 }
 
 int main(int argc, const char** argv)
@@ -222,7 +240,7 @@ int main(int argc, const char** argv)
         bool prevWasDatalayout = false;
         bool emitNoTriple = false;
         bool emitNoLayout = false;
-        ulong stackSizeOpt = 0u;
+        Pair<ulong, ulong> stackSizeOpt(0u, 0u);
         string targetTriple = GetTargetTriple();
         string datalayout = GetDataLayout();
         if (argc < 2)
@@ -303,7 +321,20 @@ int main(int argc, const char** argv)
                                 }
                                 else if (v[0] == "-stack")
                                 {
-                                    stackSizeOpt = ParseULong(v[1]);
+                                    ulong reserved = 0u;
+                                    ulong commit = 0u;
+                                    string value = v[1];
+                                    if (value.Find(',') != -1)
+                                    {
+                                        List<string> rc = value.Split(',');
+                                        reserved = ParseULong(rc[0]);
+                                        commit = ParseULong(rc[1]);
+                                    }
+                                    else
+                                    {
+                                        reserved = ParseULong(value);
+                                    }
+                                    stackSizeOpt = MakePair(reserved, commit);
                                 }
                                 else
                                 {
@@ -318,6 +349,11 @@ int main(int argc, const char** argv)
                         else if (arg == "-help" || arg == "--help")
                         {
                             PrintHelp();
+                            return 0;
+                        }
+                        else if (arg == "-version" || arg == "--version")
+                        {
+                            PrintVersion();
                             return 0;
                         }
                         else if (arg == "-R")
@@ -471,27 +507,26 @@ int main(int argc, const char** argv)
                 }
                 
             }
+            Cm.Build.CompileUnitParserRepository compileUnitParsers;
+            int numCores = System.Threading.HardwareConcurrency();
+            if (!Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.clean))
+            {
+                compileUnitParsers.Allocate(numCores);
+            }
             for (const string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
             {
                 string ext = Path.GetExtension(solutionOrProjectFilePath);
                 if (ext == ".cms")
                 {
-                    Cm.Build.BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, stackSizeOpt);
+                    Cm.Build.BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
                 }
                 else if (ext == ".cmp")
                 {
-                    Cm.Build.BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, stackSizeOpt);
+                    Cm.Build.BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
                 }
                 else
                 {
                     throw Exception(solutionOrProjectFilePath + " is not Cmajor solution or project file");
-                }
-            }
-            if (!Cm.Sym.CompileWarningCollection.Instance().Warnings().IsEmpty())
-            {
-                if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.ide))
-                {
-                    // todo
                 }
             }
         }
@@ -506,24 +541,32 @@ int main(int argc, const char** argv)
     catch (const Cm.Core.ToolError& ex)
     {
         const Cm.Ast.ToolError& error = ex.GetError();
-        if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.ide))
-        {
-            Console.Out() << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << endl(); // todo
-        }
-        else
-        {
-            Console.Out() << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << endl();
-        }
+        Console.Error() << error.ToolName() << ": " << error.Message() << " in file " << error.FilePath() << " line " << error.Line() << " column " << error.Column() << endl();
+        SaveExceptionMessage(ex.ToString());
+        return 1;
+    }
+    catch (const System.Text.Parsing.ExpectationFailure& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+        SaveExceptionMessage(ex.ToString());
+        return 1;
+    }
+    catch (const System.Text.Parsing.ParsingException& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+        SaveExceptionMessage(ex.ToString());
         return 1;
     }
     catch (const Cm.Core.Error& ex)
     {
-        Console.Out() << ex.Message() << endl();
+        Console.Error() << ex.Message() << endl();
+        SaveExceptionMessage(ex.ToString());
         return 1;
     }
     catch (const Exception& ex)
     {
-        Console.Out() << ex.ToString() << endl();
+        Console.Error() << ex.ToString() << endl();
+        SaveExceptionMessage(ex.ToString());
         return 1;
     }
     return 0;

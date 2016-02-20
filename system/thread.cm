@@ -17,6 +17,11 @@ using System;
 
 namespace System.Threading
 {
+    public nothrow int HardwareConcurrency()
+    {
+        return get_hardware_concurrency();
+    }
+    
     public const int EXIT_THREADS_NOT_JOINED = 250;
 
     public class ThreadingException: Exception
@@ -63,7 +68,7 @@ namespace System.Threading
 
     public class Thread
     {
-        public Thread(): handle(), joinable(false)
+        public Thread(): handle()
         {
         }
         public Thread(ThreadFun start, void* arg)
@@ -77,67 +82,41 @@ namespace System.Threading
                 string reason = strerror(result);
                 throw ThreadingException("could not start a thread", reason);
             }
-            joinable = true;
         }
-        public Thread(Thread&& that): handle(that.handle), joinable(that.joinable)
+        public Thread(Thread&& that): handle(that.handle)
         {
             that.handle = thread_t();
-            that.joinable = false;
         }
         public void operator=(Thread&& that)
         {
-            if (joinable)
-            {
-                Console.Error() << "exiting because thread not joined" << endl();
-                exit(EXIT_THREADS_NOT_JOINED);
-            }
             Swap(handle, that.handle);
-            Swap(joinable, that.joinable);
         }
         public ~Thread()
         {
-            if (joinable)
-            {
-                Console.Error() << "exiting because thread not joined" << endl();
-                exit(EXIT_THREADS_NOT_JOINED);
-            }
         }
         public thread_t Handle() const
         {
             return handle;
         }
-        public bool Joinable() const
-        {
-            return joinable;
-        }
         public void Join()
         {
-            if (joinable)
+            int result = join_thread(handle, null);
+            if (result != 0)
             {
-                int result = join_thread(handle, null);
-                if (result != 0)
-                {
-                    string reason = strerror(result);
-                    throw ThreadingException("could not join a thread", reason);
-                }
-                joinable = false;
+                string reason = strerror(result);
+                throw ThreadingException("could not join a thread", reason);
             }
         }
         public void Detach()
         {
-            if (joinable)
+            int result = detach_thread(handle);
+            if (result != 0)
             {
-                int result = detach_thread(handle);
-                if (result != 0)
-                {
-                    string reason = strerror(result);
-                    throw ThreadingException("could not detach a thread", reason);
-                }
-                joinable = false;
+                string reason = strerror(result);
+                throw ThreadingException("could not detach a thread", reason);
             }
         }
         private thread_t handle;
-        private bool joinable;
     }
 
     public bool operator==(const Thread& t1, const Thread& t2)

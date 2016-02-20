@@ -156,6 +156,11 @@ namespace System.IO
         public static nothrow string ChangeExtension(const string& path, const string& extension)
         {
             int lastDotPos = path.RFind('.');
+            int lastSlashPos = path.RFind('/');
+            if (lastSlashPos != -1 && lastDotPos < lastSlashPos)
+            {
+                lastDotPos = -1;
+            }
             if (extension.IsEmpty())
             {
                 if (lastDotPos != -1)

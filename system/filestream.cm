@@ -861,7 +861,7 @@ namespace System.IO
         {
             return filePath;
         }
-        public inline nothrow const char* Begin() const 
+        public nothrow const char* Begin() const 
         {
             const char* start = begin;
             if (end - begin >= 3)
@@ -875,7 +875,7 @@ namespace System.IO
             }
             return start;
         }
-        public inline nothrow const char* End() const 
+        public nothrow const char* End() const 
         {
             return end;
         }

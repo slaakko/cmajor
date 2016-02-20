@@ -36,8 +36,8 @@
 
 namespace Cm { namespace Build {
 
-bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths, int numClassHierarchyTableEntries, 
-    uint64_t stackSize, bool changed)
+bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::string& outputBasePath, const std::string& profDataFilePath, std::vector<std::string>& objectFilePaths,
+    int numClassHierarchyTableEntries, const std::pair<uint64_t, uint64_t>& stackSize, bool changed)
 {
     Cm::Sym::FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
     if (!userMainFunction)
@@ -136,7 +136,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
 
     if (userMainFunction->GetReturnType()->IsVoidTypeSymbol())
     {
-        if (stackSize != 0)
+        if (stackSize.first != 0)
         {
             Cm::Sym::FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
             if (!setStackSizeFun)
@@ -145,7 +145,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             }
             Cm::BoundTree::BoundExpressionList setStackSizeArgs;
             Cm::BoundTree::BoundLiteral* stackSizeArg = new Cm::BoundTree::BoundLiteral(nullptr);
-            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize));
+            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize.first));
             Cm::Sym::TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
             stackSizeArg->SetType(ulongType);
             setStackSizeArgs.Add(stackSizeArg);
@@ -311,7 +311,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             arguments.Add(new Cm::BoundTree::BoundParameter(nullptr, argvParam));
         }
 
-        if (stackSize != 0)
+        if (stackSize.first != 0)
         {
             Cm::Sym::FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
             if (!setStackSizeFun)
@@ -320,7 +320,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
             }
             Cm::BoundTree::BoundExpressionList setStackSizeArgs;
             Cm::BoundTree::BoundLiteral* stackSizeArg = new Cm::BoundTree::BoundLiteral(nullptr);
-            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize));
+            stackSizeArg->SetValue(new Cm::Sym::ULongValue(stackSize.first));
             Cm::Sym::TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
             stackSizeArg->SetType(ulongType);
             setStackSizeArgs.Add(stackSizeArg);

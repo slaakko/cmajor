@@ -55,11 +55,11 @@ namespace System.Text.Parsing
                 Stats.ResetSourceLines();
             }
         }
-        public inline nothrow const char* Start() const
+        public nothrow const char* Start() const
         {
             return start;
         }
-        public inline nothrow const char* End() const
+        public nothrow const char* End() const
         {
             return end;
         }
@@ -87,7 +87,7 @@ namespace System.Text.Parsing
         {
             return tokenCounter;
         }
-        public nothrow inline char GetChar() const
+        public nothrow char GetChar() const
         {
             return start[span.Start()];
         }
