@@ -974,25 +974,36 @@ namespace Cm.Parser
             {
                 ActionParser* a0ActionParser = GetAction("A0");
                 a0ActionParser->SetAction(ParsingAction(A0Action));
-                NonterminalParser* stackSizeNonterminalParser = GetNonterminal("stackSize");
-                stackSizeNonterminalParser->SetPostCall(PostCall(PoststackSize));
+                NonterminalParser* reserveNonterminalParser = GetNonterminal("reserve");
+                reserveNonterminalParser->SetPostCall(PostCall(Postreserve));
+                NonterminalParser* commitNonterminalParser = GetNonterminal("commit");
+                commitNonterminalParser->SetPostCall(PostCall(Postcommit));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = new StackSizeDeclaration(span, context.fromstackSize);
+                context.value = new StackSizeDeclaration(span, context.fromreserve, context.fromcommit);
             }
-            public throw void PoststackSize(Stack<UniquePtr<Object>>& stack, bool matched)
+            public throw void Postreserve(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
                 {
-                    UniquePtr<Object> fromstackSize_value = stack.Pop();
-                    context.fromstackSize = *cast<ValueObject<ulong>*>(fromstackSize_value.GetPtr());
+                    UniquePtr<Object> fromreserve_value = stack.Pop();
+                    context.fromreserve = *cast<ValueObject<ulong>*>(fromreserve_value.GetPtr());
+                }
+            }
+            public throw void Postcommit(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcommit_value = stack.Pop();
+                    context.fromcommit = *cast<ValueObject<ulong>*>(fromcommit_value.GetPtr());
                 }
             }
             private class Context
             {
                 public ProjectDeclaration* value;
-                public ulong fromstackSize;
+                public ulong fromreserve;
+                public ulong fromcommit;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -1442,12 +1453,12 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("long", this, "System.Text.Parsing.stdlib.long"));
-            AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("long", this, "System.Text.Parsing.stdlib.long"));
             AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
+            AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1602,11 +1613,14 @@ namespace Cm.Parser
                     new SequenceParser(
                         new SequenceParser(
                             new SequenceParser(
-                                new KeywordParser("stack"),
+                                new SequenceParser(
+                                    new KeywordParser("stack"),
+                                    new ExpectationParser(
+                                        new CharParser('='))),
                                 new ExpectationParser(
-                                    new CharParser('='))),
-                            new ExpectationParser(
-                                new NonterminalParser("stackSize", "ulong", 0))),
+                                    new NonterminalParser("reserve", "ulong", 0))),
+                            new OptionalParser(
+                                new NonterminalParser("commit", "ulong", 0))),
                         new ExpectationParser(
                             new CharParser(';'))))));
             AddRule(new AssemblyFileDeclarationRule("AssemblyFileDeclaration", GetScope(),

@@ -10,11 +10,33 @@
 using System;
 using System.Collections;
 using System.IO;
+using System.Threading;
 using Span = System.Text.Parsing.Span;
 using CodeFormatter = System.Text.CodeFormatter;
 
 namespace Cm.Build
 {
+    public class CompileUnitParserRepository
+    {
+        public void Allocate(int numGrammars)
+        {
+            for (int i = 0; i < numGrammars; ++i)
+            {
+                UniquePtr<System.Text.Parsing.ParsingDomain> parsingDomain(new System.Text.Parsing.ParsingDomain());
+                parsingDomain->SetOwned();
+                Cm.Parser.CompileUnitGrammar* compileUnitGrammar(Cm.Parser.CompileUnitGrammar.Create(parsingDomain.GetPtr()));
+                parsingDomains.Add(Rvalue(parsingDomain));
+                compileUnitsGrammars.Add(compileUnitGrammar);
+            }
+        }
+        public Cm.Parser.CompileUnitGrammar* GetCompileUnitGrammar(int index) const
+        {
+            return compileUnitsGrammars[index];
+        }
+        private List<UniquePtr<System.Text.Parsing.ParsingDomain>> parsingDomains;
+        private List<Cm.Parser.CompileUnitGrammar*> compileUnitsGrammars;
+    }
+        
     public class Grammars
     {
         static Grammars() : instance(new Grammars())
@@ -91,7 +113,8 @@ namespace Cm.Build
         private static UniquePtr<GlobalVersionParser> globalInstance;
     }
     
-    public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
+    public void BuildSolution(const string& solutionFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, CompileUnitParserRepository& compileUnitParserRepository, 
+        const Pair<ulong, ulong>& stackSizeOpt)
     {
         GlobalVersionParser.Create();
         int built = 0;
@@ -145,7 +168,7 @@ namespace Cm.Build
             }
             else
             {
-                bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, stackSizeOpt);
+                bool projectChanged = BuildProject(project, rebuild, compileFileNames, defines, stackSizeOpt, compileUnitParserRepository);
                 if (projectChanged)
                 {
                     rebuild = true;
@@ -181,7 +204,8 @@ namespace Cm.Build
         }
     }
     
-    public void BuildProject(const string& projectFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
+    public void BuildProject(const string& projectFilePath, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, CompileUnitParserRepository& compileUnitParserRepository, 
+        const Pair<ulong, ulong>& stackSizeOpt)
     {
         if (!FileExists(projectFilePath))
         {
@@ -203,11 +227,12 @@ namespace Cm.Build
         }
         else
         {
-            BuildProject(project.GetPtr(), rebuild, compileFileNames, defines, stackSizeOpt);
+            BuildProject(project.GetPtr(), rebuild, compileFileNames, defines, stackSizeOpt, compileUnitParserRepository);
         }
     }
     
-    public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, ulong stackSizeOpt)
+    public bool BuildProject(Cm.Ast.Project* project, bool rebuild, const List<string>& compileFileNames, const HashSet<string>& defines, const Pair<ulong, ulong>& stackSizeOpt, 
+        CompileUnitParserRepository& compileUnitParserRepository)
     {
         CreateDirectories(project->OutputBasePath());
         bool changed = false;
@@ -240,7 +265,17 @@ namespace Cm.Build
             }
             Console.Out() << "Parsing " << n << sourceFiles << "..." << endl();
         }
-        Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+        //Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+        Cm.Ast.SyntaxTree syntaxTree;
+        int numSourceFiles = project->SourceFilePaths().Count();
+        if (numSourceFiles <= 1)
+        {
+            syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+        }        
+        else
+        {
+            syntaxTree = ParseSourcesConcurrently(project->SourceFilePaths(), compileUnitParserRepository);
+        }
         Cm.Core.GlobalConceptData globalConceptData;
         Cm.Core.GlobalConceptData.SetInstance(&globalConceptData);
         Cm.Sym.SymbolTable symbolTable;
@@ -298,18 +333,18 @@ namespace Cm.Build
         {
             changed = true;
         }
-        ulong stackSize = 0u;
-        ulong stackSizeEnv = StackSizeEnvValue();
-        ulong projectStackSize = project->StackSize();
-        if (stackSizeOpt != 0u)
+        Pair<ulong, ulong> stackSize(0u, 0u);
+        Pair<ulong, ulong> stackSizeEnv = StackSizeEnvValue();
+        Pair<ulong, ulong> projectStackSize = project->StackSize();
+        if (stackSizeOpt.first != 0u)
         {
             stackSize = stackSizeOpt;
         }
-        else if (projectStackSize != 0u)
+        else if (projectStackSize.first != 0u)
         {
             stackSize = projectStackSize;
         } 
-        else if (stackSizeEnv != 0u)
+        else if (stackSizeEnv.first != 0u)
         {
             stackSize = stackSizeEnv;
         }
@@ -943,13 +978,49 @@ namespace Cm.Build
             objectFilePaths.Add(boundCompileUnit->ObjectFilePath());
             ++index;
         }
-        for (Cm.BoundTree.BoundCompileUnit* objectCodeCompileUnit : objectCodeCompileUnits)
+        if (!quiet)
         {
-            GenerateObjectCode(*objectCodeCompileUnit);
-            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt))
+            Console.Out() << "Generating code..." << endl();
+        }
+        if (objectCodeCompileUnits.Count() > 1)
+        {
+            CodeGenerationContext codeGenerationContext(objectCodeCompileUnits);
+            int numCompileUnits = objectCodeCompileUnits.Count();
+            int numCores = HardwareConcurrency();
+            List<Thread> threads;
+            for (int i = 0; i < numCores; ++i)
             {
-                GenerateOptimizedLlvmCodeFile(*objectCodeCompileUnit);   
+                Thread thread(ThreadFun(CodeGenerator), &codeGenerationContext);
+                threads.Add(Rvalue(thread));
             }
+            for (int i = 0; i < numCores; ++i)
+            {
+                Thread& thread = threads[i];
+                thread.Join();
+            }
+            for (int compileUnitIndex = 0; compileUnitIndex < numCompileUnits; ++compileUnitIndex)
+            {
+                ExceptionPtr exceptionPtr = codeGenerationContext.GetException(compileUnitIndex);
+                if (exceptionPtr.HasException())
+                {
+                    RethrowException(exceptionPtr);
+                }
+            }
+        }
+        else
+        {
+            for (Cm.BoundTree.BoundCompileUnit* objectCodeCompileUnit : objectCodeCompileUnits)
+            {
+                GenerateObjectCode(*objectCodeCompileUnit);
+                if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt))
+                {
+                    GenerateOptimizedLlvmCodeFile(*objectCodeCompileUnit);   
+                }
+            }
+        }        
+        for (const UniquePtr<Cm.BoundTree.BoundCompileUnit>& boundCompileUnit : boundCompileUnits)
+        {
+            boundCompileUnit->WriteDependencyFile();
         }
         return changed;
     }
@@ -1138,7 +1209,7 @@ namespace Cm.Build
         return true;
     }
     
-    public bool Link(const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, const List<string>& allLibrarySearchPaths, const string& executableFilePath, ulong stackSize)
+    public bool Link(const List<string>& assemblyFilePaths, const List<string>& cLibraryFilePaths, const List<string>& allLibrarySearchPaths, const string& executableFilePath, const Pair<ulong, ulong>& stackSize)
     {
         bool changed = false;
         string exePath;
@@ -1173,9 +1244,13 @@ namespace Cm.Build
         }
         string command = "gcc";
 #if (WINDOWS)
-        if (stackSize != 0u)
+        if (stackSize.first != 0u)
         {
-            command.Append(" -Wl,--stack," + ToString(stackSize));
+            command.Append(" -Xlinker --stack -Xlinker " + ToString(stackSize.first));
+            if (stackSize.second != 0u)
+            {
+                command.Append(" -Xlinker ,").Append(ToString(stackSize.second));
+            }
         }
 #endif
         for (const string& librarySearchPath : allLibrarySearchPaths)
@@ -1222,9 +1297,58 @@ namespace Cm.Build
     public bool CreateDebugInfoFile(const string& executableFilePath, const List<string>& allDebugInfoFilePaths)
     {
         bool changed = false;
-        // todo
+        string cmdbFilePath = GetFullPath(Path.ChangeExtension(executableFilePath, ".cmdb"));
+        if (!FileExists(cmdbFilePath))
+        {
+            changed = true;
+        }
+        else
+        {
+            for (const string& debugInfoFilePath : allDebugInfoFilePaths)
+            {
+                if (!FileExists(debugInfoFilePath))
+                {
+                    changed = true;
+                }
+                else if (LastWriteTimeLess(cmdbFilePath, debugInfoFilePath))
+                {
+                    changed = true;
+                }
+            }
+        }
         if (!changed) return false;
-        // todo
+        bool quiet = Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.quiet);
+        if (!quiet)
+        {
+            Console.Out() << "Creating debug info file..." << endl();
+        }
+        List<string> nonEmptyDebugInfoFilePaths;
+        for (const string& debugInfoFilePath : allDebugInfoFilePaths)
+        {
+            BinaryFileStream dif(debugInfoFilePath, OpenMode.readOnly);
+            long fileSize = dif.GetFileSize();
+            if (FileExists(debugInfoFilePath) && fileSize != 0)
+            {
+                nonEmptyDebugInfoFilePaths.Add(debugInfoFilePath);
+            }
+        }
+        Cm.Ser.BinaryWriter writer(cmdbFilePath);
+        writer.Write(nonEmptyDebugInfoFilePaths.Count());
+        for (const string& nonEmptyDebugInfoFilePath : nonEmptyDebugInfoFilePaths)
+        {
+            if (!quiet)
+            {
+                Console.Out() << "> " << nonEmptyDebugInfoFilePath << endl();
+            }
+            Cm.Ser.BinaryReader reader(nonEmptyDebugInfoFilePath);
+            Cm.Core.CDebugInfoFile debugInfoFile;
+            debugInfoFile.Read(reader);
+            debugInfoFile.Write(writer);
+        }
+        if (!quiet)
+        {
+            Console.Out() << "=> " << cmdbFilePath << endl();
+        }
         return true;
     }
     
@@ -1423,15 +1547,20 @@ namespace Cm.Build
         return 32;
     }
     
-    public ulong StackSizeEnvValue()
+    public Pair<ulong, ulong> StackSizeEnvValue()
     {
         char* stackSizeEnv = get_environment_variable("CM_STACK_SIZE");
         if (stackSizeEnv == null)
         {
-            return 0u;
+            return MakePair(ulong(0u), ulong(0u));
         }
         string stackSizeEnvStr = stackSizeEnv;
-        return ParseULong(stackSizeEnvStr);
+        if (stackSizeEnvStr.Find(',') != -1)
+        {
+            List<string> value = stackSizeEnvStr.Split(',');
+            return MakePair(ParseULong(value[0]), ParseULong(value[1]));
+        }
+        return MakePair(ParseULong(stackSizeEnvStr), ulong(0u));
     }
     
     public nothrow const Cm.Ast.ProgramVersion& GetLlvmVersion()
@@ -1506,6 +1635,294 @@ namespace Cm.Build
             {
                 Console.Out() << "Project '" << project->Name() << "' (" << GetFullPath(project->OutputBasePath()) << ") cleaned successfully" << endl();
             }
+        }
+    }
+    
+    public class ParsingContext
+    {
+        public ParsingContext(const List<string>& sourceFilePaths) : stop(false)
+        {
+            int n = sourceFilePaths.Count();
+            for (const string& sourceFilePath : sourceFilePaths)
+            {
+                int sourceFileIndex = Cm.Parser.FileRegistry.Instance()->RegisterParsedFile(sourceFilePath);
+                sourceFilePathIndexVec.Add(MakePair(sourceFilePath, sourceFileIndex));
+            }
+            parsedCompileUnits.Resize(n);
+            for (int i = 0; i < n; ++i)
+            {
+                fileIndexQueue.Put(i);
+            }
+            exceptions.Resize(n);
+        }
+        public int GetNextFileIndex()
+        {
+            LockGuard<Mutex> lock(mtx);
+            if (fileIndexQueue.IsEmpty()) return -1;
+            int fileIndex = fileIndexQueue.Get();
+            return fileIndex;
+        }
+        public nothrow inline const Pair<string, int>& GetSourceFileAndSourceFileIndex(int fileIndex)
+        {
+            return sourceFilePathIndexVec[fileIndex];
+        }
+        public nothrow inline void PutParsedCompileUnit(int fileIndex, Cm.Ast.CompileUnitNode* parsedCompileUnit)
+        {
+            parsedCompileUnits[fileIndex] = parsedCompileUnit;
+        }
+        public nothrow inline Cm.Ast.CompileUnitNode* GetParsedCompileUnit(int fileIndex) const
+        {
+            return parsedCompileUnits[fileIndex];
+        }
+        public nothrow inline void SetException(int fileIndex, ExceptionPtr& exception)
+        {
+            Swap(exception, exceptions[fileIndex]);
+        }
+        public nothrow inline ExceptionPtr GetException(int fileIndex)
+        {
+            ExceptionPtr ex;
+            Swap(ex, exceptions[fileIndex]);
+            return ex;
+        }
+        public nothrow inline void Stop()
+        {
+            stop = true;
+        }
+        public nothrow inline bool Stopping() const
+        {
+            return stop;
+        }
+        private List<Pair<string, int>> sourceFilePathIndexVec;
+        private List<Cm.Ast.CompileUnitNode*> parsedCompileUnits;
+        private List<ExceptionPtr> exceptions;
+        private Queue<int> fileIndexQueue;
+        private Mutex mtx;
+        private bool stop;
+    }
+
+    public class ParserData
+    {
+        public nothrow ParserData(ParsingContext* parsingContext_, Cm.Parser.CompileUnitGrammar* compileUnitGrammar_): parsingContext(parsingContext_), compileUnitGrammar(compileUnitGrammar_)
+        {
+        }
+        public nothrow inline ParsingContext* GetParsingContext() const
+        {
+            return parsingContext;
+        }
+        public nothrow inline Cm.Parser.CompileUnitGrammar* GetCompileUnitGrammar() const
+        {
+            return compileUnitGrammar;
+        }
+        private ParsingContext* parsingContext;
+        private Cm.Parser.CompileUnitGrammar* compileUnitGrammar;
+    }
+    
+    public void Parser(void* data)
+    {
+        ParserData* parserData = cast<ParserData*>(data);
+        ParsingContext* parsingContext = parserData->GetParsingContext();
+        Cm.Parser.CompileUnitGrammar* compileUnitGrammar = parserData->GetCompileUnitGrammar();
+        int fileIndex = -1;
+        try
+        {
+            fileIndex = parsingContext->GetNextFileIndex();
+            while (!parsingContext->Stopping() && fileIndex != -1)
+            {
+                const Pair<string, int>& sourceFilePathIndex = parsingContext->GetSourceFileAndSourceFileIndex(fileIndex);
+                FileMapping sourceFile(sourceFilePathIndex.first);
+                Cm.Parser.ParsingContext ctx;
+                Cm.Ast.CompileUnitNode* compileUnit = compileUnitGrammar->Parse(sourceFile.Begin(), sourceFile.End(), sourceFilePathIndex.second, sourceFilePathIndex.first, &ctx);
+                parsingContext->PutParsedCompileUnit(fileIndex, compileUnit);
+                fileIndex = parsingContext->GetNextFileIndex();
+            }
+        }
+        catch (const Exception& ex)
+        {
+            if (fileIndex != -1)
+            {
+                ExceptionPtr currentException = CaptureCurrentException();
+                parsingContext->SetException(fileIndex, currentException);
+            }
+            parsingContext->Stop();
+        }
+    }
+    
+    public Cm.Ast.SyntaxTree ParseSourcesConcurrently(const List<string>& sourceFilePaths, CompileUnitParserRepository& compileUnitParserRepository)
+    {
+        int numFiles = sourceFilePaths.Count();
+        ParsingContext parsingContext(sourceFilePaths);
+        int numCores = HardwareConcurrency();
+        List<Thread> threads;
+        List<ParserData> parserData;
+        for (int i = 0; i < numCores; ++i)
+        {
+            parserData.Add(ParserData(&parsingContext, compileUnitParserRepository.GetCompileUnitGrammar(i)));
+        }
+        for (int i = 0; i < numCores; ++i)
+        {
+            ParserData* data = &parserData[i];
+            Thread thread(ThreadFun(Parser), data);
+            threads.Add(Rvalue(thread));
+        }
+        for (int i = 0; i < numCores; ++i)
+        {
+            Thread& thread = threads[i];
+            thread.Join();
+        }
+        for (int fileIndex = 0; fileIndex < numFiles; ++fileIndex)
+        {
+            ExceptionPtr exceptionPtr = parsingContext.GetException(fileIndex);
+            if (exceptionPtr.HasException())
+            {
+                RethrowException(exceptionPtr);
+            }
+        }
+        Cm.Ast.SyntaxTree syntaxTree;
+        for (int fileIndex = 0; fileIndex < numFiles; ++fileIndex)
+        {
+            syntaxTree.AddCompileUnit(parsingContext.GetParsedCompileUnit(fileIndex));
+        }
+        return syntaxTree;
+    }
+    
+    public void GenerateObjectCodeConcurrently(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+        string errorFilePath;
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {            
+            errorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".ll.error"));
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            errorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".c.error"));
+        }
+        string command = "stdhandle_redirector -2 ";
+        command.Append(QuotedPath(errorFilePath)).Append(' ');
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            command.Append("llc");
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            command.Append("gcc");
+        }
+        command.Append(" -O").Append(ToString(Cm.Core.GlobalSettings.Instance().OptimizationLevel()));
+        if (backend == Cm.IrIntf.Backend.llvm)
+        {
+            command.Append(" -filetype=obj");
+        }
+        else if (backend == Cm.IrIntf.Backend.c)
+        {
+            command.Append(" -g -c");
+        }
+        command.Append(" -o ").Append(QuotedPath(boundCompileUnit.ObjectFilePath())).Append(' ').Append(QuotedPath(boundCompileUnit.IrFilePath()));
+        try
+        {
+            Execute(command);
+        }
+        catch (const Exception& ex)
+        {
+            ThrowToolError(errorFilePath);
+        }
+        RemoveFile(errorFilePath);
+    }
+    
+    public void GenerateOptimizedLlvmCodeFileConcurrently(Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        string optErrorFilePath = GetFullPath(Path.ChangeExtension(boundCompileUnit.IrFilePath(), ".opt.ll.error"));
+        string command = "stdhandle_redirector -2 ";
+        command.Append(QuotedPath(optErrorFilePath)).Append(' ').Append("opt");
+        int optimizationLevel = Cm.Core.GlobalSettings.Instance().OptimizationLevel();
+        if (optimizationLevel == 0)
+        {
+            optimizationLevel = 1;
+        }
+        command.Append(" -O").Append(ToString(optimizationLevel)).Append(" -S").Append(" -o ").Append(QuotedPath(boundCompileUnit.OptIrFilePath())).Append(' ').Append(QuotedPath(boundCompileUnit.IrFilePath()));
+        try
+        {
+            Execute(command);
+        }
+        catch (const Exception& ex)
+        {
+            ThrowToolError(optErrorFilePath);
+        }
+        RemoveFile(optErrorFilePath);
+    }
+    
+    public class CodeGenerationContext
+    {
+        public CodeGenerationContext(const List<Cm.BoundTree.BoundCompileUnit*>& compileUnits_) : compileUnits(compileUnits_), stop(false)
+        {
+            int n = compileUnits.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                compileUnitIndexQueue.Put(i);
+            }
+            exceptions.Resize(n);
+        }
+        public int GetNextCompileUnitIndex()
+        {
+            LockGuard<Mutex> lock(mtx);
+            if (compileUnitIndexQueue.IsEmpty()) return -1;
+            int compileUnitIndex = compileUnitIndexQueue.Get();
+            return compileUnitIndex;
+        }
+        public nothrow inline Cm.BoundTree.BoundCompileUnit* GetCompileUnit(int compileUnitIndex) const
+        {
+            return compileUnits[compileUnitIndex];
+        }
+        public nothrow inline void SetException(int compileUnitIndex, ExceptionPtr& exception)
+        {
+            Swap(exceptions[compileUnitIndex], exception);
+        }
+        public nothrow inline ExceptionPtr GetException(int compileUnitIndex)
+        {
+            ExceptionPtr ex;
+            Swap(ex, exceptions[compileUnitIndex]);
+            return ex;
+        }
+        public nothrow inline void Stop()
+        {
+            stop = true;
+        }
+        public nothrow inline bool Stopping() const
+        {
+            return stop;
+        }
+        private List<Cm.BoundTree.BoundCompileUnit*> compileUnits;
+        private List<ExceptionPtr> exceptions;
+        private Queue<int> compileUnitIndexQueue;
+        private Mutex mtx;
+        private bool stop;
+    }
+    
+    public void CodeGenerator(void* data)
+    {
+        CodeGenerationContext* context = cast<CodeGenerationContext*>(data);
+        int compileUnitIndex = -1;
+        try
+        {
+            compileUnitIndex = context->GetNextCompileUnitIndex();
+            while (!context->Stopping() && compileUnitIndex != -1)
+            {
+                Cm.BoundTree.BoundCompileUnit* compileUnit = context->GetCompileUnit(compileUnitIndex);
+                GenerateObjectCodeConcurrently(*compileUnit);
+                if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.emitOpt))
+                {
+                    GenerateOptimizedLlvmCodeFileConcurrently(*compileUnit);
+                }
+                compileUnitIndex = context->GetNextCompileUnitIndex();
+            }
+        }
+        catch (const Exception& ex)
+        {
+            if (compileUnitIndex != -1)
+            {
+                ExceptionPtr ex = CaptureCurrentException();
+                context->SetException(compileUnitIndex, ex);
+            }
+            context->Stop();
         }
     }
 }

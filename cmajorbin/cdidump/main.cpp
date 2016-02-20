@@ -18,10 +18,6 @@ int main(int argc, const char** argv)
         {
             std::string arg = argv[i];
             boost::filesystem::path a(arg);
-            if (a.extension() != ".cdi")
-            {
-                throw std::runtime_error("unknown extension '" + a.extension().generic_string() + "'");
-            }
             if (!exists(a))
             {
                 throw std::runtime_error("file '" + arg + " does not exist");

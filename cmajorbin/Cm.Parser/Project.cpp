@@ -1272,28 +1272,40 @@ public:
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
         a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StackSizeDeclarationRule>(this, &StackSizeDeclarationRule::A0Action));
-        Cm::Parsing::NonterminalParser* ulongNonterminalParser = GetNonterminal("ulong");
-        ulongNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StackSizeDeclarationRule>(this, &StackSizeDeclarationRule::Postulong));
+        Cm::Parsing::NonterminalParser* reserveNonterminalParser = GetNonterminal("reserve");
+        reserveNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StackSizeDeclarationRule>(this, &StackSizeDeclarationRule::Postreserve));
+        Cm::Parsing::NonterminalParser* commitNonterminalParser = GetNonterminal("commit");
+        commitNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StackSizeDeclarationRule>(this, &StackSizeDeclarationRule::Postcommit));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.value = new StackSizeDeclaration(span, context.fromulong);
+        context.value = new StackSizeDeclaration(span, context.fromreserve, context.fromcommit);
     }
-    void Postulong(Cm::Parsing::ObjectStack& stack, bool matched)
+    void Postreserve(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromulong_value = std::move(stack.top());
-            context.fromulong = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromulong_value.get());
+            std::unique_ptr<Cm::Parsing::Object> fromreserve_value = std::move(stack.top());
+            context.fromreserve = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromreserve_value.get());
+            stack.pop();
+        }
+    }
+    void Postcommit(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromcommit_value = std::move(stack.top());
+            context.fromcommit = *static_cast<Cm::Parsing::ValueObject<uint64_t>*>(fromcommit_value.get());
             stack.pop();
         }
     }
 private:
     struct Context
     {
-        Context(): value(), fromulong() {}
+        Context(): value(), fromreserve(), fromcommit() {}
         Cm::Ast::ProjectDeclaration* value;
-        uint64_t fromulong;
+        uint64_t fromreserve;
+        uint64_t fromcommit;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -1597,11 +1609,11 @@ void ProjectGrammar::GetReferencedGrammars()
 void ProjectGrammar::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
-    AddRuleLink(new Cm::Parsing::RuleLink("VersionNumber", this, "VersionNumberParser.VersionNumber"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
     AddRuleLink(new Cm::Parsing::RuleLink("long", this, "Cm.Parsing.stdlib.long"));
+    AddRuleLink(new Cm::Parsing::RuleLink("VersionNumber", this, "VersionNumberParser.VersionNumber"));
     AddRule(new ProjectRule("Project", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -1789,11 +1801,16 @@ void ProjectGrammar::CreateRules()
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::SequenceParser(
                     new Cm::Parsing::SequenceParser(
-                        new Cm::Parsing::KeywordParser("stack"),
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::KeywordParser("stack"),
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::CharParser('='))),
                         new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::CharParser('='))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::NonterminalParser("ulong", "ulong", 0))),
+                            new Cm::Parsing::NonterminalParser("reserve", "ulong", 0))),
+                    new Cm::Parsing::OptionalParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::CharParser(','),
+                            new Cm::Parsing::NonterminalParser("commit", "ulong", 0)))),
                 new Cm::Parsing::ExpectationParser(
                     new Cm::Parsing::CharParser(';'))))));
     AddRule(new PropertiesRule("Properties", GetScope(),

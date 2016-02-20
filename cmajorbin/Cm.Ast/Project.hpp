@@ -190,11 +190,13 @@ private:
 class StackSizeDeclaration : public ProjectDeclaration
 {
 public:
-    StackSizeDeclaration(const Span& span_, uint64_t stackSize_);
-    uint64_t StackSize() const { return stackSize; }
+    StackSizeDeclaration(const Span& span_, uint64_t stackReserveSize_, uint64_t stackCommitSize_);
+    uint64_t StackReserveSize() const { return stackReserveSize; }
+    uint64_t StackCommitSize() const { return stackCommitSize; }
     bool IsStackSizeDeclaration() const override { return true; }
 private:
-    uint64_t stackSize;
+    uint64_t stackReserveSize;
+    uint64_t stackCommitSize;
 };
 
 class Project
@@ -220,7 +222,7 @@ public:
     const std::string& AssemblyFilePath() const { return assemblyFilePath; }
     const std::string& LibraryFilePath() const { return libraryFilePath; }
     const std::string& ExecutableFilePath() const { return executableFilePath; }
-    uint64_t StackSize() const { return stackSize; }
+    const std::pair<uint64_t, uint64_t>& StackSize() const { return stackSize; }
 private:
     std::string name;
     std::string filePath;
@@ -232,7 +234,7 @@ private:
     int bits;
     ProgramVersion llvmVersion;
     Target target;
-    uint64_t stackSize;
+    std::pair<uint64_t, uint64_t> stackSize;
     std::vector<std::unique_ptr<ProjectDeclaration>> declarations;
     std::vector<std::string> sourceFilePaths;
     std::vector<std::string> asmSourceFilePaths;

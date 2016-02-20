@@ -15,8 +15,9 @@ using Span = System.Text.Parsing.Span;
 namespace Cm.Build
 {
     public bool CreateMainCompileUnit(Cm.Sym.SymbolTable& symbolTable, const string& outputBasePath, const string& profDataFilePath, List<string>& objectFilePaths, int numClassHierarchyTableEntries, 
-        ulong stackSize, bool changed)
+        const Pair<ulong, ulong>& ss, bool changed)
     {
+        Pair<ulong, ulong> stackSize = ss;
         Cm.Sym.FunctionSymbol* userMainFunction = symbolTable.UserMainFunction();
         if (userMainFunction == null)
         {
@@ -112,7 +113,7 @@ namespace Cm.Build
         UniquePtr<Cm.Sym.FunctionSymbol> intAssignment;    
         if (userMainFunction->GetReturnType() is Cm.Sym.VoidTypeSymbol*)
         {
-            if (stackSize != 0u)
+            if (stackSize.first != 0u)
             {
                 Cm.Sym.FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
                 if (setStackSizeFun == null)
@@ -121,7 +122,7 @@ namespace Cm.Build
                 }
                 Cm.BoundTree.BoundExpressionList setStackSizeArgs;
                 Cm.BoundTree.BoundLiteral* stackSizeArg = new Cm.BoundTree.BoundLiteral(null);
-                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize));
+                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize.first));
                 Cm.Sym.TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
                 stackSizeArg->SetType(ulongType);
                 setStackSizeArgs.Add(stackSizeArg);
@@ -271,7 +272,7 @@ namespace Cm.Build
                 arguments.Add(new Cm.BoundTree.BoundParameter(null, argcParam));
                 arguments.Add(new Cm.BoundTree.BoundParameter(null, argvParam));
             }
-            if (stackSize != 0u)
+            if (stackSize.first != 0u)
             {
                 Cm.Sym.FunctionSymbol* setStackSizeFun = symbolTable.GetOverload("set_stack_size");
                 if (setStackSizeFun == null)
@@ -280,7 +281,7 @@ namespace Cm.Build
                 }
                 Cm.BoundTree.BoundExpressionList setStackSizeArgs;
                 Cm.BoundTree.BoundLiteral* stackSizeArg = new Cm.BoundTree.BoundLiteral(null);
-                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize));
+                stackSizeArg->SetValue(new Cm.Sym.ULongValue(stackSize.first));
                 Cm.Sym.TypeSymbol* ulongType = symbolTable.GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
                 stackSizeArg->SetType(ulongType);
                 setStackSizeArgs.Add(stackSizeArg);

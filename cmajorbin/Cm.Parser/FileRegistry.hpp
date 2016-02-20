@@ -23,7 +23,7 @@ public:
     static FileRegistry* Instance();
     int RegisterParsedFile(const std::string& filePath);
     const std::string& GetParsedFileName(int parsedFileIndex) const;
-    int GetNumberOfParsedFiles() const { return int(parsedFiles.size()); }
+    int GetNumberOfParsedFiles() const;
 private:
     static std::unique_ptr<FileRegistry> instance;
     std::vector<std::string> parsedFiles;

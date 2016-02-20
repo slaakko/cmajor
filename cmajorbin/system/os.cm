@@ -82,6 +82,7 @@ extern public cdecl void dbgheap_disable_free();
 extern public cdecl int time_nanosecs(long& secs, int& nanosecs);
 extern public cdecl int cmsleep(long secs, int nanosecs);
 public typedef ulong thread_t;
+extern public cdecl int get_hardware_concurrency();
 extern public cdecl thread_t this_thread();
 public nothrow delegate void thread_fun(void* arg);
 extern public cdecl int create_thread(thread_t* tid, thread_fun start, void* arg);

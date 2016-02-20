@@ -93,7 +93,7 @@ namespace Cm.Parser
             ;
 
         StackSizeDeclaration: Cm::Ast::ProjectDeclaration*
-            ::= (keyword("stack") '='! ulong! ';'!){ value = new StackSizeDeclaration(span, ulong); }
+            ::= (keyword("stack") '='! ulong:reserve! (',' ulong:commit)? ';'!){ value = new StackSizeDeclaration(span, reserve, commit); }
             ;
 
         Properties: Cm::Ast::Properties

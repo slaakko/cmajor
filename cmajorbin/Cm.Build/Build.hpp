@@ -28,9 +28,9 @@ public:
 };
 
 void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines, 
-    CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt);
+    CompileUnitParserRepository& compileUnitParserRepository, const std::pair<uint64_t, uint64_t>& stackSizeOpt);
 void BuildProject(const std::string& projectFilePath, bool rebuild, const std::vector<std::string>& compileFileNames, const std::unordered_set<std::string>& defines,
-    CompileUnitParserRepository& compileUnitParserRepository, uint64_t stackSizeOpt);
+    CompileUnitParserRepository& compileUnitParserRepository, const std::pair<uint64_t, uint64_t>& stackSizeOpt);
 void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Opt::TpGraph* tpGraph);
 void GenerateObjectCode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 void GetLibraryDirectories(std::vector<std::string>& libraryDirectories);

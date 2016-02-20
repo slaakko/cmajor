@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Threading;
 
 namespace Cm.Parser
 {
@@ -28,23 +29,27 @@ namespace Cm.Parser
         }
         public int RegisterParsedFile(const string& filePath)
         {
+            LockGuard<Mutex> lock(mtx);
             int fileIndex = parsedFiles.Count();
             parsedFiles.Add(filePath);
             return fileIndex;
         }
         public string GetParsedFileName(int fileIndex)
         {
+            LockGuard<Mutex> lock(mtx);
             if (fileIndex >= 0 && fileIndex < parsedFiles.Count())
             {
                 return parsedFiles[fileIndex];
             }
             return string();
         }
-        public nothrow int GetNumberOfParsedFiles() const
+        public int GetNumberOfParsedFiles() const
         {
+            LockGuard<Mutex> lock(mtx);
             return parsedFiles.Count();
         }
         private List<string> parsedFiles;
         private static UniquePtr<FileRegistry> instance;
+        private static Mutex mtx;
     }
 }

@@ -10,6 +10,7 @@ csource <mutextbl.c>;
 source <os.cm>;
 cppsource <profile.cpp>;
 text <profile.hpp>;
+cppsource <threading.cpp>;
 csource <threadtbl.c>;
 clib <stdc++>;
 clib <rt>[os=linux];
