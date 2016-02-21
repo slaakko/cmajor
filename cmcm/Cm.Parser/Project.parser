@@ -78,7 +78,7 @@ namespace Cm.Parser
             ;
             
         StackSizeDeclaration : ProjectDeclaration*
-            ::= (keyword("stack") '='! ulong:reserve! (ulong:commit)? ';'!){ value = new StackSizeDeclaration(span, reserve, commit); }
+            ::= (keyword("stack") '='! ulong:reserve! (',' ulong:commit)? ';'!){ value = new StackSizeDeclaration(span, reserve, commit); }
             ;
 
         AssemblyFileDeclaration(Project* project) : ProjectDeclaration*
