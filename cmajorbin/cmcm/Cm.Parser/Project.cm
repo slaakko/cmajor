@@ -1438,27 +1438,27 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.VersionNumberGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.VersionNumberGrammar.Create(parsingDomain);
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.VersionNumberGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Cm.Parser.VersionNumberGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
             AddRuleLink(new RuleLink("long", this, "System.Text.Parsing.stdlib.long"));
-            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRuleLink(new RuleLink("VersionNumber", this, "VersionNumberGrammar.VersionNumber"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("qualified_id", this, "System.Text.Parsing.stdlib.qualified_id"));
             AddRule(new ProjectRule("Project", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1620,7 +1620,9 @@ namespace Cm.Parser
                                 new ExpectationParser(
                                     new NonterminalParser("reserve", "ulong", 0))),
                             new OptionalParser(
-                                new NonterminalParser("commit", "ulong", 0))),
+                                new SequenceParser(
+                                    new CharParser(','),
+                                    new NonterminalParser("commit", "ulong", 0)))),
                         new ExpectationParser(
                             new CharParser(';'))))));
             AddRule(new AssemblyFileDeclarationRule("AssemblyFileDeclaration", GetScope(),
