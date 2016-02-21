@@ -2,6 +2,6 @@ project Cm.Compiler;
 target=program;
 assembly <Cm.Compiler.cma>;
 executable <cmcm>;
-stack=268435456,134217728;
+stack=16777216,65536
 reference <../Cm.Build/Cm.Build.cml>;
 source <Main.cm>;
