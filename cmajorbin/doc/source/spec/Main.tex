@@ -1400,7 +1400,7 @@ member variable of the constructor argument in that case.
 
 This automatic generation of default constructor, copy constructor and move constructor can be suppressed using the \bf{suppress} keyword.
 
-Automatic generation of default constructor, copy constructor and move constructor can be requested by using the \bf{default} keyword.
+Generation of default constructor, copy constructor and move constructor can be explicitly requested by using the \bf{default} keyword.
 
 \begin{grammar}
 \label{constructor}<constructor> ::= <constructor-specifiers> <constructor-class-name>\\
@@ -1471,7 +1471,7 @@ or (2) at least one member variable has a non-trivial destructor,
 or (3) a class has a base class that has a non-trivial destructor,
 the compiler will implement a destructor that destroys all non-static member variables.
 
-Automatic generation of destructor can be requested by using the \bf{default} keyword.
+Generation of destructor can be explicitly requested by using the \bf{default} keyword.
 
 \begin{lstlisting}[frame=trBL]
 public class Foo
@@ -1536,7 +1536,7 @@ with the corresponding member variable of the function argument in that case.
 This automatic generation of copy assignment and move assignment can be suppressed using the
 \bf{suppress} keyword.
 
-Automatic generation of copy assignment and move assignment can be requested by using the \bf{default} keyword.
+Generation of copy assignment and move assignment can be explitly requested by using the \bf{default} keyword.
 
 \begin{lstlisting}[frame=trBL]
 public class Foo
@@ -1575,6 +1575,13 @@ Conversion functions participate type conversions in cast-expressions(\ref{sec:c
 
 <conversion-function-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{nothrow} | \lit*{throw} | \lit*{inline})*
 \end{grammar}
+
+\subsubsection{Synthesized equality operator for classes}\label{sec:synthesizedeq}
+
+The compiler automatically implements a memberwise equality operator for a class if it is called.
+This automatic generation of equality operator can be suppressed by using the \bf{suppress} keyword.
+Generation of memberwise equality operator can be explicitly requested by using the \bf{default} keyword.
+
 
 \subsubsection{Member Variable Declarations}
 
@@ -1924,7 +1931,7 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 <target-declaration> ::= \lit*{target} '=' (\lit*{program} | \lit*{library}) ';'
 
-<stack-size-declaration> ::= \lit*{stack} '=' <ulong> ';'
+<stack-size-declaration> ::= \lit*{stack} '=' <ulong> (',' <ulong>)? ';'
 
 <assembly-declaration> ::= \lit*{assembly} <file-path> <properties>? ';'
 
@@ -1964,7 +1971,9 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 Target declaration \emph{$<$target-declaration$>$} sets whether we are building a program or a library.
 
-Stack size declaration \emph{$<$stack-size-declaration$>$} sets the size of the program stack in bytes.
+Stack size declaration \emph{$<$stack-size-declaration$>$} sets the reserved and optionally the commit size
+of the program stack in bytes.
+The first value is the reserved size of the stack and the second value after a comma is the commit size of the stack.
 
 Assembly declaration \emph{$<$assembly-declaration$>$} sets the name of the archive that contains project's object code.
 By convention its extension is ".cma".
@@ -2008,7 +2017,7 @@ Properties contains comma-separated list of property declarations.
 Properties can be used to include a declaration only in selected configurations.
 If the properties do not match current compilation properties, the associated declaration has no effect.
 
-Currently property name can be \bf{backend}, \bf{os}, \bf{bits} or \bf{llvm-version}.
+Currently property name can be \bf{backend}, \bf{os}, \bf{bits} or \bf{llvm\_version}.
 Backend values can be \bf{c} and \bf{llvm}.
 Os values can be \bf{windows} and \bf{linux}.
 Bits values can be \bf{32} and \bf{64}.
