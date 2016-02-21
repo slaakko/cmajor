@@ -1293,7 +1293,7 @@ bool Link(const std::vector<std::string>& assemblyFilePaths, const std::vector<s
         ccCommand.append(" -Xlinker --stack -Xlinker " + std::to_string(stackSize.first));
         if (stackSize.second != 0)
         {
-            ccCommand.append(" -Xlinker ,").append(std::to_string(stackSize.second));
+            ccCommand.append(",").append(std::to_string(stackSize.second));
         }
     }
 #endif
