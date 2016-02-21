@@ -608,6 +608,40 @@ namespace Cm.Sym
                 writer.Write(typeArgument->Id());
             }
         }
+        public void ReadFunctionNode(Cm.Sym.SymbolTable& symbolTable, int fileIndex)
+        {
+            if (persistentFunctionData.IsNull())
+            {
+                throw Exception("no persistent function data");
+            }
+            const string& cmlFilePath = persistentFunctionData->cmlFilePath;
+            Cm.Ser.BinaryReader binaryReader(cmlFilePath);
+            binaryReader.SetPos(persistentFunctionData->functionPos);
+            Cm.Ast.Reader astReader(binaryReader);
+            astReader.SetReplaceFileIndex(fileIndex);
+            Cm.Ast.Node* node = astReader.ReadNode();
+            if (node is Cm.Ast.FunctionNode*)
+            {
+                symbolTable.SetNode(this, node);
+                persistentFunctionData->functionNode.Reset(cast<Cm.Ast.FunctionNode*>(node));
+            }
+            else
+            {
+                throw Exception("function node expected");
+            }
+        }
+        public void FreeFunctionNode(Cm.Sym.SymbolTable& symbolTable)
+        {
+            if (persistentFunctionData.IsNull())
+            {
+                throw Exception("no persistent function data");
+            }
+            if (!persistentFunctionData->functionNode.IsNull())
+            {
+                persistentFunctionData->functionNode.Reset();
+                symbolTable.SetNode(this, null);
+            }
+        }
         public override void AddSymbol(Symbol* symbol)
         {
             base->AddSymbol(symbol);

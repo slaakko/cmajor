@@ -746,6 +746,20 @@ namespace Cm.Bind
                 return parent->CompoundParent();
             }
         }
+        public void BeginClass(Cm.Sym.ClassTypeSymbol* classTypeSymbol)
+        {
+            if (!boundCompileUnit.IsPrebindCompileUnit())
+            {
+                AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, currentContainerScope);
+            }
+            boundClassStack.Push(Rvalue(boundClass));
+            boundClass.Reset(new Cm.BoundTree.BoundClass(classTypeSymbol, null));
+        }
+        public void EndClass()
+        {
+            boundCompileUnit.AddBoundNode(boundClass.Release());
+            boundClass = Rvalue(boundClassStack.Pop());
+        }
         private void PushCondCompValue(bool value)
         {
             condCompilationEvaluationStack.Push(value);
