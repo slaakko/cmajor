@@ -121,33 +121,9 @@ Ir::Intf::LabelObject* CreateLabel(const std::string& label)
 }
 
 int localLabelCounter = 0;
-std::string str;
-std::stack<std::string> strStack;
-int breaker = 0;
-
-void SetBreaker(int x)
-{
-    breaker = x;
-}
-
-void PushString(const std::string& s)
-{
-    strStack.push(str);
-    str = s;
-}
-
-void PopString()
-{
-    str = strStack.top();
-    strStack.pop();
-}
 
 Ir::Intf::LabelObject* CreateNextLocalLabel()
 {
-    if (breaker == 1)
-    {
-        std::cout << localLabelCounter << ": " << str << std::endl;
-    }
     return CreateLabel("$L" + std::to_string(localLabelCounter++));
 }
 

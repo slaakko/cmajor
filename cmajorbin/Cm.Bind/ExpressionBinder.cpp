@@ -353,7 +353,14 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionLookupSet memFunLookups;
     Cm::Sym::TypeSymbol* plainLeftType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(left->GetType());
-    memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    if (opGroupName == "operator==")
+    {
+        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    }
+    else
+    {
+        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    }
     std::vector<Cm::Core::Argument> memFunArguments;
     memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainLeftType, node->GetSpan())));
     memFunArguments.push_back(Cm::Core::Argument(right->GetArgumentCategory(), right->GetType()));

@@ -30,21 +30,24 @@ enum class ClassTypeSymbolFlags : uint32_t
     hasUserDefinedStaticConstructor = 1 << 7,
     hasUserDefinedCopyAssignment = 1 << 8,
     hasUserDefinedMoveAssignment = 1 << 9,
-    hasUserDefinedDestructor = 1 << 10,
-    hasSuppressedDefaultConstructor = 1 << 11,
-    hasSuppressedCopyConstructor = 1 << 12,
-    hasSuppressedMoveConstructor = 1 << 13,
-    hasSuppressedCopyAssignment = 1 << 14,
-    hasSuppressedMoveAssignment = 1 << 15,
-    generateDefaultConstructor = 1 << 16,
-    generateCopyConstructor = 1 << 17,
-    generateMoveConstructor = 1 << 18,
-    generateCopyAssignment = 1 << 19,
-    generateMoveAssignment = 1 << 20,
-    generateDestructor = 1 << 21,
-    debugInfoGenerated = 1 << 22,
-    nonLeaf = 1 << 23,
-    live = 1 << 24
+    hasUserDefinedOpEqual = 1 << 10,
+    hasUserDefinedDestructor = 1 << 11,
+    hasSuppressedDefaultConstructor = 1 << 12,
+    hasSuppressedCopyConstructor = 1 << 13,
+    hasSuppressedMoveConstructor = 1 << 14,
+    hasSuppressedCopyAssignment = 1 << 15,
+    hasSuppressedMoveAssignment = 1 << 16,
+    hasSuppressedOpEqual = 1 << 17,
+    generateDefaultConstructor = 1 << 18,
+    generateCopyConstructor = 1 << 19,
+    generateMoveConstructor = 1 << 20,
+    generateCopyAssignment = 1 << 21,
+    generateMoveAssignment = 1 << 22,
+    generateOpEqual = 1 << 23,
+    generateDestructor = 1 << 24,
+    debugInfoGenerated = 1 << 25,
+    nonLeaf = 1 << 26,
+    live = 1 << 27
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -180,6 +183,14 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::hasUserDefinedMoveAssignment);
     }
+    bool HasUserDefinedOpEqual() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasUserDefinedOpEqual);
+    }
+    void SetHasUserDefinedOpEqual()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasUserDefinedOpEqual);
+    }
     bool HasUserDefinedDestructor() const
     {
         return GetFlag(ClassTypeSymbolFlags::hasUserDefinedDestructor);
@@ -228,6 +239,14 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::hasSuppressedMoveAssignment);
     }
+    bool HasSuppressedOpEqual() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::hasSuppressedOpEqual);
+    }
+    void SetHasSuppressedOpEqual()
+    {
+        SetFlag(ClassTypeSymbolFlags::hasSuppressedOpEqual);
+    }
     bool GenerateDefaultConstructor() const
     {
         return GetFlag(ClassTypeSymbolFlags::generateDefaultConstructor);
@@ -267,6 +286,14 @@ public:
     void SetGenerateMoveAssignment()
     {
         SetFlag(ClassTypeSymbolFlags::generateMoveAssignment);
+    }
+    bool GenerateOpEqual() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::generateOpEqual);
+    }
+    void SetGenerateOpEqual()
+    {
+        SetFlag(ClassTypeSymbolFlags::generateOpEqual);
     }
     bool GenerateDestructor() const
     {

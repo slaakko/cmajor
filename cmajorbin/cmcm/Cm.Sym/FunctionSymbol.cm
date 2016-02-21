@@ -400,6 +400,23 @@ namespace Cm.Sym
             }
             return false;
         }
+        public nothrow bool IsClassOpEqual() const
+        {
+            if (groupName == "operator==" && parameters.Count() == 2)
+            {
+                Cm.Sym.TypeSymbol* firstParamType = parameters[0]->GetType();
+                Cm.Sym.TypeSymbol* classType = firstParamType->GetBaseType();
+                if (classType is ClassTypeSymbol*)
+                {
+                    Cm.Sym.TypeSymbol* secondParamType = parameters[1]->GetType();
+                    if (TypesEqual(secondParamType->GetBaseType(), classType))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
         public nothrow inline bool IsDestructor() const
         {
             return groupName == "@destructor" && parameters.Count() == 1;

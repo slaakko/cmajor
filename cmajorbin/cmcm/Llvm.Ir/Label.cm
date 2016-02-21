@@ -118,71 +118,10 @@ namespace Llvm
         private static int counter;
     }
     
-    public static class Breaker
-    {
-        public static nothrow void Set(int x)
-        {
-            b = x;
-        }
-        public static nothrow bool IsSet(int x) 
-        {
-            return b == x;
-        }
-        public static nothrow void PushString(const string& str)
-        {
-            try
-            {
-                ss.Push(s);
-            }
-            catch (const Exception& ex)
-            {
-            }
-            s = str;
-        }
-        public static nothrow void PopString()
-        {
-            try
-            {
-                s = ss.Pop();
-            }
-            catch (const Exception& ex)
-            {
-            }
-        }
-        public static nothrow string Str() 
-        {
-            return s;
-        }
-        private static int b;
-        private static string s;
-        private static Stack<string> ss;
-    }
-
-    public class Pusher
-    {
-        public nothrow Pusher(const string& s)
-        {
-            Breaker.PushString(s);
-        }
-        public nothrow ~Pusher()
-        {
-            Breaker.PopString();
-        }
-    }
-            
+       
     public nothrow Ir.Intf.LabelObject* CreateNextLocalLabel()
     {
         int next = LocalLabelCounter.Next();
-        if (Breaker.IsSet(1))
-        {
-            try
-            {
-                Console.Out() << next << ": " << Breaker.Str() << endl();
-            }
-            catch (const Exception& ex)
-            {
-            }
-        }
         return CreateLabel("$L" + ToString(next));
     }
     

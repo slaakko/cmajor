@@ -2504,7 +2504,14 @@ namespace Cm.Bind
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionLookupSet memFunLookups;
             Cm.Sym.TypeSymbol* plainLeftType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(left->Type());
-            memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            if (groupName == "operator==")
+            {
+                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            }
+            else
+            {
+                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            }
             List<Cm.Core.Argument> memFunArguments;
             memFunArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainLeftType, node->GetSpan())));
             memFunArguments.Add(Cm.Core.Argument(right->ArgumentCategory(), right->Type()));

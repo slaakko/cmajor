@@ -47,6 +47,12 @@ namespace Cm.Bind
             boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
             boundCompileUnit.Own(functionSymbol);
         }
+        else if (classTypeSymbol->GenerateOpEqual() && function->IsClassOpEqual())
+        {
+            Cm.Sym.FunctionSymbol* functionSymbol = GenerateOpEqual(true, unique, span, classTypeSymbol, containerScope, boundCompileUnit, exception);
+            boundCompileUnit.SynthesizedClassFunRepository().AddDefaultFunctionSymbol(functionSymbol);
+            boundCompileUnit.Own(functionSymbol);
+        }
         if (!exception.IsNull())
         {
             Cm.Core.Error copyOfEx = *exception;
@@ -56,10 +62,12 @@ namespace Cm.Bind
     
     public class SynthesizedClassFunRepository : Cm.Core.SynthesizedClassFunRepository
     {
-        public SynthesizedClassFunRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_), constructorGroup(boundCompileUnit), assignmentGroup(boundCompileUnit)
+        public SynthesizedClassFunRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : 
+            boundCompileUnit(boundCompileUnit_), constructorGroup(boundCompileUnit), assignmentGroup(boundCompileUnit), equalOpGroup(boundCompileUnit)
         {
             groupMap["@constructor"] = &constructorGroup;
             groupMap["operator="] = &assignmentGroup;
+            groupMap["operator=="] = &equalOpGroup;
         }
         public override void CollectViableFunctions(const string& groupName, int arity, const List<Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, 
             HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Error>& error)
@@ -70,8 +78,17 @@ namespace Cm.Bind
             }
             if (arity < 1 || arity > 2) return;
             Cm.Sym.TypeSymbol* leftArgType = arguments[0].Type();
-            if (leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerToClassType()) return;
             Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(leftArgType->GetBaseType());
+            if (groupName == "operator==")
+            {
+                if (!(classType is Cm.Sym.ClassTypeSymbol*)) return;
+                if (classType is Cm.Sym.ClassDelegateTypeSymbol*) return;
+                if (leftArgType->IsPointerType()) return;
+            }
+            else
+            {
+                if (leftArgType->IsReferenceType() || leftArgType->IsRvalueRefType() || !leftArgType->IsPointerToClassType()) return;
+            }            
             HashMap<string, SynthesizedClassFunGroup*>.ConstIterator i = groupMap.CFind(groupName);
             if (i != groupMap.CEnd())
             {
@@ -89,6 +106,7 @@ namespace Cm.Bind
         private HashMap<string, SynthesizedClassFunGroup*> groupMap;
         private SynthesizedConstructorGroup constructorGroup;
         private SynthesizedAssignmentGroup assignmentGroup;
+        private SynthesizedOpEqualGroup equalOpGroup;
         private List<Cm.Sym.FunctionSymbol*> defaultFunctionSymbols;
     }
     
@@ -330,6 +348,57 @@ namespace Cm.Bind
         }
     }
         
+    public class SynthesizedOpEqualGroup : SynthesizedClassFunGroup
+    {
+        public nothrow SynthesizedOpEqualGroup(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : base(boundCompileUnit_)
+        {
+        }
+        public override void CollectViableFunctions(HashMap<Cm.Sym.ClassTypeSymbol*, SynthesizedClassFunCache*>& cacheMap, List<UniquePtr<SynthesizedClassFunCache>>& caches, Cm.Sym.ClassTypeSymbol* classType, 
+            int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.ContainerScope* containerScope, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions, UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (arity != 2) return;
+            Cm.Sym.TypeSymbol* secondArgumentType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(arguments[1].Type());
+            if (!Cm.Sym.TypesEqual(classType, secondArgumentType)) return;
+            bool generated = false;
+            if (classType->IsStatic())
+            {
+                exception.Reset(new Cm.Core.Error("cannot equality operator for class '" + classType->FullName() + "' because class is static", span, classType->GetSpan()));
+            }
+            else if (classType->HasSuppressedOpEqual())
+            {
+                exception.Reset(new Cm.Core.Error("cannot equality operator for class '" + classType->FullName() + "' because equality operator is suppressed", span, classType->GetSpan()));
+            }
+            else 
+            {
+                if (classType->HasUserDefinedOpEqual())
+                {
+                    exception.Reset(new Cm.Core.Error("cannot equality operator for class '" + classType->FullName() + "' because because class has user defined equality operator",
+                        span, classType->GetSpan()));
+                }
+                else
+                {
+                    SynthesizedClassFunCache* cache = cacheMap[classType];
+                    if (cache == null)
+                    {
+                        cache = new SynthesizedClassFunCache();
+                        cacheMap[classType] = cache;
+                        caches.Add(UniquePtr<SynthesizedClassFunCache>(cache));
+                    }
+                    Cm.Sym.FunctionSymbol* opEqual = cache->GetOpEqual(span, classType, containerScope, BoundCompileUnit(), exception);
+                    if (opEqual != null)
+                    {
+                        viableFunctions.Insert(opEqual);
+                        generated = true;
+                    }
+                }
+            }
+            if (generated && (classType is Cm.Sym.TemplateTypeSymbol*))
+            {
+                BoundCompileUnit().ClassTemplateRepository().InstantiateVirtualFunctionsFor(containerScope, classType);
+            }
+        }
+    }
+        
     public class SynthesizedClassFunCache
     {
         public Cm.Sym.FunctionSymbol* GetDefaultConstructor(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
@@ -387,11 +456,23 @@ namespace Cm.Bind
             }
             return moveAssignment.GetPtr();
         }
+        public Cm.Sym.FunctionSymbol* GetOpEqual(const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 
+            UniquePtr<Cm.Core.Error>& exception)
+        {
+            if (opEqual.IsNull())
+            {
+                bool generateImplementation = !classTypeSymbol->GenerateOpEqual(); // default implementation is generated from elsewhere
+                if (boundCompileUnit.IsPrebindCompileUnit()) generateImplementation = false;
+                opEqual.Reset(GenerateOpEqual(generateImplementation, classTypeSymbol->GenerateOpEqual(), span, classTypeSymbol, containerScope, boundCompileUnit, exception));
+            }
+            return opEqual.GetPtr();
+        }
         private UniquePtr<Cm.Sym.FunctionSymbol> defaultConstructor;
         private UniquePtr<Cm.Sym.FunctionSymbol> copyConstructor;
         private UniquePtr<Cm.Sym.FunctionSymbol> moveConstructor;
         private UniquePtr<Cm.Sym.FunctionSymbol> copyAssignment;
         private UniquePtr<Cm.Sym.FunctionSymbol> moveAssignment;
+        private UniquePtr<Cm.Sym.FunctionSymbol> opEqual;
     }
     
     internal Cm.Sym.FunctionSymbol* GenerateDefaultConstructor(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
@@ -887,6 +968,242 @@ namespace Cm.Bind
         }
         boundCompileUnit.AddBoundNode(moveAssignment.Release());
         return moveAssignmentSymbol;
+    }
+    
+    internal Cm.Sym.FunctionSymbol* GenerateOpEqual(bool generateImplementation, bool unique, const Span& span, Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope, 
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, UniquePtr<Cm.Core.Error>& exception)
+    {
+        Cm.Sym.TypeSymbol* constRefClassType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(classTypeSymbol, span);
+        Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(span, "left");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(leftParam);
+        leftParam->SetType(constRefClassType);
+        Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(span, "right");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(rightParam);
+        rightParam->SetType(constRefClassType);
+        Cm.Sym.FunctionSymbol* opEqualSymbol = new Cm.Sym.FunctionSymbol(span, "@op_equal");
+        boundCompileUnit.SymbolTable().SetSidAndAddSymbol(opEqualSymbol);
+        opEqualSymbol->SetCompileUnit(boundCompileUnit.SyntaxUnit());
+        opEqualSymbol->SetGroupName("operator==");
+        Cm.Sym.TypeSymbol* boolType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+        opEqualSymbol->SetReturnType(boolType);
+        opEqualSymbol->SetAccess(Cm.Sym.SymbolAccess.public_);
+        opEqualSymbol->SetNothrow();
+        opEqualSymbol->SetParent(classTypeSymbol->Ns());
+        if (!unique)
+        {
+            opEqualSymbol->SetReplicated();
+        }
+        opEqualSymbol->AddSymbol(leftParam);
+        opEqualSymbol->AddSymbol(rightParam);
+        opEqualSymbol->ComputeName();
+        Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+        opEqualSymbol->AddSymbol(entry);
+        if (!generateImplementation) return opEqualSymbol;
+        AddClassTypeToIrClassTypeRepository(classTypeSymbol, boundCompileUnit, containerScope);
+        UniquePtr<Cm.BoundTree.BoundFunction> opEqual(new Cm.BoundTree.BoundFunction(null, opEqualSymbol));
+        opEqual->SetBody(new Cm.BoundTree.BoundCompoundStatement(null));
+        GenerateReceives(containerScope, boundCompileUnit, opEqual.GetPtr());
+        List<Cm.Core.Argument> boolCopyCtorArgs;
+        Cm.Sym.TypeSymbol* boolPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(boolType, span);
+        boolCopyCtorArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boolPtrType));
+        boolCopyCtorArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+        Cm.Sym.FunctionLookupSet boolCopyCtorLookups;
+        boolCopyCtorLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, boundCompileUnit.SymbolTable().GlobalScope()));
+        List<Cm.Sym.FunctionSymbol*> boolCopyCtorConversions;
+        Cm.Sym.FunctionSymbol* boolCopyCtor = ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "@constructor", boolCopyCtorArgs, boolCopyCtorLookups, span, boolCopyCtorConversions);
+        List<Cm.Core.Argument> notBoolArgs;
+        notBoolArgs.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, boolType));
+        Cm.Sym.FunctionLookupSet notBoolLookups;
+        notBoolLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, boundCompileUnit.SymbolTable().GlobalScope()));
+        List<Cm.Sym.FunctionSymbol*> notBoolConversions;
+        Cm.Sym.FunctionSymbol* notBool = ResolveOverload(boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit, "operator!", notBoolArgs, notBoolLookups, span, notBoolConversions);
+        if (classTypeSymbol->BaseClass() != null)
+        {
+            Cm.Sym.ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            AddClassTypeToIrClassTypeRepository(baseClassType, boundCompileUnit, containerScope);
+            Cm.Sym.TypeSymbol* constRefBaseClassType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(baseClassType, span);
+            Cm.Sym.FunctionSymbol* conversionFun = boundCompileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(constRefBaseClassType, leftParam->GetType(), 1, span);
+            Cm.BoundTree.BoundParameter* boundLeftParam = new Cm.BoundTree.BoundParameter(null, leftParam);
+            boundLeftParam->SetType(leftParam->GetType());
+            Cm.BoundTree.BoundConversion* leftAsBase = new Cm.BoundTree.BoundConversion(null, boundLeftParam, conversionFun);
+            leftAsBase->SetType(constRefBaseClassType);
+            Cm.BoundTree.BoundParameter* boundRightParam = new Cm.BoundTree.BoundParameter(null, rightParam);
+            boundRightParam->SetType(rightParam->GetType());
+            Cm.BoundTree.BoundConversion* rightAsBase = new Cm.BoundTree.BoundConversion(null, boundRightParam, conversionFun);
+            rightAsBase->SetType(constRefBaseClassType);
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(leftAsBase);
+            arguments.Add(rightAsBase);
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.FunctionLookupSet functionLookups;
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span)));
+            resolutionArguments.Add(Cm.Core.Argument(rightAsBase->ArgumentCategory(), rightAsBase->Type()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* baseClassOpEqual = null;
+            baseClassOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, span, conversions, 
+                cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.bindOnlyMemberFunctions));
+            if (baseClassOpEqual == null)
+            {
+                resolutionArguments.Clear();
+                functionLookups.Clear();
+                conversions.Clear();
+                for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
+                {
+                    resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
+                }
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, baseClassType->GetContainerScope()->ClassOrNsScope()));
+                try
+                {
+                    baseClassOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, span, conversions);
+                }
+                catch (const Cm.Core.Error& ex)
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate equality operator for class '" + classTypeSymbol->FullName() + "' because base class equality operator not found: " + ex.Message(),
+                        ex.Defined(), ex.References()));
+                    return null;
+                }
+            }
+            PrepareArguments(containerScope, boundCompileUnit, null, baseClassOpEqual->GetReturnType(), baseClassOpEqual->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(),
+                baseClassOpEqual is Cm.Core.BasicTypeOp*);
+            int n = conversions.Count();
+            if (n != arguments.Count())
+            {
+                throw Exception("wrong number of arguments");
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                Cm.Sym.FunctionSymbol* conversionFun = conversions[i];
+                if (conversionFun != null)
+                {
+                    Cm.BoundTree.BoundExpression* arg = arguments[i].Release();
+                    arguments[i].Reset(new Cm.BoundTree.BoundConversion(arg->SyntaxNode(), arg, conversionFun));
+                    arguments[i]->SetType(conversionFun->GetTargetType());
+                }
+            }
+            Cm.BoundTree.BoundExpression* leftArg = arguments[0].Release();
+            Cm.BoundTree.BoundExpression* rightArg = arguments[1].Release();
+            Cm.BoundTree.BoundBinaryOp* eq = new Cm.BoundTree.BoundBinaryOp(null, leftArg, rightArg);
+            eq->SetType(boolType);
+            eq->SetFun(baseClassOpEqual);
+            Cm.BoundTree.BoundUnaryOp* notEq = new Cm.BoundTree.BoundUnaryOp(null, eq);
+            notEq->SetType(boolType);
+            notEq->SetFun(notBool);
+            notEq->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            Cm.BoundTree.BoundConditionalStatement* ifNotEqReturnFalse = new Cm.BoundTree.BoundConditionalStatement(null);
+            Cm.BoundTree.BoundReturnStatement* returnFalse = new Cm.BoundTree.BoundReturnStatement(null);
+            Cm.BoundTree.BoundLiteral* falseLiteral = new Cm.BoundTree.BoundLiteral(null);
+            falseLiteral->SetValue(new Cm.Sym.BoolValue(false));
+            falseLiteral->SetType(boolType);
+            returnFalse->SetExpression(falseLiteral);
+            returnFalse->SetReturnType(boolType);
+            returnFalse->SetConstructor(boolCopyCtor);
+            ifNotEqReturnFalse->SetCondition(notEq);
+            ifNotEqReturnFalse->AddStatement(returnFalse);
+            opEqual->Body()->AddStatement(ifNotEqReturnFalse);
+            if (baseClassOpEqual->CanThrow())
+            {
+                opEqualSymbol->ResetNothrow();
+            }
+        }
+        for (Cm.Sym.MemberVariableSymbol* memberVariableSymbol : classTypeSymbol->MemberVariables())
+        {
+            Cm.Sym.TypeSymbol* memberVariableType = memberVariableSymbol->GetType();
+            if (memberVariableType->GetBaseType() is Cm.Sym.ClassTypeSymbol*)
+            {
+                Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType->GetBaseType());
+                AddClassTypeToIrClassTypeRepository(memberVarClassType, boundCompileUnit, containerScope);
+            }
+            List<Cm.Core.Argument> resolutionArguments;
+            Cm.Sym.FunctionLookupSet functionLookups;
+            List<Cm.Sym.FunctionSymbol*> conversions;;
+            Cm.BoundTree.BoundParameter* boundLeftParam = new Cm.BoundTree.BoundParameter(null, leftParam);
+            boundLeftParam->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            boundLeftParam->SetType(leftParam->GetType());
+            Cm.BoundTree.BoundMemberVariable* boundLeftMemberVar = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            boundLeftMemberVar->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            boundLeftMemberVar->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(memberVariableType->GetBaseType(), span));
+            boundLeftMemberVar->SetClassObject(boundLeftParam);
+            resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundLeftMemberVar->Type()));
+            Cm.BoundTree.BoundParameter* boundRightParam = new Cm.BoundTree.BoundParameter(null, rightParam);
+            boundRightParam->SetType(rightParam->GetType());
+            boundRightParam->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            Cm.BoundTree.BoundMemberVariable* boundRightMemberVar = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+            boundRightMemberVar->SetType(memberVariableType);
+            boundRightMemberVar->SetClassObject(boundRightParam);
+            resolutionArguments.Add(Cm.Core.Argument(boundRightMemberVar->ArgumentCategory(), boundRightMemberVar->Type()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            Cm.Sym.FunctionSymbol* memberVarOpEqual = null;
+            memberVarOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, span, conversions,
+                cast<OverloadResolutionFlags>(OverloadResolutionFlags.nothrow_ | OverloadResolutionFlags.bindOnlyMemberFunctions));
+            if (memberVarOpEqual == null)
+            {
+                resolutionArguments.Clear();
+                functionLookups.Clear();
+                conversions.Clear();
+                Cm.BoundTree.BoundParameter* boundLeftParam = new Cm.BoundTree.BoundParameter(null, leftParam);
+                boundLeftParam->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                boundLeftParam->SetType(leftParam->GetType());
+                Cm.BoundTree.BoundMemberVariable* boundLeftMemberVar = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+                boundLeftMemberVar->SetType(memberVariableType);
+                boundLeftMemberVar->SetClassObject(boundLeftParam);
+                resolutionArguments.Add(Cm.Core.Argument(boundLeftMemberVar->ArgumentCategory(), boundLeftMemberVar->Type()));
+                Cm.BoundTree.BoundParameter* boundRightParam = new Cm.BoundTree.BoundParameter(null, rightParam);
+                boundRightParam->SetType(rightParam->GetType());
+                boundRightParam->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                Cm.BoundTree.BoundMemberVariable* boundRightMemberVar = new Cm.BoundTree.BoundMemberVariable(null, memberVariableSymbol);
+                boundRightMemberVar->SetType(memberVariableType);
+                boundRightMemberVar->SetClassObject(boundRightParam);
+                resolutionArguments.Add(Cm.Core.Argument(boundRightMemberVar->ArgumentCategory(), boundRightMemberVar->Type()));
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
+                try
+                {
+                    memberVarOpEqual = ResolveOverload(containerScope, boundCompileUnit, "operator==", resolutionArguments, functionLookups, span, conversions);
+                }
+                catch (const Cm.Core.Error& ex)
+                {
+                    exception.Reset(new Cm.Core.Error("cannot generate equality operator for class '" + classTypeSymbol->FullName() + "' because member equality operator for member variable '" +
+                        memberVariableSymbol->Name() + "' not found: " + ex.Message(), ex.Defined(), ex.References()));
+                    return null;
+                }
+            }
+            Cm.BoundTree.BoundExpressionList arguments;
+            arguments.Add(boundLeftMemberVar);
+            arguments.Add(boundRightMemberVar);
+            PrepareArguments(containerScope, boundCompileUnit, opEqual.GetPtr(), memberVarOpEqual->GetReturnType(), memberVarOpEqual->Parameters(), arguments, false, boundCompileUnit.IrClassTypeRepository(),
+                memberVarOpEqual is Cm.Core.BasicTypeOp*);
+            Cm.BoundTree.BoundExpression* leftArg = arguments[0].Release();
+            Cm.BoundTree.BoundExpression* rightArg = arguments[1].Release();
+            Cm.BoundTree.BoundBinaryOp* eq = new Cm.BoundTree.BoundBinaryOp(null, leftArg, rightArg);
+            eq->SetType(boolType);
+            eq->SetFun(memberVarOpEqual);
+            Cm.BoundTree.BoundUnaryOp* notEq = new Cm.BoundTree.BoundUnaryOp(null, eq);
+            notEq->SetType(boolType);
+            notEq->SetFun(notBool);
+            notEq->SetFlag(Cm.BoundTree.BoundNodeFlags.genJumpingBoolCode);
+            Cm.BoundTree.BoundConditionalStatement* ifNotEqReturnFalse = new Cm.BoundTree.BoundConditionalStatement(null);
+            Cm.BoundTree.BoundReturnStatement* returnFalse = new Cm.BoundTree.BoundReturnStatement(null);
+            Cm.BoundTree.BoundLiteral* falseLiteral = new Cm.BoundTree.BoundLiteral(null);
+            falseLiteral->SetValue(new Cm.Sym.BoolValue(false));
+            falseLiteral->SetType(boolType);
+            returnFalse->SetExpression(falseLiteral);
+            returnFalse->SetReturnType(boolType);
+            returnFalse->SetConstructor(boolCopyCtor);
+            ifNotEqReturnFalse->SetCondition(notEq);
+            ifNotEqReturnFalse->AddStatement(returnFalse);
+            opEqual->Body()->AddStatement(ifNotEqReturnFalse);
+        }
+        Cm.BoundTree.BoundLiteral* trueLiteral = new Cm.BoundTree.BoundLiteral(null);
+        trueLiteral->SetValue(new Cm.Sym.BoolValue(true));
+        trueLiteral->SetType(boolType);
+        Cm.BoundTree.BoundReturnStatement* returnTrue = new Cm.BoundTree.BoundReturnStatement(null);
+        returnTrue->SetReturnType(boolType);
+        returnTrue->SetExpression(trueLiteral);
+        returnTrue->SetConstructor(boolCopyCtor);
+        opEqual->Body()->AddStatement(returnTrue);
+        boundCompileUnit.AddBoundNode(opEqual.Release());
+        return opEqualSymbol;
     }
     
     internal Cm.BoundTree.BoundInitClassObjectStatement* GenerateBaseConstructorCall(const Span& span, Cm.Sym.ContainerScope* containerScope, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, 

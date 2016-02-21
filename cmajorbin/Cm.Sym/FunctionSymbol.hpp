@@ -202,6 +202,7 @@ public:
     bool IsStaticConstructor() const;
     bool IsCopyAssignment() const;
     bool IsMoveAssignment() const;
+    bool IsClassOpEqual() const;
     bool IsDestructor() const;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

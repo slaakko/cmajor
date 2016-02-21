@@ -387,6 +387,21 @@ namespace Cm.Bind
                     currentClass->SetHasUserDefinedMoveAssignment();
                 }
             }
+            else if (functionSymbol->IsClassOpEqual())
+            {
+                if (functionSymbol->IsSuppressed())
+                {
+                    currentClass->SetHasSuppressedOpEqual();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    currentClass->SetGenerateOpEqual();
+                }
+                else
+                {
+                    currentClass->SetHasUserDefinedOpEqual();
+                }
+            }
             else if (functionSymbol->IsDestructor())
             {
                 if (functionSymbol->IsSuppressed())
@@ -423,6 +438,29 @@ namespace Cm.Bind
             if (functionSymbol->IsNew() && functionSymbol->IsVirtualAbstractOrOverride())
             {
                 throw Cm.Core.Error("function cannot be at the same time virtual, abstract or override, and new", functionSymbol->GetSpan());
+            }
+        }
+        else
+        {
+            if (functionSymbol->IsClassOpEqual())
+            {
+                Cm.Sym.TypeSymbol* thisParamType = functionSymbol->Parameters()[0]->GetType()->GetBaseType();
+                if (thisParamType is Cm.Sym.ClassTypeSymbol*)
+                {
+                    Cm.Sym.ClassTypeSymbol* cls = cast<Cm.Sym.ClassTypeSymbol*>(thisParamType);
+                    if (functionSymbol->IsSuppressed())
+                    {
+                        cls->SetHasSuppressedOpEqual();
+                    }
+                    else if (functionSymbol->IsDefault())
+                    {
+                        cls->SetGenerateOpEqual();
+                    }
+                    else
+                    {
+                        cls->SetHasUserDefinedOpEqual();
+                    }
+                }
             }
         }
     }
