@@ -17,10 +17,82 @@ namespace Cm.Bind
         public nothrow InlineFunctionRepository(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : boundCompileUnit(boundCompileUnit_)
         {
         }
+        public nothrow ~InlineFunctionRepository()
+        {
+            try
+            {
+                for (Cm.Sym.FunctionSymbol* inlineFunction : instantiatedFunctions)
+                {
+                    inlineFunction->FreeFunctionNode(boundCompileUnit.SymbolTable());
+                }
+            }
+            catch (const Exception& ex)
+            {
+            }
+        }
         public override void Instantiate(Cm.Sym.ContainerScope* containerScope, Cm.Sym.FunctionSymbol* functionSymbol)
         {
-            // todo
+            if (functionSymbol->CompileUnit() == boundCompileUnit.SyntaxUnit()) return;
+            if (instantiatedFunctions.CFind(functionSymbol) != instantiatedFunctions.CEnd()) return;
+            instantiatedFunctions.Insert(functionSymbol);
+            Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(functionSymbol, false);
+            if (node == null)
+            {
+                functionSymbol->ReadFunctionNode(boundCompileUnit.SymbolTable(), functionSymbol->GetSpan().FileIndex());
+                node = boundCompileUnit.SymbolTable().GetNode(functionSymbol);
+            }
+            if (!(node is Cm.Ast.FunctionNode*))
+            {
+                throw Exception("function node expected");
+            }
+            Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+            Cm.Ast.NamespaceNode* currentNs = null;
+            UniquePtr<Cm.Ast.NamespaceNode> globalNs(CreateNamespaces(functionSymbol->GetSpan(), functionSymbol->Ns()->FullName(), functionSymbol->GetUsingNodes(), currentNs));
+            Cm.Ast.CloneContext cloneContext;
+            Cm.Ast.FunctionNode* functionInstanceNode = cast<Cm.Ast.FunctionNode*>(functionNode->Clone(cloneContext));
+            currentNs->AddMember(functionInstanceNode);
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = null;
+            if (functionSymbol->IsMemberFunctionSymbol())
+            {
+                classTypeSymbol = functionSymbol->Class();
+                boundCompileUnit.SymbolTable().SetCurrentClass(classTypeSymbol);
+            }
+            Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
+            globalNs->Accept(declarationVisitor);
+            Cm.Sym.FunctionSymbol* functionInstanceSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+            functionIntanceSymbols.Add(functionInstanceSymbol);
+            functionInstanceSymbol->SetReplica();
+            if (classTypeSymbol != null)
+            {
+                functionInstanceSymbol->SetParent(classTypeSymbol);
+                functionInstanceSymbol->GetContainerScope()->SetParent(classTypeSymbol->GetContainerScope());
+            }
+            Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+            if (classTypeSymbol != null)
+            {
+                prebinder.SetCurrentClass(classTypeSymbol);
+            }
+            prebinder.BeginCompileUnit();
+            globalNs->Accept(prebinder);
+            prebinder.EndCompileUnit();
+            Cm.Sym.FileScope* fileScope = prebinder.ReleaseFileScope();
+            boundCompileUnit.AddFileScope(fileScope);
+            Binder binder(boundCompileUnit);
+            if (classTypeSymbol != null)
+            {
+                binder.BeginClass(classTypeSymbol);
+            }
+            globalNs->Accept(binder);
+            if (classTypeSymbol != null)
+            {
+                binder.EndClass();
+            }
+            boundCompileUnit.RemoveLastFileScope();
+            functionSymbol->SetGlobalNs(globalNs.Release());
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
+        private HashSet<Cm.Sym.FunctionSymbol*> instantiatedFunctions;
+        private List<Cm.Sym.FunctionSymbol*> functionIntanceSymbols;
+        private List<UniquePtr<Cm.Sym.FunctionSymbol>> ownedFunctionInstanceSymbols;
     }
 }
