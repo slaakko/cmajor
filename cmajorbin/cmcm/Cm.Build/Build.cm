@@ -265,7 +265,8 @@ namespace Cm.Build
             }
             Console.Out() << "Parsing " << n << sourceFiles << "..." << endl();
         }
-        //Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+        Cm.Ast.SyntaxTree syntaxTree = ParseSources(Cm.Parser.FileRegistry.Instance(), project->SourceFilePaths());
+/*        
         Cm.Ast.SyntaxTree syntaxTree;
         int numSourceFiles = project->SourceFilePaths().Count();
         if (numSourceFiles <= 1)
@@ -276,6 +277,7 @@ namespace Cm.Build
         {
             syntaxTree = ParseSourcesConcurrently(project->SourceFilePaths(), compileUnitParserRepository);
         }
+*/        
         Cm.Core.GlobalConceptData globalConceptData;
         Cm.Core.GlobalConceptData.SetInstance(&globalConceptData);
         Cm.Sym.SymbolTable symbolTable;
