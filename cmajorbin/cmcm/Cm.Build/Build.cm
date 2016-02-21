@@ -1249,7 +1249,7 @@ namespace Cm.Build
             command.Append(" -Xlinker --stack -Xlinker " + ToString(stackSize.first));
             if (stackSize.second != 0u)
             {
-                command.Append(" -Xlinker ,").Append(ToString(stackSize.second));
+                command.Append(",").Append(ToString(stackSize.second));
             }
         }
 #endif
