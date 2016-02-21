@@ -400,6 +400,21 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
                 currentClass->SetHasUserDefinedMoveAssignment();
             }
         }
+        else if (functionSymbol->IsClassOpEqual())
+        {
+            if (functionSymbol->IsSuppressed())
+            {
+                currentClass->SetHasSuppressedOpEqual();
+            }
+            else if (functionSymbol->IsDefault())
+            {
+                currentClass->SetGenerateOpEqual();
+            }
+            else
+            {
+                currentClass->SetHasUserDefinedOpEqual();
+            }
+        }
         else if (functionSymbol->IsDestructor())
         {
             if (functionSymbol->IsSuppressed())
@@ -436,6 +451,29 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
         if (functionSymbol->IsNew() && functionSymbol->IsVirtualAbstractOrOverride())
         {
             throw Cm::Core::Exception("function cannot be at the same time abstract, virtual or override, and new", functionSymbol->GetSpan());
+        }
+    }
+    else
+    {
+        if (functionSymbol->IsClassOpEqual())
+        {
+            Cm::Sym::TypeSymbol* thisParamType = functionSymbol->Parameters()[0]->GetType()->GetBaseType();
+            if (thisParamType->IsClassTypeSymbol())
+            {
+                Cm::Sym::ClassTypeSymbol* cls = static_cast<Cm::Sym::ClassTypeSymbol*>(thisParamType);
+                if (functionSymbol->IsSuppressed())
+                {
+                    cls->SetHasSuppressedOpEqual();
+                }
+                else if (functionSymbol->IsDefault())
+                {
+                    cls->SetGenerateOpEqual();
+                }
+                else
+                {
+                    cls->SetHasUserDefinedOpEqual();
+                }
+            }
         }
     }
 }

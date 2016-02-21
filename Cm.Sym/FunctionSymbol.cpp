@@ -328,6 +328,24 @@ bool FunctionSymbol::IsMoveAssignment() const
     return false;
 }
 
+bool FunctionSymbol::IsClassOpEqual() const
+{
+    if (groupName == "operator==" && parameters.size() == 2)
+    {
+        Cm::Sym::TypeSymbol* firstParamType = parameters[0]->GetType();
+        Cm::Sym::TypeSymbol* classType = firstParamType->GetBaseType();
+        if (classType->IsClassTypeSymbol())
+        {
+            Cm::Sym::TypeSymbol* secondParamType = parameters[1]->GetType();
+            if (TypesEqual(secondParamType->GetBaseType(), classType))
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 bool FunctionSymbol::IsDestructor() const
 {
     if (groupName == "@destructor" && parameters.size() == 1)

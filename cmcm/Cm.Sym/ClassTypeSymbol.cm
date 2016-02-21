@@ -28,19 +28,22 @@ namespace Cm.Sym
         hasUserDefinedStaticConstructor = 1u << 7u,
         hasUserDefinedCopyAssignment = 1u << 8u,
         hasUserDefinedMoveAssignment = 1u << 9u,
-        hasUserDefinedDestructor = 1u << 10u,
-        hasSuppressedDefaultConstructor = 1u << 11u,
-        hasSuppressedCopyConstructor = 1u << 12u,
-        hasSuppressedMoveConstructor = 1u << 13u,
-        hasSuppressedCopyAssignment = 1u << 14u,
-        hasSuppressedMoveAssignment = 1u << 15u,
-        generateDefaultConstructor = 1u << 16u,
-        generateCopyConstructor = 1u << 17u,
-        generateMoveConstructor = 1u << 18u,
-        generateCopyAssignment = 1u << 19u,
-        generateMoveAssignment = 1u << 20u,
-        generateDestructor = 1u << 21u,
-        debugInfoGenerated = 1u << 22u
+        hasUserDefinedOpEqual = 1u << 10u,
+        hasUserDefinedDestructor = 1u << 11u,
+        hasSuppressedDefaultConstructor = 1u << 12u,
+        hasSuppressedCopyConstructor = 1u << 13u,
+        hasSuppressedMoveConstructor = 1u << 14u,
+        hasSuppressedCopyAssignment = 1u << 15u,
+        hasSuppressedMoveAssignment = 1u << 16u,
+        hasSuppressedOpEqual = 1u << 17u,
+        generateDefaultConstructor = 1u << 18u,
+        generateCopyConstructor = 1u << 19u,
+        generateMoveConstructor = 1u << 20u,
+        generateCopyAssignment = 1u << 21u,
+        generateMoveAssignment = 1u << 22u,
+        generateOpEqual = 1u << 23u,
+        generateDestructor = 1u << 24u,
+        debugInfoGenerated = 1u << 25u
     }
     
     public class PersistentClassData
@@ -170,6 +173,14 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.hasUserDefinedMoveAssignment);
         }
+        public nothrow inline bool HasUserDefinedOpEqual() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasUserDefinedOpEqual);
+        }
+        public nothrow inline void SetHasUserDefinedOpEqual()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasUserDefinedOpEqual);
+        }
         public nothrow inline bool HasUserDefinedDestructor() const
         {
             return GetFlag(ClassTypeSymbolFlags.hasUserDefinedDestructor);
@@ -218,6 +229,14 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.hasSuppressedMoveAssignment);
         }
+        public nothrow inline bool HasSuppressedOpEqual() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.hasSuppressedOpEqual);
+        }
+        public nothrow inline void SetHasSuppressedOpEqual()
+        {
+            SetFlag(ClassTypeSymbolFlags.hasSuppressedOpEqual);
+        }
         public nothrow inline bool GenerateDefaultConstructor() const
         {
             return GetFlag(ClassTypeSymbolFlags.generateDefaultConstructor);
@@ -257,6 +276,14 @@ namespace Cm.Sym
         public nothrow inline void SetGenerateMoveAssignment()
         {
             SetFlag(ClassTypeSymbolFlags.generateMoveAssignment);
+        }
+        public nothrow inline bool GenerateOpEqual() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.generateOpEqual);
+        }
+        public nothrow inline void SetGenerateOpEqual()
+        {
+            SetFlag(ClassTypeSymbolFlags.generateOpEqual);
         }
         public nothrow inline bool GenerateDestructor() const
         {
