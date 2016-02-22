@@ -181,7 +181,7 @@ Symbol* BcuReader::ReadSymbol()
         case BcuItemType::bcuBasicType:
         {
             TypeId typeId(reader.GetBinaryReader().ReadByte());
-            Symbol* typeSymbol = reader.GetSymbolTable().GetTypeRepository().GetType(GetBasicTypeId(ShortBasicTypeId(reader.GetBinaryReader().ReadByte())));
+            Symbol* typeSymbol = reader.GetSymbolTable().GetTypeRepository().GetType(typeId);
             return typeSymbol;
         }
         case BcuItemType::bcuFunctionSymbol:

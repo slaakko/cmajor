@@ -57,10 +57,6 @@ bool ClassTypeSymbol::IsExportSymbol() const
 
 void ClassTypeSymbol::Write(Writer& writer)
 {
-    if (Name() == "ExDeleter")
-    {
-        int x = 0;
-    }
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(cid);
     writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));

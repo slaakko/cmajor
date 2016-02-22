@@ -8,8 +8,11 @@
 ========================================================================*/
 
 #include <Cm.Ser/BinaryReader.hpp>
+#include <Cm.Ser/BinaryWriter.hpp>
 #include <stdexcept>
 #include <cstring>
+#include <fstream>
+#include <sstream>
 
 namespace Cm { namespace Ser {
 
@@ -19,6 +22,12 @@ BinaryReader::BinaryReader(const std::string& fileName_): fileName(fileName_), f
 
 bool BinaryReader::ReadBool()
 { 
+    if (log)
+    {
+        bool x = *reinterpret_cast<const bool*>(pos);
+        Log() << seq << " : bool : " << std::boolalpha << x << std::endl;
+        ++seq;
+    }
     if (pos == end)
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading bool");
@@ -28,6 +37,12 @@ bool BinaryReader::ReadBool()
 
 int8_t BinaryReader::ReadSByte()
 {
+    if (log)
+    {
+        int8_t x = *reinterpret_cast<const int8_t*>(pos);
+        Log() << seq << " : sbyte : " << int(x) << std::endl;
+        ++seq;
+    }
     if (pos == end)
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading sbyte");
@@ -37,6 +52,16 @@ int8_t BinaryReader::ReadSByte()
 
 uint8_t BinaryReader::ReadByte()
 {
+    if (log)
+    {
+        uint8_t x = *reinterpret_cast<const uint8_t*>(pos);
+        Log() << seq << " : byte : " << int(x) << std::endl;
+        if (seq == 126)
+        {
+            int x = 0;
+        }
+        ++seq;
+    }
     if (pos == end)
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading byte");
@@ -46,6 +71,12 @@ uint8_t BinaryReader::ReadByte()
 
 int16_t BinaryReader::ReadShort()
 {
+    if (log)
+    {
+        int16_t x = *reinterpret_cast<const int16_t*>(pos);
+        Log() << seq << " : short : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(int16_t) <= end)
     {
         int16_t x = *reinterpret_cast<const int16_t*>(pos);
@@ -60,6 +91,12 @@ int16_t BinaryReader::ReadShort()
 
 uint16_t BinaryReader::ReadUShort()
 {
+    if (log)
+    {
+        uint16_t x = *reinterpret_cast<const uint16_t*>(pos);
+        Log() << seq << " : ushort : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(uint16_t) <= end)
     {
         uint16_t x = *reinterpret_cast<const uint16_t*>(pos);
@@ -74,6 +111,12 @@ uint16_t BinaryReader::ReadUShort()
 
 int32_t BinaryReader::ReadInt()
 {
+    if (log)
+    {
+        int32_t x = *reinterpret_cast<const int32_t*>(pos);
+        Log() << seq << " : int : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(int32_t) <= end)
     {
         int32_t x = *reinterpret_cast<const int32_t*>(pos);
@@ -88,6 +131,12 @@ int32_t BinaryReader::ReadInt()
 
 uint32_t BinaryReader::ReadUInt()
 {
+    if (log)
+    {
+        uint32_t x = *reinterpret_cast<const uint32_t*>(pos);
+        Log() << seq << " : uint : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(uint32_t) <= end)
     {
         uint32_t x = *reinterpret_cast<const uint32_t*>(pos);
@@ -102,6 +151,12 @@ uint32_t BinaryReader::ReadUInt()
 
 int64_t BinaryReader::ReadLong()
 {
+    if (log)
+    {
+        int64_t x = *reinterpret_cast<const int64_t*>(pos);
+        Log() << seq << " : long : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(int64_t) <= end)
     {
         int64_t x = *reinterpret_cast<const int64_t*>(pos);
@@ -116,6 +171,12 @@ int64_t BinaryReader::ReadLong()
 
 uint64_t BinaryReader::ReadULong()
 {
+    if (log)
+    {
+        uint64_t x = *reinterpret_cast<const uint64_t*>(pos);
+        Log() << seq << " : ulong : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(uint64_t) <= end)
     {
         uint64_t x = *reinterpret_cast<const uint64_t*>(pos);
@@ -130,6 +191,12 @@ uint64_t BinaryReader::ReadULong()
 
 float BinaryReader::ReadFloat()
 {
+    if (log)
+    {
+        float x = *reinterpret_cast<const float*>(pos);
+        Log() << seq << " : float : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(float) <= end)
     {
         float x = *reinterpret_cast<const float*>(pos);
@@ -144,6 +211,12 @@ float BinaryReader::ReadFloat()
 
 double BinaryReader::ReadDouble()
 {
+    if (log)
+    {
+        double x = *reinterpret_cast<const double*>(pos);
+        Log() << seq << " : double : " << x << std::endl;
+        ++seq;
+    }
     if (pos + sizeof(double) <= end)
     {
         double x = *reinterpret_cast<const double*>(pos);
@@ -156,9 +229,14 @@ double BinaryReader::ReadDouble()
     }
 }
 
-
 char BinaryReader::ReadChar()
 {
+    if (log)
+    {
+        char x = *pos;
+        Log() << seq << " : char : " << int(x) << std::endl;
+        ++seq;
+    }
     if (pos == end)
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading char");
@@ -181,11 +259,28 @@ std::string BinaryReader::ReadString()
     {
         throw std::runtime_error("unexpected end of file '" + fileName + "' while reading string");
     }
+    if (log)
+    {
+        Log() << seq << " : string : " << s << std::endl;
+        ++seq;
+    }
     return s;
 }
 
 void BinaryReader::Read(void* buf, int size)
 {
+    if (log)
+    {
+        std::string data;
+        for (int i = 0; i < size; ++i)
+        {
+            std::stringstream s;
+            s << std::hex << int(((uint8_t*)pos)[i]);
+            data.append(s.str());
+        }
+        Log() << seq << " : data : " << data << " : " << size << std::endl;
+        ++seq;
+    }
     if (pos + size <= end)
     {
         std::memcpy(buf, pos, size);
