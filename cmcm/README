@@ -4,7 +4,7 @@ It is manually translated from C++ code to Cmajor code so that the
 algorithms and data structures of the compiler are the same.
 Hopefully I'm not making many new bugs.
 
-The Cmajor version about 2.6 times slower that the C++ version,
+The Cmajor version is about 2.5 times slower that the C++ version,
 but at least it's a starting point.
 
 To compile debug version of the compiler using LLVM backend compile with:

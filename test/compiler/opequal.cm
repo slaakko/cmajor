@@ -1,0 +1,102 @@
+using System;
+
+namespace Test.Compiler.SynthesizedOpEqual
+{
+    public class A
+    {
+    }
+
+    public class B
+    {
+        public nothrow B(int x_) : x(x_)
+        {
+        }
+        private int x;
+    }
+
+    public class C : B
+    {
+        public nothrow C(int x_) : base(x_)
+        {
+        }
+    }
+
+    public class D
+    {
+        public nothrow D(int x_, int y_) : a(), b(x_), c(y_)
+        {
+        }
+        private A a;
+        private B b;
+        private C c;
+    }
+
+    public class E
+    {
+        public nothrow E(const string& s_) : s(s_)
+        {
+        }
+        private string s;
+    }
+
+    public class F
+    {
+        public nothrow F(int x_) : x(x_)
+        {
+        }
+        public nothrow inline int X() const
+        {
+            return x;
+        }
+        private int x;
+    }
+
+    public nothrow inline bool operator==(const F& left, const F& right)
+    {
+        return left.X() == right.X();
+    }
+
+    public class G
+    {
+        public nothrow G(int x_) : f(x_)
+        {
+        }
+        private F f;
+    }
+
+    public unit_test void TestSynthesizedOpEqual()
+    {
+        A x0;
+        A y0;
+        #assert(x0 == y0);
+        B x1(0);
+        B y1(0);
+        #assert(x1 == y1);
+        B z1(1);
+        #assert(x1 != z1);
+        C x2(0);
+        C y2(0);
+        #assert(x2 == y2);
+        C z2(1);
+        #assert(x2 != z2);
+        D x3(0, 0);
+        D y3(0, 0);
+        #assert(x3 == y3);
+        D z3(1, 0);
+        #assert(x3 != z3);
+        D p3(0, 1);
+        #assert(x3 != p3);
+        D q3(1, 1);
+        #assert(x3 != q3);
+        E x4("foo");
+        E y4("foo");
+        #assert(x4 == y4);
+        E z4("bar");
+        #assert(x4 != z4);
+        G x5(0);
+        G y5(0);
+        #assert(x5 == y5);
+        G z5(1);
+        #assert(x5 != z5);
+    }
+}
