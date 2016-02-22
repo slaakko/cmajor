@@ -40,7 +40,7 @@ struct InitDone
     }
 };
 
-const char* version = "1.2.0";
+const char* version = "1.3.0";
 
 const char* Name()
 {
@@ -93,6 +93,28 @@ void ObtainLlvmVersion()
     }
 }
 
+void PrintVersion()
+{
+    std::cout << "Cmajor " << Mode() << " mode unit test engine version " << version << std::endl;
+}
+
+void PrintHelp()
+{
+    PrintVersion();
+    std::cout << "Usage: " << Name() << " [options] {file.cms | file.cmp}" << std::endl;
+    std::cout << "Compile and run unit tests in solution file.cms or project file.cmp" << std::endl;
+    std::cout <<
+        "options:\n" <<
+        "-config=debug   : use debug configuration (default)\n" <<
+        "-config=release : use release configuration\n" <<
+        "-backend=llvm   : use LLVM backend (default)\n" <<
+        "-backend=c      : use C backend\n" <<
+        "-file=FILE      : run only unit tests in file FILE\n" <<
+        "-test=TEST      : run only unit test TEST\n" <<
+        "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
+        std::endl;
+}
+
 int main(int argc, const char** argv)
 {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
@@ -109,20 +131,7 @@ int main(int argc, const char** argv)
         std::string testName;
         if (argc < 2)
         {
-            std::cout << "Cmajor " << Mode() << " mode unit test engine version " << version << std::endl;
-            std::cout << "Usage: " << Name() << " [options] {file.cms | file.cmp}" << std::endl;
-            std::cout << "Compile and run unit tests in solution file.cms or project file.cmp" << std::endl;
-            std::cout <<
-                "options:\n" <<
-                "-config=debug   : use debug configuration (default)\n" <<
-                "-config=release : use release configuration\n" <<
-                "-backend=llvm   : use LLVM backend (default)\n" <<
-                "-backend=c      : use C backend\n" <<
-                "-file=FILE      : run only unit tests in file FILE\n" <<
-                "-test=TEST      : run only unit test TEST\n" <<
-                "-verbose        : print also passed assertions\n" <<
-                "-D SYMBOL       : define conditional compilation symbol SYMBOL\n" <<
-                std::endl;
+            PrintHelp();
         }
         else
         {
@@ -138,6 +147,16 @@ int main(int argc, const char** argv)
                         if (arg == "-D")
                         { 
                             prevWasDefine = true;
+                        }
+                        else if (arg == "-help" || arg == "--help")
+                        {
+                            PrintHelp();
+                            return 0;
+                        }
+                        else if (arg == "-version" || arg == "--version")
+                        {
+                            PrintVersion();
+                            return 0;
                         }
                         else if (arg.find('=') != std::string::npos)
                         {
