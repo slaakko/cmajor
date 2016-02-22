@@ -120,11 +120,23 @@ void BoundCompileUnit::Write(Cm::Sym::BcuWriter& writer)
     irClassTypeRepository->Write(writer);
     synthesizedClassFunRepository->Write(writer);
     inlineFunctionRepository->Write(writer);
+/*
+    if (irFilePath.find("convert.ll") != std::string::npos)
+    {
+        Cm::Ser::BeginLogging(false);
+    }
+*/
     writer.GetBinaryWriter().Write(int(boundNodes.size()));
     for (const std::unique_ptr<BoundNode>& boundNode : boundNodes)
     {
         writer.Write(boundNode.get());
     }
+/*
+    if (irFilePath.find("convert.ll") != std::string::npos)
+    {
+        Cm::Ser::EndLogging();
+    }
+*/
 }
 
 void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
@@ -161,6 +173,12 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
     irClassTypeRepository->Read(reader);
     synthesizedClassFunRepository->Read(reader);
     inlineFunctionRepository->Read(reader);
+/*
+    if (irFilePath.find("convert.ll") != std::string::npos)
+    {
+        Cm::Ser::BeginLogging(true);
+    }
+*/
     int n = reader.GetBinaryReader().ReadInt();
     std::vector<Cm::Bind::ClassDelegateEqualOp*> classDelegateEqualOps;
     for (int i = 0; i < n; ++i)
@@ -207,6 +225,12 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
     }
     reader.GetSymbolReader().MakeIrTypes();
     reader.GetSymbolReader().InitVTables();
+/*
+    if (irFilePath.find("convert.ll") != std::string::npos)
+    {
+        Cm::Ser::EndLogging();
+    }
+*/
 }
 
 void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)

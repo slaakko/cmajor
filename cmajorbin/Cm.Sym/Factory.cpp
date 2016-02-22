@@ -71,6 +71,11 @@ void ValueFactory::Register(ValueType valueType, ValueCreator* creator)
 
 Value* ValueFactory::CreateValue(ValueType valueType)
 {
+    int vt = int(valueType);
+    if (vt < 0 || vt >= int(creators.size()))
+    {
+        throw std::runtime_error("invalid value type");
+    }
     const std::unique_ptr<ValueCreator>& creator = creators[int(valueType)];
     if (creator)
     {

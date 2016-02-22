@@ -17,6 +17,7 @@
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/MutexTable.hpp>
+#include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Bind {
@@ -1656,6 +1657,11 @@ void SynthesizedClassFunRepository::Write(Cm::Sym::BcuWriter& writer)
         if (moveAssignment)
         {
             collectedFunctionSymbols.push_back(moveAssignment);
+        }
+        Cm::Sym::FunctionSymbol* opEqual = cache.OpEqual();
+        if (opEqual)
+        {
+            collectedFunctionSymbols.push_back(opEqual);
         }
     }
     int32_t n = int32_t(collectedFunctionSymbols.size());

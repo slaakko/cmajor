@@ -16,6 +16,13 @@
 
 namespace Cm { namespace Ser {
 
+extern bool log;
+extern int seq;
+void BeginLogging(bool read);
+void EndLogging();
+
+std::ostream& Log();
+
 class BinaryWriter
 {
 public:
