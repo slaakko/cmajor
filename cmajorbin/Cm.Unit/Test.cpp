@@ -18,7 +18,7 @@
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Parser/Project.hpp>
-#include <Cm.Parser/Solution.hpp>
+#include <Cm.Parser/Solution.hpp> 
 #include <Cm.Parser/CompileUnit.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.Parser/ToolError.hpp>

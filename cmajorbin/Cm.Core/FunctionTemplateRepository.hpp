@@ -39,6 +39,7 @@ class FunctionTemplateRepository
 {
 public:
     FunctionTemplateRepository(Cm::Sym::SymbolTable& symbolTable_);
+    ~FunctionTemplateRepository();
     Cm::Sym::FunctionSymbol* GetFunctionTemplateInstance(const FunctionTemplateKey& key) const;
     void AddFunctionTemplateInstance(const FunctionTemplateKey& key, Cm::Sym::FunctionSymbol* functionTemplateInstance);
     void Read(Cm::Sym::BcuReader& reader);

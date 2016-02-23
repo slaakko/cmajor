@@ -17,7 +17,7 @@
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
-#include <Cm.Bind/InlineFunctionRepository.hpp>
+#include <Cm.Bind/InlineFunctionRepository.hpp> 
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>

@@ -10,6 +10,7 @@
 #include <Cm.Core/FunctionTemplateRepository.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <fstream>
 
 namespace Cm { namespace Core {
 
@@ -44,6 +45,10 @@ bool operator==(const FunctionTemplateKey& left, const FunctionTemplateKey& righ
 }
 
 FunctionTemplateRepository::FunctionTemplateRepository(Cm::Sym::SymbolTable& symbolTable_) : symbolTable(symbolTable_)
+{
+}
+
+FunctionTemplateRepository::~FunctionTemplateRepository()
 {
 }
 
@@ -89,9 +94,13 @@ void FunctionTemplateRepository::Read(Cm::Sym::BcuReader& reader)
         Cm::Sym::Symbol* symbol = reader.GetSymbolReader().ReadSymbol();
         if (symbol->IsFunctionSymbol())
         {
-            Cm::Sym::FunctionSymbol* functionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
-            functionSymbol->SetParent(parent);
-            functionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+            if (!symbol->Owned())
+            {
+                symbol->SetOwned();
+                Cm::Sym::FunctionSymbol* functionSymbol = static_cast<Cm::Sym::FunctionSymbol*>(symbol);
+                functionSymbol->SetParent(parent);
+                functionSymbols.push_back(std::unique_ptr<Cm::Sym::FunctionSymbol>(functionSymbol));
+            }
         }
         else
         {
