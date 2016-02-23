@@ -357,8 +357,8 @@ public class DcGrammar: System.Text.Parsing.Grammar
     }
     public override void CreateRules()
     {
-        AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
         AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
+        AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
         AddRule(new exprRule("expr", GetScope(),
             new SequenceParser(
                 new ActionParser("A0",
