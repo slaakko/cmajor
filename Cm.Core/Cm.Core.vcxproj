@@ -38,8 +38,10 @@
     <ClInclude Include="GlobalSettings.hpp" />
     <ClInclude Include="InitSymbolTable.hpp" />
     <ClInclude Include="InlineFunctionRepository.hpp" />
+    <ClInclude Include="InterfaceTypeOpRepository.hpp" />
     <ClInclude Include="IrClassTypeRepository.hpp" />
     <ClInclude Include="IrFunctionRepository.hpp" />
+    <ClInclude Include="IrInterfaceTypeRepository.hpp" />
     <ClInclude Include="Json.hpp" />
     <ClInclude Include="StaticMemberVariableRepository.hpp" />
     <ClInclude Include="StringRepository.hpp" />
@@ -65,8 +67,10 @@
     <ClCompile Include="GlobalSettings.cpp" />
     <ClCompile Include="InitSymbolTable.cpp" />
     <ClCompile Include="InlineFunctionRepository.cpp" />
+    <ClCompile Include="InterfaceTypeOpRepository.cpp" />
     <ClCompile Include="IrClassTypeRepository.cpp" />
     <ClCompile Include="IrFunctionRepository.cpp" />
+    <ClCompile Include="IrInterfaceTypeRepository.cpp" />
     <ClCompile Include="Json.cpp" />
     <ClCompile Include="StaticMemberVariableRepository.cpp" />
     <ClCompile Include="StringRepository.cpp" />

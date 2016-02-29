@@ -149,6 +149,28 @@ public:
     void Accept(Visitor& visitor) override;
 };
 
+class WCharNode : public Node
+{
+public:
+    WCharNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::wcharNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    std::string ToString() const override { return "wchar"; }
+    std::string DocId() const override { return "wchar"; }
+    void Accept(Visitor& visitor) override;
+};
+
+class UCharNode : public Node
+{
+public:
+    UCharNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::ucharNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    std::string ToString() const override { return "uchar"; }
+    std::string DocId() const override { return "uchar"; }
+    void Accept(Visitor& visitor) override;
+};
+
 class VoidNode: public Node
 {
 public:

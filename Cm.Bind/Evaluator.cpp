@@ -76,7 +76,7 @@ Cm::Sym::Value* Not(Cm::Sym::Value* subject, const Span& span)
 
 UnaryOperatorFun not_[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Not<Cm::Sym::BoolValue>, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
+    NotSupported, Not<Cm::Sym::BoolValue>, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 
 template <typename T>
@@ -93,7 +93,7 @@ Cm::Sym::Value* UnaryPlus(Cm::Sym::Value* subject, const Span& span)
 
 UnaryOperatorFun unaryPlus[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     UnaryPlus<Cm::Sym::SByteValue>, UnaryPlus<Cm::Sym::ByteValue>, UnaryPlus<Cm::Sym::ShortValue>, UnaryPlus<Cm::Sym::UShortValue>, UnaryPlus<Cm::Sym::IntValue>, UnaryPlus<Cm::Sym::UIntValue>, 
     UnaryPlus<Cm::Sym::LongValue>, UnaryPlus<Cm::Sym::ULongValue>, UnaryPlus<Cm::Sym::FloatValue>, UnaryPlus<Cm::Sym::DoubleValue>
 };
@@ -106,7 +106,7 @@ Cm::Sym::Value* Negate(Cm::Sym::Value* subject, const Span& span)
 
 UnaryOperatorFun negate[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Negate<Cm::Sym::SByteValue>, Negate<Cm::Sym::ByteValue>, Negate<Cm::Sym::ShortValue>, Negate<Cm::Sym::UShortValue>, Negate<Cm::Sym::IntValue>, Negate<Cm::Sym::UIntValue>, 
     Negate<Cm::Sym::LongValue>, Negate<Cm::Sym::ULongValue>, Negate<Cm::Sym::FloatValue>, Negate<Cm::Sym::DoubleValue>
 };
@@ -130,7 +130,7 @@ Cm::Sym::Value* Complement(Cm::Sym::Value* subject, const Span& span)
 
 UnaryOperatorFun complement[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Complement<Cm::Sym::SByteValue>, Complement<Cm::Sym::ByteValue>, Complement<Cm::Sym::ShortValue>, Complement<Cm::Sym::UShortValue>, Complement<Cm::Sym::IntValue>, Complement<Cm::Sym::UIntValue>, 
     Complement<Cm::Sym::LongValue>, Complement<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -174,7 +174,7 @@ Cm::Sym::Value* ShiftLeft(Cm::Sym::Value* left, Cm::Sym::Value* right, const Spa
 
 BinaryOperatorFun shiftLeft[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     ShiftLeft<Cm::Sym::SByteValue>, ShiftLeft<Cm::Sym::ByteValue>, ShiftLeft<Cm::Sym::ShortValue>, ShiftLeft<Cm::Sym::UShortValue>, ShiftLeft<Cm::Sym::IntValue>, ShiftLeft<Cm::Sym::UIntValue>, 
     ShiftLeft<Cm::Sym::LongValue>, ShiftLeft<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -196,7 +196,7 @@ Cm::Sym::Value* ShiftRight(Cm::Sym::Value* left, Cm::Sym::Value* right, const Sp
 
 BinaryOperatorFun shiftRight[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     ShiftRight<Cm::Sym::SByteValue>, ShiftRight<Cm::Sym::ByteValue>, ShiftRight<Cm::Sym::ShortValue>, ShiftRight<Cm::Sym::UShortValue>, ShiftRight<Cm::Sym::IntValue>, ShiftRight<Cm::Sym::UIntValue>, 
     ShiftRight<Cm::Sym::LongValue>, ShiftRight<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -209,7 +209,7 @@ Cm::Sym::Value* Add(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& spa
 
 BinaryOperatorFun add[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Add<Cm::Sym::SByteValue>, Add<Cm::Sym::ByteValue>, Add<Cm::Sym::ShortValue>, Add<Cm::Sym::UShortValue>, Add<Cm::Sym::IntValue>, Add<Cm::Sym::UIntValue>, 
     Add<Cm::Sym::LongValue>, Add<Cm::Sym::ULongValue>, Add<Cm::Sym::FloatValue>, Add<Cm::Sym::DoubleValue>
 };
@@ -222,7 +222,7 @@ Cm::Sym::Value* Sub(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& spa
 
 BinaryOperatorFun sub[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Sub<Cm::Sym::SByteValue>, Sub<Cm::Sym::ByteValue>, Sub<Cm::Sym::ShortValue>, Sub<Cm::Sym::UShortValue>, Sub<Cm::Sym::IntValue>, Sub<Cm::Sym::UIntValue>, 
     Sub<Cm::Sym::LongValue>, Sub<Cm::Sym::ULongValue>, Sub<Cm::Sym::FloatValue>, Sub<Cm::Sym::DoubleValue>
 };
@@ -235,7 +235,7 @@ Cm::Sym::Value* Mul(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& spa
 
 BinaryOperatorFun mul[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Mul<Cm::Sym::SByteValue>, Mul<Cm::Sym::ByteValue>, Mul<Cm::Sym::ShortValue>, Mul<Cm::Sym::UShortValue>, Mul<Cm::Sym::IntValue>, Mul<Cm::Sym::UIntValue>, 
     Mul<Cm::Sym::LongValue>, Mul<Cm::Sym::ULongValue>, Mul<Cm::Sym::FloatValue>, Mul<Cm::Sym::DoubleValue>
 };
@@ -248,7 +248,7 @@ Cm::Sym::Value* Div(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& spa
 
 BinaryOperatorFun div[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Div<Cm::Sym::SByteValue>, Div<Cm::Sym::ByteValue>, Div<Cm::Sym::ShortValue>, Div<Cm::Sym::UShortValue>, Div<Cm::Sym::IntValue>, Div<Cm::Sym::UIntValue>, 
     Div<Cm::Sym::LongValue>, Div<Cm::Sym::ULongValue>, Div<Cm::Sym::FloatValue>, Div<Cm::Sym::DoubleValue>
 };
@@ -261,7 +261,7 @@ Cm::Sym::Value* Rem(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& spa
 
 BinaryOperatorFun rem[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     Rem<Cm::Sym::SByteValue>, Rem<Cm::Sym::ByteValue>, Rem<Cm::Sym::ShortValue>, Rem<Cm::Sym::UShortValue>, Rem<Cm::Sym::IntValue>, Rem<Cm::Sym::UIntValue>, 
     Rem<Cm::Sym::LongValue>, Rem<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -274,7 +274,7 @@ Cm::Sym::Value* BitAnd(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& 
 
 BinaryOperatorFun bitAnd[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     BitAnd<Cm::Sym::SByteValue>, BitAnd<Cm::Sym::ByteValue>, BitAnd<Cm::Sym::ShortValue>, BitAnd<Cm::Sym::UShortValue>, BitAnd<Cm::Sym::IntValue>, BitAnd<Cm::Sym::UIntValue>, 
     BitAnd<Cm::Sym::LongValue>, BitAnd<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -287,7 +287,7 @@ Cm::Sym::Value* BitOr(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& s
 
 BinaryOperatorFun bitOr[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     BitOr<Cm::Sym::SByteValue>, BitOr<Cm::Sym::ByteValue>, BitOr<Cm::Sym::ShortValue>, BitOr<Cm::Sym::UShortValue>, BitOr<Cm::Sym::IntValue>, BitOr<Cm::Sym::UIntValue>, 
     BitOr<Cm::Sym::LongValue>, BitOr<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -300,7 +300,7 @@ Cm::Sym::Value* BitXor(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& 
 
 BinaryOperatorFun bitXor[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotSupported, NotSupported, 
+    NotSupported, NotSupported, NotSupported, NotSupported, NotSupported,
     BitXor<Cm::Sym::SByteValue>, BitXor<Cm::Sym::ByteValue>, BitXor<Cm::Sym::ShortValue>, BitXor<Cm::Sym::UShortValue>, BitXor<Cm::Sym::IntValue>, BitXor<Cm::Sym::UIntValue>, 
     BitXor<Cm::Sym::LongValue>, BitXor<Cm::Sym::ULongValue>, NotSupported, NotSupported
 };
@@ -313,7 +313,7 @@ Cm::Sym::Value* Disjunction(Cm::Sym::Value* left, Cm::Sym::Value* right, const S
 
 BinaryOperatorFun disjunction[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Disjunction<Cm::Sym::BoolValue>, 
+    NotSupported, Disjunction<Cm::Sym::BoolValue>, NotSupported, NotSupported,
     NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 
@@ -325,7 +325,7 @@ Cm::Sym::Value* Conjunction(Cm::Sym::Value* left, Cm::Sym::Value* right, const S
 
 BinaryOperatorFun conjunction[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Disjunction<Cm::Sym::BoolValue>, 
+    NotSupported, Disjunction<Cm::Sym::BoolValue>, NotSupported, NotSupported,
     NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 
@@ -363,7 +363,7 @@ Cm::Sym::Value* Equal(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& s
 
 BinaryOperatorFun equal[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Equal<Cm::Sym::BoolValue>, Equal<Cm::Sym::CharValue>, 
+    NotSupported, Equal<Cm::Sym::BoolValue>, Equal<Cm::Sym::CharValue>, Equal<Cm::Sym::WCharValue>, Equal<Cm::Sym::UCharValue>,
     Equal<Cm::Sym::SByteValue>, Equal<Cm::Sym::ByteValue>, Equal<Cm::Sym::ShortValue>, Equal<Cm::Sym::UShortValue>, Equal<Cm::Sym::IntValue>, Equal<Cm::Sym::UIntValue>, 
     Equal<Cm::Sym::LongValue>, Equal<Cm::Sym::ULongValue>, Equal<Cm::Sym::FloatValue>, Equal<Cm::Sym::DoubleValue>
 };
@@ -376,7 +376,7 @@ Cm::Sym::Value* NotEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span
 
 BinaryOperatorFun notEqual[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, NotEqual<Cm::Sym::BoolValue>, NotEqual<Cm::Sym::CharValue>, 
+    NotSupported, NotEqual<Cm::Sym::BoolValue>, NotEqual<Cm::Sym::CharValue>, NotEqual<Cm::Sym::WCharValue>, NotEqual<Cm::Sym::UCharValue>,
     NotEqual<Cm::Sym::SByteValue>, NotEqual<Cm::Sym::ByteValue>, NotEqual<Cm::Sym::ShortValue>, NotEqual<Cm::Sym::UShortValue>, NotEqual<Cm::Sym::IntValue>, NotEqual<Cm::Sym::UIntValue>, 
     NotEqual<Cm::Sym::LongValue>, NotEqual<Cm::Sym::ULongValue>, NotEqual<Cm::Sym::FloatValue>, NotEqual<Cm::Sym::DoubleValue>
 };
@@ -389,7 +389,7 @@ Cm::Sym::Value* Less(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span& sp
 
 BinaryOperatorFun less[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Less<Cm::Sym::BoolValue>, Less<Cm::Sym::CharValue>, 
+    NotSupported, Less<Cm::Sym::BoolValue>, Less<Cm::Sym::CharValue>, Less<Cm::Sym::WCharValue>, Less<Cm::Sym::UCharValue>,
     Less<Cm::Sym::SByteValue>, Less<Cm::Sym::ByteValue>, Less<Cm::Sym::ShortValue>, Less<Cm::Sym::UShortValue>, Less<Cm::Sym::IntValue>, Less<Cm::Sym::UIntValue>, 
     Less<Cm::Sym::LongValue>, Less<Cm::Sym::ULongValue>, Less<Cm::Sym::FloatValue>, Less<Cm::Sym::DoubleValue>
 };
@@ -402,7 +402,7 @@ Cm::Sym::Value* Greater(Cm::Sym::Value* left, Cm::Sym::Value* right, const Span&
 
 BinaryOperatorFun greater[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Greater<Cm::Sym::BoolValue>, Greater<Cm::Sym::CharValue>, 
+    NotSupported, Greater<Cm::Sym::BoolValue>, Greater<Cm::Sym::CharValue>, Greater<Cm::Sym::WCharValue>, Greater<Cm::Sym::UCharValue>,
     Greater<Cm::Sym::SByteValue>, Greater<Cm::Sym::ByteValue>, Greater<Cm::Sym::ShortValue>, Greater<Cm::Sym::UShortValue>, Greater<Cm::Sym::IntValue>, Greater<Cm::Sym::UIntValue>, 
     Greater<Cm::Sym::LongValue>, Greater<Cm::Sym::ULongValue>, Greater<Cm::Sym::FloatValue>, Greater<Cm::Sym::DoubleValue>
 };
@@ -415,7 +415,7 @@ Cm::Sym::Value* LessOrEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, const S
 
 BinaryOperatorFun lessOrEqual[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, LessOrEqual<Cm::Sym::BoolValue>, LessOrEqual<Cm::Sym::CharValue>, 
+    NotSupported, LessOrEqual<Cm::Sym::BoolValue>, LessOrEqual<Cm::Sym::CharValue>, LessOrEqual<Cm::Sym::WCharValue>, LessOrEqual<Cm::Sym::UCharValue>,
     LessOrEqual<Cm::Sym::SByteValue>, LessOrEqual<Cm::Sym::ByteValue>, LessOrEqual<Cm::Sym::ShortValue>, LessOrEqual<Cm::Sym::UShortValue>, LessOrEqual<Cm::Sym::IntValue>, LessOrEqual<Cm::Sym::UIntValue>, 
     LessOrEqual<Cm::Sym::LongValue>, LessOrEqual<Cm::Sym::ULongValue>, LessOrEqual<Cm::Sym::FloatValue>, LessOrEqual<Cm::Sym::DoubleValue>
 };
@@ -428,7 +428,7 @@ Cm::Sym::Value* GreaterOrEqual(Cm::Sym::Value* left, Cm::Sym::Value* right, cons
 
 BinaryOperatorFun greaterOrEqual[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, GreaterOrEqual<Cm::Sym::BoolValue>, GreaterOrEqual<Cm::Sym::CharValue>, 
+    NotSupported, GreaterOrEqual<Cm::Sym::BoolValue>, GreaterOrEqual<Cm::Sym::CharValue>, GreaterOrEqual<Cm::Sym::WCharValue>, GreaterOrEqual<Cm::Sym::UCharValue>,
     GreaterOrEqual<Cm::Sym::SByteValue>, GreaterOrEqual<Cm::Sym::ByteValue>, GreaterOrEqual<Cm::Sym::ShortValue>, GreaterOrEqual<Cm::Sym::UShortValue>, GreaterOrEqual<Cm::Sym::IntValue>, GreaterOrEqual<Cm::Sym::UIntValue>, 
     GreaterOrEqual<Cm::Sym::LongValue>, GreaterOrEqual<Cm::Sym::ULongValue>, GreaterOrEqual<Cm::Sym::FloatValue>, GreaterOrEqual<Cm::Sym::DoubleValue>
 };

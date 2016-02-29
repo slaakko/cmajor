@@ -11,6 +11,7 @@
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Util/TextUtils.hpp>
 #include <Llvm.Ir/Type.hpp>
@@ -105,6 +106,24 @@ void IrClassTypeRepository::AddClassType(Cm::Sym::ClassTypeSymbol* classTypeSymb
     classTypeMap[classTypeSymbol->FullName()] = classTypeSymbol;
 }
 
+void IrClassTypeRepository::Own(Ir::Intf::Type* type)
+{
+    if (!type->Owned())
+    {
+        type->SetOwned();
+        ownedTypes.push_back(std::unique_ptr<Ir::Intf::Type>(type));
+    }
+}
+
+void IrClassTypeRepository::Own(Ir::Intf::Object* object)
+{
+    if (!object->Owned())
+    {
+        object->SetOwned();
+        ownedObjects.push_back(std::unique_ptr<Ir::Intf::Object>(object));
+    }
+}
+
 struct ClassNameLess
 {
     inline bool operator()(Cm::Sym::ClassTypeSymbol* left, Cm::Sym::ClassTypeSymbol* right) const
@@ -133,7 +152,7 @@ void LlvmIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, st
         WriteIrLayout(classType, codeFormatter);
         if (classType->IsVirtual())
         {
-            WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+            WriteItbvlsAndVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
         }
     }
 }
@@ -205,12 +224,87 @@ void LlvmIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classTyp
 	codeFormatter.WriteLine(typeDeclaration);
 }
 
-void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, 
+void LlvmIrClassTypeRepository::WriteItbvlsAndVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter, 
     std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
     if (!classType->IsVirtual()) return;
     std::unique_ptr<Ir::Intf::Type> i8ptrType(Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1));
     i8ptrType->SetOwned();
+    std::vector<std::string> iids;
+    std::vector<Ir::Intf::Type*> itabIrTypes;
+    std::vector<std::string> itabNames;
+    for (const Cm::Sym::ITable& itab : classType->ITabs())
+    {
+        iids.push_back(std::to_string(itab.Intf()->Iid()));
+        Ir::Intf::Type* itabIrType(Cm::IrIntf::Array(i8ptrType->Clone(), int(itab.IntfMemFunImpl().size())));
+        Own(itabIrType);
+        itabIrTypes.push_back(itabIrType);
+        std::string itabName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + itab.Intf()->FullName() + Cm::IrIntf::GetPrivateSeparator() + "itab");
+        itabNames.push_back("@" + itabName);
+        Ir::Intf::Object* itabIrObject(Cm::IrIntf::CreateGlobal(itabName, itabIrType));
+        Own(itabIrObject);
+        codeFormatter.WriteLine(itabIrObject->Name() + " = linkonce_odr unnamed_addr constant " + itabIrType->Name());
+        codeFormatter.WriteLine("[");
+        codeFormatter.IncIndent();
+        bool first = true;
+        for (Cm::Sym::FunctionSymbol* memFun : itab.IntfMemFunImpl())
+        {
+            std::string line;
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                codeFormatter.WriteLine(",");
+            }
+            Ir::Intf::Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+            externalFunctions.insert(irFun);
+            Ir::Intf::Type* irFunPtrType = irFunctionRepository.GetFunPtrIrType(memFun);
+            line.append("i8* bitcast (").append(irFunPtrType->Name()).append(" @").append(irFun->Name()).append(" to ").append(i8ptrType->Name()).append(")");
+            codeFormatter.Write(line);
+        }
+        codeFormatter.WriteLine();
+        codeFormatter.DecIndent();
+        codeFormatter.WriteLine("]");
+    }
+    std::string irecTabName;
+    Ir::Intf::Type* irecTabIrType = nullptr;
+    Ir::Intf::Object* irecTabIrObject = nullptr;
+    if (!classType->ITabs().empty())
+    {
+        std::vector<Ir::Intf::Type*> irecElementTypes;
+        std::vector<std::string> irecElementNames;
+        irecElementTypes.push_back(Cm::IrIntf::UI64());
+        irecElementNames.push_back("iid");
+        irecElementTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1));
+        irecElementNames.push_back("itab");
+        int n = int(classType->ITabs().size()) + 1;
+        irecTabIrType = Cm::IrIntf::Array(Cm::IrIntf::CreateTypeName("irec", false), n);
+        Own(irecTabIrType);
+        irecTabName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "irectab");
+        irecTabIrObject = Cm::IrIntf::CreateGlobal(irecTabName, irecTabIrType);
+        Own(irecTabIrObject);
+        codeFormatter.WriteLine(irecTabIrObject->Name() + " = linkonce_odr unnamed_addr constant " + irecTabIrType->Name());
+        codeFormatter.WriteLine("[");
+        codeFormatter.IncIndent();
+        int nitabs = int(classType->ITabs().size());
+        for (int i = 0; i < nitabs; ++i)
+        {
+            if (i > 0)
+            {
+                codeFormatter.WriteLine(",");
+            }
+            std::string irec = "%irec { ";
+            irec.append(Ir::Intf::GetFactory()->GetUI64()->Name()).append(" ").append(iids[i]).append(", ").append("i8* bitcast (").append(itabIrTypes[i]->Name()).append("* ").append(itabNames[i]).append(" to i8*)").append(" }");
+            codeFormatter.Write(irec);
+        }
+        codeFormatter.WriteLine(",");
+        std::string irec = "%irec { i64 " + Ir::Intf::GetFactory()->GetUI64()->CreateMinusOne()->Name() + ", i8* null }";
+        codeFormatter.WriteLine(irec);
+        codeFormatter.DecIndent();
+        codeFormatter.WriteLine("]");
+    }
     std::unique_ptr<Ir::Intf::Type> vtblIrType(Cm::IrIntf::Array(i8ptrType->Clone(), int(classType->Vtbl().size())));
     vtblIrType->SetOwned();
     std::string vtblName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "vtbl");
@@ -226,22 +320,46 @@ void LlvmIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, C
     std::vector<Ir::Intf::Type*> rttiElementTypes;
     rttiElementTypes.push_back(i8ptrType->Clone());
     rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    Ir::Intf::Type* irecTabType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName("irec", false), 1);
+    rttiElementTypes.push_back(irecTabType);
     std::vector<std::string> rttiElementNames;
     rttiElementNames.push_back("class_name");
     rttiElementNames.push_back("class_id");
+    rttiElementNames.push_back("irectab");
     std::unique_ptr<Ir::Intf::Type> rttiIrType(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames));
     rttiIrType->SetOwned();
     std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
     rttiIrObject->SetOwned();
     if (Cm::Core::GetGlobalSettings()->LlvmVersion() < Cm::Ast::ProgramVersion(3, 7, 0, 0, ""))
     {
-        codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
-            std::to_string(classType->Cid()) + "}");
+        if (irecTabName.empty())
+        {
+            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
+                std::to_string(classType->Cid()) + ", %irec* null }");
+        }
+        else
+        {
+            Ir::Intf::Type* irecTabIrObjectPtrType = Cm::IrIntf::Pointer(irecTabIrObject->GetType(), 1);
+            Own(irecTabIrObjectPtrType);
+            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
+                std::to_string(classType->Cid()) + ", %irec* getelementptr (" + irecTabIrObjectPtrType->Name() + " " + irecTabIrObject->Name() + ", i32 0, i32 0)");
+        }
     }
     else
     {
-        codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " + 
-            classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + std::to_string(classType->Cid()) + "}");
+        if (irecTabName.empty())
+        {
+            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
+                classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + std::to_string(classType->Cid()) + ", %irec* null }");
+        }
+        else
+        {
+            Ir::Intf::Type* irecTabIrObjectPtrType = Cm::IrIntf::Pointer(irecTabIrObject->GetType(), 1);
+            Own(irecTabIrObjectPtrType);
+            codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
+                classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + std::to_string(classType->Cid()) + 
+                ", %irec* getelementptr (" + irecTabIrObject->GetType()->Name() + ", " + irecTabIrObjectPtrType->Name() + " " + irecTabIrObject->Name() + ", i32 0, i32 0)}");
+        }
     }
 
     std::string vtblHeader;
@@ -409,7 +527,7 @@ void CIrClassTypeRepository::Write(Cm::Util::CodeFormatter& codeFormatter, std::
     }
     for (Cm::Sym::ClassTypeSymbol* classType : classOrder)
     {
-        WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+        WriteItbvlsAndVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
     }
 }
 
@@ -480,10 +598,90 @@ void CIrClassTypeRepository::WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, 
     codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " " + typeName->Name() + ";");
 }
 
-void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
+void CIrClassTypeRepository::WriteItbvlsAndVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
     std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
 {
     if (!classType->IsVirtual()) return;
+    std::unique_ptr<Ir::Intf::Type> voidptrType(Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 1));
+    voidptrType->SetOwned();
+    std::vector<std::string> iids;
+    std::vector<Ir::Intf::Type*> itabIrTypes;
+    std::vector<std::string> itabNames;
+    for (const Cm::Sym::ITable& itab : classType->ITabs())
+    {
+        for (Cm::Sym::FunctionSymbol* memFun : itab.IntfMemFunImpl())
+        {
+            Ir::Intf::Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+            irFun->WriteDeclaration(codeFormatter, memFun->IsReplicated(), false);
+        }
+        iids.push_back(std::to_string(itab.Intf()->Iid()));
+        Ir::Intf::Type* itabIrType(Cm::IrIntf::Array(voidptrType->Clone(), int(itab.IntfMemFunImpl().size())));
+        Own(itabIrType);
+        itabIrTypes.push_back(itabIrType);
+        std::string itabName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + itab.Intf()->FullName() + Cm::IrIntf::GetPrivateSeparator() + "itab");
+        itabNames.push_back(itabName);
+        Ir::Intf::Object* itabIrObject(Cm::IrIntf::CreateGlobal(itabName, itabIrType));
+        Own(itabIrObject);
+        std::string itabHeader = "static void* ";
+        itabHeader.append(itabIrObject->Name()).append("[").append(std::to_string(itab.IntfMemFunImpl().size())).append("] =");
+        codeFormatter.WriteLine(itabHeader);
+        codeFormatter.WriteLine("{");
+        codeFormatter.IncIndent();
+        bool first = true;
+        for (Cm::Sym::FunctionSymbol* memFun : itab.IntfMemFunImpl())
+        {
+            std::string line;
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                codeFormatter.WriteLine(",");
+            }
+            Ir::Intf::Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+            externalFunctions.insert(irFun);
+            line.append("&").append(irFun->Name());
+            codeFormatter.Write(line);
+        }
+        codeFormatter.WriteLine();
+        codeFormatter.DecIndent();
+        codeFormatter.WriteLine("};");
+    }
+    std::string irecTabName;
+    if (!classType->ITabs().empty())
+    {
+        irecTabName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "irectab");
+        std::string irecTabHeader = "static irec " + irecTabName + "[" + std::to_string(classType->ITabs().size() + 1) + "] =";
+        codeFormatter.WriteLine(irecTabHeader);
+        codeFormatter.WriteLine("{");
+        codeFormatter.IncIndent();
+        bool first = true;
+        int index = 0;
+        for (const Cm::Sym::ITable& itab : classType->ITabs())
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                codeFormatter.WriteLine(",");
+            }
+            std::string line = "{ ";
+            line.append(std::to_string(itab.Intf()->Iid())).append(", ").append(itabNames[index]);
+            line.append(" }");
+            codeFormatter.Write(line);
+            ++index;
+        }
+        codeFormatter.WriteLine(",");
+        std::string line = "{ ";
+        line.append(Ir::Intf::GetFactory()->GetUI64()->CreateMinusOne()->Name()).append(", null");
+        line.append(" }");
+        codeFormatter.WriteLine(line);
+        codeFormatter.DecIndent();
+        codeFormatter.WriteLine("};");
+    }
     for (Cm::Sym::FunctionSymbol* virtualFunction : classType->Vtbl())
     {
         if (virtualFunction)
@@ -492,27 +690,33 @@ void CIrClassTypeRepository::WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::
             irFun->WriteDeclaration(codeFormatter, virtualFunction->IsReplicated(), false);
         }
     }
-    std::unique_ptr<Ir::Intf::Type> voidptrType(Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 1));
-    voidptrType->SetOwned();
     std::unique_ptr<Ir::Intf::Type> vtblIrType(Cm::IrIntf::Array(voidptrType->Clone(), int(classType->Vtbl().size())));
     vtblIrType->SetOwned();
     std::string vtblName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "vtbl");
     std::unique_ptr<Ir::Intf::Object> vtblIrObject(Cm::IrIntf::CreateGlobal(vtblName, vtblIrType.get()));
     vtblIrObject->SetOwned();
-
     std::string classRttiName = Cm::IrIntf::MakeAssemblyName(classType->FullName() + Cm::IrIntf::GetPrivateSeparator() + "rtti");
     std::vector<Ir::Intf::Type*> rttiElementTypes;
     rttiElementTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::Char(), 1));
     rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    Ir::Intf::Type* irecTabType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName("irec", false), 1);
+    rttiElementTypes.push_back(irecTabType);
     std::vector<std::string> rttiElementNames;
     rttiElementNames.push_back("class_name");
     rttiElementNames.push_back("class_id");
+    rttiElementNames.push_back("irectab");
     std::unique_ptr<Ir::Intf::Type> rttiIrType(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames));
     rttiIrType->SetOwned();
     std::unique_ptr<Ir::Intf::Object> rttiIrObject(Cm::IrIntf::CreateGlobal(classRttiName, rttiIrType.get()));
     rttiIrObject->SetOwned();
-    codeFormatter.WriteLine("rtti " + classRttiName + " = {\"" + Cm::Util::StringStr(classType->FullName()) + "\", " + std::to_string(classType->Cid()) + "};");
-
+    if (irecTabName.empty())
+    {
+        codeFormatter.WriteLine("rtti " + classRttiName + " = {\"" + Cm::Util::StringStr(classType->FullName()) + "\", " + std::to_string(classType->Cid()) + ", null};");
+    }
+    else
+    {
+        codeFormatter.WriteLine("rtti " + classRttiName + " = {\"" + Cm::Util::StringStr(classType->FullName()) + "\", " + std::to_string(classType->Cid()) + ", " + irecTabName + "};");
+    }
     std::string vtblHeader = "static void* ";
     vtblHeader.append(vtblIrObject->Name()).append("[").append(std::to_string(classType->Vtbl().size())).append("] =");
     codeFormatter.WriteLine(vtblHeader);

@@ -9,6 +9,7 @@
 
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/Class.hpp>
+#include <Cm.Bind/Interface.hpp>
 #include <Cm.Bind/Function.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Enumeration.hpp>
@@ -108,6 +109,18 @@ void Prebinder::EndVisit(Cm::Ast::ClassNode& classNode)
     currentClassStack.pop();
 }
 
+void Prebinder::BeginVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    BindInterface(symbolTable, currentContainerScope, fileScopes, &interfaceNode);
+    Cm::Sym::ContainerScope* containerScope = symbolTable.GetContainerScope(&interfaceNode);
+    BeginContainerScope(containerScope);
+}
+
+void Prebinder::EndVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    EndContainerScope();
+}
+
 void Prebinder::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &constructorNode, currentClass);
@@ -153,10 +166,13 @@ void Prebinder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 void Prebinder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
     currentFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &memberFunctionNode, currentClass);
-    if (!currentClass->IsClassTemplateSymbol() && (memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none && 
-        Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+    if (currentClass)
     {
-        currentFunction->SetUsingNodes(usingNodes);
+        if (!currentClass->IsClassTemplateSymbol() && (memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::inline_) != Cm::Ast::Specifiers::none &&
+            Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize))
+        {
+            currentFunction->SetUsingNodes(usingNodes);
+        }
     }
     BeginContainerScope(symbolTable.GetContainerScope(&memberFunctionNode));
     parameterIndex = 0;

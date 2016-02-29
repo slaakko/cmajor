@@ -111,7 +111,8 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         return;
     }
     Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode->TypeExpr());
-    if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
+    if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsWCharTypeSymbol() || type->IsUCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || 
+        type->IsFloatingPointTypeSymbol())
     {
         if (type->IsEnumTypeSymbol())
         {

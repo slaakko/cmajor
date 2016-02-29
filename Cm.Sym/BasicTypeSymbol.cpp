@@ -14,10 +14,10 @@ namespace Cm { namespace Sym {
 
 const TypeId basicTypeIds[uint8_t(ShortBasicTypeId::max)] =
 {
-    TypeId(uint8_t(0)), TypeId(uint8_t(ShortBasicTypeId::boolId)), TypeId(uint8_t(ShortBasicTypeId::charId)), TypeId(uint8_t(ShortBasicTypeId::voidId)), TypeId(uint8_t(ShortBasicTypeId::sbyteId)),
-    TypeId(uint8_t(ShortBasicTypeId::byteId)), TypeId(uint8_t(ShortBasicTypeId::shortId)), TypeId(uint8_t(ShortBasicTypeId::ushortId)), TypeId(uint8_t(ShortBasicTypeId::intId)),
-    TypeId(uint8_t(ShortBasicTypeId::uintId)), TypeId(uint8_t(ShortBasicTypeId::longId)), TypeId(uint8_t(ShortBasicTypeId::ulongId)), TypeId(uint8_t(ShortBasicTypeId::floatId)),
-    TypeId(uint8_t(ShortBasicTypeId::doubleId)), TypeId(uint8_t(ShortBasicTypeId::nullPtrId))
+    TypeId(uint8_t(0)), TypeId(uint8_t(ShortBasicTypeId::boolId)), TypeId(uint8_t(ShortBasicTypeId::charId)), TypeId(uint8_t(ShortBasicTypeId::wcharId)), TypeId(uint8_t(ShortBasicTypeId::ucharId)), 
+    TypeId(uint8_t(ShortBasicTypeId::voidId)), TypeId(uint8_t(ShortBasicTypeId::sbyteId)), TypeId(uint8_t(ShortBasicTypeId::byteId)), TypeId(uint8_t(ShortBasicTypeId::shortId)), 
+    TypeId(uint8_t(ShortBasicTypeId::ushortId)), TypeId(uint8_t(ShortBasicTypeId::intId)), TypeId(uint8_t(ShortBasicTypeId::uintId)), TypeId(uint8_t(ShortBasicTypeId::longId)), 
+    TypeId(uint8_t(ShortBasicTypeId::ulongId)), TypeId(uint8_t(ShortBasicTypeId::floatId)), TypeId(uint8_t(ShortBasicTypeId::doubleId)), TypeId(uint8_t(ShortBasicTypeId::nullPtrId))
 };
 
 const TypeId& GetBasicTypeId(ShortBasicTypeId shortId)
@@ -52,6 +52,34 @@ CharTypeSymbol::CharTypeSymbol() : BasicTypeSymbol("char", ShortBasicTypeId::cha
     else if (backend == Cm::IrIntf::BackEnd::c)
     {
         SetIrType(Cm::IrIntf::Char());
+    }
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
+}
+
+WCharTypeSymbol::WCharTypeSymbol() : BasicTypeSymbol("wchar", ShortBasicTypeId::wcharId)
+{
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        SetIrType(Cm::IrIntf::I16());
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        SetIrType(Cm::IrIntf::UI16());
+    }
+    SetDefaultIrValue(GetIrType()->CreateDefaultValue());
+}
+
+UCharTypeSymbol::UCharTypeSymbol() : BasicTypeSymbol("uchar", ShortBasicTypeId::ucharId)
+{
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        SetIrType(Cm::IrIntf::I32());
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        SetIrType(Cm::IrIntf::UI32());
     }
     SetDefaultIrValue(GetIrType()->CreateDefaultValue());
 }

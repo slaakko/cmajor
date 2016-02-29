@@ -37,8 +37,8 @@ CompileUnitMap* GetCompileUnitMap()
 }
 
 BoundCompileUnit::BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(nullptr), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), 
-    classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()),
-    irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
+    classConversionTable(symbolTable.GetTypeRepository()), derivedTypeOpRepository(symbolTable.GetTypeRepository()), interfaceTypeOpRepository(symbolTable.GetTypeRepository()), 
+    enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
 {
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
@@ -52,8 +52,8 @@ BoundCompileUnit::BoundCompileUnit(Cm::Sym::SymbolTable& symbolTable_) : syntaxU
 
 BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const std::string& irFilePath_, Cm::Sym::SymbolTable& symbolTable_) : syntaxUnit(syntaxUnit_),
     fileScopes(), irFilePath(irFilePath_), symbolTable(symbolTable_), conversionTable(symbolTable.GetStandardConversionTable()), classConversionTable(symbolTable.GetTypeRepository()), 
-    derivedTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), hasGotos(false), isPrebindCompileUnit(false), 
-    isMainUnit(false), functionTemplateRepository(symbolTable)
+    derivedTypeOpRepository(symbolTable.GetTypeRepository()), interfaceTypeOpRepository(symbolTable.GetTypeRepository()), enumTypeOpRepository(symbolTable.GetTypeRepository()), irFunctionRepository(), 
+    hasGotos(false), isPrebindCompileUnit(false), isMainUnit(false), functionTemplateRepository(symbolTable)
 {
     objectFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".o").generic_string());
     optIrFilePath = Cm::Util::GetFullPath(boost::filesystem::path(irFilePath).replace_extension(".opt.ll").generic_string());
@@ -65,12 +65,14 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     {
         stringRepository.reset(new Cm::Core::LlvmStringRepository());
         irClassTypeRepository.reset(new Cm::Core::LlvmIrClassTypeRepository());
+        irInterfaceTypeRepository.reset(new Cm::Core::LlvmIrInterfaceTypeRepository());
         externalConstantRepository.reset(new Cm::Core::LlvmExternalConstantRepository());
     }
     else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
     {
         stringRepository.reset(new Cm::Core::CStringRepository());
         irClassTypeRepository.reset(new Cm::Core::CIrClassTypeRepository());
+        irInterfaceTypeRepository.reset(new Cm::Core::CIrInterfaceTypeRepository());
         externalConstantRepository.reset(new Cm::Core::CExternalConstantRepository());
     }
     else

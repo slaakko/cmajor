@@ -7,6 +7,7 @@ source <eh.cm>;
 csource <exit.c>[backend=c];
 asmsource <exit_3.6.ll>[backend=llvm,llvm_version<3.7.0.0];
 asmsource <exit_3.7.ll>[backend=llvm,llvm_version>=3.7.0.0];
+source <intf.cm>;
 source <mtx.cm>;
 source <nupo.cm>;
 source <supportintf.cm>;

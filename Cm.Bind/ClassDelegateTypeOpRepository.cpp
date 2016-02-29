@@ -221,7 +221,7 @@ Cm::Sym::FunctionSymbol* ResolveClassDelegateOverload(Cm::Sym::ContainerScope* c
         resolutionArguments.push_back(Cm::Core::Argument(category, parameterType));
     }
     Cm::Sym::FunctionLookupSet resolutionLookups;
-    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, classObjectType->GetContainerScope()->ClassOrNsScope()));
+    resolutionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, classObjectType->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* overload = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, resolutionLookups, span, conversions);
     if (classDelegateType->IsNothrow() && overload->CanThrow())

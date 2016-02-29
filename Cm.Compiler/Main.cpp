@@ -35,7 +35,7 @@
     #include <crtdbg.h>
 #endif
 
-const char* version = "1.3.0";
+const char* version = "1.4.0";
 
 struct InitDone
 {

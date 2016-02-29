@@ -82,7 +82,7 @@ void MakeCharOps(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::BasicTypeSymbol* ch
 void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTypeSymbol* sbyteType, Cm::Sym::ByteTypeSymbol* byteType, 
     Cm::Sym::ShortTypeSymbol* shortType, Cm::Sym::UShortTypeSymbol* ushortType, Cm::Sym::IntTypeSymbol* intType, Cm::Sym::UIntTypeSymbol* uintType, 
     Cm::Sym::LongTypeSymbol* longType, Cm::Sym::ULongTypeSymbol* ulongType, Cm::Sym::FloatTypeSymbol* floatType, Cm::Sym::DoubleTypeSymbol* doubleType, 
-    Cm::Sym::CharTypeSymbol* charType, Cm::Sym::BoolTypeSymbol* boolType)
+    Cm::Sym::CharTypeSymbol* charType, Cm::Sym::WCharTypeSymbol* wcharType, Cm::Sym::UCharTypeSymbol* ucharType, Cm::Sym::BoolTypeSymbol* boolType)
 {
     std::vector<ConvertingCtor*> conversions;
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, byteType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
@@ -95,6 +95,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), sbyteType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
@@ -107,6 +109,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), byteType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, sbyteType, Cm::Sym::ConversionType::implicit, ConversionInst::sext, Cm::Sym::ConversionRank::promotion, 1));
@@ -119,6 +123,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::sext, Cm::Sym::ConversionRank::conversion, 100));
@@ -131,6 +137,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, sbyteType, Cm::Sym::ConversionType::implicit, ConversionInst::sext, Cm::Sym::ConversionRank::promotion, 3));
@@ -143,6 +151,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::sext, Cm::Sym::ConversionRank::conversion, 100));
@@ -155,6 +165,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, sbyteType, Cm::Sym::ConversionType::implicit, ConversionInst::sext, Cm::Sym::ConversionRank::promotion, 5));
@@ -167,6 +179,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptosi, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), longType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::sext, Cm::Sym::ConversionRank::conversion, 100));
@@ -179,6 +193,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ulongType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, sbyteType, Cm::Sym::ConversionType::implicit, ConversionInst::sitofp, Cm::Sym::ConversionRank::conversion, 5));
@@ -191,6 +207,8 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, ulongType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptrunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), floatType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
 
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, sbyteType, Cm::Sym::ConversionType::implicit, ConversionInst::sitofp, Cm::Sym::ConversionRank::conversion, 8));
@@ -203,8 +221,12 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, ulongType, Cm::Sym::ConversionType::implicit, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 3));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, floatType, Cm::Sym::ConversionType::implicit, ConversionInst::fpext, Cm::Sym::ConversionRank::promotion, 1));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), doubleType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::uitofp, Cm::Sym::ConversionRank::conversion, 100));
 
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, byteType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, shortType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
@@ -217,6 +239,34 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), charType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
 
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, charType, Cm::Sym::ConversionType::implicit, ConversionInst::zext, Cm::Sym::ConversionRank::promotion, 1));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, byteType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, shortType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, ushortType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, intType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, uintType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, longType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, ulongType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, charType, Cm::Sym::ConversionType::implicit, ConversionInst::zext, Cm::Sym::ConversionRank::promotion, 2));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, wcharType, Cm::Sym::ConversionType::implicit, ConversionInst::zext, Cm::Sym::ConversionRank::promotion, 1));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, byteType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, shortType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, ushortType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, intType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, uintType, Cm::Sym::ConversionType::explicit_, ConversionInst::bitcast, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, longType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, ulongType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, boolType, Cm::Sym::ConversionType::explicit_, ConversionInst::zext, Cm::Sym::ConversionRank::conversion, 100));
+
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, sbyteType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, byteType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, shortType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
@@ -228,6 +278,9 @@ void MakeStandardConversions(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::SByteTy
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, floatType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, doubleType, Cm::Sym::ConversionType::explicit_, ConversionInst::fptoui, Cm::Sym::ConversionRank::conversion, 100));
     conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, charType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, wcharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+    conversions.push_back(new ConvertingCtor(symbolTable.GetTypeRepository(), boolType, ucharType, Cm::Sym::ConversionType::explicit_, ConversionInst::trunc, Cm::Sym::ConversionRank::conversion, 100));
+
 
     for (ConvertingCtor* conversion : conversions)
     {
@@ -246,6 +299,10 @@ void MakeBasicTypes(Cm::Sym::SymbolTable& symbolTable)
     symbolTable.AddPredefinedSymbolToGlobalScope(boolTypeSymbol);
     Cm::Sym::CharTypeSymbol* charTypeSymbol = new Cm::Sym::CharTypeSymbol();
     symbolTable.AddPredefinedSymbolToGlobalScope(charTypeSymbol);
+    Cm::Sym::WCharTypeSymbol* wcharTypeSymbol = new Cm::Sym::WCharTypeSymbol();
+    symbolTable.AddPredefinedSymbolToGlobalScope(wcharTypeSymbol);
+    Cm::Sym::UCharTypeSymbol* ucharTypeSymbol = new Cm::Sym::UCharTypeSymbol();
+    symbolTable.AddPredefinedSymbolToGlobalScope(ucharTypeSymbol);
     Cm::Sym::VoidTypeSymbol* voidTypeSymbol = new Cm::Sym::VoidTypeSymbol();
     symbolTable.AddPredefinedSymbolToGlobalScope(voidTypeSymbol);
     Cm::Sym::SByteTypeSymbol* sbyteTypeSymbol = new Cm::Sym::SByteTypeSymbol();
@@ -287,9 +344,11 @@ void MakeBasicTypes(Cm::Sym::SymbolTable& symbolTable)
     MakeFloatingPointOps(symbolTable, floatTypeSymbol);
     MakeFloatingPointOps(symbolTable, doubleTypeSymbol);
     MakeCharOps(symbolTable, charTypeSymbol);
+    MakeCharOps(symbolTable, wcharTypeSymbol);
+    MakeCharOps(symbolTable, ucharTypeSymbol);
 
     MakeStandardConversions(symbolTable, sbyteTypeSymbol, byteTypeSymbol, shortTypeSymbol, ushortTypeSymbol, intTypeSymbol, uintTypeSymbol, longTypeSymbol, ulongTypeSymbol, 
-        floatTypeSymbol, doubleTypeSymbol, charTypeSymbol, boolTypeSymbol);
+        floatTypeSymbol, doubleTypeSymbol, charTypeSymbol, wcharTypeSymbol, ucharTypeSymbol, boolTypeSymbol);
 }
 
 void InitSymbolTable(Cm::Sym::SymbolTable& symbolTable, GlobalConceptData& globalConceptData)

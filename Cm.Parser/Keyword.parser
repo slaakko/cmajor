@@ -17,7 +17,7 @@ namespace Cm.Parser
             ::= keyword_list(identifier, 
                 ["bool", "true", "false", 
                 "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", 
-                "float", "double", "char", "void", "enum", "cast",
+                "float", "double", "char", "wchar", "uchar", "void", "enum", "cast", "interface",
                 "namespace", "using", "static", "extern", "as", "is", "explicit", "delegate", "inline", "cdecl", "nothrow",
                 "public", "protected", "private", "internal", "virtual", "abstract", "override", "suppress",
                 "operator", "class", "return", "if", "else",

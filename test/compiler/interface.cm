@@ -1,0 +1,41 @@
+using System;
+
+namespace Test.Compiler.Interface
+{
+    public interface Reader
+    {
+        int Read(byte* data, int count);
+    }
+
+    public interface Writer
+    {
+        void Write(byte* buf, int count);
+    }
+    
+    public class Beta
+    {
+    }
+
+    public class Alpha : Beta, Reader, Writer
+    {
+        public int Read(byte* data, int count)
+        {
+            Console.Out() << "Alpha.Read" << endl();
+            return 0;
+        }
+        public void Write(byte* buf, int count)
+        {
+            Console.Out() << "Alpha.Write" << endl();
+        }
+    }
+
+    public unit_test void TestInterface()
+    {
+        Alpha alpha;
+        byte* buf = null;
+        Writer writer(&alpha);
+        writer.Write(buf, 1);
+        Reader reader(&alpha);
+        int n = reader.Read(buf, 1);
+    }
+}

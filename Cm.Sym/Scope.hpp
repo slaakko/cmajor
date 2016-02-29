@@ -72,7 +72,8 @@ public:
     void SetContainer(ContainerSymbol* container_) { container = container_; }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
-    ContainerScope* ClassOrNsScope() const;
+    InterfaceTypeSymbol* Interface() const;
+    ContainerScope* ClassInterfaceOrNsScope() const;
     NamespaceSymbol* CreateNamespace(const std::string& qualifiedNsName, const Span& span);
 private:
     typedef std::unordered_map<std::string, Symbol*> SymbolMap;

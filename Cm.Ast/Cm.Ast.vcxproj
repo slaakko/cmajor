@@ -33,6 +33,7 @@
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="Identifier.hpp" />
     <ClInclude Include="InitDone.hpp" />
+    <ClInclude Include="Interface.hpp" />
     <ClInclude Include="IntrinsicConcept.hpp" />
     <ClInclude Include="Literal.hpp" />
     <ClInclude Include="Namespace.hpp" />
@@ -63,6 +64,7 @@
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="Expression.cpp" />
     <ClCompile Include="Function.cpp" />
+    <ClCompile Include="Interface.cpp" />
     <ClCompile Include="IntrinsicConcept.cpp" />
     <ClCompile Include="Literal.cpp" />
     <ClCompile Include="Factory.cpp" />

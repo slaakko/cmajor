@@ -15,6 +15,7 @@
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Class.hpp>
+#include <Cm.Bind/Interface.hpp>
 #include <Cm.Bind/LocalVariable.hpp>
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
@@ -58,6 +59,10 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
             AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
         }
+        else if (returnType && returnType->GetBaseType()->IsInterfaceTypeSymbol())
+        {
+            boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(returnType->GetBaseType()));
+        }
     }
     int n = arguments.Count();
     for (int i = 0; i < n; ++i)
@@ -72,6 +77,10 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
                 Cm::Sym::ClassTypeSymbol* paramClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(paramBaseType);
                 AddClassTypeToIrClassTypeRepository(paramClassType, boundCompileUnit, containerScope);
             }
+            else if (paramBaseType->IsInterfaceTypeSymbol())
+            {
+                boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(paramBaseType));
+            }
         }
         Cm::BoundTree::BoundExpression* argument = arguments[i].get();
         Cm::Sym::TypeSymbol* argumentBaseType = argument->GetType()->GetBaseType();
@@ -81,6 +90,10 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             {
                 Cm::Sym::ClassTypeSymbol* argumentClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(argumentBaseType);
                 AddClassTypeToIrClassTypeRepository(argumentClassType, boundCompileUnit, containerScope);
+            }
+            else if (argumentBaseType->IsInterfaceTypeSymbol())
+            {
+                boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(argumentBaseType));
             }
         }
         if (!isBasicTypeOp)
@@ -139,7 +152,7 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
-            else if (paramType->IsClassTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType())
+            else if (paramType->IsClassTypeSymbol() || paramType->IsInterfaceTypeSymbol() || paramType->IsArrayType() || argument->GetType()->IsArrayType())
             {
                 argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
             }
@@ -161,7 +174,11 @@ void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             }
             else
             {
-                if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
+                if (argument->GetType()->IsInterfaceTypeSymbol())
+                {
+                    argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+                }
+                else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
                 {
                     argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
                 }
@@ -194,6 +211,10 @@ Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* c
         {
             argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         }
+        else if (paramType->IsInterfaceTypeSymbol())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
         else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->GetType()->IsNonClassReferenceType())
         {
             argument->SetFlag(Cm::BoundTree::BoundNodeFlags::refByValue);
@@ -202,6 +223,10 @@ Cm::BoundTree::BoundConversion* CreateBoundConversion(Cm::Sym::ContainerScope* c
     else
     {
         if (paramType->IsClassTypeSymbol())
+        {
+            argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
+        }
+        else if (paramType->IsInterfaceTypeSymbol())
         {
             argument->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
         }
@@ -294,7 +319,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionLookupSet memFunLookups;
     Cm::Sym::TypeSymbol* plainOperandType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(operand->GetType());
-    memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Core::Argument> memFunArguments;
     memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainOperandType, node->GetSpan())));
 	bool firstArgByRef = false;
@@ -308,7 +333,7 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
     {
         Cm::Sym::FunctionLookupSet freeFunLookups;
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
-        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainOperandType->GetContainerScope()->ClassOrNsScope()));
+        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainOperandType->GetContainerScope()->ClassInterfaceOrNsScope()));
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
         std::vector<Cm::Core::Argument> freeFunArguments;
         freeFunArguments.push_back(Cm::Core::Argument(operand->GetArgumentCategory(), operand->GetType()));
@@ -355,11 +380,11 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::Sym::TypeSymbol* plainLeftType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(left->GetType());
     if (opGroupName == "operator==")
     {
-        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
     }
     else
     {
-        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+        memFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
     }
     std::vector<Cm::Core::Argument> memFunArguments;
     memFunArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainLeftType, node->GetSpan())));
@@ -379,8 +404,8 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
         Cm::Sym::FunctionLookupSet freeFunLookups;
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
 		Cm::Sym::TypeSymbol* plainRightType = BoundCompileUnit().SymbolTable().GetTypeRepository().MakePlainType(right->GetType());
-		freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainLeftType->GetContainerScope()->ClassOrNsScope()));
-        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainRightType->GetContainerScope()->ClassOrNsScope()));
+		freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainLeftType->GetContainerScope()->ClassInterfaceOrNsScope()));
+        freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainRightType->GetContainerScope()->ClassInterfaceOrNsScope()));
         freeFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
         fun = ResolveOverload(containerScope, boundCompileUnit, opGroupName, freeFunArguments, freeFunLookups, node->GetSpan(), conversions);
     }
@@ -997,6 +1022,22 @@ void ExpressionBinder::Visit(Cm::Ast::CharNode& charNode)
     boundExpressionStack.Push(typeExpression);
 }
 
+void ExpressionBinder::Visit(Cm::Ast::WCharNode& wcharNode)
+{
+    Cm::Sym::TypeSymbol* wcharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::wcharId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&wcharNode, wcharTypeSymbol);
+    typeExpression->SetType(wcharTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::UCharNode& ucharNode)
+{
+    Cm::Sym::TypeSymbol* ucharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ucharId));
+    Cm::BoundTree::BoundTypeExpression* typeExpression = new Cm::BoundTree::BoundTypeExpression(&ucharNode, ucharTypeSymbol);
+    typeExpression->SetType(ucharTypeSymbol);
+    boundExpressionStack.Push(typeExpression);
+}
+
 void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
 {
     Cm::Sym::TypeSymbol* voidTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId));
@@ -1167,9 +1208,37 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
                 throw Cm::Core::Exception("class '" + classType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
             }
         }
+        else if (type->IsInterfaceTypeSymbol())
+        {
+            Cm::Sym::InterfaceTypeSymbol* interfaceType = static_cast<Cm::Sym::InterfaceTypeSymbol*>(type);
+            Cm::Sym::ContainerScope* containerScope = interfaceType->GetContainerScope();
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_, Cm::Sym::SymbolTypeSetId::lookupFunctionGroup);
+            if (symbol)
+            {
+                Cm::BoundTree::BoundExpression* interfaceObject = expression.release();
+                BindSymbol(&dotNode, symbol);
+                std::unique_ptr<Cm::BoundTree::BoundExpression> symbolExpr(boundExpressionStack.Pop());
+                if (symbolExpr->IsBoundFunctionGroup())
+                {
+                    boundExpressionStack.Push(symbolExpr.release());
+                    interfaceObject->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
+                    interfaceObject->SetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg);
+                    boundExpressionStack.Push(interfaceObject);
+                }
+                else
+                {
+                    throw Cm::Core::Exception("symbol '" + symbolExpr->SyntaxNode()->ToString() + "' does not denote a function group", dotNode.GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
+                }
+            }
+            else
+            {
+                throw Cm::Core::Exception("interface '" + interfaceType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+            }
+        }
         else
         {
-            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, or enumerated type object", dotNode.Subject()->GetSpan());
+            throw Cm::Core::Exception("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, interface type or enumerated type object", 
+                dotNode.Subject()->GetSpan());
         }
     }
 }
@@ -1639,7 +1708,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     Cm::Sym::TypeSymbol* typeSymbol, Cm::Sym::LocalVariableSymbol*& temporary, int& numArgs)
 {
     Cm::Sym::FunctionLookupSet ctorLookups;
-    ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
+    ctorLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, typeSymbol->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Core::Argument> ctorResolutionArguments;
     std::vector<Cm::Sym::TypeSymbol*> boundTemplateArguments;
     temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
@@ -1697,7 +1766,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeMemFun(Cm::Ast::Node* node,
     Cm::Sym::ParameterSymbol* thisParam = currentFunction->GetFunctionSymbol()->Parameters()[0];
     Cm::Sym::TypeSymbol* thisParamType = thisParam->GetType();
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, thisParamType));
-    memberFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+    memberFunLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
     bool first = true;
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
     {
@@ -1756,7 +1825,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
         Cm::Sym::TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
         if (!qualifiedScope)
         {
-            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassInterfaceOrNsScope()));
         }
         if (argument->GetFlag(Cm::BoundTree::BoundNodeFlags::classObjectArg) && argument->GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue))
         {
@@ -1830,7 +1899,7 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeOpApply(Cm::Ast::Node* node
 {
     Cm::Sym::FunctionLookupSet functionLookups;
     std::vector<Cm::Core::Argument> resolutionArguments;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainSubjectType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, plainSubjectType->GetContainerScope()->ClassInterfaceOrNsScope()));
     Cm::Sym::TypeSymbol* subjectPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainSubjectType, node->GetSpan());
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, subjectPtrType));
     for (const std::unique_ptr<Cm::BoundTree::BoundExpression>& argument : arguments)
@@ -1974,6 +2043,12 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
             BindClassTypeSymbol(node, classTypeSymbol);
+            break;
+        }
+        case Cm::Sym::SymbolType::interfaceTypeSymbol:
+        {        
+            Cm::Sym::InterfaceTypeSymbol* interfaceTypeSymbol = static_cast<Cm::Sym::InterfaceTypeSymbol*>(symbol);
+            BindInterfaceTypeSymbol(node, interfaceTypeSymbol);
             break;
         }
         case Cm::Sym::SymbolType::delegateSymbol:
@@ -2133,6 +2208,26 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
     boundExpressionStack.Push(boundType);
 }
 
+void ExpressionBinder::BindInterfaceTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::InterfaceTypeSymbol* interfaceTypeSymbol)
+{
+    if (!interfaceTypeSymbol->Bound())
+    {
+        Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(interfaceTypeSymbol);
+        if (node->IsInterfaceNode())
+        {
+            Cm::Ast::InterfaceNode* interfaceNode = static_cast<Cm::Ast::InterfaceNode*>(node);
+            BindInterface(boundCompileUnit.SymbolTable(), containerScope, fileScopes, interfaceNode);
+        }
+        else
+        {
+            throw std::runtime_error("interface node expected");
+        }
+    }
+    Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, interfaceTypeSymbol);
+    boundType->SetType(interfaceTypeSymbol);
+    boundExpressionStack.Push(boundType);
+}
+
 void ExpressionBinder::BindDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol)
 {
     Cm::BoundTree::BoundTypeExpression* boundType = new Cm::BoundTree::BoundTypeExpression(idNode, delegateTypeSymbol);
@@ -2231,7 +2326,7 @@ void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Sym::TypeSymbol* target
     resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, node->GetSpan())));
     resolutionArguments.push_back(Cm::Core::Argument(sourceExpr->GetArgumentCategory(), sourceExpr->GetType()));
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, targetType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, targetType->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* convertingCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions, Cm::Sym::ConversionType::explicit_,
         OverloadResolutionFlags::none);
@@ -2445,7 +2540,7 @@ void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExp
         resolutionArguments.push_back(resolutionArgument);
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, type->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
     PrepareFunctionSymbol(ctor, node->GetSpan());

@@ -1,5 +1,5 @@
-#ifndef BasicType_hpp_11627
-#define BasicType_hpp_11627
+#ifndef BasicType_hpp_8682
+#define BasicType_hpp_8682
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -22,4 +22,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // BasicType_hpp_11627
+#endif // BasicType_hpp_8682

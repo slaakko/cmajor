@@ -185,13 +185,6 @@ Symbol* ContainerScope::Lookup(const std::string& name, ScopeLookup lookup, Symb
             SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
             if (symbolTypeSet.find(s->GetSymbolType()) != symbolTypeSet.end())
             {
-                /* check this
-                if (s->IsReplica() && s->IsTemplateTypeSymbol())
-                {
-                    TemplateTypeSymbol* replica = static_cast<TemplateTypeSymbol*>(s);
-                    s = replica->GetPrimaryTemplateTypeSymbol();
-                }
-                */
                 return s;
             }
         }
@@ -231,12 +224,17 @@ ClassTypeSymbol* ContainerScope::Class() const
     return container->Class();
 }
 
-ContainerScope* ContainerScope::ClassOrNsScope() const
+InterfaceTypeSymbol* ContainerScope::Interface() const
 {
-    Symbol* clasOrNsSymbol = container->ClassOrNs();
-    if (clasOrNsSymbol)
+    return container->Interface();
+}
+
+ContainerScope* ContainerScope::ClassInterfaceOrNsScope() const
+{
+    Symbol* classInterfaceOrNsSymbol = container->ClassInterfaceOrNs();
+    if (classInterfaceOrNsSymbol)
     {
-        return clasOrNsSymbol->GetContainerScope();
+        return classInterfaceOrNsSymbol->GetContainerScope();
     }
     else
     {

@@ -89,7 +89,7 @@ void GenerateReceives(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::Bo
             resolutionArguments.push_back(sourceArgument);
         }
         Cm::Sym::FunctionLookupSet functionLookups;
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, parameterType->GetContainerScope()->ClassInterfaceOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         Cm::Sym::FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, parameterSymbol->GetSpan(), conversions);
         boundReceiveStatement->SetConstructor(ctor);

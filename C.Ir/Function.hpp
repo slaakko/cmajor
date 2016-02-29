@@ -18,6 +18,7 @@ using Cm::Util::CodeFormatter;
 
 extern const char* exceptionCodeParamName;
 extern const char* classObjectResultParamName;
+extern const char* irecPtrName;
 
 class Function : public Ir::Intf::Function
 {

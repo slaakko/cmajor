@@ -1,7 +1,7 @@
 /*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
- 
+
     Distributed under the GNU General Public License, version 3 (GPLv3).
     (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
 
@@ -327,7 +327,7 @@ int remove_all(const char* dirPath)
                 }
             }
         }
-        else 
+        else
         {
             removeResult = DeleteFile(absolutePath);
             if (removeResult == 0)
@@ -550,7 +550,7 @@ int timedwait_cond(cond_t* cond, mutex_t* mtx, long long secs, int nanosecs, _Bo
         *timedout = 1;
         return 0;
     }
-    else 
+    else
     {
         return result;
     }
@@ -724,7 +724,7 @@ void begin_unit_test(const char* unitTestName)
 
 void end_unit_test(const char* unitTestName)
 {
-    fprintf(stderr, "< %s: %d assertions, %d passed, %d failed\n", unitTestName, num_passed_unit_test_assertions + num_failed_unit_test_assertions, num_passed_unit_test_assertions, 
+    fprintf(stderr, "< %s: %d assertions, %d passed, %d failed\n", unitTestName, num_passed_unit_test_assertions + num_failed_unit_test_assertions, num_passed_unit_test_assertions,
         num_failed_unit_test_assertions);
     if (num_failed_unit_test_assertions > 0)
     {

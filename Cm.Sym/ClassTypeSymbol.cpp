@@ -8,6 +8,7 @@
 ========================================================================*/
 
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Sym/NameMangling.hpp>
 #include <Cm.Sym/MemberVariableSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
@@ -22,6 +23,20 @@
 #include <Cm.IrIntf/Rep.hpp>
 
 namespace Cm { namespace Sym {
+
+ITable::ITable(InterfaceTypeSymbol* intf_) : intf(intf_)
+{
+    intfMemFunImpl.resize(intf->MemFuns().size());
+}
+
+void ITable::SetImplementedMemFun(int index, FunctionSymbol* memFun)
+{
+    if (index < 0 || index >= intfMemFunImpl.size())
+    {
+        throw std::runtime_error("invalid interface mem fun index");
+    }
+    intfMemFunImpl[index] = memFun;
+}
 
 PersistentClassData::PersistentClassData() : classNodePos(0), classNodeSize(0)
 {
@@ -59,12 +74,18 @@ void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(cid);
-    writer.GetBinaryWriter().Write(uint32_t(flags & ~ClassTypeSymbolFlags::vtblInitialized));
+    writer.GetBinaryWriter().Write(uint32_t(flags & ~(ClassTypeSymbolFlags::vtblInitialized | ClassTypeSymbolFlags::itblsInitialized | ClassTypeSymbolFlags::typesSet)));
     bool hasBaseClass = baseClass != nullptr;
     writer.GetBinaryWriter().Write(hasBaseClass);
     if (hasBaseClass)
     {
         writer.Write(baseClass->Id());
+    }
+    int numImplementedInterfaces = int(implementedInterfaces.size());
+    writer.GetBinaryWriter().Write(numImplementedInterfaces);
+    for (InterfaceTypeSymbol* implementedInterface : implementedInterfaces)
+    {
+        writer.Write(implementedInterface->Id());
     }
     bool hasInitializedVar = initializedVar != nullptr;
     writer.GetBinaryWriter().Write(hasInitializedVar);
@@ -114,6 +135,12 @@ void ClassTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, -2);
     }
+    int numImplementedInterfaces = reader.GetBinaryReader().ReadInt();
+    for (int i = 0; i < numImplementedInterfaces; ++i)
+    {
+        reader.FetchTypeFor(this, -2);
+    }
+    SetTypesSet();
     bool hasInitializedVar = reader.GetBinaryReader().ReadBool();
     if (hasInitializedVar)
     {
@@ -181,12 +208,29 @@ void ClassTypeSymbol::FreeClassNode(Cm::Sym::SymbolTable& symbolTable)
     }
 }
 
+void ClassTypeSymbol::AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol)
+{
+    implementedInterfaces.push_back(interfaceTypeSymbol);
+}
+
 void ClassTypeSymbol::SetType(TypeSymbol* type, int index) 
 {
     if (index == -2)
     {
-        baseClass = static_cast<ClassTypeSymbol*>(type);
-        GetContainerScope()->SetBase(baseClass->GetContainerScope());
+        if (type->IsClassTypeSymbol())
+        {
+            baseClass = static_cast<ClassTypeSymbol*>(type);
+            GetContainerScope()->SetBase(baseClass->GetContainerScope());
+        }
+        else if (type->IsInterfaceTypeSymbol())
+        {
+            InterfaceTypeSymbol* implementedInterface = static_cast<InterfaceTypeSymbol*>(type);
+            implementedInterfaces.push_back(implementedInterface);
+        }
+        else
+        {
+            throw std::runtime_error("class or interface type expected");
+        }
     }
 }
 
@@ -207,7 +251,7 @@ bool ClassTypeSymbol::DoGenerateDestructor()
 {
     if (destructor) return false;           // already has one, don't generate
     if (GenerateDestructor()) return true;  // asked to generate one, so generate
-    if (IsVirtual()) return true;           // virtual classes need to have one
+    if (HasVirtualFunctions()) return true;             // classes having virtual functions need to have one
     if (HasNonTrivialMemberDestructor()) return true;   // member has one => need to have one
     if (baseClass && baseClass->Destructor()) return true;  // base class has one => need to have one
     return false;                           // else don't generate
@@ -236,6 +280,22 @@ bool ClassTypeSymbol::HasNonTrivialMemberDestructor() const
     return false;
 }
 
+bool ClassTypeSymbol::HasVirtualFunctions() const
+{
+    for (Symbol* symbol : const_cast<ClassTypeSymbol*>(this)->Symbols())
+    {
+        if (symbol->IsFunctionSymbol())
+        {
+            FunctionSymbol* fun = static_cast<FunctionSymbol*>(symbol);
+            if (fun->IsVirtual())
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 ClassTypeSymbol* ClassTypeSymbol::VPtrContainerClass() const
 {
     if (vptrIndex != -1) return const_cast<ClassTypeSymbol*>(this);
@@ -243,9 +303,10 @@ ClassTypeSymbol* ClassTypeSymbol::VPtrContainerClass() const
     return nullptr;
 }
 
-void ClassTypeSymbol::InitVirtualFunctionTables()
+void ClassTypeSymbol::InitVirtualFunctionTablesAndInterfaceTables()
 {
-    TypeSymbol::InitVirtualFunctionTables();
+    TypeSymbol::InitVirtualFunctionTablesAndInterfaceTables();
+    InitItbls();
     InitVtbl();
 }
 
@@ -383,6 +444,79 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
             }
             f->SetVtblIndex(m);
             vtblToInit.push_back(f);
+        }
+    }
+}
+
+bool Implements(FunctionSymbol* memFun, FunctionSymbol* intfMemFun)
+{
+    if (!memFun->GetReturnType()) return false;
+    if (!TypesEqual(memFun->GetReturnType(), intfMemFun->GetReturnType())) return false;
+    int n = int(memFun->Parameters().size());
+    if (n != int(intfMemFun->Parameters().size())) return false;
+    for (int i = 0; i < n; ++i)
+    {
+        TypeSymbol* memFunParamType = memFun->Parameters()[i]->GetType();
+        TypeSymbol* intfMemFunParamType = intfMemFun->Parameters()[i]->GetType();
+        if (i == 0)
+        {
+            if (intfMemFunParamType->IsConstType() && !memFunParamType->IsConstType() || !intfMemFunParamType->IsConstType() && memFunParamType->IsConstType())
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (!TypesEqual(memFunParamType, intfMemFunParamType)) return false;
+        }
+    }
+    return true;
+}
+
+void ClassTypeSymbol::InitItbls()
+{
+    if (GetFlag(ClassTypeSymbolFlags::itblsInitialized)) return;
+    SetFlag(ClassTypeSymbolFlags::itblsInitialized);
+    if (implementedInterfaces.empty()) return;
+    SetVirtual();
+    if (!HasVirtualFunctions())
+    {
+        vtbl.push_back(nullptr); // generate vtbl although has no virtual functions because rtti needed...
+    }
+    for (InterfaceTypeSymbol* intf : implementedInterfaces)
+    {
+        itabs.push_back(ITable(intf));
+    }
+    for (Symbol* symbol : Symbols())
+    {
+        if (symbol->IsFunctionSymbol())
+        {
+            FunctionSymbol* memFun = static_cast<FunctionSymbol*>(symbol);
+            for (ITable& itab : itabs)
+            {
+                InterfaceTypeSymbol* intf = itab.Intf();
+                for (FunctionSymbol* intfMemFun : intf->MemFuns())
+                {
+                    if (Implements(memFun, intfMemFun))
+                    {
+                        itab.SetImplementedMemFun(intfMemFun->ItblIndex(), memFun);
+                    }
+                }
+            }
+        }
+    }
+    for (const ITable& itab : itabs)
+    {
+        int index = 0;
+        for (FunctionSymbol* memFun : itab.IntfMemFunImpl())
+        {
+            if (!memFun)
+            {
+                std::string intfMemFunSignature = itab.Intf()->MemFuns()[index]->ParsingName();
+                throw Cm::Sym::Exception("class '" + FullName() + "' does not implement interface '" + itab.Intf()->FullName() + "' because implementation of interface function '" + 
+                    intfMemFunSignature + "' is missing", GetSpan(), itab.Intf()->MemFuns()[index]->GetSpan());
+            }
+            ++index;
         }
     }
 }

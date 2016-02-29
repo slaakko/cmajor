@@ -17,6 +17,7 @@ class CBackEnd : public BackEndIntf
 {
 public:
     std::string GetExCodeVarName() override;
+    std::string GetIrecPtrName() override;
     Ir::Intf::LabelObject* CreateTempLabel(int tempLabelCounter) override;
     std::string CreateTempVarName(int tempVarCounter) override;
     Ir::Intf::LabelObject* CreateNextLocalLabel() override;

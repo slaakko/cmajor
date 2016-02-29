@@ -43,6 +43,7 @@
     <ClInclude Include="FunctionTable.hpp" />
     <ClInclude Include="GlobalFlags.hpp" />
     <ClInclude Include="InitDone.hpp" />
+    <ClInclude Include="InterfaceTypeSymbol.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
     <ClInclude Include="MemberVariableSymbol.hpp" />
     <ClInclude Include="Module.hpp" />
@@ -92,6 +93,7 @@
     <ClCompile Include="FunctionTable.cpp" />
     <ClCompile Include="GlobalFlags.cpp" />
     <ClCompile Include="InitDone.cpp" />
+    <ClCompile Include="InterfaceTypeSymbol.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />
     <ClCompile Include="MemberVariableSymbol.cpp" />
     <ClCompile Include="Module.cpp" />

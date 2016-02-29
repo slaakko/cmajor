@@ -15,6 +15,7 @@
  [cpp]#include <Cm.Parser/Enumeration.hpp>
  [cpp]#include <Cm.Parser/Typedef.hpp>
  [cpp]#include <Cm.Parser/Class.hpp>
+ [cpp]#include <Cm.Parser/Interface.hpp>
  [cpp]#include <Cm.Parser/Delegate.hpp>
  [cpp]#include <Cm.Parser/Concept.hpp>
  [cpp]#include <Cm.Ast/Namespace.hpp>
@@ -40,6 +41,7 @@ namespace Cm.Parser
         using EnumerationGrammar.EnumType;
         using TypedefGrammar.Typedef;
         using ClassGrammar.Class;
+        using InterfaceGrammar.Interface;
         using DelegateGrammar.Delegate;
         using DelegateGrammar.ClassDelegate;
         using ConceptGrammar.Concept;
@@ -84,6 +86,7 @@ namespace Cm.Parser
             |   EnumerationDefinition(ctx){ value = EnumerationDefinition; }
             |   TypedefDefinition(ctx){ value = TypedefDefinition; }
             |   ClassDefinition(ctx, compileUnit){ value = ClassDefinition; }
+            |   InterfaceDefinition(ctx, compileUnit){ value = InterfaceDefinition; }
             |   DelegateDefinition(ctx){ value = DelegateDefinition; }
             |   ClassDelegateDefinition(ctx){ value = ClassDelegateDefinition; }
             |   ConceptDefinition(ctx){ value = ConceptDefinition; }
@@ -111,6 +114,10 @@ namespace Cm.Parser
 
         ClassDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*
             ::= Class(ctx, compileUnit){ value = Class; }
+            ;
+
+        InterfaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*
+            ::= Interface(ctx, compileUnit){ value = Interface; }
             ;
 
         DelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*

@@ -126,8 +126,8 @@ public:
         identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostIdentifier));
         Cm::Parsing::NonterminalParser* templateParameterListNonterminalParser = GetNonterminal("TemplateParameterList");
         templateParameterListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreTemplateParameterList));
-        Cm::Parsing::NonterminalParser* inheritanceNonterminalParser = GetNonterminal("Inheritance");
-        inheritanceNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreInheritance));
+        Cm::Parsing::NonterminalParser* inheritanceAndImplIntfsNonterminalParser = GetNonterminal("InheritanceAndImplIntfs");
+        inheritanceAndImplIntfsNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreInheritanceAndImplIntfs));
         Cm::Parsing::NonterminalParser* whereConstraintNonterminalParser = GetNonterminal("WhereConstraint");
         whereConstraintNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<ClassRule>(this, &ClassRule::PreWhereConstraint));
         whereConstraintNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<ClassRule>(this, &ClassRule::PostWhereConstraint));
@@ -167,7 +167,7 @@ public:
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Node*>(context.value)));
     }
-    void PreInheritance(Cm::Parsing::ObjectStack& stack)
+    void PreInheritanceAndImplIntfs(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::ClassNode*>(context.value)));
@@ -206,10 +206,10 @@ private:
     Context context;
 };
 
-class ClassGrammar::InheritanceRule : public Cm::Parsing::Rule
+class ClassGrammar::InheritanceAndImplIntfsRule : public Cm::Parsing::Rule
 {
 public:
-    InheritanceRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+    InheritanceAndImplIntfsRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
@@ -234,13 +234,13 @@ public:
     virtual void Link()
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceRule>(this, &InheritanceRule::A0Action));
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceAndImplIntfsRule>(this, &InheritanceAndImplIntfsRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceRule>(this, &InheritanceRule::A1Action));
-        a1ActionParser->SetFailureAction(new Cm::Parsing::MemberFailureAction<InheritanceRule>(this, &InheritanceRule::A1ActionFail));
-        Cm::Parsing::NonterminalParser* baseClassTypeExprNonterminalParser = GetNonterminal("BaseClassTypeExpr");
-        baseClassTypeExprNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InheritanceRule>(this, &InheritanceRule::PreBaseClassTypeExpr));
-        baseClassTypeExprNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<InheritanceRule>(this, &InheritanceRule::PostBaseClassTypeExpr));
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InheritanceAndImplIntfsRule>(this, &InheritanceAndImplIntfsRule::A1Action));
+        a1ActionParser->SetFailureAction(new Cm::Parsing::MemberFailureAction<InheritanceAndImplIntfsRule>(this, &InheritanceAndImplIntfsRule::A1ActionFail));
+        Cm::Parsing::NonterminalParser* baseClassTypeExprOrImplIntfNonterminalParser = GetNonterminal("BaseClassTypeExprOrImplIntf");
+        baseClassTypeExprOrImplIntfNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InheritanceAndImplIntfsRule>(this, &InheritanceAndImplIntfsRule::PreBaseClassTypeExprOrImplIntf));
+        baseClassTypeExprOrImplIntfNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<InheritanceAndImplIntfsRule>(this, &InheritanceAndImplIntfsRule::PostBaseClassTypeExprOrImplIntf));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -248,42 +248,42 @@ public:
     }
     void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
-        context.cls->SetBaseClassTypeExpr(context.fromBaseClassTypeExpr);
+        context.cls->AddBaseClassOrImplIntfTypeExpr(context.fromBaseClassTypeExprOrImplIntf);
         context.ctx->EndParsingTypeExpr();
     }
     void A1ActionFail()
     {
         context.ctx->EndParsingTypeExpr();
     }
-    void PreBaseClassTypeExpr(Cm::Parsing::ObjectStack& stack)
+    void PreBaseClassTypeExprOrImplIntf(Cm::Parsing::ObjectStack& stack)
     {
         stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
     }
-    void PostBaseClassTypeExpr(Cm::Parsing::ObjectStack& stack, bool matched)
+    void PostBaseClassTypeExprOrImplIntf(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
         {
-            std::unique_ptr<Cm::Parsing::Object> fromBaseClassTypeExpr_value = std::move(stack.top());
-            context.fromBaseClassTypeExpr = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromBaseClassTypeExpr_value.get());
+            std::unique_ptr<Cm::Parsing::Object> fromBaseClassTypeExprOrImplIntf_value = std::move(stack.top());
+            context.fromBaseClassTypeExprOrImplIntf = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::Node*>*>(fromBaseClassTypeExprOrImplIntf_value.get());
             stack.pop();
         }
     }
 private:
     struct Context
     {
-        Context(): ctx(), cls(), fromBaseClassTypeExpr() {}
+        Context(): ctx(), cls(), fromBaseClassTypeExprOrImplIntf() {}
         ParsingContext* ctx;
         Cm::Ast::ClassNode* cls;
-        Cm::Ast::Node* fromBaseClassTypeExpr;
+        Cm::Ast::Node* fromBaseClassTypeExprOrImplIntf;
     };
     std::stack<Context> contextStack;
     Context context;
 };
 
-class ClassGrammar::BaseClassTypeExprRule : public Cm::Parsing::Rule
+class ClassGrammar::BaseClassTypeExprOrImplIntfRule : public Cm::Parsing::Rule
 {
 public:
-    BaseClassTypeExprRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+    BaseClassTypeExprOrImplIntfRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
         Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
     {
         AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
@@ -309,14 +309,14 @@ public:
     virtual void Link()
     {
         Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
-        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BaseClassTypeExprRule>(this, &BaseClassTypeExprRule::A0Action));
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BaseClassTypeExprOrImplIntfRule>(this, &BaseClassTypeExprOrImplIntfRule::A0Action));
         Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
-        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BaseClassTypeExprRule>(this, &BaseClassTypeExprRule::A1Action));
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BaseClassTypeExprOrImplIntfRule>(this, &BaseClassTypeExprOrImplIntfRule::A1Action));
         Cm::Parsing::NonterminalParser* templateIdNonterminalParser = GetNonterminal("TemplateId");
-        templateIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<BaseClassTypeExprRule>(this, &BaseClassTypeExprRule::PreTemplateId));
-        templateIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<BaseClassTypeExprRule>(this, &BaseClassTypeExprRule::PostTemplateId));
+        templateIdNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<BaseClassTypeExprOrImplIntfRule>(this, &BaseClassTypeExprOrImplIntfRule::PreTemplateId));
+        templateIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<BaseClassTypeExprOrImplIntfRule>(this, &BaseClassTypeExprOrImplIntfRule::PostTemplateId));
         Cm::Parsing::NonterminalParser* qualifiedIdNonterminalParser = GetNonterminal("QualifiedId");
-        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<BaseClassTypeExprRule>(this, &BaseClassTypeExprRule::PostQualifiedId));
+        qualifiedIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<BaseClassTypeExprOrImplIntfRule>(this, &BaseClassTypeExprOrImplIntfRule::PostQualifiedId));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -1983,40 +1983,40 @@ private:
 void ClassGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::EnumerationGrammar::Create(pd);
+        grammar0 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar3 = Cm::Parser::DelegateGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parsing::stdlib::Create(pd);
+        grammar4 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.EnumerationGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar5 = Cm::Parser::EnumerationGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
     Cm::Parsing::Grammar* grammar6 = pd->GetGrammar("Cm.Parser.ConceptGrammar");
@@ -2037,50 +2037,49 @@ void ClassGrammar::GetReferencedGrammars()
         grammar8 = Cm::Parser::ConstantGrammar::Create(pd);
     }
     AddGrammarReference(grammar8);
-    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("Cm.Parser.DelegateGrammar");
+    Cm::Parsing::Grammar* grammar9 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
     if (!grammar9)
     {
-        grammar9 = Cm::Parser::DelegateGrammar::Create(pd);
+        grammar9 = Cm::Parser::TypedefGrammar::Create(pd);
     }
     AddGrammarReference(grammar9);
-    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parser.TypedefGrammar");
+    Cm::Parsing::Grammar* grammar10 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar10)
     {
-        grammar10 = Cm::Parser::TypedefGrammar::Create(pd);
+        grammar10 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar10);
-    Cm::Parsing::Grammar* grammar11 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar11 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar11)
     {
-        grammar11 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar11 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar11);
-    Cm::Parsing::Grammar* grammar12 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar12 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
     if (!grammar12)
     {
-        grammar12 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar12 = Cm::Parser::FunctionGrammar::Create(pd);
     }
     AddGrammarReference(grammar12);
-    Cm::Parsing::Grammar* grammar13 = pd->GetGrammar("Cm.Parser.FunctionGrammar");
+    Cm::Parsing::Grammar* grammar13 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar13)
     {
-        grammar13 = Cm::Parser::FunctionGrammar::Create(pd);
+        grammar13 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar13);
 }
 
 void ClassGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
     AddRuleLink(new Cm::Parsing::RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
     AddRuleLink(new Cm::Parsing::RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
     AddRuleLink(new Cm::Parsing::RuleLink("Constant", this, "ConstantGrammar.Constant"));
     AddRuleLink(new Cm::Parsing::RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
     AddRuleLink(new Cm::Parsing::RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
@@ -2088,6 +2087,7 @@ void ClassGrammar::CreateRules()
     AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new ClassRule("Class", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
@@ -2104,7 +2104,7 @@ void ClassGrammar::CreateRules()
                                 new Cm::Parsing::OptionalParser(
                                     new Cm::Parsing::NonterminalParser("TemplateParameterList", "TemplateParameterList", 2))),
                             new Cm::Parsing::OptionalParser(
-                                new Cm::Parsing::NonterminalParser("Inheritance", "Inheritance", 2))),
+                                new Cm::Parsing::NonterminalParser("InheritanceAndImplIntfs", "InheritanceAndImplIntfs", 2))),
                         new Cm::Parsing::OptionalParser(
                             new Cm::Parsing::ActionParser("A1",
                                 new Cm::Parsing::NonterminalParser("WhereConstraint", "WhereConstraint", 1)))),
@@ -2114,14 +2114,17 @@ void ClassGrammar::CreateRules()
                     new Cm::Parsing::NonterminalParser("ClassContent", "ClassContent", 3))),
             new Cm::Parsing::ExpectationParser(
                 new Cm::Parsing::CharParser('}')))));
-    AddRule(new InheritanceRule("Inheritance", GetScope(),
+    AddRule(new InheritanceAndImplIntfsRule("InheritanceAndImplIntfs", GetScope(),
         new Cm::Parsing::SequenceParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::CharParser(':')),
-            new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("BaseClassTypeExpr", "BaseClassTypeExpr", 1))))));
-    AddRule(new BaseClassTypeExprRule("BaseClassTypeExpr", GetScope(),
+            new Cm::Parsing::CharParser(':'),
+            new Cm::Parsing::ListParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::EmptyParser()),
+                    new Cm::Parsing::ActionParser("A1",
+                        new Cm::Parsing::NonterminalParser("BaseClassTypeExprOrImplIntf", "BaseClassTypeExprOrImplIntf", 1))),
+                new Cm::Parsing::CharParser(',')))));
+    AddRule(new BaseClassTypeExprOrImplIntfRule("BaseClassTypeExprOrImplIntf", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",
                 new Cm::Parsing::NonterminalParser("TemplateId", "TemplateId", 1)),

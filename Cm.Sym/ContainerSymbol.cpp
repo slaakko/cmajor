@@ -183,11 +183,11 @@ void ContainerSymbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& 
     }
 }
 
-void ContainerSymbol::InitVirtualFunctionTables()
+void ContainerSymbol::InitVirtualFunctionTablesAndInterfaceTables()
 {
     for (Symbol* symbol : symbols)
     {
-        symbol->InitVirtualFunctionTables();
+        symbol->InitVirtualFunctionTablesAndInterfaceTables();
     }
 }
 

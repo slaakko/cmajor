@@ -35,6 +35,7 @@
     <ClInclude Include="ExpressionBinder.hpp" />
     <ClInclude Include="Function.hpp" />
     <ClInclude Include="InlineFunctionRepository.hpp" />
+    <ClInclude Include="Interface.hpp" />
     <ClInclude Include="LocalVariable.hpp" />
     <ClInclude Include="MemberVariable.hpp" />
     <ClInclude Include="OverloadResolution.hpp" />
@@ -66,6 +67,7 @@
     <ClCompile Include="ExpressionBinder.cpp" />
     <ClCompile Include="Function.cpp" />
     <ClCompile Include="InlineFunctionRepository.cpp" />
+    <ClCompile Include="Interface.cpp" />
     <ClCompile Include="LocalVariable.cpp" />
     <ClCompile Include="MemberVariable.cpp" />
     <ClCompile Include="OverloadResolution.cpp" />

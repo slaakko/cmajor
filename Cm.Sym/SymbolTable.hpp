@@ -15,7 +15,7 @@
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/LocalVariableSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
-#include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Interface.hpp>
 #include <Cm.Ast/Enumeration.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/Delegate.hpp>
@@ -41,6 +41,8 @@ public:
     void EndNamespaceScope();
     void BeginClassScope(Cm::Ast::ClassNode* classNode, std::unordered_map<std::string, uint64_t>* cidMap);
     void EndClassScope();
+    void BeginInterfaceScope(Cm::Ast::InterfaceNode* interfaceNode, std::unordered_map<std::string, uint64_t>* iidMap);
+    void EndInterfaceScope();
     void BeginTemplateTypeScope(Cm::Ast::ClassNode* templateClassNode, Cm::Sym::TemplateTypeSymbol* templateTypeSymbol);
     void EndTemplateTypeScope();
     void BeginEnumScope(Cm::Ast::EnumTypeNode* enumTypeNode);
@@ -82,7 +84,7 @@ public:
     TypeRepository& GetTypeRepository() { return typeRepository; }
     ConversionTable& GetStandardConversionTable() { return standardConversionTable; }
     void AddPredefinedSymbolToGlobalScope(Symbol* symbol);
-    void InitVirtualFunctionTables();
+    void InitVirtualFunctionTablesAndInterfaceTables();
     FunctionSymbol* GetOverload(const std::string& fullOverloadGroupName) const;
     void BeginContainer(ContainerSymbol* container_);
     void EndContainer();

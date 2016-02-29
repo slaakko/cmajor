@@ -10,6 +10,7 @@
 #include <Cm.Sym/Symbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Sym/FunctionSymbol.hpp>
 #include <Cm.Sym/Writer.hpp>
 #include <Cm.Sym/Reader.hpp>
@@ -21,10 +22,11 @@ namespace Cm { namespace Sym {
      
 const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
 {
-    "boolSymbol", "charSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", "floatSymbol", "doubleSymbol", "nullptrSymbol",
+    "boolSymbol", "charSymbol", "wcharSymbol", "ucharSymbol", "voidSymbol", "sbyteSymbol", "byteSymbol", "shortSymbol", "ushortSymbol", "intSymbol", "uintSymbol", "longSymbol", "ulongSymbol", 
+    "floatSymbol", "doubleSymbol", "nullptrSymbol",
     "classSymbol", "constantSymbol", "declarationBlock", "delegateSymbol", "classDelegateSymbol", "enumTypeSymbol", "enumConstantSymbol", "functionSymbol", "functionGroupSymbol", "localVariableSymbol", "memberVariableSymbol",
     "namespaceSymbol", "parameterSymbol", "typeParameterSymbol", "templateTypeSymbol", "derivedTypeSymbol", "typedefSymbol", "boundTypeParameterSymbol", "conceptSymbol", "conceptGroupSymbol", 
-    "instantiatedConceptSymbol", "functionGroupTypeSymbol", "entrySymbol", "returnValueSymbol"
+    "instantiatedConceptSymbol", "functionGroupTypeSymbol", "entrySymbol", "returnValueSymbol", "interfaceSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType st)
@@ -175,6 +177,25 @@ ClassTypeSymbol* Symbol::Class() const
     }
 }
 
+InterfaceTypeSymbol* Symbol::Interface() const
+{
+    if (IsInterfaceTypeSymbol())
+    {
+        return const_cast<InterfaceTypeSymbol*>(static_cast<const InterfaceTypeSymbol*>(this));
+    }
+    else 
+    {
+        if (parent)
+        {
+            return parent->Interface();
+        }
+        else
+        {
+            return nullptr;
+        }
+    }
+}
+
 ClassTypeSymbol* Symbol::ContainingClass() const
 {
     if (parent)
@@ -238,9 +259,9 @@ bool Symbol::IsSameParentOrAncestorOf(Symbol* that) const
     }
 }
 
-ContainerSymbol* Symbol::ClassOrNs() const
+ContainerSymbol* Symbol::ClassInterfaceOrNs() const
 {
-    if (IsClassTypeSymbol() || IsNamespaceSymbol())
+    if (IsClassTypeSymbol() || IsInterfaceTypeSymbol() || IsNamespaceSymbol())
     {
         return const_cast<ContainerSymbol*>(static_cast<const ContainerSymbol*>(this));
     }
@@ -248,7 +269,7 @@ ContainerSymbol* Symbol::ClassOrNs() const
     {
         if (parent)
         {
-            return parent->ClassOrNs();
+            return parent->ClassInterfaceOrNs();
         }
         else
         {
@@ -281,7 +302,7 @@ void Symbol::CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected
 {
 }
 
-void Symbol::InitVirtualFunctionTables()
+void Symbol::InitVirtualFunctionTablesAndInterfaceTables()
 {
 }
 

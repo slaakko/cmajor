@@ -33,6 +33,14 @@ Ir::Intf::Parameter* IrFunctionRepository::CreateIrParameter(Cm::Sym::ParameterS
         }
         irParameterType = Cm::IrIntf::Pointer(parameter->GetType()->GetIrType(), 1);
     }
+    else if (parameter->GetType()->IsInterfaceTypeSymbol())
+    {
+        if (!parameter->GetType()->IrTypeMade())
+        {
+            parameter->GetType()->MakeIrType();
+        }
+        irParameterType = Cm::IrIntf::Pointer(parameter->GetType()->GetIrType(), 1);
+    }
     else
     {
         irParameterType = parameter->GetType()->GetIrType();

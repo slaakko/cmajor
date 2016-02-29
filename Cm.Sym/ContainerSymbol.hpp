@@ -36,7 +36,7 @@ public:
     void Dump(CodeFormatter& formatter) override;
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
-    void InitVirtualFunctionTables();
+    void InitVirtualFunctionTablesAndInterfaceTables();
     void Collect(SymbolCollector& collector) override;
     void ReplaceReplicaTypes() override;
 private:

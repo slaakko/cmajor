@@ -685,6 +685,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
     if ((flags & OverloadResolutionFlags::bindOnlyMemberFunctions) == OverloadResolutionFlags::none)
     {
         boundCompileUnit.DerivedTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
+        boundCompileUnit.InterfaceTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, span, viableFunctions);
         boundCompileUnit.ArrayTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, containerScope, span, viableFunctions);
         boundCompileUnit.EnumTypeOpRepository().CollectViableFunctions(groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);
         boundCompileUnit.DelegateTypeOpRepository().CollectViableFunctions(containerScope, groupName, arity, arguments, boundCompileUnit.ConversionTable(), span, viableFunctions);

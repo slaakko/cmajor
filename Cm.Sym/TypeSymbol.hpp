@@ -52,6 +52,7 @@ public:
     virtual int GetPointerCount() const { return 0; }
     virtual int GetPointerCountAfterArray() const { return 0; }
     virtual bool IsPointerToClassType() const { return false; }
+    virtual bool IsPointerToInterfaceTypeSymbol() const { return false; }
     virtual bool IsPointerToTemplateType() const { return false; }
     virtual bool IsReferenceType() const { return false; }
     virtual bool IsNonConstReferenceType() const { return false; }

@@ -16,6 +16,19 @@ namespace Cm { namespace Sym {
 
 class MemberVariableSymbol;
 class TypeParameterSymbol;
+class InterfaceTypeSymbol;
+
+class ITable
+{
+public:
+    ITable(InterfaceTypeSymbol* intf_);
+    InterfaceTypeSymbol* Intf() const { return intf; }
+    const std::vector<FunctionSymbol*>& IntfMemFunImpl() const { return intfMemFunImpl; }
+    void SetImplementedMemFun(int index, FunctionSymbol* memFun);
+private:
+    InterfaceTypeSymbol* intf;
+    std::vector<FunctionSymbol*> intfMemFunImpl;
+};
 
 enum class ClassTypeSymbolFlags : uint32_t
 {
@@ -47,7 +60,9 @@ enum class ClassTypeSymbolFlags : uint32_t
     generateDestructor = 1 << 24,
     debugInfoGenerated = 1 << 25,
     nonLeaf = 1 << 26,
-    live = 1 << 27
+    live = 1 << 27,
+    typesSet = 1 << 28,
+    itblsInitialized = 1 << 29
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -97,12 +112,15 @@ public:
     bool IsClassTemplateSymbol() const override { return !typeParameters.empty(); }
     ClassTypeSymbol* BaseClass() const { return baseClass; }
     void SetBaseClass(ClassTypeSymbol* baseClass_) { baseClass = baseClass_; }
+    const std::vector<InterfaceTypeSymbol*>& ImplementedInterfaces() const { return implementedInterfaces; }
+    void AddImplementedInterface(InterfaceTypeSymbol* interfaceTypeSymbol);
     void SetType(TypeSymbol* type, int index);
     bool HasBaseClass(ClassTypeSymbol* cls) const;
     bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const;
     bool DoGenerateDestructor();
     bool DoGenerateStaticConstructor();
     bool HasNonTrivialMemberDestructor() const;
+    bool HasVirtualFunctions() const;
     void AddSymbol(Symbol* symbol) override;
     void AddConversion(FunctionSymbol* functionSymbol);
     const std::vector<MemberVariableSymbol*>& MemberVariables() const { return memberVariables; }
@@ -327,6 +345,14 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::live);
     }
+    bool TypesSet() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::typesSet);
+    }
+    void SetTypesSet()
+    {
+        SetFlag(ClassTypeSymbolFlags::typesSet);
+    }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }
     const std::unordered_set<FunctionSymbol*>& Conversions() const { return conversions; }
@@ -337,7 +363,9 @@ public:
     ClassTypeSymbol* VPtrContainerClass() const;
     void InitVtbl();
     const std::vector<Cm::Sym::FunctionSymbol*>& Vtbl() const { return vtbl; }
-    void InitVirtualFunctionTables() override;
+    void InitVirtualFunctionTablesAndInterfaceTables() override;
+    void InitItbls();
+    const std::vector<ITable>& ITabs() const { return itabs; }
     void MakeIrType() override;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes) override;
@@ -363,6 +391,8 @@ private:
     int priority;
     ClassTypeSymbolFlags flags;
     ClassTypeSymbol* baseClass;
+    std::vector<InterfaceTypeSymbol*> implementedInterfaces;
+    std::vector<ITable> itabs;
     std::vector<MemberVariableSymbol*> memberVariables;
     std::vector<MemberVariableSymbol*> staticMemberVariables;
     std::vector<TypeParameterSymbol*> typeParameters;

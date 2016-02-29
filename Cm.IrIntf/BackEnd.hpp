@@ -29,6 +29,7 @@ class BackEndIntf
 public:
     virtual ~BackEndIntf();
     virtual std::string GetExCodeVarName() = 0;
+    virtual std::string GetIrecPtrName() = 0;
     virtual Ir::Intf::LabelObject* CreateTempLabel(int tempLabelCounter) = 0;
     virtual std::string CreateTempVarName(int tempVarCounter) = 0;
     virtual Ir::Intf::LabelObject* CreateNextLocalLabel() = 0;

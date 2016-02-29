@@ -19,12 +19,15 @@ class DeclarationVisitor : public Cm::Ast::Visitor
 public:
     DeclarationVisitor(SymbolTable& symbolTable_);
     void SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_);
+    void SetIidMap(std::unordered_map<std::string, uint64_t>* iidMap_);
     void SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_);
     void MarkFunctionSymbolAsTemplateSpecialization() { markFunctionSymbolAsTemplateSpecialization = true; }
     void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void EndVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
     void BeginVisit(Cm::Ast::ClassNode& classNode) override;
     void EndVisit(Cm::Ast::ClassNode& classNode) override;
+    void BeginVisit(Cm::Ast::InterfaceNode& interfaceNode) override;
+    void EndVisit(Cm::Ast::InterfaceNode& interfaceNode) override;
     void BeginVisit(Cm::Ast::ConstructorNode& constructorNode) override;
     void EndVisit(Cm::Ast::ConstructorNode& constructorNode) override;
     void BeginVisit(Cm::Ast::DestructorNode& destructorNode) override;
@@ -65,6 +68,7 @@ private:
     Cm::Sym::TemplateTypeSymbol* templateType;
     bool markFunctionSymbolAsTemplateSpecialization;
     std::unordered_map<std::string, uint64_t>* cidMap;
+    std::unordered_map<std::string, uint64_t>* iidMap;
 };
 
 } } // namespace Cm::Sym

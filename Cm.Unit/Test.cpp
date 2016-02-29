@@ -31,6 +31,7 @@
 #include <Cm.Sym/ExceptionTable.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/ClassCounter.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Sym/DeclarationVisitor.hpp>
 #include <Cm.Sym/Conditional.hpp>
 #include <Cm.Ast/Function.hpp>
@@ -174,7 +175,7 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, Cm::Core::GlobalConcept
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     Cm::Build::ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable, allLibrarySearchPaths);
     testUnit->GlobalNs()->AddMember(CreateDriverFunction(unitTestName));
-    symbolTable.InitVirtualFunctionTables();
+    symbolTable.InitVirtualFunctionTablesAndInterfaceTables();
     Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
     testUnit->Accept(declarationVisitor);
 }
@@ -241,6 +242,8 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     Cm::Sym::SetMutexTable(&mutexTable);
     Cm::Sym::ClassCounter classCounter;
     Cm::Sym::SetClassCounter(&classCounter);
+    Cm::Sym::InterfaceCounter interfaceCounter;
+    Cm::Sym::SetInterfaceCounter(&interfaceCounter);
     std::vector<std::string> libraryDirs;
     Cm::Build::GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;

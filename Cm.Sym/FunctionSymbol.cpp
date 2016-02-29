@@ -119,7 +119,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), entrySymbol(nullptr), returnValueSymbol(nullptr)
+    itblIndex(-1), classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), entrySymbol(nullptr), returnValueSymbol(nullptr)
 {
 }
 
@@ -371,6 +371,7 @@ void FunctionSymbol::Write(Writer& writer)
     writer.GetBinaryWriter().Write(uint32_t(flags));
     writer.GetBinaryWriter().Write(groupName);
     writer.GetBinaryWriter().Write(vtblIndex);
+    writer.GetBinaryWriter().Write(itblIndex);
     if (IsFunctionTemplate() && !justSymbol)
     {
         SymbolTable* symbolTable = writer.GetSymbolTable();
@@ -489,6 +490,7 @@ void FunctionSymbol::Read(Reader& reader)
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
     vtblIndex = reader.GetBinaryReader().ReadShort();
+    itblIndex = reader.GetBinaryReader().ReadShort();
     bool justSymbol = JustSymbol();
     if (IsFunctionTemplate() && !justSymbol)
     {
@@ -791,22 +793,26 @@ std::string FunctionSymbol::ParsingName() const
             startParamIndex = 1;
         }
         Symbol* parent = Parent();
-        ClassTypeSymbol* classType = nullptr;
+        TypeSymbol* parentType = nullptr;
         if (parent->IsClassTypeSymbol())
         {
-            classType = static_cast<ClassTypeSymbol*>(parent);
+            parentType = static_cast<TypeSymbol*>(parent);
+        }
+        else if (parent->IsInterfaceTypeSymbol())
+        {
+            parentType = static_cast<TypeSymbol*>(parent);
         }
         else
         {
-            throw std::runtime_error("not class type");
+            throw std::runtime_error("not class or interface type");
         }
         if (IsConstructor())
         {
-            parsingName.append(classType->Name());
+            parsingName.append(parentType->Name());
         }
         else if (IsDestructor())
         {
-            parsingName.append("~").append(classType->Name());
+            parsingName.append("~").append(parentType->Name());
         }
         else
         {

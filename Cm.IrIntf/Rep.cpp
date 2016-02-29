@@ -16,6 +16,11 @@ std::string GetExCodeVarName()
     return GetBackEndImpl()->GetExCodeVarName();
 }
 
+std::string GetIrecPtrName()
+{
+    return GetBackEndImpl()->GetIrecPtrName();
+}
+
 Ir::Intf::LabelObject* CreateTempLabel(int tempLabelCounter)
 {
     return GetBackEndImpl()->CreateTempLabel(tempLabelCounter);

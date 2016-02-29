@@ -35,12 +35,12 @@ void ClassNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
     templateParameters.Add(templateParameter);
 }
 
-void ClassNode::SetBaseClassTypeExpr(Node* baseClassTypeExpr_)
+void ClassNode::AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr_)
 {
-    baseClassTypeExpr.reset(baseClassTypeExpr_);
-    if (baseClassTypeExpr)
+    if (baseClassOrImplIntfTypeExpr_)
     {
-        baseClassTypeExpr->SetParent(this);
+        baseClassOrImplIntfTypeExprs.push_back(std::unique_ptr<Node>(baseClassOrImplIntfTypeExpr_));
+        baseClassOrImplIntfTypeExpr_->SetParent(this);
     }
 }
 
@@ -69,9 +69,9 @@ Node* ClassNode::Clone(CloneContext& cloneContext) const
             clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
         }
     }
-    if (baseClassTypeExpr)
+    for (const std::unique_ptr<Node>& baseClassOrImplIntfTypeExpr : baseClassOrImplIntfTypeExprs)
     {
-        clone->SetBaseClassTypeExpr(baseClassTypeExpr->Clone(cloneContext));
+        clone->AddBaseClassOrImplIntfTypeExpr(baseClassOrImplIntfTypeExpr->Clone(cloneContext));
     }
     if (constraint)
     {
@@ -91,11 +91,10 @@ void ClassNode::Read(Reader& reader)
     id->SetParent(this);
     templateParameters.Read(reader);
     templateParameters.SetParent(this);
-    bool hasBaseClass = reader.ReadBool();
-    if (hasBaseClass)
+    int numBaseClassOrImplIntfTypeExprs = reader.ReadInt();
+    for (int i = 0; i < numBaseClassOrImplIntfTypeExprs; ++i)
     {
-        baseClassTypeExpr.reset(reader.ReadNode());
-        baseClassTypeExpr->SetParent(this);
+        AddBaseClassOrImplIntfTypeExpr(reader.ReadNode());
     }
     bool hasConstraint = reader.ReadBool();
     if (hasConstraint)
@@ -112,11 +111,11 @@ void ClassNode::Write(Writer& writer)
     writer.Write(specifiers);
     writer.Write(id.get());
     templateParameters.Write(writer);
-    bool hasBasClass = baseClassTypeExpr != nullptr;
-    writer.Write(hasBasClass);
-    if (hasBasClass)
+    int numBaseClassOrImplIntfTypeExprs = int(baseClassOrImplIntfTypeExprs.size());
+    writer.Write(numBaseClassOrImplIntfTypeExprs);
+    for (const std::unique_ptr<Node>& baseClassOrImplIntfTypeExpr : baseClassOrImplIntfTypeExprs)
     {
-        writer.Write(baseClassTypeExpr.get());
+        writer.Write(baseClassOrImplIntfTypeExpr.get());
     }
     bool hasConstraint = constraint != nullptr;
     writer.Write(hasConstraint);
@@ -135,9 +134,18 @@ void ClassNode::Print(CodeFormatter& formatter)
         s.append(1, ' ');
     }
     s.append("class ").append(id->ToString()).append(templateParameters.ToString());
-    if (baseClassTypeExpr)
-    { 
-        s.append(" : ").append(baseClassTypeExpr->ToString());
+    int numBaseClassOrImplIntfTypeExprs = int(baseClassOrImplIntfTypeExprs.size());
+    if (numBaseClassOrImplIntfTypeExprs > 0)
+    {
+        s.append(" : ");
+    }
+    for (int i = 0; i < numBaseClassOrImplIntfTypeExprs; ++i)
+    {
+        if (i > 0)
+        {
+            s.append(", ");
+        }
+        s.append(baseClassOrImplIntfTypeExprs[i]->ToString());
     }
     if (constraint)
     {

@@ -32,6 +32,8 @@ public:
 
     void BeginVisit(Cm::Ast::ClassNode& classNode) override;
     void EndVisit(Cm::Ast::ClassNode& classNode) override;
+    void BeginVisit(Cm::Ast::InterfaceNode& interfaceNode) override;
+    void EndVisit(Cm::Ast::InterfaceNode& interfaceNode) override;
     void BeginVisit(Cm::Ast::ConstructorNode& constructorNode) override;
     void EndVisit(Cm::Ast::ConstructorNode& constructorNode) override;
     void BeginVisit(Cm::Ast::DestructorNode& destructorNode) override;

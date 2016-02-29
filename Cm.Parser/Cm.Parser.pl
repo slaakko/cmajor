@@ -13,8 +13,8 @@ namespace Cm.Parser
     grammar ClassGrammar
     {
         Class(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::ClassNode*;
-        Inheritance(ParsingContext* ctx, Cm::Ast::ClassNode* cls);
-        BaseClassTypeExpr(ParsingContext* ctx): Cm::Ast::Node*;
+        InheritanceAndImplIntfs(ParsingContext* ctx, Cm::Ast::ClassNode* cls);
+        BaseClassTypeExprOrImplIntf(ParsingContext* ctx): Cm::Ast::Node*;
         ClassContent(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit);
         ClassMember(ParsingContext* ctx, Cm::Ast::ClassNode* cls, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*;
         InitializerList(ParsingContext* ctx, Node* owner);
@@ -67,6 +67,7 @@ namespace Cm.Parser
         EnumerationDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         TypedefDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         ClassDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*;
+        InterfaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::Node*;
         DelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         ClassDelegateDefinition(ParsingContext* ctx): Cm::Ast::Node*;
         ConceptDefinition(ParsingContext* ctx): Cm::Ast::Node*;
@@ -125,6 +126,14 @@ namespace Cm.Parser
         NewExpr(ParsingContext* ctx): Cm::Ast::Node*;
         ArgumentList(ParsingContext* ctx, Cm::Ast::Node* node);
         ExpressionList(ParsingContext* ctx, Cm::Ast::Node* node);
+    }
+    grammar InterfaceGrammar
+    {
+        Interface(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::InterfaceNode*;
+        InterfaceContent(ParsingContext* ctx, Cm::Ast::InterfaceNode* intf, Cm::Ast::CompileUnitNode* compileUnit);
+        InterfaceMemFun(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<Cm::Ast::MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*;
+        InterfaceMemFunSpecifiers: Cm::Ast::Specifiers;
+        InterfaceFunctionGroupId: Cm::Ast::FunctionGroupIdNode*;
     }
     grammar IdentifierGrammar
     {

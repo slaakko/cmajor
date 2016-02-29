@@ -19,8 +19,8 @@
 namespace Cm { namespace Emit {
 
 CEmitter::CEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
-    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::IrInterfaceTypeRepository& irInterfaceTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
+    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, irInterfaceTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
 {
 }
 
@@ -39,7 +39,9 @@ void CEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     codeFormatter.WriteLine("typedef uint32_t ui32;");
     codeFormatter.WriteLine("typedef int64_t i64;");
     codeFormatter.WriteLine("typedef uint64_t ui64;");
-    codeFormatter.WriteLine("struct rtti_ { const char* class_name; ui64 class_id; };");
+    codeFormatter.WriteLine("struct irec_ { ui64 iid; void* itab; };");
+    codeFormatter.WriteLine("typedef struct irec_ irec;");
+    codeFormatter.WriteLine("struct rtti_ { const char* class_name; ui64 class_id; irec* irectab; };");
     codeFormatter.WriteLine("typedef struct rtti_ rtti;");
 }
 
@@ -82,6 +84,7 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
         tdfsTypes.push_back(tdf.get());
     }
     IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
+    IrInterfaceTypeRepository().Write(CodeFormatter());
     std::unordered_set<std::string> externalFunctionNames;
     std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())
@@ -164,7 +167,7 @@ void CEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
     }
     CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
         ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(),
-        start, end, debugInfoFile != nullptr, Profile());
+        InterfaceLookupFailed(), start, end, debugInfoFile != nullptr, Profile());
     functionEmitter.SetFunctionMap(&functionMap);
     functionEmitter.SetCFilePath(cFilePath);
     functionEmitter.SetSymbolTable(SymbolTable());
