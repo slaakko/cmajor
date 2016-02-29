@@ -24,7 +24,7 @@ using Cm::Util::CodeFormatter;
 
 enum class NodeType: uint8_t
 {
-    boolNode, sbyteNode, byteNode, shortNode, ushortNode, intNode, uintNode, longNode, ulongNode, floatNode, doubleNode, charNode, voidNode,
+    boolNode, sbyteNode, byteNode, shortNode, ushortNode, intNode, uintNode, longNode, ulongNode, floatNode, doubleNode, charNode, wcharNode, ucharNode, voidNode,
     booleanLiteralNode, sbyteLiteralNode, byteLiteralNode, shortLiteralNode, ushortLiteralNode, intLiteralNode, uintLiteralNode, longLiteralNode, ulongLiteralNode,
     floatLiteralNode, doubleLiteralNode, charLiteralNode, stringLiteralNode, nullLiteralNode,
     derivedTypeExprNode,
@@ -43,7 +43,8 @@ enum class NodeType: uint8_t
     constructorConstraintNode, destructorConstraintNode, memberFunctionConstraintNode, functionConstraintNode, axiomNode, axiomStatementNode, conceptIdNode, conceptNode,
     functionGroupIdNode, templateParameterNode, functionNode, 
     classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
-    aliasNode, namespaceImportNode, namespaceNode, compileUnitNode, intrinsicConstraintNode, exitTryNode, beginCatchStatementNode,
+    aliasNode, namespaceImportNode, namespaceNode, compileUnitNode, intrinsicConstraintNode, exitTryNode, beginCatchStatementNode, 
+    interfaceNode,
     maxNode
 };
 
@@ -76,6 +77,7 @@ public:
     virtual void AddInitializer(InitializerNode* initializer);
     virtual bool IsNamespaceNode() const { return false; }
     virtual bool IsClassNode() const { return false; }
+    virtual bool IsInterfaceNode() const { return false; }
     virtual bool IsStatementNode() const { return false; }
     virtual bool IsCompoundStatementNode() const { return false; }
     virtual bool IsCaseStatementNode() const { return false; }

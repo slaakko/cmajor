@@ -2,4 +2,5 @@ project compiler;
 target=program;
 assembly <compiler.cma>;
 source <emitter.cm>;
+source <interface.cm>;
 source <opequal.cm>;

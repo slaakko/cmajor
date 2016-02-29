@@ -14,6 +14,7 @@
 namespace Cm { namespace IrIntf {
 
 std::string GetExCodeVarName();
+std::string GetIrecPtrName();
 Ir::Intf::LabelObject* CreateTempLabel(int tempLabelCounter);
 std::string CreateTempVarName(int tempVarCounter);
 Ir::Intf::LabelObject* CreateNextLocalLabel();

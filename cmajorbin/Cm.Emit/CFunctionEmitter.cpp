@@ -23,10 +23,10 @@ CFunctionEmitter::CFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, const char* start_, const char* end_, bool generateDebugInfo_, bool profile_) :
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, Cm::Sym::FunctionSymbol* interfaceLookupFailed_, const char* start_, const char* end_, bool generateDebugInfo_, bool profile_) :
     FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_, generateDebugInfo_, profile_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
+    leaveTracedCallFun_, interfaceLookupFailed_, generateDebugInfo_, profile_), functionMap(nullptr), start(start_), end(end_), generateDebugInfo(generateDebugInfo_)
 {
 }
 
@@ -553,6 +553,70 @@ void CFunctionEmitter::GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::Ge
         }
     }
     emitter->Emit(callInst);
+}
+
+void CFunctionEmitter::GenInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult)
+{
+    Cm::Core::Emitter* emitter = Emitter();
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter, GenFlags()));
+    Cm::Sym::Symbol* funParent = fun->Parent();
+    if (!funParent->IsInterfaceTypeSymbol())
+    {
+        throw std::runtime_error("interface type expected");
+    }
+    Cm::Sym::InterfaceTypeSymbol* intf = static_cast<Cm::Sym::InterfaceTypeSymbol*>(funParent);
+    Ir::Intf::Type* voidPtr = Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 1);
+    emitter->Own(voidPtr);
+    Ir::Intf::Type* voidPtrPtr = Cm::IrIntf::Pointer(Cm::IrIntf::Void(), 2);
+    emitter->Own(voidPtrPtr);
+    Ir::Intf::Object* mainObject = memberFunctionResult.Arg1();
+    Ir::Intf::Type* intfPtrType = Cm::IrIntf::Pointer(intf->GetIrType(), 1);
+    emitter->Own(intfPtrType);
+    Ir::Intf::Object* intfObject = Cm::IrIntf::CreateTemporaryRegVar(intfPtrType);
+    emitter->Own(intfObject);
+    emitter->Emit(Cm::IrIntf::Load(voidPtr, intfObject, mainObject, Ir::Intf::Indirection::none, Ir::Intf::Indirection::none));
+    Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", intfObject, 0, voidPtr);
+    emitter->Own(obj);
+    Ir::Intf::Object* objRegVar = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
+    Cm::IrIntf::Assign(*emitter, voidPtr, obj, objRegVar);
+    int n = int(memberFunctionResult.Objects().size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i == 1)
+        {
+            result->AddObject(objRegVar);
+        }
+        else
+        {
+            result->AddObject(memberFunctionResult.Objects()[i]);
+        }
+    }
+    Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", intfObject, 1, voidPtr);
+    emitter->Own(itab);
+    Ir::Intf::Object* loadedItab = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
+    emitter->Own(loadedItab);
+    Cm::IrIntf::Assign(*emitter, voidPtr, itab, loadedItab);
+    Ir::Intf::Object* itabPtrPtr = Cm::IrIntf::CreateTemporaryRegVar(voidPtrPtr);
+    emitter->Own(itabPtrPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(voidPtr, itabPtrPtr, loadedItab, voidPtrPtr));
+    Ir::Intf::Object* funIndex = Cm::IrIntf::CreateI32Constant(fun->ItblIndex());
+    emitter->Own(funIndex);
+    Ir::Intf::Object* funI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(voidPtrPtr);
+    emitter->Own(funI8PtrPtr);
+    Ir::Intf::Object* zero = Cm::IrIntf::CreateUI32Constant(0);
+    emitter->Own(zero);
+    emitter->Emit(Cm::IrIntf::Add(voidPtrPtr, funI8PtrPtr, itabPtrPtr, funIndex));
+    Ir::Intf::Object* funI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
+    emitter->Own(funI8Ptr);
+    Ir::Intf::RegVar* loadedFunI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
+    emitter->Own(loadedFunI8Ptr);
+    Cm::IrIntf::Assign(*emitter, voidPtr, funI8PtrPtr, loadedFunI8Ptr);
+    Ir::Intf::Type* funPtrType = IrFunctionRepository().GetFunPtrIrType(fun);
+    Ir::Intf::Object* funPtr = Cm::IrIntf::CreateTemporaryRegVar(funPtrType);
+    emitter->Own(funPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(voidPtr, funPtr, loadedFunI8Ptr, funPtrType));
+    emitter->Emit(Cm::IrIntf::IndirectCall(result->MainObject(), funPtr, result->Args()));
+    ResultStack().Push(result);
 }
 
 void CFunctionEmitter::SetCallDebugInfoInfo(Ir::Intf::Instruction* callInst, Ir::Intf::Function* fun)

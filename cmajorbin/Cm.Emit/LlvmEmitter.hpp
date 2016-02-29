@@ -17,7 +17,8 @@ class LlvmEmitter : public Emitter
 {
 public:
     LlvmEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, 
-        Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_);
+        Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::IrInterfaceTypeRepository& irInterfaceTypeRepository_, Cm::Core::StringRepository& stringRepository_, 
+        Cm::Core::ExternalConstantRepository& externalConstantRepository_);
     void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     void EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     void BeginVisit(Cm::BoundTree::BoundClass& boundClass) override;

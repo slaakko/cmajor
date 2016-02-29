@@ -28,6 +28,8 @@ namespace Cm.Parser
             |    keyword("float"){ value = new FloatNode(span); }
             |    keyword("double"){ value = new DoubleNode(span); }
             |    keyword("char"){ value = new CharNode(span); }
+            |    keyword("wchar"){ value = new WCharNode(span); }
+            |    keyword("uchar"){ value = new UCharNode(span); }
             |    keyword("void"){ value = new VoidNode(span); }
             ;
     }

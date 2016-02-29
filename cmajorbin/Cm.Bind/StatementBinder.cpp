@@ -95,7 +95,7 @@ void ConstructionStatementBinder::EndVisit(Cm::Ast::ConstructionStatementNode& c
     resolutionArguments.push_back(variableArgument);
     constructionStatement->GetResolutionArguments(localVariableType, resolutionArguments);
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
     Cm::Sym::FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, 
@@ -196,7 +196,7 @@ void AssignmentStatementBinder::EndVisit(Cm::Ast::AssignmentStatementNode& assig
         resolutionArguments.push_back(Cm::Core::Argument(functionGroup->GetArgumentCategory(), functionGroup->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* assignment = ResolveOverload(ContainerScope(), BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
     PrepareFunctionSymbol(assignment, assignmentStatementNode.GetSpan());
@@ -464,7 +464,7 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                     }
                 }
                 Cm::Sym::FunctionLookupSet functionLookups;
-                functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, returnType->GetContainerScope()->ClassOrNsScope()));
+                functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, returnType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 std::vector<Cm::Sym::FunctionSymbol*> conversions;
                 Cm::Sym::ConversionType conversionType = Cm::Sym::ConversionType::implicit;
                 if (returnValue->IsBoundCast())
@@ -719,7 +719,7 @@ void SwitchStatementBinder::BeginVisit(Cm::Ast::SwitchStatementNode& switchState
     conditionNode->Accept(*this);
     Cm::BoundTree::BoundExpression* condition = Pop();
     Cm::Sym::TypeSymbol* condType = SymbolTable().GetTypeRepository().MakePlainType(condition->GetType());
-    if (condType->IsIntegerTypeSymbol() || condType->IsCharTypeSymbol() || condType->IsBoolTypeSymbol() || condType->IsEnumTypeSymbol())
+    if (condType->IsIntegerTypeSymbol() || condType->IsCharTypeSymbol() || condType->IsWCharTypeSymbol() || condType->IsUCharTypeSymbol() || condType->IsBoolTypeSymbol() || condType->IsEnumTypeSymbol())
     {
         switchStatement->SetCondition(condition);
     }

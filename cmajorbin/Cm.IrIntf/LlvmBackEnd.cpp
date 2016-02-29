@@ -41,6 +41,11 @@ std::string LlvmBackEnd::GetExCodeVarName()
     return "$ex";
 }
 
+std::string LlvmBackEnd::GetIrecPtrName()
+{
+    return Llvm::irecPtrName;
+}
+
 Ir::Intf::LabelObject* LlvmBackEnd::CreateTempLabel(int tempLabelCounter)
 {
     return Llvm::CreateLabel("$T" + std::to_string(tempLabelCounter));

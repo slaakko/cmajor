@@ -1,0 +1,59 @@
+/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+[hpp]#include <Cm.Parser/ParsingContext.hpp>
+[hpp]#include <Cm.Ast/Interface.hpp>
+[hpp]#include <Cm.Ast/CompileUnit.hpp>
+[cpp]#include <Cm.Ast/Identifier.hpp>
+[cpp]#include <Cm.Parser/Specifier.hpp>
+[cpp]#include <Cm.Parser/Identifier.hpp>
+[cpp]#include <Cm.Parser/Keyword.hpp>
+[cpp]#include <Cm.Parser/Parameter.hpp>
+[cpp]#include <Cm.Parser/TypeExpr.hpp>
+
+namespace Cm.Parser
+{
+    grammar InterfaceGrammar
+    {
+        using SpecifierGrammar.Specifiers;
+        using IdentifierGrammar.Identifier;
+        using ParameterGrammar.ParameterList;
+        using TypeExprGrammar.TypeExpr;
+        using KeywordGrammar.Keyword;
+        using stdlib.identifier;
+        using stdlib.spaces_and_comments;
+        skip spaces_and_comments;
+        
+        Interface(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::InterfaceNode*
+            ::= (Specifiers keyword("interface") Identifier!){ value = new Cm::Ast::InterfaceNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
+                '{'! InterfaceContent(ctx, value, compileUnit) '}'!
+            ;
+
+        InterfaceContent(ParsingContext* ctx, Cm::Ast::InterfaceNode* intf, Cm::Ast::CompileUnitNode* compileUnit)
+            ::= (InterfaceMemFun(ctx, compileUnit){ intf->AddMember(InterfaceMemFun); })*
+            ;
+            
+        InterfaceMemFun(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, var std::unique_ptr<Cm::Ast::MemberFunctionNode> memFun): Cm::Ast::MemberFunctionNode*
+            ::= ((InterfaceMemFunSpecifiers? TypeExpr(ctx) InterfaceFunctionGroupId){ memFun.reset(new Cm::Ast::MemberFunctionNode(span, InterfaceMemFunSpecifiers, TypeExpr, InterfaceFunctionGroupId)); }
+                ParameterList(ctx, memFun.get()) (keyword("const"){ memFun->SetConst(); })? ';'!)
+            {
+                value = memFun.release(); value->SetCompileUnit(compileUnit);
+            }
+            ;
+
+        InterfaceMemFunSpecifiers: Cm::Ast::Specifiers
+            ::= keyword("throw"){ value = Cm::Ast::Specifiers::throw_; }
+            |   keyword("nothrow"){ value = Cm::Ast::Specifiers::nothrow_; }
+            ;
+
+        InterfaceFunctionGroupId: Cm::Ast::FunctionGroupIdNode*
+            ::= token(identifier - Keyword){ value = new Cm::Ast::FunctionGroupIdNode(span, std::string(matchBegin, matchEnd)); }
+            ;
+    }
+}

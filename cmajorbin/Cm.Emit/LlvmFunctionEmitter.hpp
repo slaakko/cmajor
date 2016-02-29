@@ -21,7 +21,7 @@ public:
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool profile_);
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, Cm::Sym::FunctionSymbol* interfaceLookupFailed_, bool profile_);
     void EmitDummyVar(Cm::Core::Emitter* emitter) override;
     void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) override;
     void Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression) override;
@@ -31,6 +31,7 @@ public:
     void Visit(Cm::BoundTree::BoundInitVPtrStatement& boundInitVPtrStatement) override;
     void RegisterDestructor(Cm::Sym::MemberVariableSymbol* staticMemberVariableSymbol) override;
     void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) override;
+    void GenInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) override;
     Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) override;
     void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) override;
     Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) override;

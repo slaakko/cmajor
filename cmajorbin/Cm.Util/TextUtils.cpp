@@ -130,6 +130,20 @@ std::string HexEscape(char c)
     return s.str();
 }
 
+std::string HexEscape(uint16_t c)
+{
+    std::stringstream s;
+    s << "\\x" << std::hex << c;
+    return s.str();
+}
+
+std::string HexEscape(uint32_t c)
+{
+    std::stringstream s;
+    s << "\\x" << std::hex << c;
+    return s.str();
+}
+
 std::string CharStr(char c)
 {
     switch (c)
@@ -156,6 +170,30 @@ std::string CharStr(char c)
                 return HexEscape(c);
             }
         }
+    }
+}
+
+std::string WCharStr(uint16_t c)
+{
+    if (c < 0x100)
+    {
+        return CharStr(static_cast<char>(c));
+    }
+    else
+    {
+        return HexEscape(c);
+    }
+}
+
+std::string UCharStr(uint32_t c)
+{
+    if (c < 0x100)
+    {
+        return CharStr(static_cast<char>(c));
+    }
+    else
+    {
+        return HexEscape(c);
     }
 }
 

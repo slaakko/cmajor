@@ -23,6 +23,7 @@ class EnumTypeNode;
 class EnumConstantNode;
 class TypedefNode;
 class ClassNode;
+class InterfaceNode;
 class DelegateNode;
 class ClassDelegateNode;
 class ParameterNode;
@@ -90,6 +91,8 @@ class ULongNode;
 class FloatNode;
 class DoubleNode;
 class CharNode;
+class WCharNode;
+class UCharNode;
 class VoidNode;
 class DerivedTypeExprNode;
 
@@ -198,6 +201,8 @@ public:
     virtual void Visit(TypedefNode& typedefNode) {}
     virtual void BeginVisit(ClassNode& classNode) {}
     virtual void EndVisit(ClassNode& classNode) {}
+    virtual void BeginVisit(InterfaceNode& interfaceNode) {}
+    virtual void EndVisit(InterfaceNode& interfaceNode) {}
     virtual void BeginVisit(DelegateNode& delegateNode) {}
     virtual void EndVisit(DelegateNode& delegateNode) {}
     virtual void BeginVisit(ClassDelegateNode& classDelegateNode) {}
@@ -308,6 +313,8 @@ public:
     virtual void Visit(FloatNode& floatNode) {}
     virtual void Visit(DoubleNode& doubleNode) {}
     virtual void Visit(CharNode& charNode) {}
+    virtual void Visit(WCharNode& wcharNode) {}
+    virtual void Visit(UCharNode& ucharNode) {}
     virtual void Visit(VoidNode& voidNode) {}
     virtual void Visit(DerivedTypeExprNode& derivedTypeExprNode) {}
 

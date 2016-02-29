@@ -118,6 +118,10 @@ public:
         a11ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A11Action));
         Cm::Parsing::ActionParser* a12ActionParser = GetAction("A12");
         a12ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A12Action));
+        Cm::Parsing::ActionParser* a13ActionParser = GetAction("A13");
+        a13ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A13Action));
+        Cm::Parsing::ActionParser* a14ActionParser = GetAction("A14");
+        a14ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<BasicTypeRule>(this, &BasicTypeRule::A14Action));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -169,6 +173,14 @@ public:
     }
     void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
+        context.value = new WCharNode(span);
+    }
+    void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new UCharNode(span);
+    }
+    void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
         context.value = new VoidNode(span);
     }
 private:
@@ -200,31 +212,37 @@ void BasicTypeGrammar::CreateRules()
                                             new Cm::Parsing::AlternativeParser(
                                                 new Cm::Parsing::AlternativeParser(
                                                     new Cm::Parsing::AlternativeParser(
-                                                        new Cm::Parsing::ActionParser("A0",
-                                                            new Cm::Parsing::KeywordParser("bool")),
-                                                        new Cm::Parsing::ActionParser("A1",
-                                                            new Cm::Parsing::KeywordParser("sbyte"))),
-                                                    new Cm::Parsing::ActionParser("A2",
-                                                        new Cm::Parsing::KeywordParser("byte"))),
-                                                new Cm::Parsing::ActionParser("A3",
-                                                    new Cm::Parsing::KeywordParser("short"))),
-                                            new Cm::Parsing::ActionParser("A4",
-                                                new Cm::Parsing::KeywordParser("ushort"))),
-                                        new Cm::Parsing::ActionParser("A5",
-                                            new Cm::Parsing::KeywordParser("int"))),
-                                    new Cm::Parsing::ActionParser("A6",
-                                        new Cm::Parsing::KeywordParser("uint"))),
-                                new Cm::Parsing::ActionParser("A7",
-                                    new Cm::Parsing::KeywordParser("long"))),
-                            new Cm::Parsing::ActionParser("A8",
-                                new Cm::Parsing::KeywordParser("ulong"))),
-                        new Cm::Parsing::ActionParser("A9",
-                            new Cm::Parsing::KeywordParser("float"))),
-                    new Cm::Parsing::ActionParser("A10",
-                        new Cm::Parsing::KeywordParser("double"))),
-                new Cm::Parsing::ActionParser("A11",
-                    new Cm::Parsing::KeywordParser("char"))),
-            new Cm::Parsing::ActionParser("A12",
+                                                        new Cm::Parsing::AlternativeParser(
+                                                            new Cm::Parsing::AlternativeParser(
+                                                                new Cm::Parsing::ActionParser("A0",
+                                                                    new Cm::Parsing::KeywordParser("bool")),
+                                                                new Cm::Parsing::ActionParser("A1",
+                                                                    new Cm::Parsing::KeywordParser("sbyte"))),
+                                                            new Cm::Parsing::ActionParser("A2",
+                                                                new Cm::Parsing::KeywordParser("byte"))),
+                                                        new Cm::Parsing::ActionParser("A3",
+                                                            new Cm::Parsing::KeywordParser("short"))),
+                                                    new Cm::Parsing::ActionParser("A4",
+                                                        new Cm::Parsing::KeywordParser("ushort"))),
+                                                new Cm::Parsing::ActionParser("A5",
+                                                    new Cm::Parsing::KeywordParser("int"))),
+                                            new Cm::Parsing::ActionParser("A6",
+                                                new Cm::Parsing::KeywordParser("uint"))),
+                                        new Cm::Parsing::ActionParser("A7",
+                                            new Cm::Parsing::KeywordParser("long"))),
+                                    new Cm::Parsing::ActionParser("A8",
+                                        new Cm::Parsing::KeywordParser("ulong"))),
+                                new Cm::Parsing::ActionParser("A9",
+                                    new Cm::Parsing::KeywordParser("float"))),
+                            new Cm::Parsing::ActionParser("A10",
+                                new Cm::Parsing::KeywordParser("double"))),
+                        new Cm::Parsing::ActionParser("A11",
+                            new Cm::Parsing::KeywordParser("char"))),
+                    new Cm::Parsing::ActionParser("A12",
+                        new Cm::Parsing::KeywordParser("wchar"))),
+                new Cm::Parsing::ActionParser("A13",
+                    new Cm::Parsing::KeywordParser("uchar"))),
+            new Cm::Parsing::ActionParser("A14",
                 new Cm::Parsing::KeywordParser("void")))));
 }
 

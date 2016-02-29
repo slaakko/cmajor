@@ -15,7 +15,7 @@ namespace Cm { namespace Sym {
 
 enum class ShortBasicTypeId : uint8_t
 {
-    boolId = 1, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
+    boolId = 1, charId, wcharId, ucharId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
 };
 
 const TypeId& GetBasicTypeId(ShortBasicTypeId shortId);
@@ -47,6 +47,24 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::charSymbol; }
     bool IsCharTypeSymbol() const override { return true; }
     std::string GetMangleId() const override { return "ch"; }
+};
+
+class WCharTypeSymbol : public BasicTypeSymbol
+{
+public:
+    WCharTypeSymbol();
+    SymbolType GetSymbolType() const override { return SymbolType::wcharSymbol; }
+    bool IsWCharTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "wc"; }
+};
+
+class UCharTypeSymbol : public BasicTypeSymbol
+{
+public:
+    UCharTypeSymbol();
+    SymbolType GetSymbolType() const override { return SymbolType::ucharSymbol; }
+    bool IsWCharTypeSymbol() const override { return true; }
+    std::string GetMangleId() const override { return "uc"; }
 };
 
 class VoidTypeSymbol : public BasicTypeSymbol

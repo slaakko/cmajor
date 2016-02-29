@@ -32,8 +32,9 @@ std::string Unquote(const std::string& s)
 }
 
 LlvmEmitter::LlvmEmitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_,
-    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
-    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_)
+    Cm::Core::IrClassTypeRepository& irClassTypeRepository_, Cm::Core::IrInterfaceTypeRepository& irInterfaceTypeRepository_, Cm::Core::StringRepository& stringRepository_, 
+    Cm::Core::ExternalConstantRepository& externalConstantRepository_) :
+    Emitter(irFilePath, typeRepository_, irFunctionRepository_, irClassTypeRepository_, irInterfaceTypeRepository_, stringRepository_, externalConstantRepository_)
 {
 }
 
@@ -56,7 +57,8 @@ void LlvmEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     {
         codeFormatter.WriteLine("target datalayout = \"" + dataLayout + "\"");
     }
-    codeFormatter.WriteLine("%rtti = type { i8*, i64 }");
+    codeFormatter.WriteLine("%irec = type { i64, i8* }");
+    codeFormatter.WriteLine("%rtti = type { i8*, i64, %irec* }");
 }
 
 struct FunctionNameLess
@@ -70,6 +72,7 @@ struct FunctionNameLess
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
     IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), std::vector<Ir::Intf::Type*>());
+    IrInterfaceTypeRepository().Write(CodeFormatter());
     std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())
     {
@@ -117,7 +120,8 @@ void LlvmEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
         generatedFunctions.insert(boundFunction.GetFunctionSymbol()->FullName());
     }
     LlvmFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(),
-        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), Profile());
+        ExternalFunctions(), staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), 
+        InterfaceLookupFailed(), Profile());
     functionEmitter.SetSymbolTable(SymbolTable());
     functionEmitter.SetTpGraph(TpGraph());
     boundFunction.Accept(functionEmitter);

@@ -180,6 +180,34 @@ void CharNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+WCharNode::WCharNode(const Span& span_) : Node(span_)
+{
+}
+
+Node* WCharNode::Clone(CloneContext& cloneContext) const
+{
+    return new WCharNode(GetSpan());
+}
+
+void WCharNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+UCharNode::UCharNode(const Span& span_) : Node(span_)
+{
+}
+
+Node* UCharNode::Clone(CloneContext& cloneContext) const
+{
+    return new UCharNode(GetSpan());
+}
+
+void UCharNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 VoidNode::VoidNode(const Span& span_): Node(span_)
 {
 }

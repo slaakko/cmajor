@@ -36,7 +36,7 @@ Cm::BoundTree::BoundInitClassObjectStatement* GenerateBaseConstructorCall(const 
         resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* baseClassCtor = nullptr;
     try
@@ -89,7 +89,7 @@ Cm::BoundTree::BoundInitMemberVariableStatement* GenerateInitMemberVariableState
         resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassInterfaceOrNsScope()));
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
@@ -148,7 +148,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateBaseAssignmentCall(const Cm::
         resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassInterfaceOrNsScope()));
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     Cm::Sym::FunctionSymbol* baseClassAssignment = nullptr;
     try
@@ -199,7 +199,7 @@ Cm::BoundTree::BoundFunctionCallStatement* GenerateAssignMemberVariableStatement
         resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
     }
     Cm::Sym::FunctionLookupSet functionLookups;
-    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+    functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassInterfaceOrNsScope()));
     if (memberVariableType->IsClassTypeSymbol())
     {
         Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);
@@ -795,7 +795,7 @@ Cm::Sym::FunctionSymbol* GenerateOpEqual(bool generateImplementation, bool uniqu
         Cm::Sym::FunctionLookupSet functionLookups;
         resolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span)));
         resolutionArguments.push_back(Cm::Core::Argument(rightAsBase->GetArgumentCategory(), rightAsBase->GetType()));
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, baseClassType->GetContainerScope()->ClassInterfaceOrNsScope()));
         std::vector<Cm::Sym::FunctionSymbol*> conversions;
         Cm::Sym::FunctionSymbol* baseClassOpEqual = nullptr;
         baseClassOpEqual = ResolveOverload(containerScope, compileUnit, "operator==", resolutionArguments, functionLookups, span, conversions, 
@@ -810,7 +810,7 @@ Cm::Sym::FunctionSymbol* GenerateOpEqual(bool generateImplementation, bool uniqu
                 resolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
             }
             functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, containerScope));
-            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, baseClassType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, baseClassType->GetContainerScope()->ClassInterfaceOrNsScope()));
             try
             {
                 baseClassOpEqual = ResolveOverload(containerScope, compileUnit, "operator==", resolutionArguments, functionLookups, span, conversions);
@@ -890,7 +890,7 @@ Cm::Sym::FunctionSymbol* GenerateOpEqual(bool generateImplementation, bool uniqu
         boundRightMemberVar->SetType(memberVariableType);
         boundRightMemberVar->SetClassObject(boundRightParam);
         resolutionArguments.push_back(Cm::Core::Argument(boundRightMemberVar->GetArgumentCategory(), boundRightMemberVar->GetType()));
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
         Cm::Sym::FunctionSymbol* memberVarOpEqual = nullptr;
         memberVarOpEqual = ResolveOverload(containerScope, compileUnit, "operator==", resolutionArguments, functionLookups, span, conversions,
             OverloadResolutionFlags::nothrow | OverloadResolutionFlags::bindOnlyMemberFunctions);
@@ -1066,22 +1066,21 @@ void GenerateDestructorImplementation(const Cm::Parsing::Span& span, Cm::Sym::Cl
             compileUnit.ClassTemplateRepository().BindTemplateTypeSymbol(baseClassTemplateType, containerScope, compileUnit.GetFileScopes());
         }
         Cm::Sym::FunctionSymbol* baseClassDtor = baseClass->Destructor();
-        if (!baseClassDtor)
+        if (baseClassDtor)
         {
-            throw std::runtime_error("could not generate destructor because base class has no destructor");
+            Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
+            Cm::Sym::TypeSymbol* baseClassPtrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
+            Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
+            boundThisParam->SetType(thisParam->GetType());
+            Cm::Sym::FunctionSymbol* conversionFun = compileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
+            Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
+            thisAsBase->SetType(baseClassPtrType);
+            Cm::BoundTree::BoundExpressionList arguments;
+            arguments.Add(thisAsBase);
+            PrepareArguments(containerScope, compileUnit, nullptr, nullptr, baseClassDtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), baseClassDtor->IsBasicTypeOp());
+            Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
+            destructor->Body()->AddStatement(destroyBaseClassObjectStatement);
         }
-        Cm::Sym::ClassTypeSymbol* baseClassType = classTypeSymbol->BaseClass();
-        Cm::Sym::TypeSymbol* baseClassPtrType = compileUnit.SymbolTable().GetTypeRepository().MakePointerType(baseClassType, span);
-        Cm::BoundTree::BoundParameter* boundThisParam = new Cm::BoundTree::BoundParameter(nullptr, thisParam);
-        boundThisParam->SetType(thisParam->GetType());
-        Cm::Sym::FunctionSymbol* conversionFun = compileUnit.ClassConversionTable().MakeBaseClassDerivedClassConversion(baseClassPtrType, thisParam->GetType(), 1, span);
-        Cm::BoundTree::BoundConversion* thisAsBase = new Cm::BoundTree::BoundConversion(nullptr, boundThisParam, conversionFun);
-        thisAsBase->SetType(baseClassPtrType);
-        Cm::BoundTree::BoundExpressionList arguments;
-        arguments.Add(thisAsBase);
-        PrepareArguments(containerScope, compileUnit, nullptr, nullptr, baseClassDtor->Parameters(), arguments, true, compileUnit.IrClassTypeRepository(), baseClassDtor->IsBasicTypeOp());
-        Cm::BoundTree::BoundFunctionCallStatement* destroyBaseClassObjectStatement = new Cm::BoundTree::BoundFunctionCallStatement(baseClassDtor, std::move(arguments));
-        destructor->Body()->AddStatement(destroyBaseClassObjectStatement);
     }
     compileUnit.AddBoundNode(destructor.release());
 }
@@ -1113,7 +1112,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
 	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::lvalue, mutexGuardPointerType));
 	mutexGuardResolutionArguments.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, intType));
 	Cm::Sym::FunctionLookupSet mutexGuardFunctionLookups;
-	mutexGuardFunctionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, mutexGuardClassType->ClassOrNs()->GetContainerScope()));
+	mutexGuardFunctionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, mutexGuardClassType->ClassInterfaceOrNs()->GetContainerScope()));
 	std::vector<Cm::Sym::FunctionSymbol*> mutexGuardConversions;
 	Cm::Sym::FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, compileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups,
 		span, mutexGuardConversions);
@@ -1184,7 +1183,7 @@ void GenerateStaticConstructorImplementation(Cm::BoundTree::BoundClass* boundCla
         Cm::Core::Argument variableArgument(Cm::Core::ArgumentCategory::lvalue, compileUnit.SymbolTable().GetTypeRepository().MakePointerType(memberVariableType, span));
         resolutionArguments.push_back(variableArgument);
         Cm::Sym::FunctionLookupSet functionLookups;
-        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+        functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_, memberVariableType->GetContainerScope()->ClassInterfaceOrNsScope()));
         if (memberVariableType->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* memberVarClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableType);

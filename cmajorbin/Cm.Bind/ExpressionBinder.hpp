@@ -133,6 +133,8 @@ public:
     void Visit(Cm::Ast::FloatNode& floatNode) override;
     void Visit(Cm::Ast::DoubleNode& doubleNode) override;
     void Visit(Cm::Ast::CharNode& charNode) override;
+    void Visit(Cm::Ast::WCharNode& wcharNode) override;
+    void Visit(Cm::Ast::UCharNode& ucharNode) override;
     void Visit(Cm::Ast::VoidNode& voidNode) override;
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
 
@@ -158,6 +160,7 @@ private:
     void BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol);
     void BindParameterSymbol(Cm::Ast::Node* idNode, Cm::Sym::ParameterSymbol* parameterSymbol);
     void BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol);
+    void BindInterfaceTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::InterfaceTypeSymbol* interfaceTypeSymbol);
     void BindDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol);
     void BindClassDelegateTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol);
     void BindNamespaceSymbol(Cm::Ast::Node* idNode, Cm::Sym::NamespaceSymbol* namespaceSymbol);

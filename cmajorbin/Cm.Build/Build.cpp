@@ -30,6 +30,7 @@
 #include <Cm.Sym/SymbolTypeSet.hpp>
 #include <Cm.Sym/Conditional.hpp>
 #include <Cm.Sym/FunctionTable.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Bind/Prebinder.hpp>
 #include <Cm.Bind/VirtualBinder.hpp>
 #include <Cm.Bind/Binder.hpp>
@@ -418,6 +419,36 @@ void WriteCidMap(const std::string& cidFilePath, const std::unordered_map<std::s
     }
 }
 
+std::unordered_map<std::string, uint64_t> ReadIidMap(const std::string& iidFilePath)
+{
+    std::unordered_map<std::string, uint64_t> iidMap;
+    if (boost::filesystem::exists(iidFilePath))
+    {
+        std::ifstream iidFile(iidFilePath);
+        std::string line;
+        while (std::getline(iidFile, line))
+        {
+            std::vector<std::string> components = Cm::Util::Split(line, ':');
+            if (components.size() >= 2)
+            {
+                std::string interfaceName = components[0];
+                uint64_t iid = std::stoull(components[1]);
+                iidMap[interfaceName] = iid;
+            }
+        }
+    }
+    return iidMap;
+}
+
+void WriteIidMap(const std::string& iidFilePath, const std::unordered_map<std::string, uint64_t>& iidMap)
+{
+    std::ofstream iidFile(iidFilePath);
+    for (const std::pair<std::string, uint64_t>& c : iidMap)
+    {
+        iidFile << c.first << ":" << c.second << std::endl;
+    }
+}
+
 void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core::GlobalConceptData& globalConceptData, Cm::Ast::SyntaxTree& syntaxTree, Cm::Ast::Project* project, 
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
     std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable, 
@@ -426,7 +457,7 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core:
     Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
     ReadNextSid(symbolTable);
     ImportModules(symbolTable, project, libraryDirs, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable, allLibrarySearchPaths);
-    symbolTable.InitVirtualFunctionTables();
+    symbolTable.InitVirtualFunctionTablesAndInterfaceTables();
     for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
     {
         std::unordered_map<std::string, uint64_t> cidMap;
@@ -435,10 +466,17 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core:
         {
             cidMap = ReadCidMap(cidFilePath);
         }
+        std::unordered_map<std::string, uint64_t> iidMap;
+        std::string iidFilePath = (project->OutputBasePath() / boost::filesystem::path(compileUnit->FilePath()).filename().replace_extension(".iid")).generic_string();
+        if (!rebuild)
+        {
+            iidMap = ReadIidMap(iidFilePath);
+        }
         Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
         declarationVisitor.SetCidMap(&cidMap);
+        declarationVisitor.SetIidMap(&iidMap);
         compileUnit->Accept(declarationVisitor);
-        WriteCidMap(cidFilePath, cidMap);
+        WriteIidMap(iidFilePath, iidMap);
     }
 }
 
@@ -475,14 +513,14 @@ void Emit(Cm::Sym::TypeRepository& typeRepository, Cm::BoundTree::BoundCompileUn
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
     {
         Cm::Emit::LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
-            boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+            boundCompileUnit.IrInterfaceTypeRepository(), boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
         emitter.SetTpGraph(tpGraph);
         boundCompileUnit.Accept(emitter);
     }
     else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::c)
     {
         Cm::Emit::CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(),
-            boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
+            boundCompileUnit.IrInterfaceTypeRepository(), boundCompileUnit.StringRepository(), boundCompileUnit.ExternalConstantRepository());
         emitter.SetTpGraph(tpGraph);
         boundCompileUnit.Accept(emitter);
     }
@@ -1690,6 +1728,30 @@ void WriteNextCid(Cm::Sym::ClassCounter& classCounter)
     nextCidFile << nextCid;
 }
 
+void ReadNextIid(Cm::Sym::InterfaceCounter& interfaceCounter)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint64_t nextIid = 0;
+    boost::filesystem::path nextIidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.iid");
+    if (boost::filesystem::exists(nextIidPath))
+    {
+        std::ifstream nextIidFile(nextIidPath.generic_string());
+        nextIidFile >> nextIid;
+    }
+    interfaceCounter.SetNextIid(nextIid);
+}
+
+void WriteNextIid(Cm::Sym::InterfaceCounter& interfaceCounter)
+{
+    std::vector<std::string> libraryDirectories;
+    GetLibraryDirectories(libraryDirectories);
+    uint64_t nextIid = interfaceCounter.GetNextIid();
+    boost::filesystem::path nextIidPath = boost::filesystem::path(libraryDirectories[0]) / (Cm::IrIntf::GetBackEndStr() + "." + Cm::Core::GetGlobalSettings()->Config() + ".next.iid");
+    std::ofstream nextIidFile(nextIidPath.generic_string());
+    nextIidFile << nextIid;
+}
+
 void ReadNextSid(Cm::Sym::SymbolTable& symbolTable)
 {
     std::vector<std::string> libraryDirectories;
@@ -1734,7 +1796,7 @@ void BuildProgram(Cm::Ast::Project* project, const std::pair<uint64_t, uint64_t>
     std::vector<uint64_t> classHierarchyTable;
     std::vector<std::string> allLibrarySearchPaths;
     ImportModules(symbolTable, project, libraryDirs, afps, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable, allLibrarySearchPaths);
-    symbolTable.InitVirtualFunctionTables();
+    symbolTable.InitVirtualFunctionTablesAndInterfaceTables();
     bool quiet = Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
     if (!quiet)
     {
@@ -1924,6 +1986,9 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Sym::ClassCounter classCounter;
     Cm::Sym::SetClassCounter(&classCounter);
     ReadNextCid(classCounter);
+    Cm::Sym::InterfaceCounter interfaceCounter;
+    Cm::Sym::SetInterfaceCounter(&interfaceCounter);
+    ReadNextIid(interfaceCounter);
     std::vector<std::string> libraryDirs;
     GetLibraryDirectories(libraryDirs);
     std::vector<std::string> allReferenceFilePaths;
@@ -2063,7 +2128,9 @@ bool BuildProject(Cm::Ast::Project* project, bool rebuild, const std::vector<std
     Cm::Sym::SetExceptionTable(nullptr);
     Cm::Sym::SetMutexTable(nullptr);
     WriteNextCid(classCounter);
+    WriteNextIid(interfaceCounter);
     Cm::Sym::SetClassCounter(nullptr);
+    Cm::Sym::SetInterfaceCounter(nullptr);
     Cm::Sym::FunctionTable::SetInstance(nullptr);
     if (!quiet)
     {

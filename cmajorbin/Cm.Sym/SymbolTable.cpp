@@ -31,6 +31,7 @@
 #include <Cm.Sym/ClassCounter.hpp>
 #include <Cm.Sym/MutexTable.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.IrIntf/Rep.hpp>
@@ -180,6 +181,44 @@ void SymbolTable::EndClassScope()
 {
     currentClass = currentClassStack.top();
     currentClassStack.pop();
+    EndContainer();
+}
+
+void SymbolTable::BeginInterfaceScope(Cm::Ast::InterfaceNode* interfaceNode, std::unordered_map<std::string, uint64_t>* iidMap)
+{
+    uint64_t iid = noIid;
+    if (iidMap)
+    {
+        std::string interfaceTypeFullName = container->FullName().empty() ? interfaceNode->Id()->Str() : container->FullName() + "." + interfaceNode->Id()->Str();
+        std::unordered_map<std::string, uint64_t>::const_iterator i = iidMap->find(interfaceTypeFullName);
+        if (i != iidMap->cend())
+        {
+            iid = i->second;
+        }
+        else
+        {
+            iid = GetInterfaceCounter()->GetIid();
+            (*iidMap)[interfaceTypeFullName] = iid;
+        }
+    }
+    if (iid == noCid)
+    {
+        iid = GetInterfaceCounter()->GetIid();
+    }
+    InterfaceTypeSymbol* interfaceTypeSymbol = new InterfaceTypeSymbol(interfaceNode->GetSpan(), interfaceNode->Id()->Str());
+    interfaceTypeSymbol->SetIid(iid);
+    interfaceTypeSymbol->SetCompileUnit(interfaceNode->GetCompileUnit());
+    ContainerScope* interfaceScope = interfaceTypeSymbol->GetContainerScope();
+    nodeScopeMap[interfaceNode] = interfaceScope;
+    symbolNodeMap[interfaceTypeSymbol] = interfaceNode;
+    ContainerScope* containerScope = container->GetContainerScope();
+    interfaceScope->SetParent(containerScope);
+    container->AddSymbol(interfaceTypeSymbol);
+    BeginContainer(interfaceTypeSymbol);
+}
+
+void SymbolTable::EndInterfaceScope()
+{
     EndContainer();
 }
 
@@ -624,9 +663,9 @@ void SymbolTable::AddPredefinedSymbolToGlobalScope(Symbol* symbol)
     }
 }
 
-void SymbolTable::InitVirtualFunctionTables()
+void SymbolTable::InitVirtualFunctionTablesAndInterfaceTables()
 {
-    globalNs.InitVirtualFunctionTables();
+    globalNs.InitVirtualFunctionTablesAndInterfaceTables();
 }
 
 FunctionSymbol* SymbolTable::GetOverload(const std::string& fullOverloadGroupName) const

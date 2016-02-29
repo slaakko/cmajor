@@ -1,5 +1,5 @@
-#ifndef CompileUnit_hpp_11627
-#define CompileUnit_hpp_11627
+#ifndef CompileUnit_hpp_17321
+#define CompileUnit_hpp_17321
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -32,6 +32,7 @@ private:
     class EnumerationDefinitionRule;
     class TypedefDefinitionRule;
     class ClassDefinitionRule;
+    class InterfaceDefinitionRule;
     class DelegateDefinitionRule;
     class ClassDelegateDefinitionRule;
     class ConceptDefinitionRule;
@@ -39,4 +40,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // CompileUnit_hpp_11627
+#endif // CompileUnit_hpp_17321

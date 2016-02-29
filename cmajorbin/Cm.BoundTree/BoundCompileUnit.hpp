@@ -13,10 +13,12 @@
 #include <Cm.BoundTree/BoundNode.hpp>
 #include <Cm.Core/ClassConversionTable.hpp>
 #include <Cm.Core/DerivedTypeOpRepository.hpp>
+#include <Cm.Core/InterfaceTypeOpRepository.hpp>
 #include <Cm.Core/EnumTypeOpRepository.hpp>
 #include <Cm.Core/StringRepository.hpp>
 #include <Cm.Core/IrFunctionRepository.hpp>
 #include <Cm.Core/IrClassTypeRepository.hpp>
+#include <Cm.Core/IrInterfaceTypeRepository.hpp>
 #include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Core/SynthesizedClassFunRepository.hpp>
 #include <Cm.Core/DelegateTypeOpRepository.hpp>
@@ -69,10 +71,12 @@ public:
     Cm::Sym::ConversionTable& ConversionTable() { return conversionTable; }
     Cm::Core::ClassConversionTable& ClassConversionTable() { return classConversionTable; }
     Cm::Core::DerivedTypeOpRepository& DerivedTypeOpRepository() { return derivedTypeOpRepository; }
+    Cm::Core::InterfaceTypeOpRepository& InterfaceTypeOpRepository() { return interfaceTypeOpRepository; }
     Cm::Core::EnumTypeOpRepository& EnumTypeOpRepository() {return enumTypeOpRepository; }
     Cm::Core::StringRepository& StringRepository() { return *stringRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return *irClassTypeRepository; }
+    Cm::Core::IrInterfaceTypeRepository& IrInterfaceTypeRepository() { return *irInterfaceTypeRepository; }
     Cm::Core::ExternalConstantRepository& ExternalConstantRepository() { return *externalConstantRepository; }
     void SetSynthesizedClassFunRepository(Cm::Core::SynthesizedClassFunRepository* synthesizedClassFunRepository_);
     Cm::Core::SynthesizedClassFunRepository& SynthesizedClassFunRepository() { return *synthesizedClassFunRepository; }
@@ -123,10 +127,12 @@ private:
     Cm::Sym::ConversionTable conversionTable;
     Cm::Core::ClassConversionTable classConversionTable;
     Cm::Core::DerivedTypeOpRepository derivedTypeOpRepository;
+    Cm::Core::InterfaceTypeOpRepository interfaceTypeOpRepository;
     Cm::Core::EnumTypeOpRepository enumTypeOpRepository;
     std::unique_ptr<Cm::Core::StringRepository> stringRepository;
     Cm::Core::IrFunctionRepository irFunctionRepository;
     std::unique_ptr<Cm::Core::IrClassTypeRepository> irClassTypeRepository;
+    std::unique_ptr<Cm::Core::IrInterfaceTypeRepository> irInterfaceTypeRepository;
     std::unique_ptr<Cm::Core::ExternalConstantRepository> externalConstantRepository;
     std::unique_ptr<Cm::Core::SynthesizedClassFunRepository> synthesizedClassFunRepository;
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;

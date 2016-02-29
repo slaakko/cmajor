@@ -39,6 +39,8 @@ public:
     void Visit(Cm::Ast::FloatNode& floatNode) override;
     void Visit(Cm::Ast::DoubleNode& doubleNode) override;
     void Visit(Cm::Ast::CharNode& charNode) override;
+    void Visit(Cm::Ast::WCharNode& wcharNode) override;
+    void Visit(Cm::Ast::UCharNode& ucharNode) override;
     void Visit(Cm::Ast::VoidNode& voidNode) override;
     void Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode) override;
     void Visit(Cm::Ast::TemplateIdNode& templateIdNode) override;
@@ -83,6 +85,16 @@ void TypeResolver::Visit(Cm::Ast::BoolNode& boolNode)
 void TypeResolver::Visit(Cm::Ast::CharNode& charNode)
 {
     typeSymbol = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
+}
+
+void TypeResolver::Visit(Cm::Ast::WCharNode& wcharNode)
+{
+    typeSymbol = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::wcharId));
+}
+
+void TypeResolver::Visit(Cm::Ast::UCharNode& ucharNode)
+{
+    typeSymbol = symbolTable.GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ucharId));
 }
 
 void TypeResolver::Visit(Cm::Ast::VoidNode& voidNode)

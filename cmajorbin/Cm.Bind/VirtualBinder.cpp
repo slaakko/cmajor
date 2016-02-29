@@ -49,6 +49,7 @@ void VirtualBinder::EndVisit(Cm::Ast::ClassNode& classNode)
         staticConstructor->SetPublic();
         classTypeSymbol->AddSymbol(staticConstructor);
     }
+    classTypeSymbol->InitItbls();
     classTypeSymbol->InitVtbl();
 }
 

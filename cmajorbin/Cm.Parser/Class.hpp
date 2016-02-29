@@ -1,5 +1,5 @@
-#ifndef Class_hpp_11627
-#define Class_hpp_11627
+#ifndef Class_hpp_31847
+#define Class_hpp_31847
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -20,8 +20,8 @@ private:
     virtual void CreateRules();
     virtual void GetReferencedGrammars();
     class ClassRule;
-    class InheritanceRule;
-    class BaseClassTypeExprRule;
+    class InheritanceAndImplIntfsRule;
+    class BaseClassTypeExprOrImplIntfRule;
     class ClassContentRule;
     class ClassMemberRule;
     class InitializerListRule;
@@ -39,4 +39,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Class_hpp_11627
+#endif // Class_hpp_31847

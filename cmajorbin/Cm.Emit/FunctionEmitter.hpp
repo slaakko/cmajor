@@ -90,12 +90,13 @@ public:
         std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
         Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, 
         Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_, 
-        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool generateDebugInfo_, bool profile_);
+        Cm::Sym::FunctionSymbol* leaveTracedCallFun_, Cm::Sym::FunctionSymbol* interfaceLookupFailed_, bool generateDebugInfo_, bool profile_);
 
     virtual void EmitDummyVar(Cm::Core::Emitter* emitter) = 0;
     virtual void SetStringLiteralResult(Cm::Core::Emitter* emitter, Ir::Intf::Object* resultObject, Ir::Intf::Object* stringConstant, Ir::Intf::Object* stringObject) = 0;
     virtual void DoNothing(Cm::Core::GenResult& genResult) = 0;
     virtual void GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) = 0;
+    virtual void GenInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult) = 0;
     virtual Ir::Intf::LabelObject* CreateLandingPadLabel(int landingPadId) = 0;
     virtual void MapIrFunToFun(Ir::Intf::Function* irFun, Cm::Sym::FunctionSymbol* fun) = 0;
     virtual Ir::Intf::Object* MakeLocalVarIrObject(Cm::Sym::TypeSymbol* type, Ir::Intf::Object* source) = 0;
@@ -247,6 +248,7 @@ private:
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
     Cm::Sym::FunctionSymbol* enterTracedCallFun;
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
+    Cm::Sym::FunctionSymbol* interfaceLookupFailed;
     Cm::Sym::SymbolTable* symbolTable;
     Cm::Opt::TpGraph* tpGraph;
     std::stack<std::vector<Ir::Intf::LabelObject*>> nextTargetsStack;
@@ -262,6 +264,7 @@ private:
     void MakePlainValueResult(Cm::Sym::TypeSymbol* plainType, Cm::Core::GenResult& result);
     void ExecutePostfixIncDecStatements(Cm::Core::GenResult& result);
     void GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
+    void GenerateInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result);
     void CallEnterFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void CallLeaveFrame(Cm::BoundTree::TraceCallInfo* traceCallInfo);
     void GenerateTestExceptionResult();

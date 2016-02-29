@@ -124,6 +124,12 @@ public:
     void SetActiveCfgNode(CfgNode* activeCfgNode_) { activeCfgNode = activeCfgNode_; }
     CfgNode* GetActiveCfgNode() const { return activeCfgNode; }
     void SetProfilingHandler(ProfilingHandler* profilingHandler_) { profilingHandler = profilingHandler_; }
+    bool IrecPtrAllocated() const { return irecPtrAllocated; }
+    void SetIrecPtrAllocated() { irecPtrAllocated = true; }
+    bool TempBoolVarAllocted() const { return tempBoolVarAllocted; }
+    void SetTempBoolVarAllocted() { tempBoolVarAllocted = true; }
+    void SetInterfaceLookupFailed(Ir::Intf::Function* interfaceLookupFailed_) { interfaceLookupFailed = interfaceLookupFailed_; }
+    Ir::Intf::Function* InterfaceLookupFailed() const { return interfaceLookupFailed; }
 private:
     bool newLlvmSyntax;
     Ir::Intf::Function* irFunction;
@@ -134,9 +140,12 @@ private:
     std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
     std::vector<std::unique_ptr<Ir::Intf::Type>> ownedTypes;
     std::vector<std::unique_ptr<Ir::Intf::Function>> ownedFuns;
+    Ir::Intf::Function* interfaceLookupFailed;
     Ir::Intf::CDebugNode* cDebugNode;
     CfgNode* activeCfgNode;
     ProfilingHandler* profilingHandler;
+    bool irecPtrAllocated;
+    bool tempBoolVarAllocted;
 };
 
 class GenResult

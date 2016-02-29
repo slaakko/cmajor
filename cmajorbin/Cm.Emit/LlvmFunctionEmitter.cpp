@@ -19,9 +19,10 @@ LlvmFunctionEmitter::LlvmFunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_,
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_,
     Cm::Ast::CompileUnitNode* currentCompileUnit_, Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCalllFun_,
-    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, bool profile_) : FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
+    Cm::Sym::FunctionSymbol* leaveTracedCallFun_, Cm::Sym::FunctionSymbol* interfaceLookupFailed_, bool profile_) : 
+    FunctionEmitter(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_,
     internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_, externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCalllFun_,
-    leaveTracedCallFun_, false, profile_)
+    leaveTracedCallFun_, interfaceLookupFailed_, false, profile_)
 {
 }
 
@@ -82,9 +83,11 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundDynamicTypeNameExpression& b
     std::vector<Ir::Intf::Type*> rttiElementTypes;
     rttiElementTypes.push_back(i8Ptr->Clone());
     rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    rttiElementTypes.push_back(Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName("irec", false), 1));
     std::vector<std::string> rttiElementNames;
     rttiElementNames.push_back("class_name");
     rttiElementNames.push_back("class_id");
+    rttiElementNames.push_back("irectab");
     Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
     emitter->Own(rttiPtrIrType);
     Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
@@ -146,9 +149,12 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundIsExpression& boundIsExpress
     std::vector<Ir::Intf::Type*> rttiElementTypes;
     rttiElementTypes.push_back(i8Ptr->Clone());
     rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    Ir::Intf::Type* irecTabType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName("irec", false), 1);
+    rttiElementTypes.push_back(irecTabType);
     std::vector<std::string> rttiElementNames;
     rttiElementNames.push_back("class_name");
     rttiElementNames.push_back("class_id");
+    rttiElementNames.push_back("irectab");
     Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
     emitter->Own(rttiPtrIrType);
     Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
@@ -246,9 +252,12 @@ void LlvmFunctionEmitter::Visit(Cm::BoundTree::BoundAsExpression& boundAsExpress
     std::vector<Ir::Intf::Type*> rttiElementTypes;
     rttiElementTypes.push_back(i8Ptr->Clone());
     rttiElementTypes.push_back(Cm::IrIntf::UI64());
+    Ir::Intf::Type* irecTabType = Cm::IrIntf::Pointer(Cm::IrIntf::CreateTypeName("irec", false), 1);
+    rttiElementTypes.push_back(irecTabType);
     std::vector<std::string> rttiElementNames;
     rttiElementNames.push_back("class_name");
     rttiElementNames.push_back("class_id");
+    rttiElementNames.push_back("irectab");
     Ir::Intf::Type* rttiPtrIrType(Cm::IrIntf::Pointer(Cm::IrIntf::Structure("rtti_", rttiElementTypes, rttiElementNames), 1));
     emitter->Own(rttiPtrIrType);
     Ir::Intf::RegVar* rttiPtr = Cm::IrIntf::CreateTemporaryRegVar(rttiPtrIrType);
@@ -476,6 +485,70 @@ void LlvmFunctionEmitter::GenVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Core:
     emitter->Own(loadedFunctionPtr);
     emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, loadedFunctionPtr, loadedFunctionI8Ptr, functionPtrType));
     emitter->Emit(Cm::IrIntf::IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
+}
+
+void LlvmFunctionEmitter::GenInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::GenResult& memberFunctionResult)
+{
+    Cm::Core::Emitter* emitter = Emitter();
+    std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter, GenFlags()));
+    Cm::Sym::Symbol* funParent = fun->Parent();
+    if (!funParent->IsInterfaceTypeSymbol())
+    {
+        throw std::runtime_error("interface type expected");
+    }
+    Cm::Sym::InterfaceTypeSymbol* intf = static_cast<Cm::Sym::InterfaceTypeSymbol*>(funParent);
+    Ir::Intf::Type* i8Ptr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 1);
+    emitter->Own(i8Ptr);
+    Ir::Intf::Type* i8PtrPtr = Cm::IrIntf::Pointer(Cm::IrIntf::I8(), 2);
+    emitter->Own(i8PtrPtr);
+    Ir::Intf::Object* mainObject = memberFunctionResult.Arg1();
+    Ir::Intf::Type* intfPtrType = Cm::IrIntf::Pointer(intf->GetIrType(), 1);
+    emitter->Own(intfPtrType);
+    Ir::Intf::Object* intfObject = Cm::IrIntf::CreateTemporaryRegVar(intfPtrType);
+    emitter->Own(intfObject);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, intfObject, mainObject, intfPtrType));
+    Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", intfObject, 0, i8Ptr);
+    emitter->Own(obj);
+    Ir::Intf::Object* objRegVar = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, obj, objRegVar);
+    int n = int(memberFunctionResult.Objects().size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i == 1)
+        {
+            result->AddObject(objRegVar);
+        }
+        else
+        {
+            result->AddObject(memberFunctionResult.Objects()[i]);
+        }
+    }
+    Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", intfObject, 1, i8Ptr);
+    emitter->Own(itab);
+    Ir::Intf::Object* loadedItab = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(loadedItab);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, itab, loadedItab);
+    Ir::Intf::Object* itabPtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(itabPtrPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, itabPtrPtr, loadedItab, i8PtrPtr));
+    Ir::Intf::Object* funIndex = Cm::IrIntf::CreateI32Constant(fun->ItblIndex());
+    emitter->Own(funIndex);
+    Ir::Intf::Object* funI8PtrPtr = Cm::IrIntf::CreateTemporaryRegVar(i8PtrPtr);
+    emitter->Own(funI8PtrPtr);
+    Ir::Intf::Object* zero = Cm::IrIntf::CreateUI32Constant(0);
+    emitter->Own(zero);
+    emitter->Emit(Cm::IrIntf::GetElementPtr(i8PtrPtr, funI8PtrPtr, itabPtrPtr, funIndex));
+    Ir::Intf::Object* funI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(funI8Ptr);
+    Ir::Intf::RegVar* loadedFunI8Ptr = Cm::IrIntf::CreateTemporaryRegVar(i8Ptr);
+    emitter->Own(loadedFunI8Ptr);
+    Cm::IrIntf::Assign(*emitter, i8Ptr, funI8PtrPtr, loadedFunI8Ptr);
+    Ir::Intf::Type* funPtrType = IrFunctionRepository().GetFunPtrIrType(fun);
+    Ir::Intf::Object* funPtr = Cm::IrIntf::CreateTemporaryRegVar(funPtrType);
+    emitter->Own(funPtr);
+    emitter->Emit(Cm::IrIntf::Bitcast(i8Ptr, funPtr, loadedFunI8Ptr, funPtrType));
+    emitter->Emit(Cm::IrIntf::IndirectCall(result->MainObject(), funPtr, result->Args()));
+    ResultStack().Push(result);
 }
 
 Ir::Intf::LabelObject* LlvmFunctionEmitter::CreateLandingPadLabel(int landingPadId)

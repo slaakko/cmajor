@@ -52,16 +52,17 @@ namespace Cm.Parser
 
         Class(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::ClassNode*
             ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
-                TemplateParameterList(ctx, value)? Inheritance(ctx, value)? 
+                TemplateParameterList(ctx, value)? InheritanceAndImplIntfs(ctx, value)? 
                 (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
             ;
 
-        Inheritance(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
-            ::= ':'{ ctx->BeginParsingTypeExpr(); }
-                BaseClassTypeExpr(ctx)!{ cls->SetBaseClassTypeExpr(BaseClassTypeExpr); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
+        InheritanceAndImplIntfs(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
+            ::= ':' 
+                (empty{ ctx->BeginParsingTypeExpr(); } 
+                BaseClassTypeExprOrImplIntf(ctx){ cls->AddBaseClassOrImplIntfTypeExpr(BaseClassTypeExprOrImplIntf); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); })  % ','
             ;
                 
-        BaseClassTypeExpr(ParsingContext* ctx): Cm::Ast::Node*
+        BaseClassTypeExprOrImplIntf(ParsingContext* ctx): Cm::Ast::Node*
             ::= TemplateId(ctx){ value = TemplateId; }
             |   QualifiedId{ value = QualifiedId; }
             ;

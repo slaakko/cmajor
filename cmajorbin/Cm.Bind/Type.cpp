@@ -9,6 +9,7 @@
 
 #include <Cm.Bind/Type.hpp>
 #include <Cm.Bind/Class.hpp>
+#include <Cm.Bind/Interface.hpp>
 #include <Cm.Bind/Delegate.hpp>
 #include <Cm.Bind/Enumeration.hpp>
 
@@ -33,6 +34,19 @@ void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* contai
             throw std::runtime_error("not class node");
         }
         BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, static_cast<Cm::Sym::ClassTypeSymbol*>(type));
+    }
+    else if (type->IsInterfaceTypeSymbol())
+    {
+        Cm::Ast::InterfaceNode* interfaceNode = nullptr;
+        if (node->IsInterfaceNode())
+        {
+            interfaceNode = static_cast<Cm::Ast::InterfaceNode*>(node);
+        }
+        else
+        {
+            throw std::runtime_error("interface node expected");
+        }
+        BindInterface(symbolTable, containerScope, fileScopes, interfaceNode);
     }
     else if (type->IsEnumTypeSymbol())
     {

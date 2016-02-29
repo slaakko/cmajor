@@ -66,6 +66,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("if");
     keywords0.push_back("inline");
     keywords0.push_back("int");
+    keywords0.push_back("interface");
     keywords0.push_back("internal");
     keywords0.push_back("is");
     keywords0.push_back("long");
@@ -93,12 +94,14 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("try");
     keywords0.push_back("typedef");
     keywords0.push_back("typename");
+    keywords0.push_back("uchar");
     keywords0.push_back("uint");
     keywords0.push_back("ulong");
     keywords0.push_back("ushort");
     keywords0.push_back("using");
     keywords0.push_back("virtual");
     keywords0.push_back("void");
+    keywords0.push_back("wchar");
     keywords0.push_back("where");
     keywords0.push_back("while");
 }

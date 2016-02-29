@@ -201,6 +201,8 @@ void InitFactory()
     SymbolFactory::Init();
     SymbolFactory::Instance().Register(SymbolType::boolSymbol, new ConcreteBasicTypeSymbolCreator<BoolTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::charSymbol, new ConcreteBasicTypeSymbolCreator<CharTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::wcharSymbol, new ConcreteBasicTypeSymbolCreator<WCharTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::ucharSymbol, new ConcreteBasicTypeSymbolCreator<UCharTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::voidSymbol, new ConcreteBasicTypeSymbolCreator<VoidTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::sbyteSymbol, new ConcreteBasicTypeSymbolCreator<SByteTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::byteSymbol, new ConcreteBasicTypeSymbolCreator<ByteTypeSymbol>());

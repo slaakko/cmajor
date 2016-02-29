@@ -24,7 +24,7 @@ class Emitter : public Cm::BoundTree::Visitor, public Ir::Intf::TempTypedefProvi
 {
 public:
     Emitter(const std::string& irFilePath, Cm::Sym::TypeRepository& typeRepository_, Cm::Core::IrFunctionRepository& irFunctionRepository_, Cm::Core::IrClassTypeRepository& irClassTypeRepository_,
-        Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_);
+        Cm::Core::IrInterfaceTypeRepository& irInterfaceTypeRepository_, Cm::Core::StringRepository& stringRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_);
     void BeginVisit(Cm::BoundTree::BoundCompileUnit& compileUnit) override;
     virtual void WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter) = 0;
     virtual Cm::Core::StaticMemberVariableRepository& GetStaticMemberVariableRepository() = 0;
@@ -44,12 +44,14 @@ protected:
     Cm::Sym::TypeRepository& TypeRepository() { return typeRepository; }
     Cm::Core::IrFunctionRepository& IrFunctionRepository() { return irFunctionRepository; }
     Cm::Core::IrClassTypeRepository& IrClassTypeRepository() { return irClassTypeRepository; }
+    Cm::Core::IrInterfaceTypeRepository& IrInterfaceTypeRepository() { return irInterfaceTypeRepository; }
     Cm::Core::StringRepository& StringRepository() { return stringRepository; }
     Cm::Ast::CompileUnitNode* CurrentCompileUnit() { return currentCompileUnit; }
     Cm::Sym::FunctionSymbol* EnterFrameFun() { return enterFrameFun; }
     Cm::Sym::FunctionSymbol* LeaveFrameFun() { return leaveFrameFun; }
     Cm::Sym::FunctionSymbol* EnterTracedCallFun() { return enterTracedCallFun; }
-    Cm::Sym::FunctionSymbol* LeaveTracedCallFun() {return leaveTracedCallFun; }
+    Cm::Sym::FunctionSymbol* LeaveTracedCallFun() { return leaveTracedCallFun; }
+    Cm::Sym::FunctionSymbol* InterfaceLookupFailed() { return interfaceLookupFailed; }
     Cm::Sym::SymbolTable* SymbolTable() const { return symbolTable; }
     bool Profile() const { return profile; }
     Cm::Opt::TpGraph* TpGraph() const { return tpGraph; }
@@ -57,6 +59,7 @@ private:
 	Cm::Sym::TypeRepository& typeRepository;
     Cm::Core::IrFunctionRepository& irFunctionRepository;
     Cm::Core::IrClassTypeRepository& irClassTypeRepository;
+    Cm::Core::IrInterfaceTypeRepository& irInterfaceTypeRepository;
     Cm::Core::StringRepository& stringRepository;
     Cm::Core::ExternalConstantRepository& externalConstantRepository;
     std::ofstream irFile;
@@ -69,6 +72,7 @@ private:
 	Cm::Sym::FunctionSymbol* leaveFrameFun;
     Cm::Sym::FunctionSymbol* enterTracedCallFun;
     Cm::Sym::FunctionSymbol* leaveTracedCallFun;
+    Cm::Sym::FunctionSymbol* interfaceLookupFailed;
     std::unordered_set<Cm::Sym::ClassTypeSymbol*> processedClasses;
     Cm::Sym::SymbolTable* symbolTable;
     Cm::Opt::TpGraph* tpGraph;

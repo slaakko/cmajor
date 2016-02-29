@@ -25,7 +25,7 @@ using Cm::Parsing::Span;
 
 enum class ValueType : uint8_t
 {
-    none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
+    none, boolValue, charValue, wcharValue, ucharValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
 };
 
 std::string ValueTypeStr(ValueType valueType);
@@ -81,6 +81,42 @@ public:
     std::string ToString() const override { return "'" + Cm::Util::CharStr(value) + "'"; }
 private:
     char value;
+};
+
+class WCharValue : public Value
+{
+public:
+    typedef uint16_t OperandType;
+    WCharValue();
+    WCharValue(uint16_t value_);
+    ValueType GetValueType() const override { return ValueType::wcharValue; }
+    Value* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
+    uint16_t Value() const { return value; }
+    std::string ToString() const override { return "'" + Cm::Util::WCharStr(value) + "'"; }
+private:
+    uint16_t value;
+};
+
+class UCharValue : public Value
+{
+public:
+    typedef uint32_t OperandType;
+    UCharValue();
+    UCharValue(uint32_t value_);
+    ValueType GetValueType() const override { return ValueType::ucharValue; }
+    Value* Clone() const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    Value* As(ValueType targetType, bool cast, const Span& span) const override;
+    Ir::Intf::Object* CreateIrObject() const override;
+    uint32_t Value() const { return value; }
+    std::string ToString() const override { return "'" + Cm::Util::UCharStr(value) + "'"; }
+private:
+    uint32_t value;
 };
 
 class SByteValue : public Value

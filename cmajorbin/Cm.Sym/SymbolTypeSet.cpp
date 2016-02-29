@@ -37,6 +37,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     typeSymbols.insert(SymbolType::floatSymbol);
     typeSymbols.insert(SymbolType::doubleSymbol);
     typeSymbols.insert(SymbolType::classSymbol);
+    typeSymbols.insert(SymbolType::interfaceTypeSymbol);
     typeSymbols.insert(SymbolType::delegateSymbol);
     typeSymbols.insert(SymbolType::classDelegateSymbol);
     typeSymbols.insert(SymbolType::enumTypeSymbol);
@@ -62,6 +63,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     typeAndFunctionGroupSymbols.insert(SymbolType::floatSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::doubleSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::classSymbol);
+    typeAndFunctionGroupSymbols.insert(SymbolType::interfaceTypeSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::delegateSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::classDelegateSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::enumTypeSymbol);
@@ -75,6 +77,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     //  lookupClassEnumAndNamespaceSymbols:
     SymbolTypeSet dotSubjectSymbols;
     dotSubjectSymbols.insert(SymbolType::classSymbol);
+    dotSubjectSymbols.insert(SymbolType::interfaceTypeSymbol);
     dotSubjectSymbols.insert(SymbolType::typedefSymbol);
     dotSubjectSymbols.insert(SymbolType::enumTypeSymbol);
     dotSubjectSymbols.insert(SymbolType::namespaceSymbol);
@@ -88,6 +91,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupContainerSymbols:
     SymbolTypeSet containerSymbols;
     containerSymbols.insert(SymbolType::classSymbol);
+    containerSymbols.insert(SymbolType::interfaceTypeSymbol);
     containerSymbols.insert(SymbolType::typedefSymbol);
     containerSymbols.insert(SymbolType::enumTypeSymbol);
     containerSymbols.insert(SymbolType::namespaceSymbol);
@@ -98,6 +102,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupClassAndNamespaceSymbols:
     SymbolTypeSet classAndNamespaceSymbols;
     classAndNamespaceSymbols.insert(SymbolType::classSymbol);
+    classAndNamespaceSymbols.insert(SymbolType::interfaceTypeSymbol);
     classAndNamespaceSymbols.insert(SymbolType::typedefSymbol);
     classAndNamespaceSymbols.insert(SymbolType::namespaceSymbol);
     classAndNamespaceSymbols.insert(SymbolType::templateTypeSymbol);
@@ -107,11 +112,18 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
 //  lookupClassSymbols:
     SymbolTypeSet classSymbols;
     classSymbols.insert(SymbolType::classSymbol);
+    classSymbols.insert(SymbolType::interfaceTypeSymbol);
     classSymbols.insert(SymbolType::typedefSymbol);
     classSymbols.insert(SymbolType::templateTypeSymbol);
     classSymbols.insert(SymbolType::typeParameterSymbol);
     classSymbols.insert(SymbolType::boundTypeParameterSymbol);
     symbolTypeSets[int(SymbolTypeSetId::lookupClassSymbols)] = std::move(classSymbols);
+//  lookupInterfaceSymbols:
+    SymbolTypeSet interfaceSymbols;
+    interfaceSymbols.insert(SymbolType::classSymbol);
+    interfaceSymbols.insert(SymbolType::interfaceTypeSymbol);
+    interfaceSymbols.insert(SymbolType::typedefSymbol);
+    symbolTypeSets[int(SymbolTypeSetId::lookupInterfaceSymbols)] = std::move(interfaceSymbols);
 //  lookupFunctionGroupAndMemberVariable:
     SymbolTypeSet functionGroupAndMemberVariableSymbols;
     functionGroupAndMemberVariableSymbols.insert(SymbolType::functionGroupSymbol);
@@ -155,6 +167,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     invokeSubjectSymbols.insert(SymbolType::floatSymbol);
     invokeSubjectSymbols.insert(SymbolType::doubleSymbol);
     invokeSubjectSymbols.insert(SymbolType::classSymbol);
+    invokeSubjectSymbols.insert(SymbolType::interfaceTypeSymbol);
     invokeSubjectSymbols.insert(SymbolType::delegateSymbol);
     invokeSubjectSymbols.insert(SymbolType::classDelegateSymbol);
     invokeSubjectSymbols.insert(SymbolType::enumTypeSymbol);

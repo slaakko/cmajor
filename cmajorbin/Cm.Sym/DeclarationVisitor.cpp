@@ -17,13 +17,19 @@
 namespace Cm { namespace Sym {
 
 DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : 
-    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false), cidMap(nullptr)
+    Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false), 
+    cidMap(nullptr), iidMap(nullptr)
 {
 }
 
 void DeclarationVisitor::SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_)
 {
     cidMap = cidMap_;
+}
+
+void DeclarationVisitor::SetIidMap(std::unordered_map<std::string, uint64_t>* iidMap_)
+{
+    iidMap = iidMap_;
 }
 
 void DeclarationVisitor::SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_)
@@ -66,6 +72,16 @@ void DeclarationVisitor::EndVisit(Cm::Ast::ClassNode& classNode)
     }
 }
 
+void DeclarationVisitor::BeginVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    symbolTable.BeginInterfaceScope(&interfaceNode, iidMap);
+}
+
+void DeclarationVisitor::EndVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    symbolTable.EndInterfaceScope();
+}
+
 void DeclarationVisitor::BeginVisit(Cm::Ast::ConstructorNode& constructorNode)
 {
     symbolTable.BeginFunctionScope(&constructorNode, FunctionSymbolFlags::constructorOrDestructorSymbol | FunctionSymbolFlags::memberFunctionSymbol);
@@ -100,27 +116,47 @@ void DeclarationVisitor::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
-    parameterIndex = 0;
-    if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::static_) == Cm::Ast::Specifiers::none)
+    if (symbolTable.Container()->IsInterfaceTypeSymbol())
     {
+        symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
+        parameterIndex = 0;
         ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
         if (memberFunctionNode.IsConst())
         {
-            TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-            thisParam->SetType(thisParamType);
+            symbolTable.GetTypeRepository().MakeConstGenericPtrType(memberFunctionNode.GetSpan());
         }
         else
         {
-            TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-            thisParam->SetType(thisParamType);
+            thisParam->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(memberFunctionNode.GetSpan()));
         }
         thisParam->SetBound();
         symbolTable.AddParameter(thisParam);
-    }
-    if (memberFunctionNode.ReturnTypeExpr())
-    {
         symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
+    }
+    else
+    {
+        symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags::memberFunctionSymbol);
+        parameterIndex = 0;
+        if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::static_) == Cm::Ast::Specifiers::none)
+        {
+            ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
+            if (memberFunctionNode.IsConst())
+            {
+                TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+                thisParam->SetType(thisParamType);
+            }
+            else
+            {
+                TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+                thisParam->SetType(thisParamType);
+            }
+            thisParam->SetBound();
+            symbolTable.AddParameter(thisParam);
+        }
+        if (memberFunctionNode.ReturnTypeExpr())
+        {
+            symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
+        }
     }
 }
 

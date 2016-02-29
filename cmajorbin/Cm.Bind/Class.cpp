@@ -8,11 +8,13 @@
 ========================================================================*/
 
 #include <Cm.Bind/Class.hpp>
+#include <Cm.Bind/Interface.hpp>
 #include <Cm.Bind/Access.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/MemberVariable.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Ast/Identifier.hpp>
@@ -20,7 +22,7 @@
 
 namespace Cm { namespace Bind {
 
-Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, Cm::Sym::SymbolTypeSetId::lookupClassSymbols);
@@ -43,7 +45,7 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
     }
 }
 
-void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
+void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
     Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (classTypeSymbol->Bound()) return;
@@ -111,48 +113,83 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
         classTypeSymbol->SetBound();
         return;
     }
-    Cm::Ast::Node* baseClassTypeExpr = classNode->BaseClassTypeExpr();
-    if (baseClassTypeExpr)
+    if (!classTypeSymbol->TypesSet())
     {
-        Cm::Sym::TypeSymbol* baseTypeSymbol = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassTypeExpr);
-        if (baseTypeSymbol)
+        for (const std::unique_ptr<Cm::Ast::Node>& baseClassOrImplIntf : classNode->BaseClassOrImplIntfTypeExprs())
         {
-            if (baseTypeSymbol->IsClassTypeSymbol())
+            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassOrImplIntf.get());
+            if (type)
             {
-                Cm::Sym::ClassTypeSymbol* baseClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(baseTypeSymbol);
-                if (Cm::Sym::TypesEqual(classTypeSymbol, baseClassTypeSymbol))
+                if (type->IsClassTypeSymbol())
                 {
-                    Cm::Core::Exception("class cannot derive from itself", classTypeSymbol->GetSpan());
-                }
-                Cm::Ast::Node* node = symbolTable.GetNode(baseClassTypeSymbol, false);
-                if (node)
-                {
-                    if (node->IsClassNode())
+                    Cm::Sym::ClassTypeSymbol* baseClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
+                    if (Cm::Sym::TypesEqual(classTypeSymbol, baseClassType))
                     {
-                        Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
-                        Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
-                        BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassTypeSymbol);
+                        Cm::Core::Exception("class cannot derive from itself", classTypeSymbol->GetSpan());
                     }
                     else
                     {
-                        throw std::runtime_error("not class node");
+                        if (classTypeSymbol->BaseClass())
+                        {
+                            throw Cm::Core::Exception("class cannot have more than one base class", classTypeSymbol->GetSpan(), baseClassType->GetSpan());
+                        }
+                        Cm::Ast::Node* node = symbolTable.GetNode(baseClassType, false);
+                        if (node)
+                        {
+                            if (node->IsClassNode())
+                            {
+                                Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
+                                Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
+                                BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassType);
+                            }
+                            else
+                            {
+                                throw std::runtime_error("class node expected");
+                            }
+                        }
+                        if (baseClassType->Access() < classTypeSymbol->Access())
+                        {
+                            throw Cm::Core::Exception("base class type must be at least as accessible as the class type itself", baseClassType->GetSpan(), classTypeSymbol->GetSpan());
+                        }
+                        classTypeSymbol->SetBaseClass(baseClassType);
+                        classTypeSymbol->GetContainerScope()->SetBase(baseClassType->GetContainerScope());
                     }
                 }
-                if (baseClassTypeSymbol->Access() < classTypeSymbol->Access())
+                else if (type->IsInterfaceTypeSymbol())
                 {
-                    throw Cm::Core::Exception("base class type must be at least as accessible as the class type itself", baseClassTypeSymbol->GetSpan(), classTypeSymbol->GetSpan());
+                    Cm::Sym::InterfaceTypeSymbol* interfaceType = static_cast<Cm::Sym::InterfaceTypeSymbol*>(type);
+                    Cm::Ast::Node* node = symbolTable.GetNode(interfaceType, false);
+                    if (node)
+                    {
+                        if (node->IsInterfaceNode())
+                        {
+                            Cm::Ast::InterfaceNode* interfaceNode = static_cast<Cm::Ast::InterfaceNode*>(node);
+                            Cm::Sym::ContainerScope* interfaceContainerScope = symbolTable.GetContainerScope(interfaceNode);
+                            BindInterface(symbolTable, interfaceContainerScope, fileScopes, interfaceNode);
+                        }
+                        else
+                        {
+                            throw std::runtime_error("interface node expected");
+                        }
+                    }
+                    for (Cm::Sym::InterfaceTypeSymbol* implementedInterface : classTypeSymbol->ImplementedInterfaces())
+                    {
+                        if (Cm::Sym::TypesEqual(interfaceType, implementedInterface))
+                        {
+                            throw Cm::Core::Exception("class already implements interface '" + implementedInterface->FullName() + "'", interfaceType->GetSpan());
+                        }
+                    }
+                    classTypeSymbol->AddImplementedInterface(interfaceType);
                 }
-                classTypeSymbol->SetBaseClass(baseClassTypeSymbol);
-                classTypeSymbol->GetContainerScope()->SetBase(baseClassTypeSymbol->GetContainerScope());
+                else
+                {
+                    throw Cm::Core::Exception("type expression does not denote a class type or interface type", baseClassOrImplIntf->GetSpan());
+                }
             }
             else
             {
-                throw Cm::Core::Exception("base class type expression does not denote a class type", baseClassTypeExpr->GetSpan());
+                throw Cm::Core::Exception("type expression does not denote a type", baseClassOrImplIntf->GetSpan());
             }
-        }
-        else
-        {
-            throw Cm::Core::Exception("base class type expression does not denote a type", baseClassTypeExpr->GetSpan());
         }
     }
     if (!classTypeSymbol->IrTypeMade())
@@ -180,12 +217,20 @@ void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm
     {
         AddClassTypeToIrClassTypeRepository(classType->BaseClass(), boundCompileUnit, containerScope);
     }
+    for (Cm::Sym::InterfaceTypeSymbol* intf : classType->ImplementedInterfaces())
+    {
+        boundCompileUnit.IrInterfaceTypeRepository().Add(intf);
+    }
     for (Cm::Sym::MemberVariableSymbol* memberVar : classType->MemberVariables())
     {
         Cm::Sym::TypeSymbol* memberVariableBaseType = memberVar->GetType()->GetBaseType();
         if (memberVariableBaseType->IsClassTypeSymbol())
         {
             AddClassTypeToIrClassTypeRepository(static_cast<Cm::Sym::ClassTypeSymbol*>(memberVariableBaseType), boundCompileUnit, containerScope);
+        }
+        else if (memberVariableBaseType->IsInterfaceTypeSymbol())
+        {
+            boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(memberVariableBaseType));
         }
     }
     if (classType->IsVirtual())
@@ -200,6 +245,10 @@ void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm
                     Cm::Sym::ClassTypeSymbol* returnClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(returnType->GetBaseType());
                     AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
                 }
+                else if (returnType && returnType->GetBaseType()->IsInterfaceTypeSymbol())
+                {
+                    boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(returnType->GetBaseType()));
+                }
                 for (Cm::Sym::ParameterSymbol* parameter : virtualFunction->Parameters())
                 {
                     Cm::Sym::TypeSymbol* parameterBaseType = parameter->GetType()->GetBaseType();
@@ -207,6 +256,10 @@ void AddClassTypeToIrClassTypeRepository(Cm::Sym::ClassTypeSymbol* classType, Cm
                     {
                         Cm::Sym::ClassTypeSymbol* parameterClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(parameterBaseType);
                         AddClassTypeToIrClassTypeRepository(parameterClassType, boundCompileUnit, containerScope);
+                    }
+                    else if (parameterBaseType->IsInterfaceTypeSymbol())
+                    {
+                        boundCompileUnit.IrInterfaceTypeRepository().Add(static_cast<Cm::Sym::InterfaceTypeSymbol*>(parameterBaseType));
                     }
                 }
             }

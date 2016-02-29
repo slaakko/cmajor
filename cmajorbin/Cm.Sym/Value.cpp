@@ -17,7 +17,7 @@ namespace Cm { namespace Sym {
 
 ValueType valueTypes[uint8_t(Cm::Sym::SymbolType::maxSymbol)] =
 {
-    ValueType::boolValue, ValueType::charValue, ValueType::none,
+    ValueType::boolValue, ValueType::charValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none,
     ValueType::sbyteValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue,
     ValueType::floatValue, ValueType::doubleValue, ValueType::nullValue, ValueType::none,
     ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none,
@@ -36,21 +36,23 @@ ValueType GetValueTypeFor(SymbolType symbolType)
 
 ValueType commonType[uint8_t(Cm::Sym::ValueType::max)][uint8_t(Cm::Sym::ValueType::max)] = 
 {
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::nullValue, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::stringValue }
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::wcharValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::ucharValue, ValueType::ucharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::nullValue, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::stringValue }
 };
 
 ValueType GetCommonType(ValueType left, ValueType right)
@@ -60,7 +62,7 @@ ValueType GetCommonType(ValueType left, ValueType right)
 
 const char* valueTypeStr[uint8_t(ValueType::max)] =
 {
-    "", "bool", "char", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "@nullptrtype", "string"
+    "", "bool", "char", "wchar", "uchar", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "@nullptrtype", "string"
 };
 
 std::string ValueTypeStr(ValueType valueType)
@@ -267,6 +269,14 @@ Value* CharValue::As(ValueType targetType, bool cast, const Span& span) const
         {
             return new CharValue(value);
         }
+        case ValueType::wcharValue:
+        {
+            return new WCharValue(value);
+        }
+        case ValueType::ucharValue:
+        {
+            return new UCharValue(value);
+        }
         case ValueType::sbyteValue:
         {
             if (cast)
@@ -389,6 +399,371 @@ Ir::Intf::Object* CharValue::CreateIrObject() const
     return Cm::IrIntf::CreateCharConstant(value);
 }
 
+WCharValue::WCharValue() : value(0)
+{
+}
+
+WCharValue::WCharValue(uint16_t value_) : value(value_)
+{
+}
+
+Value* WCharValue::Clone() const
+{
+    return new WCharValue(value);
+}
+
+void WCharValue::Read(Reader& reader)
+{
+    value = reader.GetBinaryReader().ReadUShort();
+}
+
+void WCharValue::Write(Writer& writer)
+{
+    writer.GetBinaryWriter().Write(value);
+}
+
+Value* WCharValue::As(ValueType targetType, bool cast, const Span& span) const
+{
+    switch (targetType)
+    {
+        case ValueType::boolValue:
+        {
+            if (cast)
+            {
+                return new BoolValue(static_cast<bool>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::charValue:
+        {
+            if (cast)
+            {
+                return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            return new WCharValue(value);
+        }
+        case ValueType::ucharValue:
+        {
+            return new UCharValue(value);
+        }
+        case ValueType::sbyteValue:
+        {
+            if (cast)
+            {
+                return new SByteValue(static_cast<int8_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::byteValue:
+        {
+            if (cast)
+            {
+                return new ByteValue(static_cast<uint8_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::shortValue:
+        {
+            if (cast)
+            {
+                return new ShortValue(static_cast<int16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ushortValue:
+        {
+            if (cast)
+            {
+                return new UShortValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::intValue:
+        {
+            if (cast)
+            {
+                return new IntValue(static_cast<int32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::uintValue:
+        {
+            if (cast)
+            {
+                return new UIntValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::longValue:
+        {
+            if (cast)
+            {
+                return new LongValue(static_cast<int64_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ulongValue:
+        {
+            if (cast)
+            {
+                return new ULongValue(static_cast<uint64_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::floatValue:
+        {
+            if (cast)
+            {
+                return new FloatValue(static_cast<float>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::doubleValue:
+        {
+            if (cast)
+            {
+                return new DoubleValue(static_cast<double>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        default:
+        {
+            throw Exception("invalid conversion", span);
+        }
+    }
+}
+
+Ir::Intf::Object* WCharValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI16Constant(value);
+}
+
+UCharValue::UCharValue() : value()
+{
+}
+
+UCharValue::UCharValue(uint32_t value_) : value(value_)
+{
+}
+
+Value* UCharValue::Clone() const
+{
+    return new UCharValue(value);
+}
+
+void UCharValue::Read(Reader& reader)
+{
+    value = reader.GetBinaryReader().ReadUInt();
+}
+
+void UCharValue::Write(Writer& writer)
+{
+    writer.GetBinaryWriter().Write(value);
+}
+
+Value* UCharValue::As(ValueType targetType, bool cast, const Span& span) const
+{
+    switch (targetType)
+    {
+        case ValueType::boolValue:
+        {
+            if (cast)
+            {
+                return new BoolValue(static_cast<bool>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::charValue:
+        {
+            if (cast)
+            {
+                return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            return new UCharValue(value);
+        }
+        case ValueType::sbyteValue:
+        {
+            if (cast)
+            {
+                return new SByteValue(static_cast<int8_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::byteValue:
+        {
+            if (cast)
+            {
+                return new ByteValue(static_cast<uint8_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::shortValue:
+        {
+            if (cast)
+            {
+                return new ShortValue(static_cast<int16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ushortValue:
+        {
+            if (cast)
+            {
+                return new UShortValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::intValue:
+        {
+            if (cast)
+            {
+                return new IntValue(static_cast<int32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::uintValue:
+        {
+            if (cast)
+            {
+                return new UIntValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::longValue:
+        {
+            if (cast)
+            {
+                return new LongValue(static_cast<int64_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ulongValue:
+        {
+            if (cast)
+            {
+                return new ULongValue(static_cast<uint64_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::floatValue:
+        {
+            if (cast)
+            {
+                return new FloatValue(static_cast<float>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::doubleValue:
+        {
+            if (cast)
+            {
+                return new DoubleValue(static_cast<double>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        default:
+        {
+            throw Exception("invalid conversion", span);
+        }
+    }
+}
+
+Ir::Intf::Object* UCharValue::CreateIrObject() const
+{
+    return Cm::IrIntf::CreateUI32Constant(value);
+}
+
 SByteValue::SByteValue() : value(0)
 {
 }
@@ -432,6 +807,28 @@ Value* SByteValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {
@@ -567,6 +964,28 @@ Value* ByteValue::As(ValueType targetType, bool cast, const Span& span) const
                 throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
             }
         }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
         case ValueType::sbyteValue:
         {
             if (cast)
@@ -669,6 +1088,28 @@ Value* ShortValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {
@@ -811,6 +1252,28 @@ Value* UShortValue::As(ValueType targetType, bool cast, const Span& span) const
                 throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
             }
         }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
         case ValueType::sbyteValue:
         {
             if (cast)
@@ -927,6 +1390,28 @@ Value* IntValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {
@@ -1076,6 +1561,28 @@ Value* UIntValue::As(ValueType targetType, bool cast, const Span& span) const
                 throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
             }
         }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
         case ValueType::sbyteValue:
         {
             if (cast)
@@ -1206,6 +1713,28 @@ Value* LongValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {
@@ -1362,6 +1891,28 @@ Value* ULongValue::As(ValueType targetType, bool cast, const Span& span) const
                 throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
             }
         }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
         case ValueType::sbyteValue:
         {
             if (cast)
@@ -1506,6 +2057,28 @@ Value* FloatValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {
@@ -1663,6 +2236,28 @@ Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const
             if (cast)
             {
                 return new CharValue(static_cast<char>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::wcharValue:
+        {
+            if (cast)
+            {
+                return new WCharValue(static_cast<uint16_t>(value));
+            }
+            else
+            {
+                throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span);
+            }
+        }
+        case ValueType::ucharValue:
+        {
+            if (cast)
+            {
+                return new UCharValue(static_cast<uint32_t>(value));
             }
             else
             {

@@ -169,6 +169,22 @@ void Binder::EndVisit(Cm::Ast::ClassNode& classNode)
     }
 }
 
+void Binder::BeginVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    if (!boundCompileUnit.IsPrebindCompileUnit())
+    {
+        Cm::Sym::ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&interfaceNode);
+        Cm::Sym::InterfaceTypeSymbol* interfaceTypeSymbol = containerScope->Interface();
+        boundCompileUnit.IrInterfaceTypeRepository().Add(interfaceTypeSymbol);
+        BeginContainerScope(containerScope);
+    }
+}
+
+void Binder::EndVisit(Cm::Ast::InterfaceNode& interfaceNode)
+{
+    EndContainerScope();
+}
+
 void Binder::BeginClass(Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (!boundCompileUnit.IsPrebindCompileUnit())
@@ -259,61 +275,75 @@ void Binder::EndVisit(Cm::Ast::DestructorNode& destructorNode)
 
 void Binder::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    if ((memberFunctionNode.GetSpecifiers() & (Cm::Ast::Specifiers::default_ | Cm::Ast::Specifiers::suppress)) == Cm::Ast::Specifiers::none)
+    if (boundClass)
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
-        BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
-        boundFunction.reset(new Cm::BoundTree::BoundFunction(&memberFunctionNode, functionSymbol));
-        if (!functionSymbol->IsVirtualAbstractOrOverride() && !functionSymbol->IsNew())
+        if ((memberFunctionNode.GetSpecifiers() & (Cm::Ast::Specifiers::default_ | Cm::Ast::Specifiers::suppress)) == Cm::Ast::Specifiers::none)
         {
-            Cm::Sym::ClassTypeSymbol* ownerClass = boundClass->Symbol();
-            if (ownerClass && ownerClass->BaseClass())
+            Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
+            BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
+            boundFunction.reset(new Cm::BoundTree::BoundFunction(&memberFunctionNode, functionSymbol));
+            if (!functionSymbol->IsVirtualAbstractOrOverride() && !functionSymbol->IsNew())
             {
-                Cm::Sym::ClassTypeSymbol* baseClass = ownerClass->BaseClass();
-                for (Cm::Sym::FunctionSymbol* f : baseClass->Vtbl())
+                Cm::Sym::ClassTypeSymbol* ownerClass = boundClass->Symbol();
+                if (ownerClass && ownerClass->BaseClass())
                 {
-                    if (f && f->IsVirtualAbstractOrOverride())
+                    Cm::Sym::ClassTypeSymbol* baseClass = ownerClass->BaseClass();
+                    for (Cm::Sym::FunctionSymbol* f : baseClass->Vtbl())
                     {
-                        if (Cm::Sym::Overrides(functionSymbol, f))
+                        if (f && f->IsVirtualAbstractOrOverride())
                         {
-                            std::string warningMessage = "function '" + functionSymbol->FullName() + "' hides base class virtual function '" + f->FullName() + "'. " +
-                                "To get rid of this warning declare the function either 'override' or 'new'.";
-                            std::cout << "warning: " << warningMessage << std::endl;
-                            Cm::Sym::Warning warning(Cm::Sym::CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
-                            warning.SetDefined(functionSymbol->GetSpan());
-                            warning.SetReferenced(f->GetSpan());
-                            Cm::Sym::CompileWarningCollection::Instance().AddWarning(warning);
+                            if (Cm::Sym::Overrides(functionSymbol, f))
+                            {
+                                std::string warningMessage = "function '" + functionSymbol->FullName() + "' hides base class virtual function '" + f->FullName() + "'. " +
+                                    "To get rid of this warning declare the function either 'override' or 'new'.";
+                                std::cout << "warning: " << warningMessage << std::endl;
+                                Cm::Sym::Warning warning(Cm::Sym::CompileWarningCollection::Instance().GetCurrentProjectName(), warningMessage);
+                                warning.SetDefined(functionSymbol->GetSpan());
+                                warning.SetReferenced(f->GetSpan());
+                                Cm::Sym::CompileWarningCollection::Instance().AddWarning(warning);
+                            }
                         }
                     }
                 }
             }
         }
     }
+    else
+    {
+        BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
+    }
 }
 
 void Binder::EndVisit(Cm::Ast::MemberFunctionNode& memberFunctionNode)
 {
-    if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none)
+    if (boundClass)
     {
-        Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
-        bool unique = !boundClass->Symbol()->IsTemplateTypeSymbol();
-        GenerateSynthesizedFunctionImplementation(functionSymbol, memberFunctionNode.GetSpan(), boundClass->Symbol(), currentContainerScope, boundCompileUnit, unique);
-    }
-    else if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::suppress) == Cm::Ast::Specifiers::none)
-    {
-        if (!boundFunction->GetFunctionSymbol()->IsAbstract() && boundFunction->Body())
+        if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::default_) != Cm::Ast::Specifiers::none)
         {
-            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), 
-                boundFunction->GetFunctionSymbol(), &memberFunctionNode);
-            CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
-            GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
-            if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
-            {
-                GenerateStaticConstructorCall(boundCompileUnit, boundFunction.get(), boundClass->Symbol(), &memberFunctionNode);
-            }
-            boundClass->AddBoundNode(boundFunction.release());
+            Cm::Sym::FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
+            bool unique = !boundClass->Symbol()->IsTemplateTypeSymbol();
+            GenerateSynthesizedFunctionImplementation(functionSymbol, memberFunctionNode.GetSpan(), boundClass->Symbol(), currentContainerScope, boundCompileUnit, unique);
         }
-        EndContainerScope(); 
+        else if ((memberFunctionNode.GetSpecifiers() & Cm::Ast::Specifiers::suppress) == Cm::Ast::Specifiers::none)
+        {
+            if (!boundFunction->GetFunctionSymbol()->IsAbstract() && boundFunction->Body())
+            {
+                CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(),
+                    boundFunction->GetFunctionSymbol(), &memberFunctionNode);
+                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->GetFunctionSymbol());
+                GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.get());
+                if (boundFunction->GetFunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor())
+                {
+                    GenerateStaticConstructorCall(boundCompileUnit, boundFunction.get(), boundClass->Symbol(), &memberFunctionNode);
+                }
+                boundClass->AddBoundNode(boundFunction.release());
+            }
+            EndContainerScope();
+        }
+    }
+    else 
+    {
+        EndContainerScope();
     }
 }
 

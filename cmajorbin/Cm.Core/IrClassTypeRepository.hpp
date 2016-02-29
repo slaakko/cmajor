@@ -26,13 +26,17 @@ public:
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository, const std::vector<Ir::Intf::Type*>& tdfs) = 0;
     virtual void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) = 0;
-    virtual void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
+    virtual void WriteItbvlsAndVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) = 0;
     void SetLayoutIndeces();
     virtual void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) = 0;
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& ClassTypeMap() { return classTypeMap; }
+    void Own(Ir::Intf::Type* type);
+    void Own(Ir::Intf::Object* object);
 private:
     std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*> classTypeMap;
+    std::vector<std::unique_ptr<Ir::Intf::Type>> ownedTypes;
+    std::vector<std::unique_ptr<Ir::Intf::Object>> ownedObjects;
 };
 
 class LlvmIrClassTypeRepository : public IrClassTypeRepository
@@ -41,7 +45,7 @@ public:
     void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository, const std::vector<Ir::Intf::Type*>& tdfs) override;
     void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) override;
-    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
+    void WriteItbvlsAndVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) override;
     void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) override;
 };
@@ -52,7 +56,7 @@ public:
     void Write(Cm::Util::CodeFormatter& codeFormatter, std::unordered_set<Ir::Intf::Function*>& externalFunctions,
         IrFunctionRepository& irFunctionRepository, const std::vector<Ir::Intf::Type*>& tdfs) override;
     void WriteIrLayout(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter) override;
-    void WriteVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
+    void WriteItbvlsAndVtbl(Cm::Sym::ClassTypeSymbol* classType, Cm::Util::CodeFormatter& codeFormatter,
         std::unordered_set<Ir::Intf::Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository) override;
     void WriteDestructionNodeDef(Cm::Util::CodeFormatter& codeFormatter) override;
 };

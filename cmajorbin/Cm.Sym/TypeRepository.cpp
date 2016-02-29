@@ -386,6 +386,15 @@ TypeSymbol* TypeRepository::MakeGenericPtrType(const Span& span)
     return MakeDerivedType(derivations, voidType, std::vector<int>(), span);
 }
 
+TypeSymbol* TypeRepository::MakeConstGenericPtrType(const Span& span)
+{
+    TypeSymbol* voidType = GetType(GetBasicTypeId(ShortBasicTypeId::voidId));
+    Cm::Ast::DerivationList derivations;
+    derivations.Add(Cm::Ast::Derivation::const_);
+    derivations.Add(Cm::Ast::Derivation::pointer);
+    return MakeDerivedType(derivations, voidType, std::vector<int>(), span);
+}
+
 TypeSymbol* TypeRepository::MakeTemplateType(TypeSymbol* subjectType, const std::vector<TypeSymbol*>& typeArguments, const Span& span)
 {
     TypeId typeId = ComputeTemplateTypeId(subjectType, typeArguments);

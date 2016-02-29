@@ -25,16 +25,19 @@ using Cm::Util::CodeFormatter;
 class ContainerScope;
 class NamespaceSymbol;
 class ClassTypeSymbol;
+class InterfaceTypeSymbol;
 class TemplateTypeSymbol;
 class FunctionSymbol;
 class ContainerSymbol;
 
 enum class SymbolType : uint8_t
 {
-    boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
+    boolSymbol, charSymbol, wcharSymbol, ucharSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, 
+    nullptrSymbol,
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
     memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
     conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,
+    interfaceTypeSymbol,
     maxSymbol
 };
 
@@ -152,10 +155,13 @@ public:
     virtual bool IsTypeSymbol() const { return false; }
     virtual bool IsClassTypeSymbol() const { return false; }
     virtual bool IsClassTemplateSymbol() const { return false; }
+    virtual bool IsInterfaceTypeSymbol() const { return false; }
     virtual bool IsConstantSymbol() const { return false; }
     virtual bool IsBasicTypeSymbol() const { return false; }
     virtual bool IsBoolTypeSymbol() const { return false; }
     virtual bool IsCharTypeSymbol() const { return false; }
+    virtual bool IsWCharTypeSymbol() const { return false; }
+    virtual bool IsUCharTypeSymbol() const { return false; }
     virtual bool IsEnumTypeSymbol() const { return false; }
     virtual bool IsVoidTypeSymbol() const { return false; }
     virtual bool IsIntegerTypeSymbol() const { return false; }
@@ -182,7 +188,8 @@ public:
     virtual bool IsDeclarationBlock() const { return false; }
     NamespaceSymbol* Ns() const;
     ClassTypeSymbol* Class() const;
-    ContainerSymbol* ClassOrNs() const;
+    InterfaceTypeSymbol* Interface() const;
+    ContainerSymbol* ClassInterfaceOrNs() const;
     ClassTypeSymbol* ContainingClass() const;
     FunctionSymbol* Function() const;
     FunctionSymbol* ContainingFunction() const;
@@ -199,7 +206,7 @@ public:
     virtual void Dump(CodeFormatter& formatter);
     virtual void CollectExportedDerivedTypes(std::unordered_set<Symbol*>& collected, std::unordered_set<TypeSymbol*>& exportedDerivedTypes);
     virtual void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes);
-    virtual void InitVirtualFunctionTables();
+    virtual void InitVirtualFunctionTablesAndInterfaceTables();
     virtual void MakeIrType();
     virtual std::string DocId() const { return name; }
     virtual std::string FullDocId() const;

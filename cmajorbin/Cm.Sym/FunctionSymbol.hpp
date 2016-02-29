@@ -144,6 +144,7 @@ public:
     virtual bool IsDelegateFromFunAssignment() const { return false; }
     virtual bool IsClassDelegateFromFunAssignment() const { return false; }
     virtual bool IsClassDelegateEqualOp() const { return false; }
+    virtual bool IsInterfaceObjectFromClassPtrCtor() const { return false; }
     virtual bool IsConvertingConstructor() const;
     virtual bool IsConversionFunction() const;
     bool IsExportSymbol() const override;
@@ -238,6 +239,8 @@ public:
     void CollectExportedTemplateTypes(std::unordered_set<Symbol*>& collected, std::unordered_map<TypeId, std::unordered_set<TemplateTypeSymbol*>, TypeIdHash>& exportedTemplateTypes) override;
     int16_t VtblIndex() const { return vtblIndex; }
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
+    int16_t ItblIndex() const { return itblIndex; }
+    void SetItblIndex(int16_t itblIndex_) { itblIndex = itblIndex_; }
     Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }
     void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
     void SetTypeArguments(const std::vector<Cm::Sym::TypeSymbol*>& typeArguments_) { typeArguments = typeArguments_; }
@@ -263,6 +266,7 @@ private:
     FunctionSymbolFlags flags;
     std::string groupName;
     int16_t vtblIndex;
+    int16_t itblIndex;
     TypeSymbol* returnType;
     EntrySymbol* entrySymbol;
     ReturnValueSymbol* returnValueSymbol;

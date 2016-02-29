@@ -40,6 +40,11 @@ std::string CBackEnd::GetExCodeVarName()
     return "_X_ex";
 }
 
+std::string CBackEnd::GetIrecPtrName()
+{
+    return C::irecPtrName;
+}
+
 Ir::Intf::LabelObject* CBackEnd::CreateTempLabel(int tempLabelCounter)
 {
     return C::CreateLabel(std::to_string(tempLabelCounter));

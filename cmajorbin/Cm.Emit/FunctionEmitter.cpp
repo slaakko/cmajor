@@ -89,7 +89,7 @@ Ir::Intf::Object* LocalVariableIrObjectRepository::CreateLocalVariableIrObjectFo
     }
     if (type->IsReferenceType() || type->IsRvalueRefType())
     {
-        if (type->GetBaseType()->IsClassTypeSymbol() || type->GetBaseType()->IsDelegateTypeSymbol())
+        if (type->GetBaseType()->IsClassTypeSymbol() || type->GetBaseType()->IsInterfaceTypeSymbol() || type->GetBaseType()->IsDelegateTypeSymbol())
         {
             if (backend == Cm::IrIntf::BackEnd::llvm)
             {
@@ -231,7 +231,7 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     std::unordered_set<std::string>& internalFunctionNames_, std::unordered_set<Ir::Intf::Function*>& externalFunctions_, 
     Cm::Core::StaticMemberVariableRepository& staticMemberVariableRepository_, Cm::Core::ExternalConstantRepository& externalConstantRepository_, Cm::Ast::CompileUnitNode* currentCompileUnit_, 
     Cm::Sym::FunctionSymbol* enterFrameFun_, Cm::Sym::FunctionSymbol* leaveFrameFun_, Cm::Sym::FunctionSymbol* enterTracedCallFun_, Cm::Sym::FunctionSymbol* leaveTracedCallFun_,
-    bool generateDebugInfo_, bool profile_) :
+    Cm::Sym::FunctionSymbol* interfaceLookupFailed_, bool generateDebugInfo_, bool profile_) :
     Cm::BoundTree::Visitor(true), emitter(new Cm::Core::Emitter()), codeFormatter(codeFormatter_), genFlags(Cm::Core::GenFlags::none), typeRepository(typeRepository_),
     irFunctionRepository(irFunctionRepository_), irClassTypeRepository(irClassTypeRepository_), stringRepository(stringRepository_), localVariableIrObjectRepository(&irFunctionRepository), 
     compoundResult(), currentCompileUnit(currentCompileUnit_),
@@ -239,8 +239,10 @@ FunctionEmitter::FunctionEmitter(Cm::Util::CodeFormatter& codeFormatter_, Cm::Sy
     staticMemberVariableRepository(staticMemberVariableRepository_), externalConstantRepository(externalConstantRepository_),
     executingPostfixIncDecStatements(false), continueTargetStatement(nullptr), breakTargetStatement(nullptr), currentSwitchEmitState(SwitchEmitState::none), 
     currentSwitchCaseConstantMap(nullptr), switchCaseLabel(nullptr), firstStatementInCompound(false), currentCatchId(-1), enterFrameFun(enterFrameFun_), leaveFrameFun(leaveFrameFun_),
-    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr), endProfiledFunLabel(nullptr), tpGraph(nullptr)
+    enterTracedCallFun(enterTracedCallFun_), leaveTracedCallFun(leaveTracedCallFun_), interfaceLookupFailed(interfaceLookupFailed_), generateDebugInfo(generateDebugInfo_), symbolTable(nullptr), 
+    endProfiledFunLabel(nullptr), tpGraph(nullptr)
 {
+    emitter->SetInterfaceLookupFailed(irFunctionRepository.CreateIrFunction(interfaceLookupFailed));
 }
 
 void FunctionEmitter::BeginVisit(Cm::BoundTree::BoundFunction& boundFunction)
@@ -660,9 +662,14 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundConversion& boundConversion)
         }
         result->Merge(operandResult);
     }
-    if (boundConversion.Operand()->GetType()->IsClassTypeSymbol() && (boundConversion.GetType()->IsPointerType() || boundConversion.GetType()->IsReferenceType() || boundConversion.GetType()->IsRvalueRefType()))
+    if ((boundConversion.Operand()->GetType()->IsClassTypeSymbol() || boundConversion.Operand()->GetType()->IsInterfaceTypeSymbol()) && 
+        (boundConversion.GetType()->IsPointerType() || boundConversion.GetType()->IsReferenceType() || boundConversion.GetType()->IsRvalueRefType()))
     {
         result->SetClassTypeToPointerTypeConversion();
+        if (boundConversion.Operand()->GetType()->IsInterfaceTypeSymbol())
+        {
+            result->SetArgByRef();
+        }
     }
     GenerateCall(conversionFun, nullptr, *result);
     if (boundConversion.GetFlag(Cm::BoundTree::BoundNodeFlags::refByValue))
@@ -881,6 +888,10 @@ Cm::Sym::FunctionSymbol* ResolveVirtualCall(Cm::Sym::TypeRepository& typeReposit
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
+    if (functionCall.GetFunction()->GroupName() == "Write")
+    {
+        int x = 0;
+    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
     if (functionReturnsClassObjectByValue)
@@ -2961,6 +2972,32 @@ void FunctionEmitter::GenerateVirtualCall(Cm::Sym::FunctionSymbol* fun, Cm::Boun
     }
 }
 
+void FunctionEmitter::GenerateInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::TraceCallInfo* traceCallInfo, Cm::Core::GenResult& result)
+{
+    if (traceCallInfo)
+    {
+        CallEnterFrame(traceCallInfo);
+    }
+    Cm::Core::GenResult memberFunctionResult(emitter.get(), result.Flags());
+    for (Ir::Intf::Object* object : result.Objects())
+    {
+        memberFunctionResult.AddObject(object);
+    }
+    if (fun->CanThrow())
+    {
+        memberFunctionResult.AddObject(localVariableIrObjectRepository.GetExceptionCodeVariable());
+    }
+    GenInterfaceCall(fun, memberFunctionResult);
+    if (traceCallInfo)
+    {
+        CallLeaveFrame(traceCallInfo);
+    }
+    if (fun->CanThrow())
+    {
+        GenerateTestExceptionResult();
+    }
+}
+
 void FunctionEmitter::GenerateClassDelegateInitFromFun(Cm::Bind::ClassDelegateFromFunCtor* ctor, Cm::Core::GenResult& result)
 {
     Cm::Sym::Symbol* objSymbol = ctor->ClassDelegateType()->GetContainerScope()->Lookup("obj");
@@ -3061,6 +3098,10 @@ void FunctionEmitter::GenerateCall(Cm::Sym::FunctionSymbol* fun, Cm::BoundTree::
             externalFunctions.insert(irFunction);
             MapIrFunToFun(irFunction, fun);
             GenerateVirtualCall(fun, traceCallInfo, result);
+        }
+        else if (fun->Parent()->IsInterfaceTypeSymbol())
+        {
+            GenerateInterfaceCall(fun, traceCallInfo, result);
         }
         else
         {
