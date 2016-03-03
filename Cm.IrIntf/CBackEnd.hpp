@@ -65,6 +65,8 @@ public:
     std::string GetPrivateSeparator() override;
     std::string GetStringValuePrefix() override;
     Ir::Intf::Object* CreateStringConstant(const std::string& value) override;
+    Ir::Intf::Object* CreateWStringConstant(const std::string& value) override;
+    Ir::Intf::Object* CreateUStringConstant(const std::string& value) override;
     Ir::Intf::Object* Null(Ir::Intf::Type* ptrType) override;
     Ir::Intf::Object* CreateI8Constant(int8_t value) override;
     Ir::Intf::Object* CreateUI8Constant(uint8_t value) override;
@@ -77,6 +79,8 @@ public:
     Ir::Intf::Object* CreateFloatConstant(float value) override;
     Ir::Intf::Object* CreateDoubleConstant(double value) override;
     std::string MakeStringConstantName(const std::string& s) override;
+    std::string MakeWStringConstantName(const std::string& s) override;
+    std::string MakeUStringConstantName(const std::string& s) override;
     std::string MakeStringConstantName(const std::string& s, bool metadataSyntax) override;
     std::string MakeDestructionNodeName(const std::string& assemblyName) override;
     std::string GetDestructionNodeTypeName() override;

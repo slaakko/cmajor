@@ -910,8 +910,26 @@ void ExpressionBinder::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 void ExpressionBinder::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 {
     Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(stringLiteralNode.GetSpan());
-    int id = boundCompileUnit.StringRepository().Install(stringLiteralNode.Value());
+    int id = boundCompileUnit.StringRepository().InstallString(stringLiteralNode.Value());
     Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&stringLiteralNode, id);
+    literalNode->SetType(type);
+    boundExpressionStack.Push(literalNode);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode)
+{
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstWCharPtrType(wstringLiteralNode.GetSpan());
+    int id = boundCompileUnit.StringRepository().InstallWString(wstringLiteralNode.Value());
+    Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&wstringLiteralNode, id);
+    literalNode->SetType(type);
+    boundExpressionStack.Push(literalNode);
+}
+
+void ExpressionBinder::Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode)
+{
+    Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstUCharPtrType(ustringLiteralNode.GetSpan());
+    int id = boundCompileUnit.StringRepository().InstallUString(ustringLiteralNode.Value());
+    Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&ustringLiteralNode, id);
     literalNode->SetType(type);
     boundExpressionStack.Push(literalNode);
 }
@@ -1685,7 +1703,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     {
         if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::debugVCalls))
         {
-            int id = boundCompileUnit.StringRepository().Install(std::to_string(functionCall->FunctionCallSid()) + "\n");
+            int id = boundCompileUnit.StringRepository().InstallString(std::to_string(functionCall->FunctionCallSid()) + "\n");
             Cm::Sym::TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(node->GetSpan());
             Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(node, id);
             literalNode->SetType(type);
@@ -2764,7 +2782,7 @@ void ExpressionBinder::Visit(Cm::Ast::TypeNameNode& typeNameNode)
             return;
         }
     }
-    int id = boundCompileUnit.StringRepository().Install(subjectType->FullName());
+    int id = boundCompileUnit.StringRepository().InstallString(subjectType->FullName());
     Cm::BoundTree::BoundStringLiteral* literalNode = new Cm::BoundTree::BoundStringLiteral(&typeNameNode, id);
     literalNode->SetType(constCharPtrType);
     boundExpressionStack.Push(literalNode);
@@ -2817,11 +2835,11 @@ Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUni
     if (fun->FullName() == "main()" && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test)) return nullptr;
     std::string funFullName = fun->FullName();
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
-    int funId = boundCompileUnit.StringRepository().Install(funFullName);
+    int funId = boundCompileUnit.StringRepository().InstallString(funFullName);
     Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
     funLiteral->SetType(constCharPtrType);
     std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(span.FileIndex());
-    int fileId = boundCompileUnit.StringRepository().Install(filePath);
+    int fileId = boundCompileUnit.StringRepository().InstallString(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
     fileLiteral->SetType(constCharPtrType);
     Cm::Sym::TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));

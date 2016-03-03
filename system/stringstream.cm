@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -94,9 +94,27 @@ namespace System.IO
         {
             str.Append(s);
         }
+        public override void Write(const wstring& s)
+        {
+            str.Append(ToUtf8(s));
+        }
+        public override void Write(const ustring& s)
+        {
+            str.Append(ToUtf8(s));
+        }
         public override void Write(char c)
         {
             str.Append(c);
+        }
+        public override void Write(wchar c)
+        {
+            wstring s(c);
+            str.Append(ToUtf8(s));
+        }
+        public override void Write(uchar c)
+        {
+            ustring s(c);
+            str.Append(ToUtf8(s));
         }
         public override void Write(byte b)
         {
@@ -156,9 +174,31 @@ namespace System.IO
             str.Append(s);
             str.Append('\n');
         }
+        public override void WriteLine(const wstring& s)
+        {
+            str.Append(ToUtf8(s));
+            str.Append('\n');
+        }
+        public override void WriteLine(const ustring& s)
+        {
+            str.Append(ToUtf8(s));
+            str.Append('\n');
+        }
         public override void WriteLine(char c)
         {
             str.Append(c);
+            str.Append('\n');
+        }
+        public override void WriteLine(wchar c)
+        {
+            wstring s(c);
+            str.Append(ToUtf8(s));
+            str.Append('\n');
+        }
+        public override void WriteLine(uchar c)
+        {
+            ustring s(c);
+            str.Append(ToUtf8(s));
             str.Append('\n');
         }
         public override void WriteLine(byte b)

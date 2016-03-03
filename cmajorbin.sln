@@ -241,6 +241,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "system", "system", "{AAF2D7
 		system\assert.cm = system\assert.cm
 		system\bitset.cm = system\bitset.cm
 		system\bytestream.cm = system\bytestream.cm
+		system\caseconv.cm = system\caseconv.cm
 		system\charclass.cm = system\charclass.cm
 		system\class_hierarchy.cpp = system\class_hierarchy.cpp
 		system\class_hierarchy.hpp = system\class_hierarchy.hpp

@@ -155,6 +155,78 @@ Ir::Intf::Object* CreateStringConstant(const std::string& value)
     return new StringConstant(value);
 }
 
+int WStringConstantLength(const std::string& s)
+{
+    std::vector<uint16_t> utf16Str = Cm::Util::ToUtf16(s);
+    return int(utf16Str.size() + 1);
+}
+
+WStringConstant::WStringConstant(const std::string& value_) : Constant(MakeWStringConstantName(value_), WString(WStringConstantLength(value_)))
+{
+}
+
+Ir::Intf::Object* CreateWStringConstant(const std::string& value)
+{
+    return new WStringConstant(value);
+}
+
+std::string MakeWStringConstantName(const std::string& s)
+{
+    std::vector<uint16_t> utf16Str = Cm::Util::ToUtf16(s);
+    std::string name;
+    int n = int(utf16Str.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(", ");
+        }
+        name.append(std::to_string(utf16Str[i]));
+    }
+    if (n > 0)
+    {
+        name.append(", ");
+    }
+    name.append("0");
+    return name;
+}
+
+int UStringConstantLength(const std::string& s)
+{
+    std::vector<uint32_t> utf32Str = Cm::Util::ToUtf32(s);
+    return int(utf32Str.size() + 1);
+}
+
+std::string MakeUStringConstantName(const std::string& s)
+{
+    std::vector<uint32_t> utf32Str = Cm::Util::ToUtf32(s);
+    std::string name;
+    int n = int(utf32Str.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(", ");
+        }
+        name.append(std::to_string(utf32Str[i]));
+    }
+    if (n > 0)
+    {
+        name.append(", ");
+    }
+    name.append("0");
+    return name;
+}
+
+UStringConstant::UStringConstant(const std::string& value_) : Constant(MakeUStringConstantName(value_), UString(UStringConstantLength(value_)))
+{
+}
+
+Ir::Intf::Object* CreateUStringConstant(const std::string& value)
+{
+    return new UStringConstant(value);
+}
+
 NullConstant::NullConstant(Ir::Intf::Type* ptrType_) : Constant("null", ptrType_)
 {
 }

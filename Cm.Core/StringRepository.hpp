@@ -17,13 +17,15 @@
 namespace Cm { namespace Core {
 
 class StringRepository : Cm::Sym::BcuItem
-
 {
 public:
+    StringRepository();
     virtual ~StringRepository();
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
-    int Install(const std::string& str);
+    int InstallString(const std::string& str);
+    int InstallWString(const std::string& str);
+    int InstallUString(const std::string& str);
     Ir::Intf::Object* GetStringConstant(int id) const;
     Ir::Intf::Object* GetStringObject(int id) const;
     virtual void Write(Cm::Util::CodeFormatter& codeFormatter) = 0;
@@ -33,6 +35,8 @@ private:
     typedef std::unordered_map<std::string, int> StringIntMap;
     typedef StringIntMap::const_iterator StringIntMapIt;
     StringIntMap stringIntMap;
+    StringIntMap wstringIntMap;
+    StringIntMap ustringIntMap;
     std::vector<std::unique_ptr<Ir::Intf::Object>> stringConstants;
     std::vector<std::unique_ptr<Ir::Intf::Object>> stringObjects;
 };

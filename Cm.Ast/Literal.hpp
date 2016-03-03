@@ -225,6 +225,38 @@ private:
     std::string value;
 };
 
+class WStringLiteralNode : public Node
+{
+public:
+    WStringLiteralNode(const Span& span_);
+    WStringLiteralNode(const Span& span_, const std::string& value_);
+    NodeType GetNodeType() const override { return NodeType::wstringLiteralNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    const std::string& Value() const { return value; }
+private:
+    std::string value;
+};
+
+class UStringLiteralNode : public Node
+{
+public:
+    UStringLiteralNode(const Span& span_);
+    UStringLiteralNode(const Span& span_, const std::string& value_);
+    NodeType GetNodeType() const override { return NodeType::ustringLiteralNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    std::string ToString() const override;
+    void Accept(Visitor& visitor) override;
+    const std::string& Value() const { return value; }
+private:
+    std::string value;
+};
+
 class NullLiteralNode : public Node
 {
 public:

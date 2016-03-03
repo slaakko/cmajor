@@ -60,12 +60,32 @@ class StringConstant: public Constant
 {
 public:
     StringConstant(const std::string& value_);
-	~StringConstant();
 };
 
 std::string MakeStringConstantName(const std::string& s);
 std::string MakeStringConstantName(const std::string& s, bool metadataSyntax);
+
 Ir::Intf::Object* CreateStringConstant(const std::string& value);
+
+class WStringConstant : public Constant
+{
+public:
+    WStringConstant(const std::string& value_);
+};
+
+std::string MakeWStringConstantName(const std::string& s);
+
+Ir::Intf::Object* CreateWStringConstant(const std::string& value);
+
+class UStringConstant : public Constant
+{
+public:
+    UStringConstant(const std::string& value_);
+};
+
+Ir::Intf::Object* CreateUStringConstant(const std::string& value);
+
+std::string MakeUStringConstantName(const std::string& s);
 
 class NullConstant: public Constant
 {

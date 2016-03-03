@@ -421,6 +421,16 @@ Ir::Intf::Object* LlvmBackEnd::CreateStringConstant(const std::string& value)
     return Llvm::CreateStringConstant(value);
 }
 
+Ir::Intf::Object* LlvmBackEnd::CreateWStringConstant(const std::string& value)
+{
+    return Llvm::CreateWStringConstant(value);
+}
+
+Ir::Intf::Object* LlvmBackEnd::CreateUStringConstant(const std::string& value)
+{
+    return Llvm::CreateUStringConstant(value);
+}
+
 Ir::Intf::Object* LlvmBackEnd::Null(Ir::Intf::Type* ptrType)
 {
     return Llvm::Null(ptrType);
@@ -479,6 +489,16 @@ Ir::Intf::Object* LlvmBackEnd::CreateDoubleConstant(double value)
 std::string LlvmBackEnd::MakeStringConstantName(const std::string& s)
 {
     return Llvm::MakeStringConstantName(s);
+}
+
+std::string LlvmBackEnd::MakeWStringConstantName(const std::string& s)
+{
+    return Llvm::MakeWStringConstantName(s);
+}
+
+std::string LlvmBackEnd::MakeUStringConstantName(const std::string& s)
+{
+    return Llvm::MakeUStringConstantName(s);
 }
 
 std::string LlvmBackEnd::MakeStringConstantName(const std::string& s, bool metadataSyntax)

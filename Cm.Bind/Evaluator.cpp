@@ -452,6 +452,8 @@ public:
     void Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode) override;
     void Visit(Cm::Ast::CharLiteralNode& charLiteralNode) override;
     void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
+    void Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode) override;
+    void Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
 
     void BeginVisit(Cm::Ast::ClassNode& classNode) override;
@@ -594,6 +596,16 @@ void Evaluator::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 void Evaluator::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
 {
     throw Cm::Core::Exception("cannot evaluate statically", stringLiteralNode.GetSpan());
+}
+
+void Evaluator::Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode)
+{
+    throw Cm::Core::Exception("cannot evaluate statically", wstringLiteralNode.GetSpan());
+}
+
+void Evaluator::Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode)
+{
+    throw Cm::Core::Exception("cannot evaluate statically", ustringLiteralNode.GetSpan());
 }
 
 void Evaluator::Visit(Cm::Ast::NullLiteralNode& nullLiteralNode)
@@ -972,6 +984,8 @@ public:
     void Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode) override;
     void Visit(Cm::Ast::CharLiteralNode& charLiteralNode) override;
     void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
+    void Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode) override;
+    void Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
 
     void BeginVisit(Cm::Ast::ClassNode& classNode) override;
@@ -1125,6 +1139,16 @@ void BooleanEvaluator::Visit(Cm::Ast::CharLiteralNode& charLiteralNode)
 }
 
 void BooleanEvaluator::Visit(Cm::Ast::StringLiteralNode& stringLiteralNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode)
+{
+    interrupted = true;
+}
+
+void BooleanEvaluator::Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode)
 {
     interrupted = true;
 }

@@ -225,7 +225,6 @@ void PrintHelp()
         "If there is no CM_TARGET_DATALAYOUT environment variable, default datalayout is used unless option -emit-no-layout is given." << std::endl;
 }
 
-
 int main(int argc, const char** argv)
 {
 #if defined(_MSC_VER) && !defined(NDEBUG)

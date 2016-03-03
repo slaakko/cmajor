@@ -1341,7 +1341,6 @@ Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetMoveAssignment(const Cm::P
 
 Cm::Sym::FunctionSymbol* SynthesizedClassFunCache::GetOpEqual(const Cm::Parsing::Span& span, Cm::Sym::ClassTypeSymbol* classTypeSymbol, Cm::Sym::ContainerScope* containerScope,
     Cm::BoundTree::BoundCompileUnit& compileUnit, std::unique_ptr<Cm::Core::Exception>& exception)
-
 {
     if (!opEqual)
     {
@@ -1569,6 +1568,11 @@ void SynthesizedOpEqualGroup::CollectViableFunctions(SynthesizedClassTypeCacheMa
         if (classType->HasUserDefinedOpEqual())
         {
             exception.reset(new Cm::Core::Exception("cannot generate equality operator for class '" + classType->FullName() + "' because class has user defined equality operator",
+                span, classType->GetSpan()));
+        }
+        else if (classType->IsTemplateTypeSymbol())
+        {
+            exception.reset(new Cm::Core::Exception("cannot generate equality operator for class '" + classType->FullName() + "' because class is template specialization",
                 span, classType->GetSpan()));
         }
         else

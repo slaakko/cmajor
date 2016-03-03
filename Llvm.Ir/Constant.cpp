@@ -61,6 +61,60 @@ std::string MakeStringConstantName(const std::string& s, bool metadataSyntax)
     return name;
 }
 
+std::string MakeWStringConstantName(const std::string& s)
+{
+    std::vector<uint16_t> utf16Str = Cm::Util::ToUtf16(s);
+    std::string name("[");
+    int n = int(utf16Str.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(", ");
+        }
+        name.append("i16 ").append(std::to_string(utf16Str[i]));
+    }
+    if (n > 0)
+    {
+        name.append(", ");
+    }
+    name.append("i16 0]");
+    return name;
+}
+
+int WStringConstantLength(const std::string& s)
+{
+    std::vector<uint16_t> utf16Str = Cm::Util::ToUtf16(s);
+    return int(utf16Str.size() + 1);
+}
+
+std::string MakeUStringConstantName(const std::string& s)
+{
+    std::vector<uint32_t> utf32Str = Cm::Util::ToUtf32(s);
+    std::string name("[");
+    int n = int(utf32Str.size());
+    for (int i = 0; i < n; ++i)
+    {
+        if (i > 0)
+        {
+            name.append(", ");
+        }
+        name.append("i32 ").append(std::to_string(utf32Str[i]));
+    }
+    if (n > 0)
+    {
+        name.append(", ");
+    }
+    name.append("i32 0]");
+    return name;
+}
+
+int UStringConstantLength(const std::string& s)
+{
+    std::vector<uint32_t> utf32Str = Cm::Util::ToUtf32(s);
+    return int(utf32Str.size() + 1);
+}
+
 std::string MakeStringConstantName(const std::string& s)
 {
     return MakeStringConstantName(s, false);
@@ -150,7 +204,7 @@ void Constant::AssignFrom(Ir::Intf::Emitter& emitter, Ir::Intf::Type* type, Ir::
     throw std::runtime_error("cannot assign constant");
 }
 
-BooleanConstant::BooleanConstant(bool value_): Constant(value_ ? "true" : "false", Ir::Intf::GetFactory()->GetI1())
+BooleanConstant::BooleanConstant(bool value_) : Constant(value_ ? "true" : "false", Ir::Intf::GetFactory()->GetI1())
 {
 }
 
@@ -174,7 +228,7 @@ Ir::Intf::Object* CreateBooleanConstant(bool value)
     return new BooleanConstant(value);
 }
 
-CharConstant::CharConstant(char value_): Constant(std::to_string(uint8_t(value_)), Ir::Intf::GetFactory()->GetI8())
+CharConstant::CharConstant(char value_) : Constant(std::to_string(uint8_t(value_)), Ir::Intf::GetFactory()->GetI8())
 {
 }
 
@@ -183,17 +237,31 @@ Ir::Intf::Object* CreateCharConstant(char value)
     return new CharConstant(value);
 }
 
-StringConstant::StringConstant(const std::string& value_): Constant(MakeStringConstantName(value_), String(int(value_.length()) + 1))
-{
-}
-
-StringConstant::~StringConstant()
+StringConstant::StringConstant(const std::string& value_) : Constant(MakeStringConstantName(value_), String(int(value_.length()) + 1))
 {
 }
 
 Ir::Intf::Object* CreateStringConstant(const std::string& value)
 {
     return new StringConstant(value);
+}
+
+WStringConstant::WStringConstant(const std::string& value_) : Constant(MakeWStringConstantName(value_), WString(WStringConstantLength(value_)))
+{
+}
+
+Ir::Intf::Object* CreateWStringConstant(const std::string& value)
+{
+    return new WStringConstant(value);
+}
+
+UStringConstant::UStringConstant(const std::string& value_) : Constant(MakeUStringConstantName(value_), UString(UStringConstantLength(value_)))
+{
+}
+
+Ir::Intf::Object* CreateUStringConstant(const std::string& value)
+{
+    return new UStringConstant(value);
 }
 
 NullConstant::NullConstant(Ir::Intf::Type* ptrType_): Constant("null", ptrType_)

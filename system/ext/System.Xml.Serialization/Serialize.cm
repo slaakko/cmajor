@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.IO;
 using System.Xml;
@@ -158,7 +158,9 @@ namespace System.Xml.Serialization
             {
                 throw Exception("too big character code " + ToString(code) + " in character reference (max=" + ToString(MaxValue<uint>()) + ")");
             }
-            data.Append(ToUtf8(cast<uint>(code & MaxValue<uint>())));
+            uchar x = cast<uchar>(cast<uint>(code));
+            ustring s(x);
+            data.Append(ToUtf8(s));
         }
         private int state;
         private string data;

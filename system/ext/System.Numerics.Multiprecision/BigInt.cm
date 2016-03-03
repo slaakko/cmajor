@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
  
@@ -33,7 +33,7 @@ namespace System.Numerics.Multiprecision
             int result = assign_mpz_str(mpz, str.Chars(), base_);
             if (result != 0)
             {
-                throw ConversionException("invalid digit string for initializing BigInt");
+                ThrowConversionException("invalid digit string for initializing BigInt");
             }
         }
         public nothrow ~BigInt()

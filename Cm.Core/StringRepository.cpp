@@ -12,6 +12,10 @@
 
 namespace Cm { namespace Core {
 
+StringRepository::StringRepository()
+{
+}
+
 StringRepository::~StringRepository()
 {
 }
@@ -52,14 +56,14 @@ void StringRepository::Read(Cm::Sym::BcuReader& reader)
     }
 }
 
-int StringRepository::Install(const std::string& str)
+int StringRepository::InstallString(const std::string& str)
 {
     StringIntMapIt i = stringIntMap.find(str);
     if (i != stringIntMap.end())
     {
         return i->second;
     }
-    int id = int(stringObjects.size());
+    int id = int(stringConstants.size());
     Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateStringConstant(str);
 	stringConstant->SetOwned();
     stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>(stringConstant));
@@ -68,6 +72,44 @@ int StringRepository::Install(const std::string& str)
 	stringObject->SetOwned();
     stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(stringObject));
     stringIntMap[str] = id;
+    return id;
+}
+
+int StringRepository::InstallWString(const std::string& str)
+{
+    StringIntMapIt i = wstringIntMap.find(str);
+    if (i != wstringIntMap.end())
+    {
+        return i->second;
+    }
+    int id = int(stringConstants.size()); 
+    Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateWStringConstant(str);
+    stringConstant->SetOwned();
+    stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>(stringConstant));
+    std::string stringObjectName = Cm::IrIntf::GetStringValuePrefix() + std::to_string(id);
+    Ir::Intf::Object* stringObject = Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType());
+    stringObject->SetOwned();
+    stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(stringObject));
+    wstringIntMap[str] = id;
+    return id;
+}
+
+int StringRepository::InstallUString(const std::string& str)
+{
+    StringIntMapIt i = ustringIntMap.find(str);
+    if (i != ustringIntMap.end())
+    {
+        return i->second;
+    }
+    int id = int(stringConstants.size());
+    Ir::Intf::Object* stringConstant = Cm::IrIntf::CreateUStringConstant(str);
+    stringConstant->SetOwned();
+    stringConstants.push_back(std::unique_ptr<Ir::Intf::Object>(stringConstant));
+    std::string stringObjectName = Cm::IrIntf::GetStringValuePrefix() + std::to_string(id);
+    Ir::Intf::Object* stringObject = Cm::IrIntf::CreateGlobal(stringObjectName, stringConstant->GetType());
+    stringObject->SetOwned();
+    stringObjects.push_back(std::unique_ptr<Ir::Intf::Object>(stringObject));
+    ustringIntMap[str] = id;
     return id;
 }
 

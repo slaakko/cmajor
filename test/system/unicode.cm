@@ -1,0 +1,20 @@
+using System;
+
+namespace Test.Unicode
+{
+    public unit_test void UnicodeTest()
+    {
+        for (uint i = 0u; i < 0x110000u; ++i)
+        {
+            if (i >= 0xD800u && i <= 0xDFFFu) continue; // reserved for UTF-16...
+            uchar u = cast<uchar>(i);
+            ustring s(u);
+            wstring w(ToUtf16(s));
+            ustring sw(ToUtf32(w));
+            #assert(s == sw);
+            string b(ToUtf8(s));
+            ustring sb(ToUtf32(b));
+            #assert(s == sb);
+        }
+    }
+}

@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -18,27 +18,30 @@ using System.Collections;
 
 namespace System
 {
-    public static class EmptyStrHolder
+    public nothrow const char* EmptyString(char x)
     {
-        public static nothrow EmptyStrHolder(): emptyStr("")
-        {
-        }
-        public static nothrow const char* GetEmptyStr() 
-        {
-            return emptyStr;
-        }
-        private static const char* emptyStr;
+        return "";
     }
-
-    public class String
+    
+    public nothrow const wchar* EmptyString(wchar x)
     {
-        public typedef RandomAccessIter<char, const char&, const char*> ConstIterator;
-        public typedef RandomAccessIter<char, char&, char*> Iterator;
+        return w"";
+    }
+    
+    public nothrow const uchar* EmptyString(uchar x)
+    {
+        return u"";
+    }
+   
+    public class String<CharT>
+    {
+        public typedef RandomAccessIter<CharT, const CharT&, const CharT*> ConstIterator;
+        public typedef RandomAccessIter<CharT, CharT&, CharT*> Iterator;
 
         public nothrow String(): chars(null), len(0), res(0)
         {
         }
-        public nothrow String(const char* chars_): len(StrLen(chars_)), res(0), chars(null)
+        public nothrow String(const CharT* chars_): len(StrLen(chars_)), res(0), chars(null)
         {
             if (len > 0)
             {
@@ -46,7 +49,7 @@ namespace System
                 StrCopy(chars, chars_);
             }
         }
-        public nothrow String(const char* chars_, int length_): len(0), res(0), chars(null)
+        public nothrow String(const CharT* chars_, int length_): len(0), res(0), chars(null)
         {
             if (length_ > 0)
             {
@@ -54,10 +57,10 @@ namespace System
                 len = StrCopy(chars, chars_, length_);
             }
         }
-        public nothrow String(const char* begin, const char* end) : this(begin, end - begin)
+        public nothrow String(const CharT* begin, const CharT* end) : this(begin, end - begin)
         {
         }
-        public nothrow String(const String& that): len(that.len), res(0), chars(null)
+        public nothrow String(const String<CharT>& that): len(that.len), res(0), chars(null)
         {
             if (len > 0)
             {
@@ -65,19 +68,19 @@ namespace System
                 StrCopy(chars, that.chars);
             }
         }
-        public nothrow String(String&& that): len(that.len), res(that.res), chars(that.chars)
+        public nothrow String(String<CharT>&& that): len(that.len), res(that.res), chars(that.chars)
         {
             that.len = 0;
             that.res = 0;
             that.chars = null;
         }
-        public nothrow String(char c): len(1), res(0), chars(null)
+        public nothrow String(CharT c): len(1), res(0), chars(null)
         {
             Reserve(1);
             chars[0] = c;
             chars[1] = '\0';
         }
-        public nothrow String(char c, int n): len(n), res(0), chars(null)
+        public nothrow String(CharT c, int n): len(n), res(0), chars(null)
         {
             Reserve(n);
             for (int i = 0; i < n; ++i)
@@ -85,7 +88,7 @@ namespace System
                 chars[i] = c;
             }
         }
-        public nothrow void operator=(const String& that)
+        public nothrow void operator=(const String<CharT>& that)
         {
             Deallocate();
             Reserve(that.len);
@@ -95,7 +98,7 @@ namespace System
                 StrCopy(chars, that.chars);
             }
         }
-        public default nothrow void operator=(String&& that);
+        public default nothrow void operator=(String<CharT>&& that);
         public nothrow ~String()
         {
             Deallocate();
@@ -116,20 +119,20 @@ namespace System
         {
             Deallocate();
         }
-        public nothrow const char* Chars() const
+        public nothrow const CharT* Chars() const
         {
             if (chars != null)
             {
                 return chars;
             }
-            return EmptyStrHolder.GetEmptyStr();
+            return EmptyString(CharT());
         }
-        public nothrow char operator[](int index) const
+        public nothrow CharT operator[](int index) const
         {
             #assert(index >= 0 && index < len);
             return chars[index];
         }
-        public nothrow char& operator[](int index)
+        public nothrow CharT& operator[](int index)
         {
             #assert(index >= 0 && index < len);
             return chars[index];
@@ -145,14 +148,14 @@ namespace System
                 }
             }
         }
-        public nothrow String& Append(char c)
+        public nothrow String<CharT>& Append(CharT c)
         {
             Reserve(len + 1);
             chars[len] = c;
             chars[++len] = '\0';
             return *this;
         }
-        public nothrow String& Append(char c, int count)
+        public nothrow String<CharT>& Append(CharT c, int count)
         {
             #assert(count >= 0);
             if (count > 0)
@@ -166,22 +169,22 @@ namespace System
             }            
             return *this;
         }
-        public nothrow String& Append(const char* that)
+        public nothrow String<CharT>& Append(const CharT* that)
         {
             AppendFrom(that, StrLen(that));
             return *this;
         }
-        public nothrow String& Append(const char* that, int count)
+        public nothrow String<CharT>& Append(const CharT* that, int count)
         {
             AppendFrom(that, count);
             return *this;
         }
-        public nothrow String& Append(const String& that)
+        public nothrow String<CharT>& Append(const String<CharT>& that)
         {
             AppendFrom(that.chars, that.len);
             return *this;
         }
-        public nothrow void Replace(char oldChar, char newChar)
+        public nothrow void Replace(CharT oldChar, CharT newChar)
         {
             int n = len;
             for (int i = 0; i < n; ++i)
@@ -192,21 +195,21 @@ namespace System
                 }
             }
         }
-        public nothrow String Substring(int start) const
+        public nothrow String<CharT> Substring(int start) const
         {
             if (start >= 0 && start < len)
             {
-                return String(chars + start);
+                return String<CharT>(chars + start);
             }
-            return String();
+            return String<CharT>();
         }
-        public nothrow String Substring(int start, int length) const
+        public nothrow String<CharT> Substring(int start, int length) const
         {
             if (start >= 0 && start < len)
             {
-                return String(chars + start, length);
+                return String<CharT>(chars + start, length);
             }
-            return String();
+            return String<CharT>();
         }
         public nothrow Iterator Begin()
         {
@@ -244,7 +247,7 @@ namespace System
             }
             return ConstIterator(null);
         }
-        public nothrow bool operator==(const String& that) const
+        public nothrow bool operator==(const String<CharT>& that) const
         {
             if (len != that.len) return false;
             for (int i = 0; i < len; ++i)
@@ -256,22 +259,22 @@ namespace System
             }
             return true;
         }
-        public nothrow bool operator<(const String& that) const
+        public nothrow bool operator<(const String<CharT>& that) const
         {
             if (len == 0 && that.len > 0) return true;
             if (len > 0 && that.len == 0) return false;
             int n = Min(len, that.len);
             for (int i = 0; i < n; ++i)
             {
-                char left = chars[i];
-                char right = that.chars[i];
+                CharT left = chars[i];
+                CharT right = that.chars[i];
                 if (left < right) return true;
                 if (left > right) return false;
             }
             if (len < that.len) return true;
             return false;
         }
-        public nothrow bool StartsWith(const String& prefix) const
+        public nothrow bool StartsWith(const String<CharT>& prefix) const
         {
             int n = prefix.len;
             if (len < n) return false;
@@ -281,7 +284,7 @@ namespace System
             }
             return true;
         }
-        public nothrow bool EndsWith(const String& suffix) const
+        public nothrow bool EndsWith(const String<CharT>& suffix) const
         {
             int n = len;
             int m = suffix.len;
@@ -292,9 +295,9 @@ namespace System
             }
             return true;
         }
-        public List<String> Split(char c)
+        public List<String<CharT>> Split(CharT c)
         {
-            List<String> result;
+            List<String<CharT>> result;
             int start = 0;
             for (int i = 0; i < len; ++i)
             {
@@ -310,11 +313,11 @@ namespace System
             }
             return result;
         }
-        public nothrow int Find(char x) const
+        public nothrow int Find(CharT x) const
         {
             return Find(x, 0);
         }
-        public nothrow int Find(char x, int start) const
+        public nothrow int Find(CharT x, int start) const
         {
             #assert(start >= 0);
             for (int i = start; i < len; ++i)
@@ -326,11 +329,11 @@ namespace System
             }
             return -1;
         }
-        public nothrow int RFind(char x) const
+        public nothrow int RFind(CharT x) const
         {
             return RFind(x, len - 1);
         }
-        public nothrow int RFind(char x, int start) const
+        public nothrow int RFind(CharT x, int start) const
         {
             #assert(start < len);
             for (int i = start; i >= 0; --i)
@@ -342,16 +345,16 @@ namespace System
             }
             return -1;
         }
-        public nothrow int Find(const String& s) const
+        public nothrow int Find(const String<CharT>& s) const
         {
             return Find(s, 0);
         }
-        public nothrow int Find(const String& s, int start) const
+        public nothrow int Find(const String<CharT>& s, int start) const
         {
             #assert(start >= 0);
             if (s.IsEmpty()) return start;
             int n = s.Length();
-            char x = s[0];
+            CharT x = s[0];
             int i = Find(x, start);
             while (i != -1)
             {
@@ -373,16 +376,16 @@ namespace System
             }
             return -1;
         }
-        public nothrow int RFind(const String& s) const
+        public nothrow int RFind(const String<CharT>& s) const
         {
             return RFind(s, len - 1);
         }
-        public nothrow int RFind(const String& s, int start) const
+        public nothrow int RFind(const String<CharT>& s, int start) const
         {
             #assert(start < len);
             if (s.IsEmpty()) return start;
             int n = s.Length();
-            char x = s[0];
+            CharT x = s[0];
             int i = RFind(x, start);
             while (i != -1)
             {
@@ -406,7 +409,7 @@ namespace System
             }
             return -1;
         }
-        private nothrow void AppendFrom(const char* that, int thatLen)
+        private nothrow void AppendFrom(const CharT* that, int thatLen)
         {
             int newLen = len + thatLen;
             if (newLen > 0)
@@ -419,7 +422,7 @@ namespace System
         private nothrow void Grow(int minRes)
         {
             minRes = cast<int>(MemGrow(cast<ulong>(minRes)));
-            char* newChars = cast<char*>(MemAlloc(cast<ulong>(minRes)));
+            CharT* newChars = cast<CharT*>(MemAlloc(sizeof(CharT) * cast<ulong>(minRes)));
             if (chars != null)
             {
                 StrCopy(newChars, chars);
@@ -440,76 +443,60 @@ namespace System
         }
         private int len;
         private int res;
-        private char* chars;
+        private CharT* chars;
     }
 
-    public typedef String string;
+    public typedef String<char> string;
+    public typedef String<wchar> wstring;
+    public typedef String<uchar> ustring;
 
-    public nothrow string operator+(const string& first, const string& second)
+    public nothrow String<CharT> operator+<CharT>(const String<CharT>& first, const String<CharT>& second)
     {
-        string temp(first);
+        String<CharT> temp(first);
         temp.Append(second);
         return temp;
     }
 
-    public nothrow string operator+(const string& first, const char* second)
+    public nothrow String<CharT> operator+<CharT>(const String<CharT>& first, const CharT* second)
     {
-        string temp(first);
+        String<CharT> temp(first);
         temp.Append(second);
         return temp;
     }
 
-    public nothrow string operator+(const char* first, const string& second)
+    public nothrow String<CharT> operator+<CharT>(const CharT* first, const String<CharT>& second)
     {
-        string temp(first);
+        String<CharT> temp(first);
         temp.Append(second);
         return temp;
     }
-
-    public nothrow string ToLower(const string& s)
+    
+    public string ToLower(const string& s)
     {
-        string result;
-        int n = s.Length();
-        result.Reserve(n);
-        for (int i = 0; i < n; ++i)
+        ustring result;
+        ustring utf32 = ToUtf32(s);
+        for (uchar c : utf32)
         {
-            char c = s[i];
-            if (c >= 'A' && c <= 'Z')
-            {
-                result.Append(cast<char>(cast<int>(c) + (cast<int>('a') - cast<int>('A'))));
-            }
-            else
-            {
-                result.Append(c);
-            }
+            result.Append(CaseConversion.Instance().ToLower(c));
         }
-        return result;
+        return ToUtf8(result);
     }
 
-    public nothrow string ToUpper(const string& s)
+    public string ToUpper(const string& s)
     {
-        string result;
-        int n = s.Length();
-        result.Reserve(n);
-        for (int i = 0; i < n; ++i)
+        ustring result;
+        ustring utf32 = ToUtf32(s);
+        for (uchar c : utf32)
         {
-            char c = s[i];
-            if (c >= 'a' && c <= 'z')
-            {
-                result.Append(cast<char>(cast<int>(c) + (cast<int>('A') - cast<int>('a'))));
-            }
-            else
-            {
-                result.Append(c);
-            }
+            result.Append(CaseConversion.Instance().ToUpper(c));
         }
-        return result;
+        return ToUtf8(result);
     }
-
-    public bool LastComponentsEqual(const string& s0, const string& s1, char componentSeparator)
+    
+    public bool LastComponentsEqual<CharT>(const String<CharT>& s0, const String<CharT>& s1, CharT componentSeparator)
     {
-        List<string> c0 = s0.Split(componentSeparator);
-        List<string> c1 = s1.Split(componentSeparator);
+        List<String<CharT>> c0 = s0.Split(componentSeparator);
+        List<String<CharT>> c1 = s1.Split(componentSeparator);
         int n0 = c0.Count();
         int n1 = c1.Count();
         int n = Min(n0, n1);

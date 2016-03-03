@@ -1548,12 +1548,12 @@ Cm::BoundTree::BoundConstructionStatement* CreateTracedFunConstructionStatement(
     Cm::BoundTree::BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun = boundFunction->GetFunctionSymbol();
     std::string funFullName = fun->FullName();
-    int funId = boundCompileUnit.StringRepository().Install(funFullName);
+    int funId = boundCompileUnit.StringRepository().InstallString(funFullName);
     Cm::BoundTree::BoundStringLiteral* funLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, funId);
     funLiteral->SetType(constCharPtrType);
     arguments.Add(funLiteral);
     std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(span.FileIndex());
-    int fileId = boundCompileUnit.StringRepository().Install(filePath);
+    int fileId = boundCompileUnit.StringRepository().InstallString(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(nullptr, fileId);
     fileLiteral->SetType(constCharPtrType);
     arguments.Add(fileLiteral);
@@ -1586,17 +1586,17 @@ void AssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNode)
     }
     Cm::BoundTree::BoundExpressionList failAssertionArguments;
     std::string assertExpr = assertStatementNode.AssertExpr()->ToString();
-    int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);
+    int assertExprId = BoundCompileUnit().StringRepository().InstallString(assertExpr);
     Cm::BoundTree::BoundStringLiteral* assertExprLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, assertExprId);
     assertExprLiteral->SetType(constCharPtrType);
     failAssertionArguments.Add(assertExprLiteral);
     std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
-    int fileId = BoundCompileUnit().StringRepository().Install(filePath);
+    int fileId = BoundCompileUnit().StringRepository().InstallString(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, fileId);
     fileLiteral->SetType(constCharPtrType);
     failAssertionArguments.Add(fileLiteral);
     std::string line = std::to_string(assertStatementNode.GetSpan().LineNumber());
-    int lineId = BoundCompileUnit().StringRepository().Install(line);
+    int lineId = BoundCompileUnit().StringRepository().InstallString(line);
     Cm::BoundTree::BoundStringLiteral* lineLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, lineId);
     lineLiteral->SetType(constCharPtrType);
     failAssertionArguments.Add(lineLiteral);
@@ -1641,7 +1641,7 @@ void UnitTestAssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNo
     Cm::BoundTree::BoundSimpleStatement* callPassAssertionStatement = new Cm::BoundTree::BoundSimpleStatement(&assertStatementNode);
     Cm::BoundTree::BoundExpressionList passAssertionArguments;
     std::string assertExpr = assertStatementNode.AssertExpr()->ToString();
-    int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);
+    int assertExprId = BoundCompileUnit().StringRepository().InstallString(assertExpr);
     Cm::BoundTree::BoundStringLiteral* assertExprLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, assertExprId);
     assertExprLiteral->SetType(constCharPtrType);
     passAssertionArguments.Add(assertExprLiteral);
@@ -1657,7 +1657,7 @@ void UnitTestAssertBinder::Visit(Cm::Ast::AssertStatementNode& assertStatementNo
     assertExprLiteral2->SetType(constCharPtrType);
     failAssertionArguments.Add(assertExprLiteral2);
     std::string filePath = Cm::Parser::FileRegistry::Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
-    int fileId = BoundCompileUnit().StringRepository().Install(filePath);
+    int fileId = BoundCompileUnit().StringRepository().InstallString(filePath);
     Cm::BoundTree::BoundStringLiteral* fileLiteral = new Cm::BoundTree::BoundStringLiteral(&assertStatementNode, fileId);
     fileLiteral->SetType(constCharPtrType);
     failAssertionArguments.Add(fileLiteral);

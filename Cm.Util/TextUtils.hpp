@@ -11,6 +11,7 @@
 #define CM_UTIL_TEXTUTILS_INCLUDED
 #include <string>
 #include <vector>
+#include <stdint.h>
 
 namespace Cm { namespace Util {
 
@@ -37,6 +38,12 @@ std::string ToLower(const std::string& s);
 std::string ToString(double x);
 std::string ToString(double x, int maxNumDecimals);
 std::string ToString(double x, int minNumDecimals, int maxNumDecimals);
+std::vector<uint32_t> ToUtf32(const std::string& utf8Str);
+std::vector<uint32_t> ToUtf32(const std::vector<uint16_t>& utf16Str);
+std::vector<uint16_t> ToUtf16(const std::vector<uint32_t>& utf32Str);
+std::vector<uint16_t> ToUtf16(const std::string& utf8Str);
+std::string ToUtf8(const std::vector<uint32_t>& utf32Str);
+std::string ToUtf8(const std::vector<uint16_t>& utf16Str);
 
 } } // namespace Cm::Util
 

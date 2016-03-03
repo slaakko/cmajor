@@ -153,6 +153,24 @@ public:
 
 Ir::Intf::Type* String(int size);
 
+class WStringType : public ArrayType
+{
+public:
+    WStringType(int size_);
+    Ir::Intf::Type* Clone() const override;
+};
+
+Ir::Intf::Type* WString(int size);
+
+class UStringType : public ArrayType
+{
+public:
+    UStringType(int size_);
+    Ir::Intf::Type* Clone() const override;
+};
+
+Ir::Intf::Type* UString(int size);
+
 class StructureType: public Ir::Intf::Type
 {
 public:

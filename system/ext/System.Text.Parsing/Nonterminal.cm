@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko    
     http://sourceforge.net/projects/cmajor/
  
@@ -114,7 +114,7 @@ namespace System.Text.Parsing
         {
             return "from" + name;
         }
-        public nothrow string VariableName() const
+        public string VariableName() const
         {
             if (!name.IsEmpty())
             {

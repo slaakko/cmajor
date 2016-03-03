@@ -77,6 +77,8 @@ public:
     virtual std::string GetPrivateSeparator() = 0;
     virtual std::string GetStringValuePrefix() = 0;
     virtual Ir::Intf::Object* CreateStringConstant(const std::string& value) = 0;
+    virtual Ir::Intf::Object* CreateWStringConstant(const std::string& value) = 0;
+    virtual Ir::Intf::Object* CreateUStringConstant(const std::string& value) = 0;
     virtual Ir::Intf::Object* Null(Ir::Intf::Type* ptrType) = 0;
     virtual Ir::Intf::Object* CreateI8Constant(int8_t value) = 0;
     virtual Ir::Intf::Object* CreateUI8Constant(uint8_t value) = 0;
@@ -90,6 +92,8 @@ public:
     virtual Ir::Intf::Object* CreateDoubleConstant(double value) = 0;
     virtual std::string MakeStringConstantName(const std::string& s) = 0;
     virtual std::string MakeStringConstantName(const std::string& s, bool metadataSyntax) = 0;
+    virtual std::string MakeWStringConstantName(const std::string& s) = 0;
+    virtual std::string MakeUStringConstantName(const std::string& s) = 0;
     virtual std::string MakeDestructionNodeName(const std::string& assemblyName) = 0;
     virtual std::string GetDestructionNodeTypeName() = 0;
     virtual std::string GetRegisterDestructorFunctionName() = 0;
