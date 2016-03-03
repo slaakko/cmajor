@@ -140,7 +140,7 @@ Ir::Intf::Type* MakeIrType(TypeSymbol* baseType, const Cm::Ast::DerivationList& 
     }
     if (numPointers == 0)
     {
-        return baseIrType;
+        return baseIrType->Clone();
     }
     else
     {
@@ -366,6 +366,24 @@ TypeSymbol* TypeRepository::MakeConstCharPtrType(const Span& span)
     derivations.Add(Cm::Ast::Derivation::const_);
     derivations.Add(Cm::Ast::Derivation::pointer);
     return MakeDerivedType(derivations, charType, std::vector<int>(), span);
+}
+
+TypeSymbol* TypeRepository::MakeConstWCharPtrType(const Span& span)
+{
+    TypeSymbol* wcharType = GetType(GetBasicTypeId(ShortBasicTypeId::wcharId));
+    Cm::Ast::DerivationList derivations;
+    derivations.Add(Cm::Ast::Derivation::const_);
+    derivations.Add(Cm::Ast::Derivation::pointer);
+    return MakeDerivedType(derivations, wcharType, std::vector<int>(), span);
+}
+
+TypeSymbol* TypeRepository::MakeConstUCharPtrType(const Span& span)
+{
+    TypeSymbol* ucharType = GetType(GetBasicTypeId(ShortBasicTypeId::ucharId));
+    Cm::Ast::DerivationList derivations;
+    derivations.Add(Cm::Ast::Derivation::const_);
+    derivations.Add(Cm::Ast::Derivation::pointer);
+    return MakeDerivedType(derivations, ucharType, std::vector<int>(), span);
 }
 
 TypeSymbol* TypeRepository::MakeConstCharPtrPtrType(const Span& span)

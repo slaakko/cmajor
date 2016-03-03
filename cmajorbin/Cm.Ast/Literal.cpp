@@ -483,6 +483,76 @@ void StringLiteralNode::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
+WStringLiteralNode::WStringLiteralNode(const Span& span_) : Node(span_), value("")
+{
+}
+
+WStringLiteralNode::WStringLiteralNode(const Span& span_, const std::string& value_) : Node(span_), value(value_)
+{
+}
+
+Node* WStringLiteralNode::Clone(CloneContext& cloneContext) const
+{
+    return new WStringLiteralNode(GetSpan(), value);
+}
+
+void WStringLiteralNode::Read(Reader& reader)
+{
+    value = reader.ReadString();
+}
+
+void WStringLiteralNode::Write(Writer& writer)
+{
+    writer.Write(value);
+}
+
+std::string WStringLiteralNode::ToString() const
+{
+    std::string s(1, '"');
+    s.append(Cm::Util::StringStr(value)).append(1, '"');
+    return s;
+}
+
+void WStringLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
+UStringLiteralNode::UStringLiteralNode(const Span& span_) : Node(span_), value("")
+{
+}
+
+UStringLiteralNode::UStringLiteralNode(const Span& span_, const std::string& value_) : Node(span_), value(value_)
+{
+}
+
+Node* UStringLiteralNode::Clone(CloneContext& cloneContext) const
+{
+    return new UStringLiteralNode(GetSpan(), value);
+}
+
+void UStringLiteralNode::Read(Reader& reader)
+{
+    value = reader.ReadString();
+}
+
+void UStringLiteralNode::Write(Writer& writer)
+{
+    writer.Write(value);
+}
+
+std::string UStringLiteralNode::ToString() const
+{
+    std::string s(1, '"');
+    s.append(Cm::Util::StringStr(value)).append(1, '"');
+    return s;
+}
+
+void UStringLiteralNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 NullLiteralNode::NullLiteralNode(const Span& span_) : Node(span_)
 {
 }

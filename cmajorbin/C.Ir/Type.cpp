@@ -416,6 +416,34 @@ Ir::Intf::Type* String(int size)
     return new StringType(size);
 }
 
+WStringType::WStringType(int size_) : Type("ui16*"), size(size_)
+{
+}
+
+Ir::Intf::Type* WStringType::Clone() const
+{
+    return new WStringType(size);
+}
+
+Ir::Intf::Type* WString(int size)
+{
+    return new WStringType(size);
+}
+
+UStringType::UStringType(int size_): Type("ui32*"), size(size_)
+{
+}
+
+Ir::Intf::Type* UStringType::Clone() const
+{
+    return new UStringType(size);
+}
+
+Ir::Intf::Type* UString(int size)
+{
+    return new UStringType(size);
+}
+
 StructureType::StructureType(const std::string& tagName_, const std::vector<Ir::Intf::Type*>& elementTypes_, const std::vector<std::string>& elementNames_) : Ir::Intf::Type("*structure*"),
     tagName(tagName_), elementNames(elementNames_)
 {

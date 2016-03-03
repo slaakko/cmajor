@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace System.Text.Json.Data
 {
@@ -34,8 +34,8 @@ namespace System.Text.Json.Data
             |   "\\u" (hexdigit hexdigit hexdigit hexdigit)
                 { 
                     ulong u = ParseHex(string(matchBegin, matchEnd));
-                    ushort c = cast<ushort>(u & 0xFFFF);
-                    value->Append(ToUtf8(c)); 
+                    ustring s(cast<uchar>(u));
+                    value->Append(ToUtf8(s)); 
                 }
             |   escape{ value->Append(escape); } 
             )* '"')

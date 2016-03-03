@@ -512,8 +512,16 @@ public:
         a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A1Action));
         Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
         a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<StringLiteralRule>(this, &StringLiteralRule::A4Action));
         Cm::Parsing::NonterminalParser* sNonterminalParser = GetNonterminal("s");
         sNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringLiteralRule>(this, &StringLiteralRule::Posts));
+        Cm::Parsing::NonterminalParser* wsNonterminalParser = GetNonterminal("ws");
+        wsNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringLiteralRule>(this, &StringLiteralRule::Postws));
+        Cm::Parsing::NonterminalParser* usNonterminalParser = GetNonterminal("us");
+        usNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<StringLiteralRule>(this, &StringLiteralRule::Postus));
     }
     void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
     {
@@ -527,6 +535,14 @@ public:
     {
         context.r = std::string(matchBegin, matchEnd);
     }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new WStringLiteralNode(span, context.fromws);
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = new UStringLiteralNode(span, context.fromus);
+    }
     void Posts(Cm::Parsing::ObjectStack& stack, bool matched)
     {
         if (matched)
@@ -536,13 +552,33 @@ public:
             stack.pop();
         }
     }
+    void Postws(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromws_value = std::move(stack.top());
+            context.fromws = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromws_value.get());
+            stack.pop();
+        }
+    }
+    void Postus(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromus_value = std::move(stack.top());
+            context.fromus = *static_cast<Cm::Parsing::ValueObject<std::string>*>(fromus_value.get());
+            stack.pop();
+        }
+    }
 private:
     struct Context
     {
-        Context(): value(), r(), froms() {}
+        Context(): value(), r(), froms(), fromws(), fromus() {}
         Cm::Ast::Node* value;
         std::string r;
         std::string froms;
+        std::string fromws;
+        std::string fromus;
     };
     std::stack<Context> contextStack;
     Context context;
@@ -602,12 +638,12 @@ void LiteralGrammar::GetReferencedGrammars()
 
 void LiteralGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
     AddRuleLink(new Cm::Parsing::RuleLink("bool", this, "Cm.Parsing.stdlib.bool"));
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
-    AddRuleLink(new Cm::Parsing::RuleLink("ureal", this, "Cm.Parsing.stdlib.ureal"));
-    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ureal", this, "Cm.Parsing.stdlib.ureal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ulong", this, "Cm.Parsing.stdlib.ulong"));
+    AddRuleLink(new Cm::Parsing::RuleLink("hex_literal", this, "Cm.Parsing.stdlib.hex_literal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRule(new LiteralRule("Literal", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -670,19 +706,29 @@ void LiteralGrammar::CreateRules()
             new Cm::Parsing::NonterminalParser("c", "char", 0))));
     AddRule(new StringLiteralRule("StringLiteral", GetScope(),
         new Cm::Parsing::AlternativeParser(
-            new Cm::Parsing::ActionParser("A0",
-                new Cm::Parsing::NonterminalParser("s", "string", 0)),
-            new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::CharParser('@'),
-                    new Cm::Parsing::TokenParser(
+            new Cm::Parsing::AlternativeParser(
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::ActionParser("A0",
+                        new Cm::Parsing::NonterminalParser("s", "string", 0)),
+                    new Cm::Parsing::ActionParser("A1",
                         new Cm::Parsing::SequenceParser(
-                            new Cm::Parsing::SequenceParser(
-                                new Cm::Parsing::CharParser('\"'),
-                                new Cm::Parsing::ActionParser("A2",
-                                    new Cm::Parsing::KleeneStarParser(
-                                        new Cm::Parsing::CharSetParser("\"", true)))),
-                            new Cm::Parsing::CharParser('\"'))))))));
+                            new Cm::Parsing::CharParser('@'),
+                            new Cm::Parsing::TokenParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::SequenceParser(
+                                        new Cm::Parsing::CharParser('\"'),
+                                        new Cm::Parsing::ActionParser("A2",
+                                            new Cm::Parsing::KleeneStarParser(
+                                                new Cm::Parsing::CharSetParser("\"", true)))),
+                                    new Cm::Parsing::CharParser('\"')))))),
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::CharParser('w'),
+                    new Cm::Parsing::ActionParser("A3",
+                        new Cm::Parsing::NonterminalParser("ws", "string", 0)))),
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::CharParser('u'),
+                new Cm::Parsing::ActionParser("A4",
+                    new Cm::Parsing::NonterminalParser("us", "string", 0))))));
     AddRule(new NullLiteralRule("NullLiteral", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::KeywordParser("null"))));

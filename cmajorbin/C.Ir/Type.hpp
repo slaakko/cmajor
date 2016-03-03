@@ -214,6 +214,28 @@ private:
 
 Ir::Intf::Type* String(int size);
 
+class WStringType : public Ir::Intf::Type
+{
+public:
+    WStringType(int size_);
+    Ir::Intf::Type* Clone() const override;
+private:
+    int size;
+};
+
+Ir::Intf::Type* WString(int size);
+
+class UStringType : public Ir::Intf::Type
+{
+public:
+    UStringType(int size_);
+    Ir::Intf::Type* Clone() const override;
+private:
+    int size;
+};
+
+Ir::Intf::Type* UString(int size);
+
 class StructureType : public Ir::Intf::Type
 {
 public:

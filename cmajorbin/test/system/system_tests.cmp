@@ -32,3 +32,4 @@ source <string.cm>;
 source <stringstream.cm>;
 source <textutil.cm>;
 source <time.cm>;
+source <unicode.cm>;

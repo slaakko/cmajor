@@ -33,6 +33,8 @@ public:
     TypeSymbol* MakeConstReferenceType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstPointerType(TypeSymbol* baseType, const Span& span);
     TypeSymbol* MakeConstCharPtrType(const Span& span);
+    TypeSymbol* MakeConstWCharPtrType(const Span& span);
+    TypeSymbol* MakeConstUCharPtrType(const Span& span);
     TypeSymbol* MakeConstCharPtrPtrType(const Span& span);
     TypeSymbol* MakeGenericPtrType(const Span& span);
     TypeSymbol* MakeConstGenericPtrType(const Span& span);

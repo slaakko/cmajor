@@ -77,6 +77,8 @@ class FloatLiteralNode;
 class DoubleLiteralNode;
 class CharLiteralNode;
 class StringLiteralNode;
+class WStringLiteralNode;
+class UStringLiteralNode;
 class NullLiteralNode;
 
 class BoolNode;
@@ -299,6 +301,8 @@ public:
     virtual void Visit(DoubleLiteralNode& doubleLiteralNode) {}
     virtual void Visit(CharLiteralNode& charLiteralNode) {}
     virtual void Visit(StringLiteralNode& stringLiteralNode) {}
+    virtual void Visit(WStringLiteralNode& wstringLiteralNode) {}
+    virtual void Visit(UStringLiteralNode& ustringLiteralNode) {}
     virtual void Visit(NullLiteralNode& nullLiteralNode) {}
 
     virtual void Visit(BoolNode& boolNode) {}

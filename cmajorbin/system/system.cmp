@@ -6,6 +6,7 @@ reference <os.cml>;
 source <algorithm.cm>;
 source <bitset.cm>;
 source <bytestream.cm>;
+source <caseconv.cm>;
 source <charclass.cm>;
 source <codeformatter.cm>;
 source <concept.cm>;

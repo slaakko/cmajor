@@ -335,8 +335,8 @@ namespace System.Text.Json.Data
             public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 ulong u = ParseHex(string(matchBegin, matchEnd));
-                ushort c = cast<ushort>(u & 0x000000000000FFFF);
-                context.value->Append(ToUtf8(c));
+                ustring s = cast<uchar>(u);
+                context.value->Append(ToUtf8(s));
             }
             public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -417,9 +417,9 @@ namespace System.Text.Json.Data
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
             AddRuleLink(new RuleLink("spaces", this, "System.Text.Parsing.stdlib.spaces"));
             AddRuleLink(new RuleLink("number", this, "System.Text.Parsing.stdlib.number"));
+            AddRuleLink(new RuleLink("escape", this, "System.Text.Parsing.stdlib.escape"));
             AddRule(new ValueRule("Value", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(

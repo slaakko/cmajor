@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -46,7 +46,11 @@ namespace System.IO
         public nothrow default void operator=(OutputStream&&);
         public abstract void Write(const char* s);
         public abstract void Write(const string& s);
+        public abstract void Write(const wstring& s);
+        public abstract void Write(const ustring& s);
         public abstract void Write(char c);
+        public abstract void Write(wchar c);
+        public abstract void Write(uchar c);
         public abstract void Write(byte b);
         public abstract void Write(sbyte b);
         public abstract void Write(short s);
@@ -61,7 +65,11 @@ namespace System.IO
         public abstract void WriteLine();
         public abstract void WriteLine(const char* s);
         public abstract void WriteLine(const string& s);
+        public abstract void WriteLine(const wstring& s);
+        public abstract void WriteLine(const ustring& s);
         public abstract void WriteLine(char c);
+        public abstract void WriteLine(wchar c);
+        public abstract void WriteLine(uchar c);
         public abstract void WriteLine(byte b);
         public abstract void WriteLine(sbyte b);
         public abstract void WriteLine(short s);
@@ -80,6 +88,18 @@ namespace System.IO
         s.Write(str);
         return s;
     }
+    
+    public OutputStream& operator<<(OutputStream& s, const wstring& str)
+    {
+        s.Write(str);
+        return s;
+    }
+    
+    public OutputStream& operator<<(OutputStream& s, const ustring& str)
+    {
+        s.Write(str);
+        return s;
+    }
 
     public OutputStream& operator<<(OutputStream& s, const char* str)
     {
@@ -88,6 +108,18 @@ namespace System.IO
     }
 
     public OutputStream& operator<<(OutputStream& s, char c)
+    {
+        s.Write(c);
+        return s;
+    }
+    
+    public OutputStream& operator<<(OutputStream& s, wchar c)
+    {
+        s.Write(c);
+        return s;
+    }
+    
+    public OutputStream& operator<<(OutputStream& s, uchar c)
     {
         s.Write(c);
         return s;

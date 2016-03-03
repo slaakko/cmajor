@@ -119,6 +119,8 @@ public:
     void Visit(Cm::Ast::DoubleLiteralNode& doubleLiteralNode) override;
     void Visit(Cm::Ast::CharLiteralNode& charLiteralNode) override;
     void Visit(Cm::Ast::StringLiteralNode& stringLiteralNode) override;
+    void Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode) override;
+    void Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
 
     void Visit(Cm::Ast::BoolNode& boolNode) override;

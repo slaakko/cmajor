@@ -201,7 +201,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         {
             Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
             Cm::BoundTree::BoundExpressionList startProfilingArguments;
-            int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+            int profDataFileId = mainCompileUnit.StringRepository().InstallString(profDataFilePath);
             Cm::BoundTree::BoundStringLiteral* profDataFileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profDataFileId);
             Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
             profDataFileArg->SetType(constCharPtrType);
@@ -376,7 +376,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
         {
             Cm::Sym::FunctionSymbol* startProfiling = symbolTable.GetOverload("start_profiling");
             Cm::BoundTree::BoundExpressionList startProfilingArguments;
-            int profDataFileId = mainCompileUnit.StringRepository().Install(profDataFilePath);
+            int profDataFileId = mainCompileUnit.StringRepository().InstallString(profDataFilePath);
             Cm::BoundTree::BoundStringLiteral* profDataFileArg = new Cm::BoundTree::BoundStringLiteral(nullptr, profDataFileId);
             Cm::Sym::TypeSymbol* constCharPtrType = symbolTable.GetTypeRepository().MakeConstCharPtrType(userMainFunction->GetSpan());
             profDataFileArg->SetType(constCharPtrType);
