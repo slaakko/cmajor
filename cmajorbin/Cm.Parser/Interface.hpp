@@ -1,11 +1,13 @@
-#ifndef Interface_hpp_19055
-#define Interface_hpp_19055
+#ifndef Interface_hpp_26941
+#define Interface_hpp_26941
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
 #include <Cm.Parser/ParsingContext.hpp>
 #include <Cm.Ast/Interface.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
+#include <Cm.Ast/Concept.hpp>
+#include <Cm.Ast/Statement.hpp>
 
 namespace Cm { namespace Parser {
 
@@ -28,4 +30,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Interface_hpp_19055
+#endif // Interface_hpp_26941
