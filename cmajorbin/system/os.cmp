@@ -8,6 +8,7 @@ csource <dbgheap.c>;
 csource <mappedfile.c>;
 csource <mutextbl.c>;
 source <os.cm>;
+cppsource <print_unicode.cpp>;
 cppsource <profile.cpp>;
 text <profile.hpp>;
 cppsource <threading.cpp>;

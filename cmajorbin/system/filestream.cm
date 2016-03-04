@@ -354,21 +354,61 @@ namespace System.IO
         }
         public override void Write(const char* s)
         {
-            int result = write_64(handle, s, cast<ulong>(StrLen(s)));
+            wstring ws;
+            int result = 0;
+            string reason;
+#if (WINDOWS)
+            if (handle == 1 || handle == 2)
+            {
+                ws = System.Unicode.ToUtf16(s);
+                print_unicode_string(handle, ws.Chars());
+            }            
+            else
+            {
+                result = write_64(handle, s, cast<ulong>(StrLen(s)));
+                if (result == -1)
+                {
+                    reason = strerror(get_errno());
+                    throw IOException("could not write to file '" + fileName + "': " + reason);
+                }
+            }
+#else            
+            result = write_64(handle, s, cast<ulong>(StrLen(s)));
             if (result == -1)
             {
-                string reason = strerror(get_errno());
+                reason = strerror(get_errno());
                 throw IOException("could not write to file '" + fileName + "': " + reason);
             }
+#endif            
         }
         public override void Write(const string& s)
         {
-            int result = write_64(handle, s.Chars(), cast<ulong>(s.Length()));
+            wstring ws;
+            int result = 0;
+            string reason;
+#if (WINDOWS)
+            if (handle == 1 || handle == 2)
+            {
+                ws = System.Unicode.ToUtf16(s);
+                print_unicode_string(handle, ws.Chars());
+            }            
+            else
+            {
+                result = write_64(handle, s.Chars(), cast<ulong>(s.Length()));
+                if (result == -1)
+                {
+                    reason = strerror(get_errno());
+                    throw IOException("could not write to file '" + fileName + "': " + reason);
+                }
+            }
+#else            
+            result = write_64(handle, s.Chars(), cast<ulong>(s.Length()));
             if (result == -1)
             {
-                string reason = strerror(get_errno());
+                reason = strerror(get_errno());
                 throw IOException("could not write to file '" + fileName + "': " + reason);
             }
+#endif            
         }
         public override void Write(const wstring& s)
         {
