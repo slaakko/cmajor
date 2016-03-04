@@ -159,10 +159,10 @@ namespace System
         return result;
     }
 
-    public nothrow string ToString(char c)
+    public string ToString(char c)
     {
-        string s(c);
-        return s;
+        ustring s(c);
+        return System.Unicode.ToUtf8(s);
     }
     
     public string ToString(wchar c)

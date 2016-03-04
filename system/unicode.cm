@@ -247,6 +247,17 @@ namespace System.Unicode
         return Category.none;
     }
     
+    public string GetCharacterName(uchar c)
+    {
+        CharacterInfoMap.Load();
+        CharacterInfo* info = CharacterInfoMap.Instance().GetCharacterInfo(c);
+        if (info != null)
+        {
+            return info->Name();
+        }
+        return "";
+    }
+    
     public uchar ToLower(uchar c)
     {
         CharacterInfoMap.Load();
