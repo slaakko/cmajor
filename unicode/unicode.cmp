@@ -1,0 +1,9 @@
+project UnicodeBin;
+target=program;
+assembly <unicode.cma>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <main.cm>;
+text <unicode.pp>;
+source <unicodedata.cm>;
+text <unicodedata.parser>;
+text <UnicodeData.txt>;

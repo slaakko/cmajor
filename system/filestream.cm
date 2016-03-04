@@ -372,11 +372,11 @@ namespace System.IO
         }
         public override void Write(const wstring& s)
         {
-            Write(ToUtf8(s));
+            Write(System.Unicode.ToUtf8(s));
         }
         public override void Write(const ustring& s)
         {
-            Write(ToUtf8(s));
+            Write(System.Unicode.ToUtf8(s));
         }
         public override void Write(char c)
         {
