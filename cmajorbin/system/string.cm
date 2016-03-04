@@ -474,23 +474,23 @@ namespace System
     public string ToLower(const string& s)
     {
         ustring result;
-        ustring utf32 = ToUtf32(s);
+        ustring utf32 = System.Unicode.ToUtf32(s);
         for (uchar c : utf32)
         {
-            result.Append(CaseConversion.Instance().ToLower(c));
+            result.Append(System.Unicode.ToLower(c));
         }
-        return ToUtf8(result);
+        return System.Unicode.ToUtf8(result);
     }
 
     public string ToUpper(const string& s)
     {
         ustring result;
-        ustring utf32 = ToUtf32(s);
+        ustring utf32 = System.Unicode.ToUtf32(s);
         for (uchar c : utf32)
         {
-            result.Append(CaseConversion.Instance().ToUpper(c));
+            result.Append(System.Unicode.ToUpper(c));
         }
-        return ToUtf8(result);
+        return System.Unicode.ToUtf8(result);
     }
     
     public bool LastComponentsEqual<CharT>(const String<CharT>& s0, const String<CharT>& s1, CharT componentSeparator)

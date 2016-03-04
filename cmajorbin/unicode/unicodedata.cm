@@ -1,0 +1,397 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using System.Unicode;
+
+namespace UnicodeBin
+{
+    public class UnicodeDataGrammar: System.Text.Parsing.Grammar
+    {
+        public static UnicodeDataGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static UnicodeDataGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            UnicodeDataGrammar* grammar = new UnicodeDataGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private UnicodeDataGrammar(ParsingDomain* parsingDomain): base("UnicodeDataGrammar", parsingDomain->GetNamespaceScope("UnicodeBin"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public void Parse(const char* start, const char* end, int fileIndex, const string& fileName)
+        {
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            Match match = Parse(scanner, stack);
+            Span stop = scanner.GetSpan();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Start() != int(end - start))
+            {
+                Rule* startRule = StartRule();
+                if (startRule != null)
+                {
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
+                }
+            }
+        }
+        private class fileRule: System.Text.Parsing.Rule
+        {
+            public fileRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddLocalVariable(AttrOrVariable("CategoryMap", "categoryMap"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                NonterminalParser* characterDataNonterminalParser = GetNonterminal("characterData");
+                characterDataNonterminalParser->SetPreCall(PreCall(PrecharacterData));
+            }
+            public throw void PrecharacterData(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<CategoryMap*>(&context.categoryMap)));
+            }
+            private class Context
+            {
+                public CategoryMap categoryMap;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class characterDataRule: System.Text.Parsing.Rule
+        {
+            public characterDataRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("CategoryMap*", "categoryMap"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> categoryMap_value = stack.Pop();
+                context.categoryMap = *cast<ValueObject<CategoryMap*>*>(categoryMap_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* codeNonterminalParser = GetNonterminal("code");
+                codeNonterminalParser->SetPostCall(PostCall(Postcode));
+                NonterminalParser* nameNonterminalParser = GetNonterminal("name");
+                nameNonterminalParser->SetPostCall(PostCall(Postname));
+                NonterminalParser* categoryNonterminalParser = GetNonterminal("category");
+                categoryNonterminalParser->SetPostCall(PostCall(Postcategory));
+                NonterminalParser* upperNonterminalParser = GetNonterminal("upper");
+                upperNonterminalParser->SetPostCall(PostCall(Postupper));
+                NonterminalParser* lowerNonterminalParser = GetNonterminal("lower");
+                lowerNonterminalParser->SetPostCall(PostCall(Postlower));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                CharacterInfo* characterInfo = new CharacterInfo(cast<uchar>(context.fromcode), context.fromname, context.categoryMap->GetCategory(context.fromcategory), cast<uchar>(context.fromlower), cast<uchar>(context.fromupper));
+                CharacterInfoMap.Instance().Add(characterInfo);
+            }
+            public throw void Postcode(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcode_value = stack.Pop();
+                    context.fromcode = *cast<ValueObject<uint>*>(fromcode_value.GetPtr());
+                }
+            }
+            public throw void Postname(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromname_value = stack.Pop();
+                    context.fromname = *cast<ValueObject<string>*>(fromname_value.GetPtr());
+                }
+            }
+            public throw void Postcategory(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromcategory_value = stack.Pop();
+                    context.fromcategory = *cast<ValueObject<string>*>(fromcategory_value.GetPtr());
+                }
+            }
+            public throw void Postupper(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromupper_value = stack.Pop();
+                    context.fromupper = *cast<ValueObject<uint>*>(fromupper_value.GetPtr());
+                }
+            }
+            public throw void Postlower(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromlower_value = stack.Pop();
+                    context.fromlower = *cast<ValueObject<uint>*>(fromlower_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public CategoryMap* categoryMap;
+                public uint fromcode;
+                public string fromname;
+                public string fromcategory;
+                public uint fromupper;
+                public uint fromlower;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class codepointRule: System.Text.Parsing.Rule
+        {
+            public codepointRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("uint");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<uint>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* xNonterminalParser = GetNonterminal("x");
+                xNonterminalParser->SetPostCall(PostCall(Postx));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = cast<uint>(context.fromx);
+            }
+            public throw void Postx(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromx_value = stack.Pop();
+                    context.fromx = *cast<ValueObject<ulong>*>(fromx_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public uint value;
+                public ulong fromx;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class categoryRule: System.Text.Parsing.Rule
+        {
+            public categoryRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = string(matchBegin, matchEnd);
+            }
+            private class Context
+            {
+                public string value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class nameRule: System.Text.Parsing.Rule
+        {
+            public nameRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("string");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<string>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = string(matchBegin, matchEnd);
+            }
+            private class Context
+            {
+                public string value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar0 == null)
+            {
+                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("newline", this, "System.Text.Parsing.stdlib.newline"));
+            AddRuleLink(new RuleLink("hex", this, "System.Text.Parsing.stdlib.hex"));
+            AddRule(new fileRule("file", GetScope(),
+                new KleeneStarParser(
+                    new NonterminalParser("characterData", "characterData", 1))));
+            AddRule(new characterDataRule("characterData", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new SequenceParser(
+                                                    new SequenceParser(
+                                                        new SequenceParser(
+                                                            new SequenceParser(
+                                                                new SequenceParser(
+                                                                    new SequenceParser(
+                                                                        new SequenceParser(
+                                                                            new SequenceParser(
+                                                                                new SequenceParser(
+                                                                                    new SequenceParser(
+                                                                                        new SequenceParser(
+                                                                                            new SequenceParser(
+                                                                                                new SequenceParser(
+                                                                                                    new SequenceParser(
+                                                                                                        new SequenceParser(
+                                                                                                            new SequenceParser(
+                                                                                                                new SequenceParser(
+                                                                                                                    new SequenceParser(
+                                                                                                                        new SequenceParser(
+                                                                                                                            new SequenceParser(
+                                                                                                                                new SequenceParser(
+                                                                                                                                    new NonterminalParser("code", "codepoint", 0),
+                                                                                                                                    new CharParser(';')),
+                                                                                                                                new NonterminalParser("name", "name", 0)),
+                                                                                                                            new CharParser(';')),
+                                                                                                                        new NonterminalParser("category", "category", 0)),
+                                                                                                                    new CharParser(';')),
+                                                                                                                new NonterminalParser("ignore", "ignore", 0)),
+                                                                                                            new CharParser(';')),
+                                                                                                        new NonterminalParser("ignore", "ignore", 0)),
+                                                                                                    new CharParser(';')),
+                                                                                                new NonterminalParser("ignore", "ignore", 0)),
+                                                                                            new CharParser(';')),
+                                                                                        new NonterminalParser("ignore", "ignore", 0)),
+                                                                                    new CharParser(';')),
+                                                                                new NonterminalParser("ignore", "ignore", 0)),
+                                                                            new CharParser(';')),
+                                                                        new NonterminalParser("ignore", "ignore", 0)),
+                                                                    new CharParser(';')),
+                                                                new NonterminalParser("ignore", "ignore", 0)),
+                                                            new CharParser(';')),
+                                                        new NonterminalParser("ignore", "ignore", 0)),
+                                                    new CharParser(';')),
+                                                new NonterminalParser("ignore", "ignore", 0)),
+                                            new CharParser(';')),
+                                        new OptionalParser(
+                                            new NonterminalParser("upper", "codepoint", 0))),
+                                    new CharParser(';')),
+                                new OptionalParser(
+                                    new NonterminalParser("lower", "codepoint", 0))),
+                            new KleeneStarParser(
+                                new DifferenceParser(
+                                    new AnyCharParser(),
+                                    new NonterminalParser("newline", "newline", 0))
+                                )),
+                        new NonterminalParser("newline", "newline", 0)))));
+            AddRule(new codepointRule("codepoint", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("x", "hex", 0))));
+            AddRule(new categoryRule("category", GetScope(),
+                new ActionParser("A0",
+                    new KleeneStarParser(
+                        new CharSetParser(";", true)))));
+            AddRule(new nameRule("name", GetScope(),
+                new ActionParser("A0",
+                    new KleeneStarParser(
+                        new CharSetParser(";", true)))));
+            AddRule(new Rule("ignore", GetScope(),
+                new KleeneStarParser(
+                    new CharSetParser(";", true))));
+        }
+    }
+}

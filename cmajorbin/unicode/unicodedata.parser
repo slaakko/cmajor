@@ -1,0 +1,40 @@
+﻿using System;
+using System.Unicode;
+
+namespace UnicodeBin
+{
+    grammar UnicodeDataGrammar
+    {
+        using stdlib.newline;
+        using stdlib.hex;
+
+        file(var CategoryMap categoryMap)
+            ::= characterData(&categoryMap)*
+            ;
+
+        characterData(CategoryMap* categoryMap)
+            ::= (codepoint:code ';' name ';' category ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' ignore ';' codepoint:upper? ';' codepoint:lower? 
+                (anychar - newline)* newline)
+            {
+                CharacterInfo* characterInfo = new CharacterInfo(cast<uchar>(code), name, categoryMap->GetCategory(category), cast<uchar>(lower), cast<uchar>(upper));
+                CharacterInfoMap.Instance().Add(characterInfo);
+            }
+            ;
+
+        codepoint : uint
+            ::= hex:x{ value = cast<uint>(x); }
+            ;
+
+        category : string
+            ::= ([^;]*){ value = string(matchBegin, matchEnd); }
+            ;
+
+        name : string
+            ::= ([^;]*){ value = string(matchBegin, matchEnd); }
+            ;
+
+        ignore
+            ::= [^;]*
+            ;
+    }
+}

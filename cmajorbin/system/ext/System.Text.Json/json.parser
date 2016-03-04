@@ -35,7 +35,7 @@ namespace System.Text.Json.Data
                 { 
                     ulong u = ParseHex(string(matchBegin, matchEnd));
                     ustring s(cast<uchar>(u));
-                    value->Append(ToUtf8(s)); 
+                    value->Append(System.Unicode.ToUtf8(s)); 
                 }
             |   escape{ value->Append(escape); } 
             )* '"')

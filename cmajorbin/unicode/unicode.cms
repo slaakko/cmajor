@@ -1,0 +1,4 @@
+solution UnicodeBin;
+project <unicode.cmp>;
+activeProject UnicodeBin;
+dependency UnicodeBin();

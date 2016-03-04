@@ -160,7 +160,7 @@ namespace System.Xml.Serialization
             }
             uchar x = cast<uchar>(cast<uint>(code));
             ustring s(x);
-            data.Append(ToUtf8(s));
+            data.Append(System.Unicode.ToUtf8(s));
         }
         private int state;
         private string data;
