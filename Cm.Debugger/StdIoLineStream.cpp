@@ -9,8 +9,6 @@
 
 #include <Cm.Debugger/StdIoLineStream.hpp>
 #include <Cm.Util/TextUtils.hpp>
-#include <io.h>
-#include <fcntl.h>
 #include <iostream>
 #include <mutex>
 

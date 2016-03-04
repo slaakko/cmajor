@@ -10,6 +10,8 @@
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Interface.hpp>
 [hpp]#include <Cm.Ast/CompileUnit.hpp>
+[hpp]#include <Cm.Ast/Concept.hpp>
+[hpp]#include <Cm.Ast/Statement.hpp>
 [cpp]#include <Cm.Ast/Identifier.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
