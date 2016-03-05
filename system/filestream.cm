@@ -18,6 +18,36 @@ using System.Support;
 
 namespace System.IO
 {
+    public nothrow bool CmUnicodeInputEnvVarIs0()
+    {
+        string cmUnicodeInputEnvVarValue;
+        char* cmUnicodeInputEnvVar = get_environment_variable("CM_UNICODE_INPUT");
+        if (cmUnicodeInputEnvVar != null)
+        {
+            cmUnicodeInputEnvVarValue = cmUnicodeInputEnvVar;
+        }
+        if (cmUnicodeInputEnvVarValue == "0")
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    public nothrow bool CmUnicodeOutputEnvVarIs0()
+    {
+        string cmUnicodeOutputEnvVarValue;
+        char* cmUnicodeOutputEnvVar = get_environment_variable("CM_UNICODE_OUTPUT");
+        if (cmUnicodeOutputEnvVar != null)
+        {
+            cmUnicodeOutputEnvVarValue = cmUnicodeOutputEnvVar;
+        }
+        if (cmUnicodeOutputEnvVarValue == "0")
+        {
+            return true;
+        }
+        return false;
+    }
+    
     public class OpenFileException: Exception
     {
         public nothrow OpenFileException(const string& message_): base(message_)
@@ -164,14 +194,69 @@ namespace System.IO
         public override string ReadLine()
         {
             string line;
+            int result = 0;
+            string reason;
+            uchar c;
+            wchar* ws = null;
+            wstring wline;
+#if (WINDOWS)            
+            while (!endOfStream)
+            {
+                if (handle == 0 && !CmUnicodeInputEnvVarIs0())
+                {
+                    ws = read_unicode_line();
+                    if (ws != null)
+                    {
+                        wline = wstring(ws);
+                        delete_unicode_line(ws);
+                        return System.Unicode.ToUtf8(wline);
+                    }
+                    else
+                    {
+                        endOfStream = true;
+                    }
+                }
+                else
+                {
+                    if (pos == end)
+                    {
+                        result = read_64(handle, buffer.Mem(), buffer.Size());
+                        if (result == -1)
+                        {
+                            reason = strerror(get_errno());
+                            throw IOException("could not read from file '" + fileName + "': " + reason);
+                        }
+                        else if (result == 0)
+                        {
+                            endOfStream = true;
+                        }
+                        else
+                        {
+                            pos = cast<const char*>(buffer.Mem());
+                            end = pos + result;
+                        }
+                    }
+                    while (pos != end)
+                    {
+                        if (*pos == '\n')
+                        {
+                            ++pos;
+                            return line;
+                        }
+                        c = *pos++;
+                        line.Append(ToString(c));
+                    }
+                }                
+            }
+#else
             while (!endOfStream)
             {
                 if (pos == end)
                 {
-                    int result = read_64(handle, buffer.Mem(), buffer.Size());
+                    result = read_64(handle, buffer.Mem(), buffer.Size());
                     if (result == -1)
                     {
-                        string reason = strerror(get_errno());
+                        reason = strerror(get_errno());
                         throw IOException("could not read from file '" + fileName + "': " + reason);
                     }
                     else if (result == 0)
@@ -194,6 +279,7 @@ namespace System.IO
                     line.Append(*pos++);
                 }
             }
+#endif            
             return line;
         }
         public override string ReadToEnd()
@@ -358,11 +444,11 @@ namespace System.IO
             int result = 0;
             string reason;
 #if (WINDOWS)
-            if (handle == 1 || handle == 2)
+            if ((handle == 1 || handle == 2) && !CmUnicodeOutputEnvVarIs0())
             {
                 ws = System.Unicode.ToUtf16(s);
                 print_unicode_string(handle, ws.Chars());
-            }            
+            }
             else
             {
                 result = write_64(handle, s, cast<ulong>(StrLen(s)));
@@ -387,7 +473,7 @@ namespace System.IO
             int result = 0;
             string reason;
 #if (WINDOWS)
-            if (handle == 1 || handle == 2)
+            if ((handle == 1 || handle == 2) && !CmUnicodeOutputEnvVarIs0())
             {
                 ws = System.Unicode.ToUtf16(s);
                 print_unicode_string(handle, ws.Chars());

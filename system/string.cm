@@ -493,6 +493,48 @@ namespace System
         return System.Unicode.ToUtf8(result);
     }
     
+    public wstring ToLower(const wstring& s)
+    {
+        ustring result;
+        ustring utf32 = System.Unicode.ToUtf32(s);
+        for (uchar c : utf32)
+        {
+            result.Append(System.Unicode.ToLower(c));
+        }
+        return System.Unicode.ToUtf16(result);
+    }
+    
+    public wstring ToUpper(const wstring& s)
+    {
+        ustring result;
+        ustring utf32 = System.Unicode.ToUtf32(s);
+        for (uchar c : utf32)
+        {
+            result.Append(System.Unicode.ToUpper(c));
+        }
+        return System.Unicode.ToUtf16(result);
+    }
+    
+    public ustring ToLower(const ustring& s)
+    {
+        ustring result;
+        for (uchar c : s)
+        {
+            result.Append(System.Unicode.ToLower(c));
+        }
+        return result;
+    }
+    
+    public ustring ToUpper(const ustring& s)
+    {
+        ustring result;
+        for (uchar c : s)
+        {
+            result.Append(System.Unicode.ToUpper(c));
+        }
+        return result;
+    }
+    
     public bool LastComponentsEqual<CharT>(const String<CharT>& s0, const String<CharT>& s1, CharT componentSeparator)
     {
         List<String<CharT>> c0 = s0.Split(componentSeparator);

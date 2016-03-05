@@ -46,6 +46,10 @@ void GdbCommand::SetReplyMessage(const std::string& replyMessage_)
     replyMessage = replyMessage_;
 }
 
+GdbSetEnvCommand::GdbSetEnvCommand(const std::string& env) : GdbCommand("set env " + env)
+{
+}
+
 GdbSetWidthUnlimitedCommand::GdbSetWidthUnlimitedCommand() : GdbCommand("set width 0")
 {
 }
@@ -102,8 +106,8 @@ void RunGdb(Gdb* gdb)
     gdb->DoRun();
 }
 
-Gdb::Gdb(const std::string& program_, const std::vector<std::string>& args_) : 
-    program(program_), args(args_), gdbHandle(-1), hasReply(false), hasCommand(false), firstStart(true), gdbKilled(false), started(false)
+Gdb::Gdb(const std::string& program_, const std::vector<std::string>& args_, const std::vector<std::string>& envs_) :
+    program(program_), args(args_), envs(envs_), gdbHandle(-1), hasReply(false), hasCommand(false), firstStart(true), gdbKilled(false), started(false)
 {
     std::vector<std::string> gdbArgs;
     if (!args.empty())
@@ -210,6 +214,10 @@ std::shared_ptr<GdbCommand> Gdb::Start()
         ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetWidthUnlimitedCommand()));
         ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetHeightUnlimitedCommand()));
         ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetPrintElementsCommand()));
+    }
+    for (const std::string& env : envs)
+    {
+        ExecuteCommand(std::shared_ptr<GdbCommand>(new GdbSetEnvCommand(env)));
     }
     std::shared_ptr<GdbCommand> startCommand(new GdbStartCommand());
     ExecuteCommand(startCommand);

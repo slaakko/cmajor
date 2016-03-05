@@ -72,8 +72,12 @@ int main(int argc, const char** argv)
         std::string commandFileName;
         std::string executable;
         std::vector<std::string> arguments;
+        std::vector<std::string> environment;
+        environment.push_back("CM_UNICODE_INPUT=0");
+        environment.push_back("CM_UNICODE_OUTPUT=0");
         bool firstNonOption = true;
         bool receiveProgramArguments = false;
+        bool prevWasSetEnv = false;
         for (int i = 1; i < argc; ++i)
         {
             std::string arg = argv[i];
@@ -184,7 +188,7 @@ int main(int argc, const char** argv)
         }
         Cm::Debugger::SetErrorLineStream(errorLineStream.get());
         Cm::Debugger::DebugInfo debugInfo(cmdbFilePath);
-        Cm::Debugger::Gdb gdb(executable, arguments);
+        Cm::Debugger::Gdb gdb(executable, arguments, environment);
         Cm::Debugger::Shell shell(debugInfo, gdb, commandFileName);
         shell.Execute();
     }
