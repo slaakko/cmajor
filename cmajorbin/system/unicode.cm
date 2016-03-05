@@ -50,47 +50,97 @@ namespace System.Unicode
         separator = separatorLine | separatorParagraph | separatorSpace
     }
     
+    public nothrow ulong GetHashCode(Category category) 
+    {
+        return cast<ulong>(category);
+    }
+    
     public class CategoryMap
     {
+        static CategoryMap() : instance(new CategoryMap())
+        {
+        }
+        public nothrow static CategoryMap& Instance()
+        {
+            #assert(!instance.IsNull());
+            return *instance;
+        }
         public CategoryMap()
         {
-            map["Lu"] = Category.letterUpper;
-            map["Ll"] = Category.letterLower;
-            map["LC"] = Category.letterCased;
-            map["Lm"] = Category.letterModifier;
-            map["Lo"] = Category.letterOther;
-            map["Lt"] = Category.letterTitle;
-            map["Mc"] = Category.markSpacing;
-            map["Me"] = Category.markEnclosing;
-            map["Mn"] = Category.markNonspacing;
-            map["Nd"] = Category.numberDecimal;
-            map["Nl"] = Category.numberLetter;
-            map["No"] = Category.numberOther;
-            map["Pc"] = Category.punctuationConnector;
-            map["Pd"] = Category.punctuationDash;
-            map["Pe"] = Category.punctuationClose;
-            map["Pf"] = Category.punctuationFinalQuote;
-            map["Pi"] = Category.punctuationInitialQuote;
-            map["Po"] = Category.punctuationOther;
-            map["Ps"] = Category.punctuationOpen;
-            map["Sc"] = Category.symbolCurrency;
-            map["Sk"] = Category.symbolModifier;
-            map["Sm"] = Category.symbolMath;
-            map["So"] = Category.symbolOther;
-            map["Zl"] = Category.separatorLine;
-            map["Zp"] = Category.separatorParagraph;
-            map["Zs"] = Category.separatorSpace;
+            strCategoryMap["Lu"] = Category.letterUpper;
+            categoryStrMap[Category.letterUpper] = "Lu";
+            strCategoryMap["Ll"] = Category.letterLower;
+            categoryStrMap[Category.letterLower] = "Ll";
+            strCategoryMap["LC"] = Category.letterCased;
+            categoryStrMap[Category.letterCased] = "LC";
+            strCategoryMap["Lm"] = Category.letterModifier;
+            categoryStrMap[Category.letterModifier] = "Lm";
+            strCategoryMap["Lo"] = Category.letterOther;
+            categoryStrMap[Category.letterOther] = "Lo";
+            strCategoryMap["Lt"] = Category.letterTitle;
+            categoryStrMap[Category.letterTitle] = "Lt";
+            strCategoryMap["Mc"] = Category.markSpacing;
+            categoryStrMap[Category.markSpacing] = "Mc";
+            strCategoryMap["Me"] = Category.markEnclosing;
+            categoryStrMap[Category.markEnclosing] = "Me";
+            strCategoryMap["Mn"] = Category.markNonspacing;
+            categoryStrMap[Category.markNonspacing] = "Mn";
+            strCategoryMap["Nd"] = Category.numberDecimal;
+            categoryStrMap[Category.numberDecimal] = "Nd";
+            strCategoryMap["Nl"] = Category.numberLetter;
+            categoryStrMap[Category.numberLetter] = "Nl";
+            strCategoryMap["No"] = Category.numberOther;
+            categoryStrMap[Category.numberOther] = "No";
+            strCategoryMap["Pc"] = Category.punctuationConnector;
+            categoryStrMap[Category.punctuationConnector] = "Pc";
+            strCategoryMap["Pd"] = Category.punctuationDash;
+            categoryStrMap[Category.punctuationDash] = "Pd";
+            strCategoryMap["Pe"] = Category.punctuationClose;
+            categoryStrMap[Category.punctuationClose] = "Pe";
+            strCategoryMap["Pf"] = Category.punctuationFinalQuote;
+            categoryStrMap[Category.punctuationFinalQuote] = "Pf";
+            strCategoryMap["Pi"] = Category.punctuationInitialQuote;
+            categoryStrMap[Category.punctuationInitialQuote] = "Pi";
+            strCategoryMap["Po"] = Category.punctuationOther;
+            categoryStrMap[Category.punctuationOther] = "Po";
+            strCategoryMap["Ps"] = Category.punctuationOpen;
+            categoryStrMap[Category.punctuationOpen] = "Ps";
+            strCategoryMap["Sc"] = Category.symbolCurrency;
+            categoryStrMap[Category.symbolCurrency] = "Sc";
+            strCategoryMap["Sk"] = Category.symbolModifier;
+            categoryStrMap[Category.symbolModifier] = "Sk";
+            strCategoryMap["Sm"] = Category.symbolMath;
+            categoryStrMap[Category.symbolMath] = "Sm";
+            strCategoryMap["So"] = Category.symbolOther;
+            categoryStrMap[Category.symbolOther] = "So";
+            strCategoryMap["Zl"] = Category.separatorLine;
+            categoryStrMap[Category.separatorLine] = "Zl";
+            strCategoryMap["Zp"] = Category.separatorParagraph;
+            categoryStrMap[Category.separatorParagraph] ="Zp";
+            strCategoryMap["Zs"] = Category.separatorSpace;
+            categoryStrMap[Category.separatorSpace] = "Zs";
         }
         public nothrow Category GetCategory(const string& categoryName) const
         {
-            HashMap<string, Category>.ConstIterator i = map.CFind(categoryName);
-            if (i != map.CEnd())
+            HashMap<string, Category>.ConstIterator i = strCategoryMap.CFind(categoryName);
+            if (i != strCategoryMap.CEnd())
             {
                 return i->second;
             }
             return Category.none;
         }
-        private HashMap<string, Category> map;
+        public nothrow string GetCategoryName(Category category) const
+        {
+            HashMap<Category, string>.ConstIterator i = categoryStrMap.CFind(category);
+            if (i != categoryStrMap.CEnd())
+            {
+                return i->second;
+            }
+            return "";
+        }
+        private HashMap<string, Category> strCategoryMap;
+        private HashMap<Category, string> categoryStrMap;
+        private static UniquePtr<CategoryMap> instance;
     }
     
     public class CharacterInfo
@@ -247,6 +297,11 @@ namespace System.Unicode
         return Category.none;
     }
     
+    public nothrow string GetCategoryName(Category category)
+    {
+        return CategoryMap.Instance().GetCategoryName(category);
+    }
+    
     public string GetCharacterName(uchar c)
     {
         CharacterInfoMap.Load();
@@ -297,6 +352,16 @@ namespace System.Unicode
             return info->IsLetter();
         }
         return false;
+    }
+    
+    public bool IsLower(uchar c)
+    {
+        return GetCategory(c) == Category.letterLower; 
+    }
+    
+    public bool IsUpper(uchar c)
+    {
+        return GetCategory(c) == Category.letterUpper;
     }
     
     public bool IsMark(uchar c)

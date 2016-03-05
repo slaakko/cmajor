@@ -147,3 +147,5 @@ extern public cdecl void end_profiled_fun(uint fid);
 extern public cdecl void init_class_hierarchy(ulong* classHierarchyTable, int numEntries);
 extern public cdecl bool is_class_same_or_derived_from(ulong derivedCid, ulong baseCid);
 extern public cdecl void print_unicode_string(int handle, wchar* ws);
+extern public cdecl wchar* read_unicode_line();
+extern public cdecl void delete_unicode_line(wchar* line);

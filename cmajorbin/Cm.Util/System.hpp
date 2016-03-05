@@ -11,6 +11,7 @@
 #define CM_UTIL_SYSTEM_INCLUDED
 #include <string>
 #include <vector>
+#include <map>
 
 namespace Cm { namespace Util {
 

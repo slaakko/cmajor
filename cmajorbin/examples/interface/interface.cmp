@@ -1,0 +1,4 @@
+project Interface;
+target=program;
+assembly <interface.cma>;
+source <interface.cm>;

@@ -1,0 +1,44 @@
+﻿using System;
+
+namespace Interface
+{
+    public interface Reader
+    {
+        string Read();
+    }
+    public interface Writer
+    {
+        void Write(const string& s);
+    }
+    public class ConsoleIo : Reader, Writer
+    {
+        public string Read()
+        {
+            return Console.ReadLine();
+        }
+        public void Write(const string& s)
+        {
+            Console.WriteLine(s);
+        }
+    }
+    
+    public void Up(Reader reader, Writer writer)
+    {
+        writer.Write("enter line:");
+        string s = reader.Read();
+        writer.Write(ToUpper(s));
+    }
+    
+    internal void main()
+    {
+        try
+        {
+            ConsoleIo console;
+            Up(Reader(&console), Writer(&console));
+        }        
+        catch (const Exception& ex)
+        {
+            Console.Out() << ex.ToString() << endl();
+        }
+    }
+}

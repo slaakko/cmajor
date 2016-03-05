@@ -57,6 +57,12 @@ private:
     std::string replyMessage;
 };
 
+class GdbSetEnvCommand : public GdbCommand
+{
+public:
+    GdbSetEnvCommand(const std::string& env);
+};
+
 class GdbSetWidthUnlimitedCommand : public GdbCommand
 {
 public:
@@ -133,7 +139,7 @@ public:
 class Gdb
 {
 public:
-    Gdb(const std::string& program_, const std::vector<std::string>& args_);
+    Gdb(const std::string& program_, const std::vector<std::string>& args_, const std::vector<std::string>& envs_);
     void Run();
     void DoRun();
     std::shared_ptr<GdbCommand> Start();
@@ -153,6 +159,7 @@ public:
 private:
     std::string program;
     std::vector<std::string> args;
+    std::vector<std::string> envs;
     unsigned long long gdbHandle;
     std::vector<int> pipeHandles;
     std::thread gdbThread;
