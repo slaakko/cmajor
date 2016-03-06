@@ -61,8 +61,9 @@ enum class ClassTypeSymbolFlags : uint32_t
     debugInfoGenerated = 1 << 25,
     nonLeaf = 1 << 26,
     live = 1 << 27,
-    typesSet = 1 << 28,
-    itblsInitialized = 1 << 29
+    baseClassSet = 1 << 28,
+    implementedInterfacesSet = 1 << 29,
+    itblsInitialized = 1 << 30
 };
 
 inline ClassTypeSymbolFlags operator&(ClassTypeSymbolFlags left, ClassTypeSymbolFlags right)
@@ -345,13 +346,21 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::live);
     }
-    bool TypesSet() const
+    bool BaseClassSet() const
     {
-        return GetFlag(ClassTypeSymbolFlags::typesSet);
+        return GetFlag(ClassTypeSymbolFlags::baseClassSet);
     }
-    void SetTypesSet()
+    void SetBaseClassSet()
     {
-        SetFlag(ClassTypeSymbolFlags::typesSet);
+        SetFlag(ClassTypeSymbolFlags::baseClassSet);
+    }
+    bool ImplementedInterfacesSet() const
+    {
+        return GetFlag(ClassTypeSymbolFlags::implementedInterfacesSet);
+    }
+    void SetImplementedInterfacesSet()
+    {
+        SetFlag(ClassTypeSymbolFlags::implementedInterfacesSet);
     }
     FunctionSymbol* Destructor() const { return destructor; }
     FunctionSymbol* StaticConstructor() const { return staticConstructor; }

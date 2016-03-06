@@ -259,6 +259,11 @@ void BoundCompileUnit::Own(Cm::Sym::FunctionSymbol* functionSymbol)
     }
 }
 
+void BoundCompileUnit::Own(Cm::Ast::Node* node)
+{
+    ownedNodes.push_back(std::unique_ptr<Cm::Ast::Node>(node));
+}
+
 bool BoundCompileUnit::Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const
 {
     return instantiatedFunctions.find(functionSymbol) != instantiatedFunctions.end();

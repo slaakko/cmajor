@@ -1751,6 +1751,10 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast:
     {
         ctorResolutionArguments.push_back(Cm::Core::Argument(argument->GetArgumentCategory(), argument->GetType()));
     }
+    if (currentFunction->GetFunctionSymbol()->FullName() == "main()")
+    {
+        int x = 0;
+    }
     Cm::Sym::FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, "@constructor", ctorResolutionArguments, ctorLookups, node->GetSpan(), conversions);
     Cm::BoundTree::BoundLocalVariable* boundTemporary = new Cm::BoundTree::BoundLocalVariable(node, temporary);
     boundTemporary->SetType(typeSymbol);

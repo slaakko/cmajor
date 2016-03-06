@@ -1134,6 +1134,10 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->AddFileScope(fileScopes[index].release());
+            if (project->Name() != "os" && project->Name() != "support")
+            {
+                boundCompileUnit->ClassTemplateRepository().AutoBindTemplates();
+            }
             Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
             if (boundCompileUnit->HasGotos())
             {

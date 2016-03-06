@@ -227,6 +227,22 @@ ClassTemplateRepository::ClassTemplateRepository(Cm::BoundTree::BoundCompileUnit
 {
 }
 
+void ClassTemplateRepository::AutoBindTemplates()
+{
+    Cm::Ast::Node* stringNode = new Cm::Ast::TemplateIdNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "System.string"));
+    boundCompileUnit.Own(stringNode);
+    Cm::Sym::TypeSymbol* stringTypeSymbol = Cm::Bind::ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.GetFileScopes(), *this, stringNode);
+    if (stringTypeSymbol->IsTemplateTypeSymbol())
+    {
+        Cm::Sym::TemplateTypeSymbol* stringTemplate = static_cast<Cm::Sym::TemplateTypeSymbol*>(stringTypeSymbol);
+        BindTemplateTypeSymbol(stringTemplate, boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.GetFileScopes());
+    }
+    else
+    {
+        throw std::runtime_error("template type symbol expected");
+    }
+}
+
 ClassTemplateRepository::~ClassTemplateRepository()
 {
     try

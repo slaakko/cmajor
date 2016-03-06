@@ -146,6 +146,12 @@ namespace Cm.Ast
         public virtual void Visit(StringLiteralNode& stringLiteralNode)
         {
         }
+        public virtual void Visit(WStringLiteralNode& wstringLiteralNode)
+        {
+        }
+        public virtual void Visit(UStringLiteralNode& ustringLiteralNode)
+        {
+        }
         public virtual void Visit(NullLiteralNode& nullLiteralNode)
         {
         }

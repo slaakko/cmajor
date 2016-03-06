@@ -234,11 +234,11 @@ namespace Cm.Bind
         if (fun->FullName() == "main()" && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.unit_test)) return null;
         string funFullName = fun->FullName();
         Cm.Sym.TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
-        int funId = boundCompileUnit.StringRepository().Install(funFullName);
+        int funId = boundCompileUnit.StringRepository().InstallString(funFullName);
         Cm.BoundTree.BoundStringLiteral* funLiteral = new Cm.BoundTree.BoundStringLiteral(null, funId);
         funLiteral->SetType(constCharPtrType);
         string filePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(span.FileIndex());
-        int fileId = boundCompileUnit.StringRepository().Install(filePath);
+        int fileId = boundCompileUnit.StringRepository().InstallString(filePath);
         Cm.BoundTree.BoundStringLiteral* fileLiteral = new Cm.BoundTree.BoundStringLiteral(null, fileId);
         fileLiteral->SetType(constCharPtrType);
         Cm.Sym.TypeSymbol* intType = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
@@ -746,15 +746,15 @@ namespace Cm.Bind
             int id = boundCompileUnit.StringRepository().InstallWString(wstringLiteralNode.Value());
             Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&wstringLiteralNode, id);
             literalNode->SetType(type);
-            boundExpressionStack.Push(literalNode);
+            stack.Push(literalNode);
         }
         public override void Visit(Cm.Ast.UStringLiteralNode& ustringLiteralNode)
         {
             Cm.Sym.TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstUCharPtrType(ustringLiteralNode.GetSpan());
-            int id = boundCompileUnit.StringRepository().InstallUString(ustringLiteralnode.Value());
+            int id = boundCompileUnit.StringRepository().InstallUString(ustringLiteralNode.Value());
             Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&ustringLiteralNode, id);
             literalNode->SetType(type);
-            boundExpressionStack.Push(literalNode);
+            stack.Push(literalNode);
         }
         public override void Visit(Cm.Ast.NullLiteralNode& nullLiteralNode)
         {
@@ -851,15 +851,15 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.WCharNode& wcharNode)
         {
-            Cm.Sym:TypeSymbol* wcharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
-            Cm::BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&wcharNode, wcharTypeSymbol);
+            Cm.Sym.TypeSymbol* wcharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
+            Cm.BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&wcharNode, wcharTypeSymbol);
             typeExpression->SetType(wcharTypeSymbol);
             stack.Push(typeExpression);
         }
         public override void Visit(Cm.Ast.UCharNode& ucharNode)
         {
-            Cm.Sym:TypeSymbol* ucharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
-            Cm::BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&ucharNode, ucharTypeSymbol);
+            Cm.Sym.TypeSymbol* ucharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
+            Cm.BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&ucharNode, ucharTypeSymbol);
             typeExpression->SetType(ucharTypeSymbol);
             stack.Push(typeExpression);
         }
@@ -1422,7 +1422,7 @@ namespace Cm.Bind
                     return;
                 }
             }
-            int id = boundCompileUnit.StringRepository().Install(subjectType->FullName());
+            int id = boundCompileUnit.StringRepository().InstallString(subjectType->FullName());
             Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&typeNameNode, id);
             literalNode->SetType(constCharPtrType);
             stack.Push(literalNode);
