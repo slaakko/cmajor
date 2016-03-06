@@ -113,65 +113,65 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
         classTypeSymbol->SetBound();
         return;
     }
-    if (!classTypeSymbol->TypesSet())
+    for (const std::unique_ptr<Cm::Ast::Node>& baseClassOrImplIntf : classNode->BaseClassOrImplIntfTypeExprs())
     {
-        for (const std::unique_ptr<Cm::Ast::Node>& baseClassOrImplIntf : classNode->BaseClassOrImplIntfTypeExprs())
+        Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassOrImplIntf.get());
+        if (type)
         {
-            Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassOrImplIntf.get());
-            if (type)
+            if (type->IsClassTypeSymbol())
             {
-                if (type->IsClassTypeSymbol())
+                Cm::Sym::ClassTypeSymbol* baseClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
+                if (Cm::Sym::TypesEqual(classTypeSymbol, baseClassType))
                 {
-                    Cm::Sym::ClassTypeSymbol* baseClassType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
-                    if (Cm::Sym::TypesEqual(classTypeSymbol, baseClassType))
-                    {
-                        Cm::Core::Exception("class cannot derive from itself", classTypeSymbol->GetSpan());
-                    }
-                    else
-                    {
-                        if (classTypeSymbol->BaseClass())
-                        {
-                            throw Cm::Core::Exception("class cannot have more than one base class", classTypeSymbol->GetSpan(), baseClassType->GetSpan());
-                        }
-                        Cm::Ast::Node* node = symbolTable.GetNode(baseClassType, false);
-                        if (node)
-                        {
-                            if (node->IsClassNode())
-                            {
-                                Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
-                                Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
-                                BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassType);
-                            }
-                            else
-                            {
-                                throw std::runtime_error("class node expected");
-                            }
-                        }
-                        if (baseClassType->Access() < classTypeSymbol->Access())
-                        {
-                            throw Cm::Core::Exception("base class type must be at least as accessible as the class type itself", baseClassType->GetSpan(), classTypeSymbol->GetSpan());
-                        }
-                        classTypeSymbol->SetBaseClass(baseClassType);
-                        classTypeSymbol->GetContainerScope()->SetBase(baseClassType->GetContainerScope());
-                    }
+                    Cm::Core::Exception("class cannot derive from itself", classTypeSymbol->GetSpan());
                 }
-                else if (type->IsInterfaceTypeSymbol())
+                else
                 {
-                    Cm::Sym::InterfaceTypeSymbol* interfaceType = static_cast<Cm::Sym::InterfaceTypeSymbol*>(type);
-                    Cm::Ast::Node* node = symbolTable.GetNode(interfaceType, false);
+                    if (!classTypeSymbol->BaseClassSet() && classTypeSymbol->BaseClass())
+                    {
+                        throw Cm::Core::Exception("class cannot have more than one base class", classTypeSymbol->GetSpan(), baseClassType->GetSpan());
+                    }
+                    Cm::Ast::Node* node = symbolTable.GetNode(baseClassType, false);
                     if (node)
                     {
-                        if (node->IsInterfaceNode())
+                        if (node->IsClassNode())
                         {
-                            Cm::Ast::InterfaceNode* interfaceNode = static_cast<Cm::Ast::InterfaceNode*>(node);
-                            Cm::Sym::ContainerScope* interfaceContainerScope = symbolTable.GetContainerScope(interfaceNode);
-                            BindInterface(symbolTable, interfaceContainerScope, fileScopes, interfaceNode);
+                            Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
+                            Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
+                            BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassType);
                         }
                         else
                         {
-                            throw std::runtime_error("interface node expected");
+                            throw std::runtime_error("class node expected");
                         }
                     }
+                    if (baseClassType->Access() < classTypeSymbol->Access())
+                    {
+                        throw Cm::Core::Exception("base class type must be at least as accessible as the class type itself", baseClassType->GetSpan(), classTypeSymbol->GetSpan());
+                    }
+                    classTypeSymbol->SetBaseClass(baseClassType);
+                    classTypeSymbol->GetContainerScope()->SetBase(baseClassType->GetContainerScope());
+                }
+            }
+            else if (type->IsInterfaceTypeSymbol())
+            {
+                Cm::Sym::InterfaceTypeSymbol* interfaceType = static_cast<Cm::Sym::InterfaceTypeSymbol*>(type);
+                Cm::Ast::Node* node = symbolTable.GetNode(interfaceType, false);
+                if (node)
+                {
+                    if (node->IsInterfaceNode())
+                    {
+                        Cm::Ast::InterfaceNode* interfaceNode = static_cast<Cm::Ast::InterfaceNode*>(node);
+                        Cm::Sym::ContainerScope* interfaceContainerScope = symbolTable.GetContainerScope(interfaceNode);
+                        BindInterface(symbolTable, interfaceContainerScope, fileScopes, interfaceNode);
+                    }
+                    else
+                    {
+                        throw std::runtime_error("interface node expected");
+                    }
+                }
+                if (!classTypeSymbol->ImplementedInterfacesSet())
+                {
                     for (Cm::Sym::InterfaceTypeSymbol* implementedInterface : classTypeSymbol->ImplementedInterfaces())
                     {
                         if (Cm::Sym::TypesEqual(interfaceType, implementedInterface))
@@ -181,21 +181,23 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
                     }
                     classTypeSymbol->AddImplementedInterface(interfaceType);
                 }
-                else
-                {
-                    throw Cm::Core::Exception("type expression does not denote a class type or interface type", baseClassOrImplIntf->GetSpan());
-                }
             }
             else
             {
-                throw Cm::Core::Exception("type expression does not denote a type", baseClassOrImplIntf->GetSpan());
+                throw Cm::Core::Exception("type expression does not denote a class type or interface type", baseClassOrImplIntf->GetSpan());
             }
+        }
+        else
+        {
+            throw Cm::Core::Exception("type expression does not denote a type", baseClassOrImplIntf->GetSpan());
         }
     }
     if (!classTypeSymbol->IrTypeMade())
     {
         classTypeSymbol->SetIrType(Cm::IrIntf::CreateClassTypeName(classTypeSymbol->FullName()));
     }
+    classTypeSymbol->SetBaseClassSet();
+    classTypeSymbol->SetImplementedInterfacesSet();
     classTypeSymbol->SetBound();
 }
 

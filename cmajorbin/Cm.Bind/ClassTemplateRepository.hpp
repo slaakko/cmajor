@@ -29,6 +29,7 @@ public:
     void Write(Cm::Sym::BcuWriter& writer) override;
     void Read(Cm::Sym::BcuReader& reader) override;
     void RetrieveMemberVariableLayoutIndecesFrom(const std::unordered_map<std::string, Cm::Sym::ClassTypeSymbol*>& classTypeMap) override;
+    void AutoBindTemplates() override;
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     typedef std::unordered_set<Cm::Sym::ClassTypeSymbol*> ClassTemplateSet;

@@ -29,7 +29,7 @@ namespace Llvm
         return name;
     }
 
-    public nothrow string MakeWStringConstantName(const string& s)
+    public string MakeWStringConstantName(const string& s)
     {
         wstring ws = System.Unicode.ToUtf16(s);
         string name;
@@ -51,9 +51,10 @@ namespace Llvm
             name.Append(", ");
         }
         name.Append("0u");
+        return name;
     }
 
-    public nothrow string MakeUStringConstantName(const string& s)
+    public string MakeUStringConstantName(const string& s)
     {
         ustring us = System.Unicode.ToUtf32(s);
         string name;
@@ -75,6 +76,7 @@ namespace Llvm
             name.Append(", ");
         }
         name.Append("0u");
+        return name;
     }
         
     public void ThrowNotImplemented()
@@ -206,24 +208,24 @@ namespace Llvm
     
     public class WStringConstant : Constant
     {
-        public nothrow WStringConstant(const string& value_) : base(MakeWStringConstantName(value_), MakeWStringType(System.Unicode.ToUtf16(value_).Length() + 1))
+        public WStringConstant(const string& value_) : base(MakeWStringConstantName(value_), MakeWStringType(System.Unicode.ToUtf16(value_).Length() + 1))
         {
         }
     }
     
-    public nothrow inline Ir.Intf.Object* MakeWStringConstant(const string& value)
+    public inline Ir.Intf.Object* MakeWStringConstant(const string& value)
     {
         return new WStringConstant(value);
     }
     
     public class UStringConstant : Constant
     {
-        public nothrow UStringConstant(const string& value_) : base(MakeUStringConstantName(value_), MakeUStringType(System.Unicode.ToUtf32(value_).Length() + 1))
+        public UStringConstant(const string& value_) : base(MakeUStringConstantName(value_), MakeUStringType(System.Unicode.ToUtf32(value_).Length() + 1))
         {
         }
     }
     
-    public nothrow inline Ir.Intf.Object* MakeUStringConstant(const string& value)
+    public inline Ir.Intf.Object* MakeUStringConstant(const string& value)
     {
         return new UStringConstant(value);
     }

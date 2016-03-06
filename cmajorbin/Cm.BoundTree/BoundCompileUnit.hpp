@@ -95,6 +95,7 @@ public:
     void AddBoundNode(BoundNode* boundNode);
     void Accept(Visitor& visitor);
     void Own(Cm::Sym::FunctionSymbol* functionSymbol) override;
+    void Own(Cm::Ast::Node* node);
     bool Instantiated(Cm::Sym::FunctionSymbol* functionSymbol) const;
     void AddToInstantiated(Cm::Sym::FunctionSymbol* functionSymbol);
     void SetHasGotos() { hasGotos = true; }
@@ -149,6 +150,7 @@ private:
     bool isPrebindCompileUnit;
     bool isMainUnit;
     DependentCompileUnitSet dependentUnits;
+    std::vector<std::unique_ptr<Cm::Ast::Node>> ownedNodes;
 };
 
 } } // namespace Cm::BoundTree

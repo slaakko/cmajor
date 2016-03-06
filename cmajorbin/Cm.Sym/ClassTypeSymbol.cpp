@@ -74,7 +74,8 @@ void ClassTypeSymbol::Write(Writer& writer)
 {
     TypeSymbol::Write(writer);
     writer.GetBinaryWriter().Write(cid);
-    writer.GetBinaryWriter().Write(uint32_t(flags & ~(ClassTypeSymbolFlags::vtblInitialized | ClassTypeSymbolFlags::itblsInitialized | ClassTypeSymbolFlags::typesSet)));
+    writer.GetBinaryWriter().Write(uint32_t(flags & 
+        ~(ClassTypeSymbolFlags::vtblInitialized | ClassTypeSymbolFlags::itblsInitialized | ClassTypeSymbolFlags::baseClassSet | ClassTypeSymbolFlags::implementedInterfacesSet)));
     bool hasBaseClass = baseClass != nullptr;
     writer.GetBinaryWriter().Write(hasBaseClass);
     if (hasBaseClass)
@@ -140,7 +141,6 @@ void ClassTypeSymbol::Read(Reader& reader)
     {
         reader.FetchTypeFor(this, -2);
     }
-    SetTypesSet();
     bool hasInitializedVar = reader.GetBinaryReader().ReadBool();
     if (hasInitializedVar)
     {
@@ -220,12 +220,14 @@ void ClassTypeSymbol::SetType(TypeSymbol* type, int index)
         if (type->IsClassTypeSymbol())
         {
             baseClass = static_cast<ClassTypeSymbol*>(type);
+            SetBaseClassSet();
             GetContainerScope()->SetBase(baseClass->GetContainerScope());
         }
         else if (type->IsInterfaceTypeSymbol())
         {
             InterfaceTypeSymbol* implementedInterface = static_cast<InterfaceTypeSymbol*>(type);
             implementedInterfaces.push_back(implementedInterface);
+            SetImplementedInterfacesSet();
         }
         else
         {

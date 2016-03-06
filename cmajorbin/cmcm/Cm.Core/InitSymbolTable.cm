@@ -28,7 +28,7 @@ namespace Cm.Core
         symbolTable.AddPredefinedSymbolToGlobalScope(charTypeSymbol);
         Cm.Sym.WCharTypeSymbol* wcharTypeSymbol = new Cm.Sym.WCharTypeSymbol();
         symbolTable.AddPredefinedSymbolToGlobalScope(wcharTypeSymbol);
-        Cm.Sym.WCharTypeSymbol* ucharTypeSymbol = new Cm.Sym.UCharTypeSymbol();
+        Cm.Sym.UCharTypeSymbol* ucharTypeSymbol = new Cm.Sym.UCharTypeSymbol();
         symbolTable.AddPredefinedSymbolToGlobalScope(ucharTypeSymbol);
         Cm.Sym.VoidTypeSymbol* voidTypeSymbol = new Cm.Sym.VoidTypeSymbol();
         symbolTable.AddPredefinedSymbolToGlobalScope(voidTypeSymbol);
@@ -188,7 +188,7 @@ namespace Cm.Core
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, doubleType, Cm.Sym.ConversionType.explicit_, ConversionInst.fptosi, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, charType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, wcharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
-        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, uharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
+        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, ucharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), shortType, boolType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
     
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ushortType, sbyteType, Cm.Sym.ConversionType.explicit_, ConversionInst.sext, Cm.Sym.ConversionRank.conversion, 100));
@@ -216,7 +216,7 @@ namespace Cm.Core
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, doubleType, Cm.Sym.ConversionType.explicit_, ConversionInst.fptosi, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, charType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, wcharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
-        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, uharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
+        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, ucharType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), intType, boolType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
     
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), uintType, sbyteType, Cm.Sym.ConversionType.explicit_, ConversionInst.sext, Cm.Sym.ConversionRank.conversion, 100));
@@ -318,7 +318,7 @@ namespace Cm.Core
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), wcharType, boolType, Cm.Sym.ConversionType.explicit_, ConversionInst.zext, Cm.Sym.ConversionRank.conversion, 100));
 
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, charType, Cm.Sym.ConversionType.implicit, ConversionInst.zext, Cm.Sym.ConversionRank.promotion, 2));
-        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, wcharType, Cm.Sym.ConversionType.implicit_, ConversionInst.zext, Cm.Sym.ConversionRank.promotion, 1));
+        conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, wcharType, Cm.Sym.ConversionType.implicit, ConversionInst.zext, Cm.Sym.ConversionRank.promotion, 1));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, sbyteType, Cm.Sym.ConversionType.explicit_, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, byteType, Cm.Sym.ConversionType.explicit_, ConversionInst.bitcast, Cm.Sym.ConversionRank.conversion, 100));
         conversions.Add(new ConvertingCtor(symbolTable.GetTypeRepository(), ucharType, shortType, Cm.Sym.ConversionType.explicit_, ConversionInst.trunc, Cm.Sym.ConversionRank.conversion, 100));

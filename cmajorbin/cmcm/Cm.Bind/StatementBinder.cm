@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -1588,17 +1588,17 @@ namespace Cm.Bind
             }
             Cm.BoundTree.BoundExpressionList failAssertionArguments;
             string assertExpr = assertStatementNode.AssertExpr()->ToString();
-            int assertExprId = BoundCompileUnit().StringRepository().Install(assertExpr);
+            int assertExprId = BoundCompileUnit().StringRepository().InstallString(assertExpr);
             Cm.BoundTree.BoundStringLiteral* assertExprLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, assertExprId);
             assertExprLiteral->SetType(constCharPtrType);
             failAssertionArguments.Add(assertExprLiteral);
             string filePath = Cm.Parser.FileRegistry.Instance()->GetParsedFileName(assertStatementNode.GetSpan().FileIndex());
-            int fileId = BoundCompileUnit().StringRepository().Install(filePath);
+            int fileId = BoundCompileUnit().StringRepository().InstallString(filePath);
             Cm.BoundTree.BoundStringLiteral* fileLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, fileId);
             fileLiteral->SetType(constCharPtrType);
             failAssertionArguments.Add(fileLiteral);
             string line = ToString(assertStatementNode.GetSpan().LineNumber());
-            int lineId = BoundCompileUnit().StringRepository().Install(line);
+            int lineId = BoundCompileUnit().StringRepository().InstallString(line);
             Cm.BoundTree.BoundStringLiteral* lineLiteral = new Cm.BoundTree.BoundStringLiteral(&assertStatementNode, lineId);
             lineLiteral->SetType(constCharPtrType);
             failAssertionArguments.Add(lineLiteral);

@@ -21,7 +21,7 @@ namespace Cm.Sym
     
     public enum SymbolType : byte
     {
-        boolSymbol, charSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
+        boolSymbol, charSymbol, wcharSymbol, ucharSymbol, voidSymbol, sbyteSymbol, byteSymbol, shortSymbol, ushortSymbol, intSymbol, uintSymbol, longSymbol, ulongSymbol, floatSymbol, doubleSymbol, nullptrSymbol,
         classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
         memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
         conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,

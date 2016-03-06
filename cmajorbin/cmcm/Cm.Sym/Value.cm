@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -15,7 +15,7 @@ namespace Cm.Sym
 {
     public enum ValueType : byte
     {
-        none, boolValue, charValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
+        none, boolValue, charValue, wcharValue, ucharValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
     }
     
     public concept ValueClass<T>
@@ -34,6 +34,8 @@ namespace Cm.Sym
             case ValueType.none: return "";
             case ValueType.boolValue: return "bool";
             case ValueType.charValue: return "char";
+            case ValueType.wcharValue: return "wchar";
+            case ValueType.ucharValue: return "uchar";
             case ValueType.sbyteValue: return "sbyte";
             case ValueType.byteValue: return "byte";
             case ValueType.shortValue: return "short";
@@ -76,8 +78,22 @@ namespace Cm.Sym
             
             List<ValueType> charValues = None();
             charValues[cast<int>(ValueType.charValue)] = ValueType.charValue;
+            charValues[cast<int>(ValueType.wcharValue)] = ValueType.wcharValue;
+            charValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
             commonTypeMap.Add(Rvalue(charValues));
             
+            List<ValueType> wcharValues = None();
+            charValues[cast<int>(ValueType.charValue)] = ValueType.wcharValue;
+            charValues[cast<int>(ValueType.wcharValue)] = ValueType.wcharValue;
+            charValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
+            commonTypeMap.Add(Rvalue(wcharValues));
+
+            List<ValueType> ucharValues = None();
+            charValues[cast<int>(ValueType.charValue)] = ValueType.ucharValue;
+            charValues[cast<int>(ValueType.wcharValue)] = ValueType.ucharValue;
+            charValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
+            commonTypeMap.Add(Rvalue(ucharValues));
+                        
             List<ValueType> sbyteValues = None();
             sbyteValues[cast<int>(ValueType.sbyteValue)] = ValueType.sbyteValue;
             sbyteValues[cast<int>(ValueType.byteValue)] = ValueType.shortValue;
@@ -247,6 +263,8 @@ namespace Cm.Sym
             }
             valueTypes[cast<int>(SymbolType.boolSymbol)] = ValueType.boolValue;
             valueTypes[cast<int>(SymbolType.charSymbol)] = ValueType.charValue;
+            valueTypes[cast<int>(SymbolType.wcharSymbol)] = ValueType.wcharValue;
+            valueTypes[cast<int>(SymbolType.ucharSymbol)] = ValueType.ucharValue;
             valueTypes[cast<int>(SymbolType.sbyteSymbol)] = ValueType.sbyteValue;
             valueTypes[cast<int>(SymbolType.byteSymbol)] = ValueType.byteValue;
             valueTypes[cast<int>(SymbolType.shortSymbol)] = ValueType.shortValue;
@@ -513,6 +531,14 @@ namespace Cm.Sym
                 {
                     return new CharValue(value);
                 }
+                case ValueType.wcharValue:
+                {
+                    return new WCharValue(value);
+                }
+                case ValueType.ucharValue:
+                {
+                    return new UCharValue(value);
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -644,6 +670,395 @@ namespace Cm.Sym
         private char value;
     }    
 
+    public class WCharValue : Value
+    {
+        public typedef wchar OperandType;
+        
+        public nothrow WCharValue() : value(cast<wchar>(0))
+        {
+        }
+        public nothrow WCharValue(wchar value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.wcharValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new WCharValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = cast<wchar>(reader.ReadUShort());
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(cast<ushort>(value));
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    return new WCharValue(value);
+                }
+                case ValueType.ucharValue:
+                {
+                    return new UCharValue(value);
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    if (cast_)
+                    {
+                        return new DoubleValue(cast<double>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI16Constant(cast<ushort>(value));
+        }
+        public nothrow inline wchar GetValue() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return System.Text.MakeWCharLiteral(value);
+        }
+        private wchar value;
+    }
+
+    public class UCharValue : Value
+    {
+        public typedef uchar OperandType;
+        
+        public nothrow UCharValue() : value(cast<uchar>(0))
+        {
+        }
+        public nothrow UCharValue(uchar value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.ucharValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new UCharValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            value = cast<uchar>(reader.ReadUInt());
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            writer.Write(cast<uint>(value));
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            switch (targetType)
+            {
+                case ValueType.boolValue: 
+                {
+                    if (cast_)
+                    {
+                        return new BoolValue(cast<bool>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.charValue:
+                {
+                    if (cast_)
+                    {
+                        return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    return new UCharValue(value);
+                }
+                case ValueType.sbyteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new SByteValue(cast<sbyte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.byteValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ByteValue(cast<byte>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.shortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new ShortValue(cast<short>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ushortValue: 
+                {
+                    if (cast_)
+                    {
+                        return new UShortValue(cast<ushort>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.intValue: 
+                {
+                    if (cast_)
+                    {
+                        return new IntValue(cast<int>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.uintValue:
+                {
+                    if (cast_)
+                    {
+                        return new UIntValue(cast<uint>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.longValue:
+                {
+                    if (cast_)
+                    {
+                        return new LongValue(cast<long>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ulongValue:
+                {
+                    if (cast_)
+                    {
+                        return new ULongValue(cast<ulong>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.floatValue:
+                {
+                    if (cast_)
+                    {
+                        return new FloatValue(cast<float>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.doubleValue:
+                {
+                    if (cast_)
+                    {
+                        return new DoubleValue(cast<double>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                default:
+                {
+                    throw Error("invalid conversion", span_);
+                }
+            }
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            return Cm.IrIntf.MakeUI32Constant(cast<uint>(value));
+        }
+        public nothrow inline uchar GetValue() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return System.Text.MakeUCharLiteral(value);
+        }
+        private uchar value;
+    }
+
     public class SByteValue : Value
     {
         public typedef sbyte OperandType;
@@ -690,6 +1105,28 @@ namespace Cm.Sym
                     if (cast_)
                     {
                         return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
                     }
                     else
                     {
@@ -837,6 +1274,28 @@ namespace Cm.Sym
                         throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
                     }
                 }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -951,6 +1410,28 @@ namespace Cm.Sym
                     if (cast_)
                     {
                         return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
                     }
                     else
                     {
@@ -1105,6 +1586,28 @@ namespace Cm.Sym
                         throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
                     }
                 }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -1233,6 +1736,28 @@ namespace Cm.Sym
                     if (cast_)
                     {
                         return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
                     }
                     else
                     {
@@ -1394,6 +1919,28 @@ namespace Cm.Sym
                         throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
                     }
                 }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -1536,6 +2083,28 @@ namespace Cm.Sym
                     if (cast_)
                     {
                         return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
                     }
                     else
                     {
@@ -1711,6 +2280,28 @@ namespace Cm.Sym
                         throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
                     }
                 }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -1880,6 +2471,28 @@ namespace Cm.Sym
                         throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
                     }
                 }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
                 case ValueType.sbyteValue: 
                 {
                     if (cast_)
@@ -2043,6 +2656,28 @@ namespace Cm.Sym
                     if (cast_)
                     {
                         return new CharValue(cast<char>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.wcharValue:
+                {
+                    if (cast_)
+                    {
+                        return new WCharValue(cast<wchar>(value));
+                    }
+                    else
+                    {
+                        throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType) + " without a cast", span_);
+                    }
+                }
+                case ValueType.ucharValue:
+                {
+                    if (cast_)
+                    {
+                        return new UCharValue(cast<uchar>(value));
                     }
                     else
                     {

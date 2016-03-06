@@ -93,7 +93,7 @@ namespace C
         return MakeStringLiteral(s);
     }
     
-    public nothrow string MakeWStringConstantName(const string& s)
+    public string MakeWStringConstantName(const string& s)
     {
         wstring ws = System.Unicode.ToUtf16(s);
         string name;
@@ -115,9 +115,10 @@ namespace C
             name.Append(", ");
         }
         name.Append("0u");
+        return name;
     }
 
-    public nothrow string MakeUStringConstantName(const string& s)
+    public string MakeUStringConstantName(const string& s)
     {
         ustring us = System.Unicode.ToUtf32(s);
         string name;
@@ -139,6 +140,7 @@ namespace C
             name.Append(", ");
         }
         name.Append("0u");
+        return name;
     }
     
     public inline nothrow Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type)
@@ -194,24 +196,24 @@ namespace C
 
     public class WStringConstant : Constant
     {
-        public nothrow WStringConstant(const string& value_) : base(MakeWStringConstantName(value_), MakeWStringType())
+        public WStringConstant(const string& value_) : base(MakeWStringConstantName(value_), MakeWStringType())
         {
         }
     }
         
-    public inline nothrow Ir.Intf.Object* MakeWStringConstant(const string& value)
+    public inline Ir.Intf.Object* MakeWStringConstant(const string& value)
     {
         return new WStringConstant(value);
     }
                 
     public class UStringConstant : Constant
     {
-        public nothrow UStringConstant(const string& value_) : base(MakeUStringConstantName(value_), MakeUStringType())
+        public UStringConstant(const string& value_) : base(MakeUStringConstantName(value_), MakeUStringType())
         {
         }
     }
         
-    public inline nothrow Ir.Intf.Object* MakeUStringConstant(const string& value)
+    public inline Ir.Intf.Object* MakeUStringConstant(const string& value)
     {
         return new UStringConstant(value);
     }
