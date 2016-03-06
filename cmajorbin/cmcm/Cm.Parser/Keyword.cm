@@ -57,6 +57,7 @@ namespace Cm.Parser
             keywords0.Add("if");
             keywords0.Add("inline");
             keywords0.Add("int");
+            keywords0.Add("interface");
             keywords0.Add("internal");
             keywords0.Add("is");
             keywords0.Add("long");
@@ -84,12 +85,14 @@ namespace Cm.Parser
             keywords0.Add("try");
             keywords0.Add("typedef");
             keywords0.Add("typename");
+            keywords0.Add("uchar");
             keywords0.Add("uint");
             keywords0.Add("ulong");
             keywords0.Add("ushort");
             keywords0.Add("using");
             keywords0.Add("virtual");
             keywords0.Add("void");
+            keywords0.Add("wchar");
             keywords0.Add("where");
             keywords0.Add("while");
         }
