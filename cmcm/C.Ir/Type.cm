@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -344,7 +344,7 @@ namespace C
     
     public class CharType : Ir.Intf.Type
     {
-        public nothrow CharType() : base("char")
+        public nothrow CharType() : base("usngined char")
         {
         }
         public override Ir.Intf.Type* Clone() const
@@ -412,7 +412,7 @@ namespace C
     
     public class StringType : Ir.Intf.Type
     {
-        public nothrow StringType() : base("char*")
+        public nothrow StringType() : base("unsigned char*")
         {
         }
         public override Ir.Intf.Type* Clone() const
@@ -424,6 +424,38 @@ namespace C
     public nothrow Ir.Intf.Type* MakeStringType()
     {
         return new StringType();
+    }
+    
+    public class WStringType : Ir.Intf.Type
+    {
+        public nothrow WStringType() : base("ui16*")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new WStringType();
+        }
+    }
+    
+    public nothrow Ir.Intf.Type* MakeWStringType()
+    {
+        return new WStringType();
+    }
+    
+    public class UStringType : Ir.Intf.Type
+    {
+        public nothrow UStringType() : base("ui32*")
+        {
+        }
+        public override Ir.Intf.Type* Clone() const
+        {
+            return new UStringType();
+        }
+    }
+    
+    public nothrow Ir.Intf.Type* MakeUStringType()
+    {
+        return new UStringType();
     }
     
     public class StructureType : Ir.Intf.Type

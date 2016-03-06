@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -547,6 +547,84 @@ namespace Cm.Ast
         public nothrow override string ToString() const
         {
             return MakeStringLiteral(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private string value;
+    }
+
+    public class WStringLiteralNode : Node
+    {
+        public nothrow WStringLiteralNode(const Span& span_) : base(span_), value("")
+        {
+        }
+        public nothrow WStringLiteralNode(const Span& span_, const string& value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.wstringLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new WStringLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline const string& Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return "w" + MakeStringLiteral(value);
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.Visit(*this);
+        }
+        private string value;
+    }
+
+    public class UStringLiteralNode : Node
+    {
+        public nothrow UStringLiteralNode(const Span& span_) : base(span_), value("")
+        {
+        }
+        public nothrow UStringLiteralNode(const Span& span_, const string& value_) : base(span_), value(value_)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const
+        {
+            return NodeType.ustringLiteralNode;
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            return new UStringLiteralNode(GetSpan(), value);
+        }
+        public override void Read(Reader& reader)
+        {
+            value = reader.GetBinaryReader().ReadString();
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.GetBinaryWriter().Write(value);
+        }
+        public nothrow inline const string& Value() const
+        {
+            return value;
+        }
+        public nothrow override string ToString() const
+        {
+            return "u" + MakeStringLiteral(value);
         }
         public override void Accept(Visitor& visitor)
         {

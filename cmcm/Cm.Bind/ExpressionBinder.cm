@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -735,10 +735,26 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.StringLiteralNode& stringLiteralNode)
         {
             Cm.Sym.TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(stringLiteralNode.GetSpan());
-            int id = boundCompileUnit.StringRepository().Install(stringLiteralNode.Value());
+            int id = boundCompileUnit.StringRepository().InstallString(stringLiteralNode.Value());
             Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&stringLiteralNode, id);
             literalNode->SetType(type);
             stack.Push(literalNode);
+        }
+        public override void Visit(Cm.Ast.WStringLiteralNode& wstringLiteralNode)
+        {
+            Cm.Sym.TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstWCharPtrType(wstringLiteralNode.GetSpan());
+            int id = boundCompileUnit.StringRepository().InstallWString(wstringLiteralNode.Value());
+            Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&wstringLiteralNode, id);
+            literalNode->SetType(type);
+            boundExpressionStack.Push(literalNode);
+        }
+        public override void Visit(Cm.Ast.UStringLiteralNode& ustringLiteralNode)
+        {
+            Cm.Sym.TypeSymbol* type = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstUCharPtrType(ustringLiteralNode.GetSpan());
+            int id = boundCompileUnit.StringRepository().InstallUString(ustringLiteralnode.Value());
+            Cm.BoundTree.BoundStringLiteral* literalNode = new Cm.BoundTree.BoundStringLiteral(&ustringLiteralNode, id);
+            literalNode->SetType(type);
+            boundExpressionStack.Push(literalNode);
         }
         public override void Visit(Cm.Ast.NullLiteralNode& nullLiteralNode)
         {
@@ -831,6 +847,20 @@ namespace Cm.Bind
             Cm.Sym.TypeSymbol* charTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
             Cm.BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&charNode, charTypeSymbol);
             typeExpression->SetType(charTypeSymbol);
+            stack.Push(typeExpression);
+        }
+        public override void Visit(Cm.Ast.WCharNode& wcharNode)
+        {
+            Cm.Sym:TypeSymbol* wcharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
+            Cm::BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&wcharNode, wcharTypeSymbol);
+            typeExpression->SetType(wcharTypeSymbol);
+            stack.Push(typeExpression);
+        }
+        public override void Visit(Cm.Ast.UCharNode& ucharNode)
+        {
+            Cm.Sym:TypeSymbol* ucharTypeSymbol = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
+            Cm::BoundTree.BoundTypeExpression* typeExpression = new Cm.BoundTree.BoundTypeExpression(&ucharNode, ucharTypeSymbol);
+            typeExpression->SetType(ucharTypeSymbol);
             stack.Push(typeExpression);
         }
         public override void Visit(Cm.Ast.VoidNode& voidNode)

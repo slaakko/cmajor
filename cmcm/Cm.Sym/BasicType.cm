@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -14,7 +14,7 @@ namespace Cm.Sym
 {
     public enum ShortBasicTypeId : byte
     {
-        boolId = 1u, charId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
+        boolId = 1u, charId, wcharId, ucharId, voidId, sbyteId, byteId, shortId, ushortId, intId, uintId, longId, ulongId, floatId, doubleId, nullPtrId, max
     }
     
     public abstract class BasicTypeSymbol : TypeSymbol
@@ -78,6 +78,56 @@ namespace Cm.Sym
         public override string GetMangleId() const
         {
             return "ch";
+        }
+    }
+    
+    public class WCharTypeSymbol : BasicTypeSymbol
+    {
+        public WCharTypeSymbol() : base("wchar", ShortBasicTypeId.wcharId)
+        {
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                SetIrType(Cm.IrIntf.I16());
+            }            
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                SetIrType(Cm.IrIntf.UI16());
+            }
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.wcharSymbol;
+        }
+        public override string GetMangleId() const
+        {
+            return "wc";
+        }
+    }
+
+    public class UCharTypeSymbol : BasicTypeSymbol
+    {
+        public UCharTypeSymbol() : base("uchar", ShortBasicTypeId.ucharId)
+        {
+            Cm.IrIntf.Backend backend = Cm.IrIntf.GetBackend();
+            if (backend == Cm.IrIntf.Backend.llvm)
+            {
+                SetIrType(Cm.IrIntf.I32());
+            }            
+            else if (backend == Cm.IrIntf.Backend.c)
+            {
+                SetIrType(Cm.IrIntf.UI32());
+            }
+            SetDefaultIrValue(IrType()->CreateDefaultValue());
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.ucharSymbol;
+        }
+        public override string GetMangleId() const
+        {
+            return "uc";
         }
     }
 
