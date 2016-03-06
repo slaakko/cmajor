@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -93,6 +93,54 @@ namespace C
         return MakeStringLiteral(s);
     }
     
+    public nothrow string MakeWStringConstantName(const string& s)
+    {
+        wstring ws = System.Unicode.ToUtf16(s);
+        string name;
+        bool first = true;
+        for (wchar c : ws)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                name.Append(", ");
+            }
+            name.Append(ToString(cast<ushort>(c)) + "u");
+        }
+        if (!s.IsEmpty())
+        {
+            name.Append(", ");
+        }
+        name.Append("0u");
+    }
+
+    public nothrow string MakeUStringConstantName(const string& s)
+    {
+        ustring us = System.Unicode.ToUtf32(s);
+        string name;
+        bool first = true;
+        for (uchar c : us)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                name.Append(", ");
+            }
+            name.Append(ToString(cast<uint>(c)) + "u");
+        }
+        if (!s.IsEmpty())
+        {
+            name.Append(", ");
+        }
+        name.Append("0u");
+    }
+    
     public inline nothrow Ir.Intf.Object* MakeConstant(const string& name, Ir.Intf.Type* type)
     {
         return new Constant(name, type);
@@ -143,7 +191,31 @@ namespace C
     {
         return new StringConstant(value);
     }
+
+    public class WStringConstant : Constant
+    {
+        public nothrow WStringConstant(const string& value_) : base(MakeWStringConstantName(value_), MakeWStringType())
+        {
+        }
+    }
         
+    public inline nothrow Ir.Intf.Object* MakeWStringConstant(const string& value)
+    {
+        return new WStringConstant(value);
+    }
+                
+    public class UStringConstant : Constant
+    {
+        public nothrow UStringConstant(const string& value_) : base(MakeUStringConstantName(value_), MakeUStringType())
+        {
+        }
+    }
+        
+    public inline nothrow Ir.Intf.Object* MakeUStringConstant(const string& value)
+    {
+        return new UStringConstant(value);
+    }
+                
     public class NullConstant : Constant
     {
         public nothrow NullConstant(Ir.Intf.Type* ptrType_) : base("null", ptrType_)

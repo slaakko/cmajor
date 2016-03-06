@@ -508,7 +508,7 @@ void WStringLiteralNode::Write(Writer& writer)
 
 std::string WStringLiteralNode::ToString() const
 {
-    std::string s(1, '"');
+    std::string s("w\"");
     s.append(Cm::Util::StringStr(value)).append(1, '"');
     return s;
 }
@@ -543,7 +543,7 @@ void UStringLiteralNode::Write(Writer& writer)
 
 std::string UStringLiteralNode::ToString() const
 {
-    std::string s(1, '"');
+    std::string s("u\"");
     s.append(Cm::Util::StringStr(value)).append(1, '"');
     return s;
 }

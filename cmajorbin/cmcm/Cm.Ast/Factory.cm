@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -63,6 +63,8 @@ namespace Cm.Ast
             Register(NodeType.doubleLiteralNode, new Creator<DoubleLiteralNode>());
             Register(NodeType.charLiteralNode, new Creator<CharLiteralNode>());
             Register(NodeType.stringLiteralNode, new Creator<StringLiteralNode>());
+            Register(NodeType.wstringLiteralNode, new Creator<WStringLiteralNode>());
+            Register(NodeType.ustringLiteralNode, new Creator<UStringLiteralNode>());
             Register(NodeType.nullLiteralNode, new Creator<NullLiteralNode>());
             Register(NodeType.derivedTypeExprNode, new Creator<DerivedTypeExprNode>());
             Register(NodeType.equivalenceNode, new Creator<EquivalenceNode>());

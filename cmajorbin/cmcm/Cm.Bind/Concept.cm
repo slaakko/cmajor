@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -669,6 +669,14 @@ namespace Cm.Bind
         {
             type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
         }
+        public override void Visit(Cm.Ast.WCharNode& wcharNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
+        }
+        public override void Visit(Cm.Ast.UCharNode& ucharNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
+        }
         public override void Visit(Cm.Ast.VoidNode& voidNode)
         {
             type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
@@ -1252,6 +1260,14 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.CharNode& charNode)
         {
             type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
+        }
+        public override void Visit(Cm.Ast.WCharNode& wcharNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
+        }
+        public override void Visit(Cm.Ast.UCharNode& ucharNode)
+        {
+            type = boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
         }
         public override void Visit(Cm.Ast.VoidNode& voidNode)
         {
