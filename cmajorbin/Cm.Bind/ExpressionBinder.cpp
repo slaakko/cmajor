@@ -358,11 +358,11 @@ void ExpressionBinder::BindUnaryOp(Cm::Ast::Node* node, const std::string& opGro
 	Cm::BoundTree::BoundUnaryOp* op = new Cm::BoundTree::BoundUnaryOp(node, unaryOperand);
     op->SetFunction(fun);
     op->SetType(fun->GetReturnType());
-    if (fun->ReturnsClassObjectByValue() && !fun->IsBasicTypeOp())
+    if (fun->ReturnsClassOrInterfaceObjectByValue() && !fun->IsBasicTypeOp())
     {
-        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
-        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
-        op->SetClassObjectResultVar(classObjectResultVar);
+        Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        classOrInterfaceObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        op->SetClassOrInterfaceObjectResultVar(classOrInterfaceObjectResultVar);
     }
     if (!fun->IsBasicTypeOp())
     {
@@ -436,11 +436,11 @@ void ExpressionBinder::BindBinaryOp(Cm::Ast::Node* node, const std::string& opGr
     Cm::BoundTree::BoundBinaryOp* op = new Cm::BoundTree::BoundBinaryOp(node, leftOperand, rightOperand);
     op->SetFunction(fun);
     op->SetType(fun->GetReturnType());
-    if (fun->ReturnsClassObjectByValue())
+    if (fun->ReturnsClassOrInterfaceObjectByValue())
     {
-        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
-        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
-        op->SetClassObjectResultVar(classObjectResultVar);
+        Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
+        classOrInterfaceObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        op->SetClassOrInterfaceObjectResultVar(classOrInterfaceObjectResultVar);
     }
     if (!fun->IsBasicTypeOp())
     {
@@ -1478,7 +1478,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     std::vector<Cm::Sym::FunctionSymbol*> conversions;
     bool firstArgByRef = false;
     bool constructTemporary = false;
-    bool returnClassObjectByValue = false;
+    bool returnClassOrInterfaceObjectByValue = false;
     Cm::Sym::LocalVariableSymbol* temporary = nullptr;
     if (subject->IsBoundFunctionGroup())
     {
@@ -1492,8 +1492,8 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         std::vector<Cm::Sym::FunctionSymbol*> conversions2;
         bool firstArgByRef1 = false;
         bool firstArgByRef2 = false;
-        bool returnClassObjectByValue1 = false;
-        bool returnClassObjectByValue2 = false;
+        bool returnClassOrInterfaceObjectByValue1 = false;
+        bool returnClassOrInterfaceObjectByValue2 = false;
         std::unique_ptr<Cm::Core::Exception> exception1;
         std::unique_ptr<Cm::Core::Exception> exception2;
         FunctionMatch bestMatch1;
@@ -1517,9 +1517,9 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             if (fun1)
             {
                 type1 = fun1->GetReturnType();
-                if (type1->IsClassTypeSymbol())
+                if (type1->IsClassTypeSymbol() || type1->IsInterfaceTypeSymbol())
                 {
-                    returnClassObjectByValue1 = true;
+                    returnClassOrInterfaceObjectByValue1 = true;
                 }
                 firstArg.reset(arguments.RemoveFirst());
             }
@@ -1528,9 +1528,9 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         if (fun2)
         {
             type2 = fun2->GetReturnType();
-            if (type2->IsClassTypeSymbol())
+            if (type2->IsClassTypeSymbol() || type2->IsInterfaceTypeSymbol())
             {
-                returnClassObjectByValue2 = true;
+                returnClassOrInterfaceObjectByValue2 = true;
             }
         }
         if (fun1 && fun2)
@@ -1561,7 +1561,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             firstArgByRef = firstArgByRef1;
             generateVirtualCall = generateVirtualCall1;
             type = type1;
-            returnClassObjectByValue = returnClassObjectByValue1;
+            returnClassOrInterfaceObjectByValue = returnClassOrInterfaceObjectByValue1;
         }
         else if (fun2 && !fun1)
         {
@@ -1570,7 +1570,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
             firstArgByRef = firstArgByRef2;
             generateVirtualCall = generateVirtualCall2;
             type = type2;
-            returnClassObjectByValue = returnClassObjectByValue2;
+            returnClassOrInterfaceObjectByValue = returnClassOrInterfaceObjectByValue2;
         }
         else if (fun1 && fun2)
         {
@@ -1693,11 +1693,11 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
     functionCall->SetFunctionCallSid(functionCallSid);
     functionCall->SetFunction(fun);
     functionCall->SetType(type);
-    if (fun->ReturnsClassObjectByValue())
+    if (fun->ReturnsClassOrInterfaceObjectByValue())
     {
-        Cm::Sym::LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(type);
-        classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
-        functionCall->SetClassObjectResultVar(classObjectResultVar);
+        Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar = currentFunction->CreateTempLocalVariable(type);
+        classOrInterfaceObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
+        functionCall->SetClassOrInterfaceObjectResultVar(classOrInterfaceObjectResultVar);
     }
     if (generateVirtualCall)
     {
@@ -1711,7 +1711,7 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         }
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::genVirtualCall);
     }
-    if (returnClassObjectByValue)
+    if (returnClassOrInterfaceObjectByValue)
     {
         functionCall->SetFlag(Cm::BoundTree::BoundNodeFlags::argIsTemporary);
     }

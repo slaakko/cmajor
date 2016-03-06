@@ -126,7 +126,7 @@ std::string Replace(const std::string& s, const std::string& oldString, const st
 std::string HexEscape(char c)
 {
     std::stringstream s;
-    s << "\\x" << std::hex << int(c);
+    s << "\\x" << std::hex << int(static_cast<unsigned char>(c));
     return s.str();
 }
 
@@ -234,9 +234,12 @@ std::string ReadFile(const std::string& fileName)
     int start = 0;
     if (content.size() >= 3)
     {
-        if ((unsigned char)content[0] == (unsigned char)0xEF) ++start;
-        if ((unsigned char)content[1] == (unsigned char)0xBB) ++start;
-        if ((unsigned char)content[2] == (unsigned char)0xBF) ++start;
+        if (((unsigned char)content[0] == (unsigned char)0xEF) &&
+            ((unsigned char)content[1] == (unsigned char)0xBB) &&
+            ((unsigned char)content[2] == (unsigned char)0xBF))
+        {
+            start += 3;
+        }
     }
     return start == 0 ? content : content.substr(start);
 }

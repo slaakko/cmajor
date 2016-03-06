@@ -334,7 +334,7 @@ void FunctionEmitter::EndVisit(Cm::BoundTree::BoundFunction& boundFunction)
         Ir::Intf::LabelObject* retLabel = Cm::IrIntf::CreateNextLocalLabel();
         emitter->Own(retLabel);
         emitter->AddNextInstructionLabel(retLabel);
-        if (!returnType || returnType->IsVoidTypeSymbol() || boundFunction.GetFunctionSymbol()->ReturnsClassObjectByValue())
+        if (!returnType || returnType->IsVoidTypeSymbol() || boundFunction.GetFunctionSymbol()->ReturnsClassOrInterfaceObjectByValue())
         {
             emitter->Emit(Cm::IrIntf::Ret());
         }
@@ -456,7 +456,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundLocalVariable& boundLocalVariabl
     }
     Cm::Sym::TypeSymbol* type = boundLocalVariable.Symbol()->GetType();
     bool typeIsReferenceType = type->IsReferenceType() || type->IsRvalueRefType();
-    bool byRefOrClassType = boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || type->IsClassTypeSymbol();
+    bool byRefOrClassType = boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || 
+        type->IsClassTypeSymbol() || type->IsInterfaceTypeSymbol();
     if ((boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || boundLocalVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue)) && typeIsReferenceType)
     {
         byRefOrClassType = false; // already reference type
@@ -528,7 +529,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundMemberVariable& boundMemberVaria
     {
         Ir::Intf::Object* irObject = staticMemberVariableRepository.GetStaticMemberVariableIrObject(boundMemberVariable.Symbol());
         Cm::Sym::TypeSymbol* memberVariableType = boundMemberVariable.Symbol()->GetType();
-        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || memberVariableType->IsClassTypeSymbol())
+        if (boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::lvalue) || boundMemberVariable.GetFlag(Cm::BoundTree::BoundNodeFlags::argByRef) || 
+            memberVariableType->IsClassTypeSymbol() || memberVariableType->IsInterfaceTypeSymbol())
         {
             result->SetMainObject(irObject);
         }
@@ -723,8 +725,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
 {
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     Cm::Sym::FunctionSymbol* op = boundUnaryOp.GetFunction();
-    bool functionReturnsClassObjectByValue = op->ReturnsClassObjectByValue() && !op->IsBasicTypeOp();
-    if (functionReturnsClassObjectByValue)
+    bool functionReturnsClassOrInterfaceObjectByValue = op->ReturnsClassOrInterfaceObjectByValue() && !op->IsBasicTypeOp();
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
         result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     }
@@ -743,18 +745,18 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     }
     Ir::Intf::LabelObject* resultLabel = operandResult->GetLabel();
     result->Merge(operandResult);
-    Ir::Intf::Object* classObjectResultValue = nullptr;
-    if (functionReturnsClassObjectByValue)
+    Ir::Intf::Object* classOrInterfaceObjectResultValue = nullptr;
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        Cm::BoundTree::BoundLocalVariable classObjectResultVar(boundUnaryOp.SyntaxNode(), boundUnaryOp.GetClassObjectResultVar());
-        classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
-        classObjectResultVar.Accept(*this);
+        Cm::BoundTree::BoundLocalVariable classOrInterfaceObjectResultVar(boundUnaryOp.SyntaxNode(), boundUnaryOp.GetClassOrInterfaceObjectResultVar());
+        classOrInterfaceObjectResultVar.SetType(classOrInterfaceObjectResultVar.Symbol()->GetType());
+        classOrInterfaceObjectResultVar.Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> argResult = resultStack.Pop();
         if (!resultLabel)
         {
             resultLabel = argResult->GetLabel();
         }
-        classObjectResultValue = argResult->MainObject();
+        classOrInterfaceObjectResultValue = argResult->MainObject();
         result->Merge(argResult);
     }
     GenerateCall(op, boundUnaryOp.GetTraceCallInfo(), *result);
@@ -762,9 +764,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundUnaryOp& boundUnaryOp)
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundUnaryOp.GetType()), *result);
     }
-    if (functionReturnsClassObjectByValue)
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        result->SetMainObject(classObjectResultValue);
+        result->SetMainObject(classOrInterfaceObjectResultValue);
     }
     if (resultLabel)
     {
@@ -778,8 +780,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     std::shared_ptr<Cm::Core::GenResult> right = resultStack.Pop();
     std::shared_ptr<Cm::Core::GenResult> left = resultStack.Pop();
-    bool functionReturnsClassObjectByValue = boundBinaryOp.GetFunction()->ReturnsClassObjectByValue();
-    if (functionReturnsClassObjectByValue)
+    bool functionReturnsClassOrInterfaceObjectByValue = boundBinaryOp.GetFunction()->ReturnsClassOrInterfaceObjectByValue();
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
         result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     }
@@ -798,18 +800,18 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     }
     result->Merge(left);
     result->Merge(right);
-    Ir::Intf::Object* classObjectResultValue = nullptr;
-    if (functionReturnsClassObjectByValue)
+    Ir::Intf::Object* classOrInterfaceObjectResultValue = nullptr;
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        Cm::BoundTree::BoundLocalVariable classObjectResultVar(boundBinaryOp.SyntaxNode(), boundBinaryOp.GetClassObjectResultVar());
-        classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
-        classObjectResultVar.Accept(*this);
+        Cm::BoundTree::BoundLocalVariable classOrInterfaceObjectResultVar(boundBinaryOp.SyntaxNode(), boundBinaryOp.GetClassOrInterfaceObjectResultVar());
+        classOrInterfaceObjectResultVar.SetType(classOrInterfaceObjectResultVar.Symbol()->GetType());
+        classOrInterfaceObjectResultVar.Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> argResult = resultStack.Pop();
         if (!resultLabel)
         {
             resultLabel = argResult->GetLabel();
         }
-        classObjectResultValue = argResult->MainObject();
+        classOrInterfaceObjectResultValue = argResult->MainObject();
         result->Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* op = boundBinaryOp.GetFunction();
@@ -818,9 +820,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundBinaryOp& boundBinaryOp)
     {
         MakePlainValueResult(typeRepository.MakePlainType(boundBinaryOp.GetType()), *result);
     }
-    if (functionReturnsClassObjectByValue)
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        result->SetMainObject(classObjectResultValue);
+        result->SetMainObject(classOrInterfaceObjectResultValue);
     }
     if (resultLabel)
     {
@@ -893,8 +895,8 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         int x = 0;
     }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
-    bool functionReturnsClassObjectByValue = functionCall.GetFunction()->ReturnsClassObjectByValue();
-    if (functionReturnsClassObjectByValue)
+    bool functionReturnsClassOrInterfaceObjectByValue = functionCall.GetFunction()->ReturnsClassOrInterfaceObjectByValue();
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
         result->SetMainObject(typeRepository.GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::voidId)), typeRepository);
     }
@@ -917,10 +919,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         }
         result->Merge(argResult);
     }
-    Ir::Intf::Object* classObjectResultValue = nullptr;
-    if (functionReturnsClassObjectByValue)
+    Ir::Intf::Object* classOrInterfaceObjectResultValue = nullptr;
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        Cm::BoundTree::BoundLocalVariable classObjectResultVar(functionCall.SyntaxNode(), functionCall.GetClassObjectResultVar());
+        Cm::BoundTree::BoundLocalVariable classObjectResultVar(functionCall.SyntaxNode(), functionCall.GetClassOrInterfaceObjectResultVar());
         classObjectResultVar.SetType(classObjectResultVar.Symbol()->GetType());
         classObjectResultVar.Accept(*this);
         std::shared_ptr<Cm::Core::GenResult> argResult = resultStack.Pop();
@@ -928,7 +930,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
         {
             resultLabel = argResult->GetLabel();
         }
-        classObjectResultValue = argResult->MainObject();
+        classOrInterfaceObjectResultValue = argResult->MainObject();
         result->Merge(argResult);
     }
     Cm::Sym::FunctionSymbol* fun = functionCall.GetFunction();
@@ -999,9 +1001,9 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
     {
         MakePlainValueResult(typeRepository.MakePlainType(functionCall.GetType()), *result);
     }
-    if (functionReturnsClassObjectByValue)
+    if (functionReturnsClassOrInterfaceObjectByValue)
     {
-        result->SetMainObject(classObjectResultValue);
+        result->SetMainObject(classOrInterfaceObjectResultValue);
     }
     else if (functionCall.GetTemporary())
     {
@@ -1634,10 +1636,10 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
         bool resultSet = false;
         std::shared_ptr<Cm::Core::GenResult> retValResult = resultStack.Pop();
         Cm::Sym::FunctionSymbol* ctor = boundReturnStatement.Constructor();
-        bool returnsClassObjectByValue = currentFunction->GetFunctionSymbol()->ReturnsClassObjectByValue();
-        if (returnsClassObjectByValue)
+        bool returnsClassOrInterfaceObjectByValue = currentFunction->GetFunctionSymbol()->ReturnsClassOrInterfaceObjectByValue();
+        if (returnsClassOrInterfaceObjectByValue)
         {
-            result->SetMainObject(currentFunction->GetFunctionSymbol()->ClassObjectResultIrParam());
+            result->SetMainObject(currentFunction->GetFunctionSymbol()->ClassOrInterfaceObjectResultIrParam());
         }
         else if (boundReturnStatement.Temporary())
         {
@@ -1688,7 +1690,7 @@ void FunctionEmitter::Visit(Cm::BoundTree::BoundReturnStatement& boundReturnStat
             std::shared_ptr<Cm::Core::GenResult> exitResult = resultStack.Pop();
             compoundResult->Merge(exitResult);
         }
-        if (returnsClassObjectByValue)
+        if (returnsClassOrInterfaceObjectByValue)
         {
             emitter->Emit(Cm::IrIntf::Ret());
         }
@@ -3301,7 +3303,7 @@ void FunctionEmitter::GenerateLandingPadCode()
                 Cm::IrIntf::Assign(*emitter, Ir::Intf::GetFactory()->GetI32(), exCodeVariable, exCodeParam);
             }
             Cm::Sym::TypeSymbol* returnType = currentFunction->GetFunctionSymbol()->GetReturnType();
-            if (!returnType || returnType->IsVoidTypeSymbol() || currentFunction->GetFunctionSymbol()->ReturnsClassObjectByValue())
+            if (!returnType || returnType->IsVoidTypeSymbol() || currentFunction->GetFunctionSymbol()->ReturnsClassOrInterfaceObjectByValue())
             {
                 emitter->Emit(Cm::IrIntf::Ret());
             }

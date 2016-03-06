@@ -119,7 +119,7 @@ PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), speci
 }
 
 FunctionSymbol::FunctionSymbol(const Span& span_, const std::string& name_) : ContainerSymbol(span_, name_), returnType(nullptr), compileUnit(nullptr), flags(FunctionSymbolFlags::none), vtblIndex(-1),
-    itblIndex(-1), classObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), entrySymbol(nullptr), returnValueSymbol(nullptr)
+    itblIndex(-1), classOrInterfaceObjectResultIrParam(nullptr), mutexId(-1), overriddenFunction(nullptr), functionTemplate(nullptr), entrySymbol(nullptr), returnValueSymbol(nullptr)
 {
 }
 
@@ -172,9 +172,9 @@ void FunctionSymbol::SetReturnType(TypeSymbol* returnType_)
     returnType = returnType_;
 }
 
-bool FunctionSymbol::ReturnsClassObjectByValue() const
+bool FunctionSymbol::ReturnsClassOrInterfaceObjectByValue() const
 {
-    return returnType && returnType->IsClassTypeSymbol();
+    return returnType && (returnType->IsClassTypeSymbol() || returnType->IsInterfaceTypeSymbol());
 }
 
 ParameterSymbol* FunctionSymbol::ThisParameter() const

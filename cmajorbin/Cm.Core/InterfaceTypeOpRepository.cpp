@@ -63,12 +63,18 @@ void InterfaceObjectDefaultCtor::GenerateC(Emitter& emitter, GenResult& result)
     Ir::Intf::Object* mainObject = result.MainObject();
     Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", mainObject, 0, voidPtr);
     emitter.Own(obj);
-    obj->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        obj->SetDotMember();
+    }
     Ir::Intf::Object* nullPtr = voidPtr->CreateDefaultValue();
     Cm::IrIntf::Assign(emitter, voidPtr, nullPtr, obj);
     Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", mainObject, 1, voidPtr);
     emitter.Own(itab);
-    itab->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        itab->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, nullPtr, itab);
 }
 
@@ -125,18 +131,30 @@ void InterfaceObjectCopyCtor::GenerateC(Emitter& emitter, GenResult& result)
     Ir::Intf::Object* mainObject = result.MainObject();
     Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", mainObject, 0, voidPtr);
     emitter.Own(obj);
-    obj->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        obj->SetDotMember();
+    }
     Ir::Intf::Object* that = result.Arg1();
     Ir::Intf::MemberVar* thatObj = Cm::IrIntf::CreateMemberVar("obj", that, 0, voidPtr);
     emitter.Own(thatObj);
-    thatObj->SetDotMember();
+    if (!that->GetType()->IsPointerType())
+    {
+        thatObj->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, thatObj, obj);
     Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", mainObject, 1, voidPtr);
     emitter.Own(itab);
-    itab->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        itab->SetDotMember();
+    }
     Ir::Intf::MemberVar* thatItab = Cm::IrIntf::CreateMemberVar("itab", that, 1, voidPtr);
     emitter.Own(thatItab);
-    thatItab->SetDotMember();
+    if (!that->GetType()->IsPointerType())
+    {
+        thatItab->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, thatItab, itab);
 }
 
@@ -195,18 +213,30 @@ void InterfaceObjectCopyAssignment::GenerateC(Emitter& emitter, GenResult& resul
     Ir::Intf::Object* mainObject = result.MainObject();
     Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", mainObject, 0, voidPtr);
     emitter.Own(obj);
-    obj->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        obj->SetDotMember();
+    }
     Ir::Intf::Object* that = result.Arg1();
     Ir::Intf::MemberVar* thatObj = Cm::IrIntf::CreateMemberVar("obj", that, 0, voidPtr);
     emitter.Own(thatObj);
-    thatObj->SetDotMember();
+    if (!that->GetType()->IsPointerType())
+    {
+        thatObj->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, thatObj, obj);
     Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", mainObject, 1, voidPtr);
     emitter.Own(itab);
-    itab->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        itab->SetDotMember();
+    }
     Ir::Intf::MemberVar* thatItab = Cm::IrIntf::CreateMemberVar("itab", that, 1, voidPtr);
     emitter.Own(thatItab);
-    thatItab->SetDotMember();
+    if (!that->GetType()->IsPointerType())
+    {
+        thatItab->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, thatItab, itab);
 }
 
@@ -319,14 +349,20 @@ void InterfaceObjectOpEqual::GenerateC(Emitter& emitter, GenResult& result)
     emitter.Own(voidPtr);
     Ir::Intf::Object* leftObject = result.Arg1();
     Ir::Intf::MemberVar* leftObj = Cm::IrIntf::CreateMemberVar("obj", leftObject, 0, voidPtr);
-    leftObj->SetDotMember();
+    if (!leftObject->GetType()->IsPointerType())
+    {
+        leftObj->SetDotMember();
+    }
     emitter.Own(leftObj);
     Ir::Intf::Object* temp0 = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
     emitter.Own(temp0);
     Cm::IrIntf::Assign(emitter, voidPtr, leftObj, temp0);
     Ir::Intf::Object* rightObject = result.Arg2();
     Ir::Intf::MemberVar* rightObj = Cm::IrIntf::CreateMemberVar("obj", rightObject, 0, voidPtr);
-    rightObj->SetDotMember();
+    if (!rightObject->GetType()->IsPointerType())
+    {
+        rightObj->SetDotMember();
+    }
     emitter.Own(rightObj);
     Ir::Intf::Object* temp1 = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
     emitter.Own(temp1);
@@ -341,13 +377,19 @@ void InterfaceObjectOpEqual::GenerateC(Emitter& emitter, GenResult& result)
     emitter.Emit(Cm::IrIntf::Br(result0, nextLabel, falseLabel));
     emitter.AddNextInstructionLabel(nextLabel);
     Ir::Intf::MemberVar* leftItab = Cm::IrIntf::CreateMemberVar("itab", leftObject, 1, voidPtr);
-    leftItab->SetDotMember();
+    if (!leftObject->GetType()->IsPointerType())
+    {
+        leftItab->SetDotMember();
+    }
     emitter.Own(leftItab);
     Ir::Intf::Object* temp2 = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
     emitter.Own(temp2);
     Cm::IrIntf::Assign(emitter, voidPtr, leftItab, temp2);
     Ir::Intf::MemberVar* rightItab = Cm::IrIntf::CreateMemberVar("itab", rightObject, 1, voidPtr);
-    rightItab->SetDotMember();
+    if (!rightObject->GetType()->IsPointerType())
+    {
+        rightItab->SetDotMember();
+    }
     emitter.Own(rightItab);
     Ir::Intf::Object* temp3 = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
     emitter.Own(temp3);
@@ -563,7 +605,10 @@ void InterfaceObjectFromClassPtrCtor::GenerateC(Emitter& emitter, GenResult& res
     Ir::Intf::Object* mainObject = result.MainObject();
     Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", mainObject, 0, voidPtr);
     emitter.Own(obj);
-    obj->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        obj->SetDotMember();
+    }
     Ir::Intf::Object* objectPtr = result.Arg1();
     Ir::Intf::Type* interfacePtrType = Cm::IrIntf::Pointer(Type()->GetIrType(), 1);
     emitter.Own(interfacePtrType);
@@ -686,7 +731,10 @@ void InterfaceObjectFromClassPtrCtor::GenerateC(Emitter& emitter, GenResult& res
     Cm::IrIntf::Assign(emitter, voidPtr, itab, itabPtr);
     Ir::Intf::MemberVar* mainItab = Cm::IrIntf::CreateMemberVar("itab", mainObject, 1, voidPtr);
     emitter.Own(mainItab);
-    mainItab->SetDotMember();
+    if (!mainObject->GetType()->IsPointerType())
+    {
+        mainItab->SetDotMember();
+    }
     Cm::IrIntf::Assign(emitter, voidPtr, itabPtr, mainItab);
 }
 
