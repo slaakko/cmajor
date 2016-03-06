@@ -41,7 +41,7 @@ void CEmitter::WriteCompileUnitHeader(Cm::Util::CodeFormatter& codeFormatter)
     codeFormatter.WriteLine("typedef uint64_t ui64;");
     codeFormatter.WriteLine("struct irec_ { ui64 iid; void* itab; };");
     codeFormatter.WriteLine("typedef struct irec_ irec;");
-    codeFormatter.WriteLine("struct rtti_ { const char* class_name; ui64 class_id; irec* irectab; };");
+    codeFormatter.WriteLine("struct rtti_ { unsigned const char* class_name; ui64 class_id; irec* irectab; };");
     codeFormatter.WriteLine("typedef struct rtti_ rtti;");
 }
 

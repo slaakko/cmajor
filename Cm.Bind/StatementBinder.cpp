@@ -496,7 +496,8 @@ void ReturnStatementBinder::EndVisit(Cm::Ast::ReturnStatementNode& returnStateme
                 {
                     returnValue = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &returnStatementNode, returnValue, conversionFun, CurrentFunction());
                 }
-                if (returnValue->GetType()->IsClassTypeSymbol() && (returnType->IsReferenceType() || returnType->IsClassTypeSymbol()))
+                if ((returnValue->GetType()->IsClassTypeSymbol() || returnValue->GetType()->IsInterfaceTypeSymbol()) && 
+                    (returnType->IsReferenceType() || returnType->IsClassTypeSymbol() || returnType->IsInterfaceTypeSymbol()))
                 {
                     returnValue->SetFlag(Cm::BoundTree::BoundNodeFlags::argByRef);
                 }

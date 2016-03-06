@@ -843,12 +843,12 @@ void BoundDynamicTypeNameExpression::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundUnaryOp::BoundUnaryOp() : BoundExpression(nullptr), operand(nullptr), fun(nullptr), classObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
+BoundUnaryOp::BoundUnaryOp() : BoundExpression(nullptr), operand(nullptr), fun(nullptr), classOrInterfaceObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
 {
 }
 
 BoundUnaryOp::BoundUnaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* operand_) : 
-    BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
+    BoundExpression(syntaxNode_), operand(operand_), fun(nullptr), classOrInterfaceObjectResultVar(nullptr), argumentCategory(Cm::Core::ArgumentCategory::rvalue)
 {
 }
 
@@ -857,7 +857,7 @@ void BoundUnaryOp::Write(Cm::Sym::BcuWriter& writer)
     BoundExpression::Write(writer);
     writer.Write(operand.get());
     writer.Write(fun);
-    writer.Write(classObjectResultVar);
+    writer.Write(classOrInterfaceObjectResultVar);
     writer.Write(traceCallInfo.get());
     writer.GetBinaryWriter().Write(uint8_t(argumentCategory));
 }
@@ -880,7 +880,7 @@ void BoundUnaryOp::Read(Cm::Sym::BcuReader& reader)
     {
         if (t->IsLocalVariableSymbol())
         {
-            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+            classOrInterfaceObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
         }
         else
         {
@@ -913,12 +913,12 @@ void BoundUnaryOp::SetTraceCallInfo(TraceCallInfo* traceCallInfo_)
     traceCallInfo.reset(traceCallInfo_);
 }
 
-BoundBinaryOp::BoundBinaryOp() : BoundExpression(nullptr), left(nullptr), right(nullptr), fun(nullptr), classObjectResultVar(nullptr)
+BoundBinaryOp::BoundBinaryOp() : BoundExpression(nullptr), left(nullptr), right(nullptr), fun(nullptr), classOrInterfaceObjectResultVar(nullptr)
 {
 }
 
 BoundBinaryOp::BoundBinaryOp(Cm::Ast::Node* syntaxNode_, BoundExpression* left_, BoundExpression* right_) : BoundExpression(syntaxNode_), left(left_), right(right_), fun(nullptr), 
-    classObjectResultVar(nullptr)
+    classOrInterfaceObjectResultVar(nullptr)
 {
 }
 
@@ -928,7 +928,7 @@ void BoundBinaryOp::Write(Cm::Sym::BcuWriter& writer)
     writer.Write(left.get());
     writer.Write(right.get());
     writer.Write(fun);
-    writer.Write(classObjectResultVar);
+    writer.Write(classOrInterfaceObjectResultVar);
     writer.Write(traceCallInfo.get());
 }
 
@@ -959,7 +959,7 @@ void BoundBinaryOp::Read(Cm::Sym::BcuReader& reader)
     {
         if (t->IsLocalVariableSymbol())
         {
-            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+            classOrInterfaceObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
         }
         else
         {
@@ -1105,12 +1105,12 @@ void BoundFunctionGroup::SetType(Cm::Sym::TypeSymbol* type_)
     ownedTypeSymbol.reset(type_);
 }
 
-BoundFunctionCall::BoundFunctionCall() : BoundExpression(nullptr), arguments(), fun(nullptr), classObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
+BoundFunctionCall::BoundFunctionCall() : BoundExpression(nullptr), arguments(), fun(nullptr), classOrInterfaceObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
 {
 }
 
 BoundFunctionCall::BoundFunctionCall(Cm::Ast::Node* syntaxNode_, BoundExpressionList&& arguments_) : BoundExpression(syntaxNode_), arguments(std::move(arguments_)), fun(nullptr), 
-    classObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
+classOrInterfaceObjectResultVar(nullptr), functionCallSid(Cm::Sym::noSid)
 {
 }
 
@@ -1119,7 +1119,7 @@ void BoundFunctionCall::Write(Cm::Sym::BcuWriter& writer)
     BoundExpression::Write(writer);
     arguments.Write(writer);
     writer.Write(fun);
-    writer.Write(classObjectResultVar);
+    writer.Write(classOrInterfaceObjectResultVar);
     writer.Write(temporary.get());
     writer.Write(traceCallInfo.get());
     writer.Write(sidLiteral.get());
@@ -1144,7 +1144,7 @@ void BoundFunctionCall::Read(Cm::Sym::BcuReader& reader)
     {
         if (t->IsLocalVariableSymbol())
         {
-            classObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
+            classOrInterfaceObjectResultVar = static_cast<Cm::Sym::LocalVariableSymbol*>(t);
         }
         else
         {

@@ -341,7 +341,7 @@ Ir::Intf::Type* Double()
     return new DoubleType();
 }
 
-CharType::CharType() : Ir::Intf::Type("char")
+CharType::CharType() : Ir::Intf::Type("unsigned char")
 {
 }
 
@@ -402,7 +402,7 @@ ArrayType* Array(Ir::Intf::Type* itemType, int size)
     return new ArrayType(itemType, size);
 }
 
-StringType::StringType(int size_) : Type("char*"), size(size_)
+StringType::StringType(int size_) : Type("unsigned char*"), size(size_)
 {
 }
 

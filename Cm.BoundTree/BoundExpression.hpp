@@ -438,8 +438,8 @@ public:
     BoundExpression* Operand() const { return operand.get(); }
     BoundExpression* ReleaseOperand() { return operand.release(); }
     void Accept(Visitor& visitor) override;
-    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
-    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetClassOrInterfaceObjectResultVar(Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar_) { classOrInterfaceObjectResultVar = classOrInterfaceObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassOrInterfaceObjectResultVar() const { return classOrInterfaceObjectResultVar; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
     Cm::Core::ArgumentCategory GetArgumentCategory() const override { return argumentCategory; }
@@ -448,7 +448,7 @@ public:
 private:
     std::unique_ptr<BoundExpression> operand;
     Cm::Sym::FunctionSymbol* fun;
-    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
     Cm::Core::ArgumentCategory argumentCategory;
 };
@@ -467,15 +467,15 @@ public:
     void SetFunction(Cm::Sym::FunctionSymbol* fun_) { fun = fun_; }
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;
-    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
-    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetClassOrInterfaceObjectResultVar(Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar_) { classOrInterfaceObjectResultVar = classOrInterfaceObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassOrInterfaceObjectResultVar() const { return classOrInterfaceObjectResultVar; }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
     TraceCallInfo* GetTraceCallInfo() const { return traceCallInfo.get(); }
 private:
     std::unique_ptr<BoundExpression> left;
     std::unique_ptr<BoundExpression> right;
     Cm::Sym::FunctionSymbol* fun;
-    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
 };
 
@@ -533,8 +533,8 @@ public:
     Cm::Sym::FunctionSymbol* GetFunction() const { return fun; }
     void Accept(Visitor& visitor) override;
     BoundExpressionList& Arguments() { return arguments; }
-    void SetClassObjectResultVar(Cm::Sym::LocalVariableSymbol* classObjectResultVar_) { classObjectResultVar = classObjectResultVar_; }
-    Cm::Sym::LocalVariableSymbol* GetClassObjectResultVar() const { return classObjectResultVar; }
+    void SetClassOrInterfaceObjectResultVar(Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar_) { classOrInterfaceObjectResultVar = classOrInterfaceObjectResultVar_; }
+    Cm::Sym::LocalVariableSymbol* GetClassOrInterfaceObjectResultVar() const { return classOrInterfaceObjectResultVar; }
     void SetTemporary(BoundLocalVariable* temporary_) { temporary.reset(temporary_); }
     BoundLocalVariable* GetTemporary() const { return temporary.get(); }
     void SetTraceCallInfo(TraceCallInfo* traceCallInfo_);
@@ -546,7 +546,7 @@ public:
 private:
     BoundExpressionList arguments;
     Cm::Sym::FunctionSymbol* fun;
-    Cm::Sym::LocalVariableSymbol* classObjectResultVar;
+    Cm::Sym::LocalVariableSymbol* classOrInterfaceObjectResultVar;
     std::unique_ptr<BoundLocalVariable> temporary;
     std::unique_ptr<TraceCallInfo> traceCallInfo;
     uint32_t functionCallSid;

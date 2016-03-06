@@ -221,7 +221,7 @@ public:
     uint64_t BodySize() const { return persistentFunctionData->bodySize; }
     Cm::Ast::Specifiers GetSpecifiers() const { return persistentFunctionData->specifiers; }
     std::string CmlFilePath() const { return persistentFunctionData->cmlFilePath; }
-    bool ReturnsClassObjectByValue() const;
+    bool ReturnsClassOrInterfaceObjectByValue() const;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     const std::vector<Cm::Sym::TypeSymbol*>& TypeArguments() const { return typeArguments; }
     int Arity() const { return int(parameters.size()); }
@@ -241,8 +241,8 @@ public:
     void SetVtblIndex(int16_t vtblIndex_) { vtblIndex = vtblIndex_; }
     int16_t ItblIndex() const { return itblIndex; }
     void SetItblIndex(int16_t itblIndex_) { itblIndex = itblIndex_; }
-    Ir::Intf::Parameter* ClassObjectResultIrParam() const { return classObjectResultIrParam; }
-    void SetClassObjectResultIrParam(Ir::Intf::Parameter* classObjectResultIrParam_) { classObjectResultIrParam = classObjectResultIrParam_; }
+    Ir::Intf::Parameter* ClassOrInterfaceObjectResultIrParam() const { return classOrInterfaceObjectResultIrParam; }
+    void SetClassOrInterfaceObjectResultIrParam(Ir::Intf::Parameter* classOrInterfaceObjectResultIrParam_) { classOrInterfaceObjectResultIrParam = classOrInterfaceObjectResultIrParam_; }
     void SetTypeArguments(const std::vector<Cm::Sym::TypeSymbol*>& typeArguments_) { typeArguments = typeArguments_; }
     void Dump(CodeFormatter& formatter) override;
     FileScope* GetFileScope(ContainerScope* containerScope);
@@ -274,7 +274,7 @@ private:
     std::vector<TypeParameterSymbol*> typeParameters;
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
     Cm::Ast::CompileUnitNode* compileUnit;
-    Ir::Intf::Parameter* classObjectResultIrParam;
+    Ir::Intf::Parameter* classOrInterfaceObjectResultIrParam;
     std::unique_ptr<PersistentFunctionData> persistentFunctionData;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs;
     int mutexId;

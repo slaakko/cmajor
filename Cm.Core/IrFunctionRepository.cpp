@@ -115,8 +115,8 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
     }
     else
     {
-        bool returnsClassObjectByValue = function->ReturnsClassObjectByValue();
-        if (!returnsClassObjectByValue)
+        bool returnsClassOrInterfaceObjectByValue = function->ReturnsClassOrInterfaceObjectByValue();
+        if (!returnsClassOrInterfaceObjectByValue)
         {
             Cm::Sym::TypeSymbol* returnType = function->GetReturnType();
             if (returnType)
@@ -136,19 +136,19 @@ Ir::Intf::Function* IrFunctionRepository::CreateIrFunction(Cm::Sym::FunctionSymb
             irParameters.push_back(irParameter);
             irParameterTypes.push_back(irParameter->GetType()->Clone());
         }
-        if (returnsClassObjectByValue)
+        if (returnsClassOrInterfaceObjectByValue)
         {
             if (!function->GetReturnType()->IrTypeMade())
             {
                 function->GetReturnType()->MakeIrType();
             }
-            Ir::Intf::Type* classObjectResultParamType = Cm::IrIntf::Pointer(function->GetReturnType()->GetIrType(), 1);
-            Own(classObjectResultParamType);
-            Ir::Intf::Parameter* irClassObjectParameter = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetClassObjectResultParamName(), classObjectResultParamType);
-            Own(irClassObjectParameter);
-            irParameters.push_back(irClassObjectParameter);
-            irParameterTypes.push_back(classObjectResultParamType->Clone());
-            function->SetClassObjectResultIrParam(irClassObjectParameter);
+            Ir::Intf::Type* classOrInterfaceObjectResultParamType = Cm::IrIntf::Pointer(function->GetReturnType()->GetIrType(), 1);
+            Own(classOrInterfaceObjectResultParamType);
+            Ir::Intf::Parameter* irClassOrInterfaceObjectParameter = Cm::IrIntf::CreateParameter(Cm::IrIntf::GetClassObjectResultParamName(), classOrInterfaceObjectResultParamType);
+            Own(irClassOrInterfaceObjectParameter);
+            irParameters.push_back(irClassOrInterfaceObjectParameter);
+            irParameterTypes.push_back(classOrInterfaceObjectResultParamType->Clone());
+            function->SetClassOrInterfaceObjectResultIrParam(irClassOrInterfaceObjectParameter);
         }
         if (function->CanThrow())
         {
