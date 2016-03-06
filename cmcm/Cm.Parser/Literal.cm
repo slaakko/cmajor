@@ -464,8 +464,16 @@ namespace Cm.Parser
                 a1ActionParser->SetAction(ParsingAction(A1Action));
                 ActionParser* a2ActionParser = GetAction("A2");
                 a2ActionParser->SetAction(ParsingAction(A2Action));
+                ActionParser* a3ActionParser = GetAction("A3");
+                a3ActionParser->SetAction(ParsingAction(A3Action));
+                ActionParser* a4ActionParser = GetAction("A4");
+                a4ActionParser->SetAction(ParsingAction(A4Action));
                 NonterminalParser* sNonterminalParser = GetNonterminal("s");
                 sNonterminalParser->SetPostCall(PostCall(Posts));
+                NonterminalParser* wsNonterminalParser = GetNonterminal("ws");
+                wsNonterminalParser->SetPostCall(PostCall(Postws));
+                NonterminalParser* usNonterminalParser = GetNonterminal("us");
+                usNonterminalParser->SetPostCall(PostCall(Postus));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -479,6 +487,14 @@ namespace Cm.Parser
             {
                 context.r = string(matchBegin, matchEnd);
             }
+            public throw void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new WStringLiteralNode(span, context.fromws);
+            }
+            public throw void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new UStringLiteralNode(span, context.fromus);
+            }
             public throw void Posts(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
@@ -487,11 +503,29 @@ namespace Cm.Parser
                     context.froms = *cast<ValueObject<string>*>(froms_value.GetPtr());
                 }
             }
+            public throw void Postws(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromws_value = stack.Pop();
+                    context.fromws = *cast<ValueObject<string>*>(fromws_value.GetPtr());
+                }
+            }
+            public throw void Postus(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromus_value = stack.Pop();
+                    context.fromus = *cast<ValueObject<string>*>(fromus_value.GetPtr());
+                }
+            }
             private class Context
             {
                 public Node* value;
                 public string r;
                 public string froms;
+                public string fromws;
+                public string fromus;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -544,12 +578,12 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
+            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
+            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
             AddRuleLink(new RuleLink("ulong", this, "System.Text.Parsing.stdlib.ulong"));
             AddRuleLink(new RuleLink("hex_literal", this, "System.Text.Parsing.stdlib.hex_literal"));
-            AddRuleLink(new RuleLink("string", this, "System.Text.Parsing.stdlib.string"));
-            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
-            AddRuleLink(new RuleLink("bool", this, "System.Text.Parsing.stdlib.bool"));
             AddRuleLink(new RuleLink("char", this, "System.Text.Parsing.stdlib.char"));
+            AddRuleLink(new RuleLink("ureal", this, "System.Text.Parsing.stdlib.ureal"));
             AddRule(new LiteralRule("Literal", GetScope(),
                 new AlternativeParser(
                     new AlternativeParser(
@@ -612,19 +646,29 @@ namespace Cm.Parser
                     new NonterminalParser("c", "char", 0))));
             AddRule(new StringLiteralRule("StringLiteral", GetScope(),
                 new AlternativeParser(
-                    new ActionParser("A0",
-                        new NonterminalParser("s", "string", 0)),
-                    new ActionParser("A1",
-                        new SequenceParser(
-                            new CharParser('@'),
-                            new TokenParser(
+                    new AlternativeParser(
+                        new AlternativeParser(
+                            new ActionParser("A0",
+                                new NonterminalParser("s", "string", 0)),
+                            new ActionParser("A1",
                                 new SequenceParser(
-                                    new SequenceParser(
-                                        new CharParser('"'),
-                                        new ActionParser("A2",
-                                            new KleeneStarParser(
-                                                new CharSetParser("\"", true)))),
-                                    new CharParser('"'))))))));
+                                    new CharParser('@'),
+                                    new TokenParser(
+                                        new SequenceParser(
+                                            new SequenceParser(
+                                                new CharParser('"'),
+                                                new ActionParser("A2",
+                                                    new KleeneStarParser(
+                                                        new CharSetParser("\"", true)))),
+                                            new CharParser('"')))))),
+                        new SequenceParser(
+                            new CharParser('w'),
+                            new ActionParser("A3",
+                                new NonterminalParser("ws", "string", 0)))),
+                    new SequenceParser(
+                        new CharParser('u'),
+                        new ActionParser("A4",
+                            new NonterminalParser("us", "string", 0))))));
             AddRule(new NullLiteralRule("NullLiteral", GetScope(),
                 new ActionParser("A0",
                     new KeywordParser("null"))));

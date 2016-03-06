@@ -106,6 +106,10 @@ namespace Cm.Parser
                 a11ActionParser->SetAction(ParsingAction(A11Action));
                 ActionParser* a12ActionParser = GetAction("A12");
                 a12ActionParser->SetAction(ParsingAction(A12Action));
+                ActionParser* a13ActionParser = GetAction("A13");
+                a13ActionParser->SetAction(ParsingAction(A13Action));
+                ActionParser* a14ActionParser = GetAction("A14");
+                a14ActionParser->SetAction(ParsingAction(A14Action));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -157,6 +161,14 @@ namespace Cm.Parser
             }
             public throw void A12Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
+                context.value = new WCharNode(span);
+            }
+            public throw void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new UCharNode(span);
+            }
+            public throw void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
                 context.value = new VoidNode(span);
             }
             private class Context
@@ -184,31 +196,37 @@ namespace Cm.Parser
                                                     new AlternativeParser(
                                                         new AlternativeParser(
                                                             new AlternativeParser(
-                                                                new ActionParser("A0",
-                                                                    new KeywordParser("bool")),
-                                                                new ActionParser("A1",
-                                                                    new KeywordParser("sbyte"))),
-                                                            new ActionParser("A2",
-                                                                new KeywordParser("byte"))),
-                                                        new ActionParser("A3",
-                                                            new KeywordParser("short"))),
-                                                    new ActionParser("A4",
-                                                        new KeywordParser("ushort"))),
-                                                new ActionParser("A5",
-                                                    new KeywordParser("int"))),
-                                            new ActionParser("A6",
-                                                new KeywordParser("uint"))),
-                                        new ActionParser("A7",
-                                            new KeywordParser("long"))),
-                                    new ActionParser("A8",
-                                        new KeywordParser("ulong"))),
-                                new ActionParser("A9",
-                                    new KeywordParser("float"))),
-                            new ActionParser("A10",
-                                new KeywordParser("double"))),
-                        new ActionParser("A11",
-                            new KeywordParser("char"))),
-                    new ActionParser("A12",
+                                                                new AlternativeParser(
+                                                                    new AlternativeParser(
+                                                                        new ActionParser("A0",
+                                                                            new KeywordParser("bool")),
+                                                                        new ActionParser("A1",
+                                                                            new KeywordParser("sbyte"))),
+                                                                    new ActionParser("A2",
+                                                                        new KeywordParser("byte"))),
+                                                                new ActionParser("A3",
+                                                                    new KeywordParser("short"))),
+                                                            new ActionParser("A4",
+                                                                new KeywordParser("ushort"))),
+                                                        new ActionParser("A5",
+                                                            new KeywordParser("int"))),
+                                                    new ActionParser("A6",
+                                                        new KeywordParser("uint"))),
+                                                new ActionParser("A7",
+                                                    new KeywordParser("long"))),
+                                            new ActionParser("A8",
+                                                new KeywordParser("ulong"))),
+                                        new ActionParser("A9",
+                                            new KeywordParser("float"))),
+                                    new ActionParser("A10",
+                                        new KeywordParser("double"))),
+                                new ActionParser("A11",
+                                    new KeywordParser("char"))),
+                            new ActionParser("A12",
+                                new KeywordParser("wchar"))),
+                        new ActionParser("A13",
+                            new KeywordParser("uchar"))),
+                    new ActionParser("A14",
                         new KeywordParser("void")))));
         }
     }
