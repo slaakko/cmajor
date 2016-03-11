@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -143,7 +143,7 @@ namespace Cm.Sym
     public class FunctionSymbol : ContainerSymbol
     {
         public nothrow FunctionSymbol(const Span& span_, const string& name_) : 
-            base(span_, name_), returnType(null), entrySymbol(null), returnValueSymbol(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), mutexId(-1), 
+            base(span_, name_), returnType(null), entrySymbol(null), returnValueSymbol(null), compileUnit(null), flags(FunctionSymbolFlags.none), vtblIndex(-1), itblIndex(-1), mutexId(-1), 
             overriddenFunction(null), functionTemplate(null), classObjectResultIrParam(null)
         {
         }
@@ -175,6 +175,69 @@ namespace Cm.Sym
         public nothrow void SetGroupName(const string& groupName_)
         {
             groupName = groupName_;
+        }
+        public string ParsingName() const
+        {
+            string parsingName;
+            int startParamIndex = 0;
+            if (IsMemberFunctionSymbol())
+            {
+                if (!IsStatic())
+                {
+                    startParamIndex = 1;
+                }
+                Symbol* parent = Parent();
+                TypeSymbol* parentType  = null;
+                if (parent is ClassTypeSymbol* || parent is InterfaceTypeSymbol*)
+                {
+                    parentType = cast<TypeSymbol*>(parent);
+                }
+                else
+                {
+                    throw Exception("class or interface type expected");
+                }
+                if (IsConstructor())
+                {
+                    parsingName.Append(parentType->Name());
+                }
+                else if (IsDestructor())
+                {
+                    parsingName.Append('~').Append(parentType->Name());
+                }
+                else
+                {
+                    parsingName.Append(groupName);
+                }
+            }
+            else
+            {
+                parsingName.Append(groupName);
+            }
+            parsingName.Append('(');
+            int n = parameters.Count();
+            for (int i = startParamIndex; i < n; ++i)
+            {
+                if (i > startParamIndex)
+                {
+                    parsingName.Append(", ");
+                }
+                ParameterSymbol* param = parameters[i];
+                parsingName.Append(param->GetType()->FullName());
+            }
+            parsingName.Append(')');
+            if (IsConst())
+            {
+                parsingName.Append(" const");
+            }
+            return parsingName;
+        }
+        public bool IsConst() const
+        {
+            if (IsMemberFunctionSymbol() && !parameters.IsEmpty()) 
+            {
+                if (parameters[0]->GetType()->IsConstType()) return true;
+            }
+            return false;
         }
         public nothrow inline bool IsFunctionTemplateSpecialization() const 
         { 
@@ -455,6 +518,7 @@ namespace Cm.Sym
             flags = cast<FunctionSymbolFlags>(reader.GetBinaryReader().ReadUInt());
             groupName = reader.GetBinaryReader().ReadString();
             vtblIndex = reader.GetBinaryReader().ReadShort();
+            itblIndex = reader.GetBinaryReader().ReadShort();
             bool justSymbol = JustSymbol();
             if (IsFunctionTemplate() && !justSymbol)
             {
@@ -526,6 +590,7 @@ namespace Cm.Sym
             writer.GetBinaryWriter().Write(uint(flags));
             writer.GetBinaryWriter().Write(groupName);
             writer.GetBinaryWriter().Write(vtblIndex);
+            writer.GetBinaryWriter().Write(itblIndex);           
             if (IsFunctionTemplate() && !justSymbol)
             {
                 SymbolTable& symbolTable = writer.GetSymbolTable();
@@ -709,6 +774,14 @@ namespace Cm.Sym
         public nothrow inline void SetVtblIndex(short vtblIndex_)
         {
             vtblIndex = vtblIndex_;
+        }
+        public nothrow inline short ItblIndex() const
+        {
+            return itblIndex;
+        }
+        public nothrow inline void SetItblIndex(short itblIndex_)
+        {
+            itblIndex = itblIndex_;
         }
         public nothrow inline void SetOverriddenFunction(FunctionSymbol* overriddenFunction_)
         {
@@ -1034,9 +1107,9 @@ namespace Cm.Sym
         {
             flags = cast<FunctionSymbolFlags>(flags & ~flag);
         }
-        public nothrow inline bool ReturnsClassObjectByValue() const
+        public nothrow inline bool ReturnsClassOrInterfaceObjectByValue() const
         {
-            return returnType != null && (returnType is ClassTypeSymbol*);
+            return returnType != null && ((returnType is ClassTypeSymbol*) || (returnType is InterfaceTypeSymbol*));
         }
         public nothrow inline Ir.Intf.Parameter* ClassObjectResultIrParam() const
         {
@@ -1075,6 +1148,7 @@ namespace Cm.Sym
         private List<TypeParameterSymbol*> typeParameters;
         private List<TypeSymbol*> typeArguments;
         private short vtblIndex;
+        private short itblIndex;
         private Cm.Ast.CompileUnitNode* compileUnit;
         private int mutexId;
         private FunctionSymbol* overriddenFunction;

@@ -660,6 +660,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.WCharValue>); 
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.UCharValue>); 
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ShortValue>);
@@ -705,6 +707,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.WCharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.UCharValue>);
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ShortValue>);
@@ -743,6 +747,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.WCharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.UCharValue>);
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ShortValue>);
@@ -781,6 +787,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.WCharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.UCharValue>);
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ShortValue>);
@@ -819,6 +827,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.WCharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.UCharValue>);
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ShortValue>);
@@ -857,6 +867,8 @@ namespace Cm.Bind
             delegates = DefaultBinaryDelegates();
             delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.BoolValue>);
             delegates[cast<int>(Cm.Sym.ValueType.charValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.CharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.wcharValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.WCharValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ucharValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.UCharValue>);
             delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.SByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ByteValue>);
             delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ShortValue>);

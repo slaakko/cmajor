@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -288,6 +288,9 @@ namespace Cm.Build
         Cm.Sym.ClassCounter classCounter;
         Cm.Sym.ClassCounter.SetInstance(&classCounter);
         ReadNextCid();
+        Cm.Sym.InterfaceCounter interfaceCounter;
+        Cm.Sym.InterfaceCounter.SetInstance(&interfaceCounter);
+        ReadNextIid();
         List<string> assemblyFilePaths;
         assemblyFilePaths.Add(project->AssemblyFilePath());
         List<string> clibs;
@@ -418,6 +421,8 @@ namespace Cm.Build
         }
         WriteNextCid();
         Cm.Sym.ClassCounter.SetInstance(null);
+        WriteNextIid();
+        Cm.Sym.InterfaceCounter.SetInstance(null);
         Cm.Sym.MutexTable.SetInstance(null);
         Cm.Sym.ExceptionTable.SetInstance(null);
         if (!quiet)
@@ -508,6 +513,35 @@ namespace Cm.Build
         nextCidFile << nextCid;
     }
     
+    public void ReadNextIid()
+    {
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        ulong nextIid = 0u;
+        string nextIidFileName = Cm.IrIntf.GetBackendStr();
+        nextIidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.iid");
+        string nextIidPath = Path.Combine(libraryDirectories.Front(), nextIidFileName);
+        if (FileExists(nextIidPath))
+        {
+            InputFileStream nextIidFile(nextIidPath);
+            string nextIidStr = nextIidFile.ReadToEnd();
+            nextIid = ParseULong(nextIidStr);
+        }
+        Cm.Sym.InterfaceCounter.Instance()->SetNextIid(nextIid);
+    }
+
+    public void WriteNextIid()
+    {
+        List<string> libraryDirectories;
+        GetLibraryDirectories(libraryDirectories);
+        ulong nextIid = Cm.Sym.InterfaceCounter.Instance()->GetNextIid();
+        string nextIidFileName = Cm.IrIntf.GetBackendStr();
+        nextIidFileName.Append('.').Append(Cm.Core.GetConfig()).Append(".next.iid");
+        string nextIidPath = Path.Combine(libraryDirectories.Front(), nextIidFileName);
+        OutputFileStream nextIidFile(nextIidPath);
+        nextIidFile << nextIid;
+    }
+    
     public HashMap<string, ulong> ReadCidMap(const string& cidFilePath)
     {
         HashMap<string, ulong> cidMap;
@@ -534,6 +568,33 @@ namespace Cm.Build
             cidFile << c.first << ":" << c.second << endl();
         }
     }
+
+    public HashMap<string, ulong> ReadIidMap(const string& iidFilePath)
+    {
+        HashMap<string, ulong> iidMap;
+        if (FileExists(iidFilePath))
+        {
+            InputFileStream iidFile(iidFilePath);
+            string line = iidFile.ReadLine();
+            List<string> components = line.Split(':');
+            if (components.Count() >= 2)
+            {
+                string interfaceName = components[0];
+                ulong iid = ParseULong(components[1]);
+                iidMap[interfaceName] = iid;
+            }
+        }
+        return iidMap;
+    }
+    
+    public void WriteIidMap(const string& iidFilePath, const HashMap<string, ulong>& iidMap)
+    {
+        OutputFileStream iidFile(iidFilePath);
+        for (const Pair<string, ulong>& c : iidMap)
+        {
+            iidFile << c.first << ":" << c.second << endl();
+        }
+    }
     
     public void BuildSymbolTable(Cm.Sym.SymbolTable& symbolTable, bool rebuild, const Cm.Ast.SyntaxTree& syntaxTree, Cm.Ast.Project* project, 
         const List<string>& libraryDirectories, List<string>& assemblyFilePaths, List<string>& cLibraryFilePaths, List<string>& allReferenceFilePaths, List<string>& allDebugInfoFilePaths,
@@ -543,7 +604,7 @@ namespace Cm.Build
         ReadNextSid(symbolTable);
         ImportModules(symbolTable, project, libraryDirectories, assemblyFilePaths, cLibraryFilePaths, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable,
             allLibrarySearchPaths);
-        symbolTable.InitVirtualFunctionTables();
+        symbolTable.InitVirtualFunctionTablesAndInterfaceTables();
         for (const UniquePtr<Cm.Ast.CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
         {
             HashMap<string, ulong> cidMap;
@@ -552,10 +613,17 @@ namespace Cm.Build
             {
                 cidMap = ReadCidMap(cidFilePath);
             }
+            HashMap<string, ulong> iidMap;
+            string iidFilePath = GetFullPath(Path.Combine(project->OutputBasePath(), Path.ChangeExtension(Path.GetFileName(compileUnit->FilePath()), ".iid")));
+            if (!rebuild)
+            {
+                iidMap = ReadIidMap(iidFilePath);
+            }
             Cm.Sym.DeclarationVisitor declarationVisitor(symbolTable);
             declarationVisitor.SetCidMap(&cidMap);
             compileUnit->Accept(declarationVisitor);
             WriteCidMap(cidFilePath, cidMap);
+            WriteIidMap(iidFilePath, iidMap);
         }
     }
     
@@ -958,6 +1026,10 @@ namespace Cm.Build
                 boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm.Bind.ClassDelegateTypeOpRepository(*boundCompileUnit));
                 boundCompileUnit->SetArrayTypeOpRepository(new Cm.Bind.ArrayTypeOpRepository(*boundCompileUnit));
                 boundCompileUnit->AddFileScope(fileScopes[index].Release());
+                if (project->Name() != "os" && project->Name() != "support")
+                {
+                    boundCompileUnit->ClassTemplateRepository().AutoBindTemplates();
+                }
                 Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
                 if (boundCompileUnit->HasGotos())
                 {
@@ -1044,14 +1116,16 @@ namespace Cm.Build
     {
         if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
         {
-            Cm.Emit.LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository(),
+            Cm.Emit.LlvmEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
+                boundCompileUnit.IrInterfaceTypeRepository(), boundCompileUnit.StringRepository(),
                 boundCompileUnit.ExternalConstantRepository());
             // emitter.SetTpGraph(tpGraph); todo
             boundCompileUnit.Accept(emitter);
         }
         else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
         {
-            Cm.Emit.CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), boundCompileUnit.StringRepository(),
+            Cm.Emit.CEmitter emitter(boundCompileUnit.IrFilePath(), typeRepository, boundCompileUnit.IrFunctionRepository(), boundCompileUnit.IrClassTypeRepository(), 
+                boundCompileUnit.IrInterfaceTypeRepository(), boundCompileUnit.StringRepository(),
                 boundCompileUnit.ExternalConstantRepository());
             // emitter.SetTpGraph(tpGraph); todo
             boundCompileUnit.Accept(emitter);

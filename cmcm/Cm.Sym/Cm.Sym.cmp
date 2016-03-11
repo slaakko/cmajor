@@ -27,6 +27,8 @@ source <Factory.cm>;
 source <FunctionGroupSymbol.cm>;
 source <FunctionSymbol.cm>;
 source <GlobalFlags.cm>;
+source <InterfaceCounter.cm>;
+source <InterfaceTypeSymbol.cm>;
 source <LocalVariableSymbol.cm>;
 source <MemberVariableSymbol.cm>;
 source <Module.cm>;

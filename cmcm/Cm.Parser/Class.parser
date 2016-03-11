@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -34,16 +34,17 @@ namespace Cm.Parser
         
         Class(ParsingContext* ctx, CompileUnitNode* compileUnit) : ClassNode*
             ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
-                TemplateParameterList(ctx, value)? Inheritance(ctx, value)?
+                TemplateParameterList(ctx, value)? InheritanceAndImplIntfs(ctx, value)?
                 (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
             ;
             
-        Inheritance(ParsingContext* ctx, ClassNode* cls)
-            ::= ':'{ ctx->BeginParsingTypeExpr(); }
-                BaseClassTypeExpr(ctx)!{ cls->SetBaseClassTypeExpr(BaseClassTypeExpr); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }
+        InheritanceAndImplIntfs(ParsingContext* ctx, ClassNode* cls)
+            ::= ':'
+                (empty{ ctx->BeginParsingTypeExpr(); }
+                BaseClassTypeExprOrImplIntf(ctx)!{ cls->AddBaseClassOrImplIntfTypeExpr(BaseClassTypeExprOrImplIntf); ctx->EndParsingTypeExpr(); } / { ctx->EndParsingTypeExpr(); }) % ','
             ;
             
-        BaseClassTypeExpr(ParsingContext* ctx) : Node*
+        BaseClassTypeExprOrImplIntf(ParsingContext* ctx) : Node*
             ::= TemplateId(ctx){ value = TemplateId; }
             |   QualifiedId{ value = QualifiedId; }
             ;

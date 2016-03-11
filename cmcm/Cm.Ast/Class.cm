@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -35,9 +35,9 @@ namespace Cm.Ast
                     clone->AddTemplateParameter(cast<TemplateParameterNode*>(templateParam->Clone(cloneContext)));
                 }
             }
-            if (!baseClassTypeExpr.IsNull())
+            for (const UniquePtr<Node>& baseClassOrImplIntfTypeExpr : baseClassOrImplIntfTypeExprs)
             {
-                clone->SetBaseClassTypeExpr(baseClassTypeExpr->Clone(cloneContext));
+                clone->AddBaseClassOrImplIntfTypeExpr(baseClassOrImplIntfTypeExpr->Clone(cloneContext));
             }
             if (!constraint.IsNull())
             {
@@ -58,17 +58,17 @@ namespace Cm.Ast
         {
             return templateParameters;
         }
-        public nothrow void SetBaseClassTypeExpr(Node* baseClassTypeExpr_)
+        public void AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr)
         {
-            baseClassTypeExpr.Reset(baseClassTypeExpr_);
-            if (!baseClassTypeExpr.IsNull())
+            if (baseClassOrImplIntfTypeExpr != null)
             {
-                baseClassTypeExpr->SetParent(this);
+                baseClassOrImplIntfTypeExprs.Add(baseClassOrImplIntfTypeExpr);
+                baseClassOrImplIntfTypeExpr->SetParent(this);
             }
         }
-        public nothrow inline Node* BaseClassTypeExpr() const
+        public nothrow inline const NodeList<Node>& BaseClassOrImplIntfTypeExprs() const
         {
-            return baseClassTypeExpr.GetPtr();
+            return baseClassOrImplIntfTypeExprs;
         }
         public nothrow void SetConstraint(WhereConstraintNode* constraint_)
         {
@@ -123,11 +123,10 @@ namespace Cm.Ast
             id->SetParent(this);
             templateParameters.Read(reader);
             templateParameters.SetParent(this);
-            bool hasBaseClass = reader.GetBinaryReader().ReadBool();
-            if (hasBaseClass)
+            int numBaseClassOrImplIntfTypeExprs = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < numBaseClassOrImplIntfTypeExprs; ++i)
             {
-                baseClassTypeExpr.Reset(reader.ReadNode());
-                baseClassTypeExpr->SetParent(this);
+                AddBaseClassOrImplIntfTypeExpr(reader.ReadNode());
             }
             bool hasConstraint = reader.GetBinaryReader().ReadBool();
             if (hasConstraint)
@@ -143,11 +142,11 @@ namespace Cm.Ast
             writer.Write(specifiers);
             writer.Write(id.GetPtr());
             templateParameters.Write(writer);
-            bool hasBaseClass = !baseClassTypeExpr.IsNull();
-            writer.GetBinaryWriter().Write(hasBaseClass);
-            if (hasBaseClass)
+            int numBaseClassOrImplIntfTypeExprs = baseClassOrImplIntfTypeExprs.Count();
+            writer.GetBinaryWriter().Write(numBaseClassOrImplIntfTypeExprs);
+            for (const UniquePtr<Node>& baseClassOrImplIntfTypeExpr : baseClassOrImplIntfTypeExprs)
             {
-                writer.Write(baseClassTypeExpr.GetPtr());
+                writer.Write(baseClassOrImplIntfTypeExpr.GetPtr());
             }
             bool hasConstraint = !constraint.IsNull();
             writer.GetBinaryWriter().Write(hasConstraint);
@@ -170,7 +169,7 @@ namespace Cm.Ast
         private Specifiers specifiers;
         private UniquePtr<IdentifierNode> id;
         private NodeList<TemplateParameterNode> templateParameters;
-        private UniquePtr<Node> baseClassTypeExpr;
+        private NodeList<Node> baseClassOrImplIntfTypeExprs;
         private UniquePtr<WhereConstraintNode> constraint;
         private NodeList<Node> members;
         private CompileUnitNode* compileUnit;

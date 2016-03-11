@@ -279,6 +279,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     typeAndConceptSymbols.insert(SymbolType::floatSymbol);
     typeAndConceptSymbols.insert(SymbolType::doubleSymbol);
     typeAndConceptSymbols.insert(SymbolType::classSymbol);
+    typeAndConceptSymbols.insert(SymbolType::interfaceTypeSymbol);
     typeAndConceptSymbols.insert(SymbolType::delegateSymbol);
     typeAndConceptSymbols.insert(SymbolType::classDelegateSymbol);
     typeAndConceptSymbols.insert(SymbolType::enumTypeSymbol);

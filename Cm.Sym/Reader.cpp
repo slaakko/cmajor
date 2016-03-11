@@ -163,9 +163,9 @@ Symbol* Reader::ReadSymbol()
         if (symbol->IsClassTypeSymbol())
         {
             ClassTypeSymbol* classTypeSymbol = static_cast<ClassTypeSymbol*>(symbol);
-            if (classTypeSymbol->IsVirtual())
+            if (classTypeSymbol->IsVirtual() || !classTypeSymbol->ImplementedInterfaces().empty())
             {
-                initVTableSet.insert(classTypeSymbol);
+                initVTableAndITableSet.insert(classTypeSymbol);
                 if (fetchCidForVirtualClasses)
                 {
                     uint64_t cid = symbolTable.GetVirtualClassCid(classTypeSymbol->FullName());
@@ -190,10 +190,11 @@ void Reader::MakeIrTypes()
     }
 }
 
-void Reader::InitVTables()
+void Reader::InitVTablesAndITables()
 {
-    for (ClassTypeSymbol* classType : initVTableSet)
+    for (ClassTypeSymbol* classType : initVTableAndITableSet)
     {
+        classType->InitItbls();
         classType->InitVtbl();
     }
 }

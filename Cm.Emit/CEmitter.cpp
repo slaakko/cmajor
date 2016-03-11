@@ -83,8 +83,8 @@ void CEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
     {
         tdfsTypes.push_back(tdf.get());
     }
-    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
     IrInterfaceTypeRepository().Write(CodeFormatter());
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
     std::unordered_set<std::string> externalFunctionNames;
     std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())

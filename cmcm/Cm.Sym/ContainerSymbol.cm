@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -136,11 +136,11 @@ namespace Cm.Sym
                 }
             }
         }
-        public override void InitVirtualFunctionTables()
+        public override void InitVirtualFunctionTablesAndInterfaceTables()
         {
             for (Symbol* symbol : symbols)
             {
-                symbol->InitVirtualFunctionTables();
+                symbol->InitVirtualFunctionTablesAndInterfaceTables();
             }
         }
         private FunctionGroupSymbol* MakeFunctionGroupSymbol(const string& groupName, const Span& span)

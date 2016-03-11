@@ -18,30 +18,45 @@ using System.Support;
 
 namespace System.IO
 {
-    public nothrow bool CmUnicodeInputEnvVarIs0()
+    public nothrow bool CmUnicodeStdInEnvVarIs0()
     {
-        string cmUnicodeInputEnvVarValue;
-        char* cmUnicodeInputEnvVar = get_environment_variable("CM_UNICODE_INPUT");
-        if (cmUnicodeInputEnvVar != null)
+        string cmUnicodeStdInEnvVarValue;
+        char* cmUnicodeStdInEnvVar = get_environment_variable("CM_UNICODE_STDIN");
+        if (cmUnicodeStdInEnvVar != null)
         {
-            cmUnicodeInputEnvVarValue = cmUnicodeInputEnvVar;
+            cmUnicodeStdInEnvVarValue = cmUnicodeStdInEnvVar;
         }
-        if (cmUnicodeInputEnvVarValue == "0")
+        if (cmUnicodeStdInEnvVarValue == "0")
         {
             return true;
         }
         return false;
     }
     
-    public nothrow bool CmUnicodeOutputEnvVarIs0()
+    public nothrow bool CmUnicodeStdOutEnvVarIs0()
     {
-        string cmUnicodeOutputEnvVarValue;
-        char* cmUnicodeOutputEnvVar = get_environment_variable("CM_UNICODE_OUTPUT");
-        if (cmUnicodeOutputEnvVar != null)
+        string cmUnicodeStdOutEnvVarValue;
+        char* cmUnicodeStdOutEnvVar = get_environment_variable("CM_UNICODE_STDOUT");
+        if (cmUnicodeStdOutEnvVar != null)
         {
-            cmUnicodeOutputEnvVarValue = cmUnicodeOutputEnvVar;
+            cmUnicodeStdOutEnvVarValue = cmUnicodeStdOutEnvVar;
         }
-        if (cmUnicodeOutputEnvVarValue == "0")
+        if (cmUnicodeStdOutEnvVarValue == "0")
+        {
+            return true;
+        }
+        return false;
+    }
+    
+    public nothrow bool CmUnicodeStdErrEnvVarIs0()
+    {
+        string cmUnicodeStdErrEnvVarValue;
+        char* cmUnicodeStdErrEnvVar = get_environment_variable("CM_UNICODE_STDERR");
+        if (cmUnicodeStdErrEnvVar != null)
+        {
+            cmUnicodeStdErrEnvVarValue = cmUnicodeStdErrEnvVar;
+        }
+        if (cmUnicodeStdErrEnvVarValue == "0")
         {
             return true;
         }
@@ -202,7 +217,7 @@ namespace System.IO
 #if (WINDOWS)            
             while (!endOfStream)
             {
-                if (handle == 0 && !CmUnicodeInputEnvVarIs0())
+                if (handle == 0 && !CmUnicodeStdInEnvVarIs0())
                 {
                     ws = read_unicode_line();
                     if (ws != null)
@@ -444,7 +459,7 @@ namespace System.IO
             int result = 0;
             string reason;
 #if (WINDOWS)
-            if ((handle == 1 || handle == 2) && !CmUnicodeOutputEnvVarIs0())
+            if (handle == 1 && !CmUnicodeStdOutEnvVarIs0() || handle == 2 && !CmUnicodeStdErrEnvVarIs0())
             {
                 ws = System.Unicode.ToUtf16(s);
                 print_unicode_string(handle, ws.Chars());
@@ -473,7 +488,7 @@ namespace System.IO
             int result = 0;
             string reason;
 #if (WINDOWS)
-            if ((handle == 1 || handle == 2) && !CmUnicodeOutputEnvVarIs0())
+            if (handle == 1 && !CmUnicodeStdOutEnvVarIs0() || handle == 2 && !CmUnicodeStdErrEnvVarIs0())
             {
                 ws = System.Unicode.ToUtf16(s);
                 print_unicode_string(handle, ws.Chars());

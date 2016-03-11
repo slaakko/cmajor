@@ -1,0 +1,85 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Ast
+{
+    public class InterfaceNode : Node
+    {
+        public nothrow InterfaceNode(const Span& span_) : base(span_), compileUnit(null)
+        {
+        }
+        public nothrow InterfaceNode(const Span& span_, Specifiers specifiers_, IdentifierNode* id_) : base(span_), specifiers(specifiers_), id(id_), compileUnit(null)
+        {
+        }
+        public nothrow override NodeType GetNodeType() const 
+        {
+            return NodeType.interfaceNode;
+        }
+        public void AddMember(Node* member)
+        {
+            member->SetParent(this);
+            members.Add(member);
+        }
+        public override Node* Clone(CloneContext& cloneContext) const
+        {
+            InterfaceNode* clone = new InterfaceNode(GetSpan(), specifiers, cast<IdentifierNode*>(id->Clone(cloneContext)));
+            for (const UniquePtr<Node>& member : members)
+            {
+                clone->AddMember(member->Clone(cloneContext));
+            }
+            return clone;
+        }
+        public override void Read(Reader& reader)
+        {
+            specifiers = reader.ReadSpecifiers();
+            id.Reset(reader.ReadIdentifierNode());
+            id->SetParent(this);
+            members.Read(reader);
+            members.SetParent(this);
+        }
+        public override void Write(Writer& writer)
+        {
+            writer.Write(specifiers);
+            writer.Write(id.GetPtr());
+            members.Write(writer);
+        }
+        public nothrow inline Specifiers GetSpecifiers() const
+        {
+            return specifiers;
+        }
+        public nothrow inline IdentifierNode* Id() const
+        {
+            return id.GetPtr();
+        }
+        public nothrow inline void SetCompileUnit(CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
+        }
+        public nothrow inline CompileUnitNode* GetCompileUnit() const
+        {
+            return compileUnit;
+        }
+        public override void Accept(Visitor& visitor)
+        {
+            visitor.BeginVisit(*this);
+            if (!visitor.SkipContent())
+            {
+                members.Accept(visitor);
+            }
+            visitor.EndVisit(*this);
+        }
+        private Specifiers specifiers;
+        private UniquePtr<IdentifierNode> id;
+        private NodeList<Node> members;
+        private CompileUnitNode* compileUnit;
+    }
+}

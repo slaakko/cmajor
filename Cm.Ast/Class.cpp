@@ -35,12 +35,12 @@ void ClassNode::AddTemplateParameter(TemplateParameterNode* templateParameter)
     templateParameters.Add(templateParameter);
 }
 
-void ClassNode::AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr_)
+void ClassNode::AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr)
 {
-    if (baseClassOrImplIntfTypeExpr_)
+    if (baseClassOrImplIntfTypeExpr)
     {
-        baseClassOrImplIntfTypeExprs.push_back(std::unique_ptr<Node>(baseClassOrImplIntfTypeExpr_));
-        baseClassOrImplIntfTypeExpr_->SetParent(this);
+        baseClassOrImplIntfTypeExprs.Add(baseClassOrImplIntfTypeExpr);
+        baseClassOrImplIntfTypeExpr->SetParent(this);
     }
 }
 
@@ -111,7 +111,7 @@ void ClassNode::Write(Writer& writer)
     writer.Write(specifiers);
     writer.Write(id.get());
     templateParameters.Write(writer);
-    int numBaseClassOrImplIntfTypeExprs = int(baseClassOrImplIntfTypeExprs.size());
+    int numBaseClassOrImplIntfTypeExprs = int(baseClassOrImplIntfTypeExprs.Count());
     writer.Write(numBaseClassOrImplIntfTypeExprs);
     for (const std::unique_ptr<Node>& baseClassOrImplIntfTypeExpr : baseClassOrImplIntfTypeExprs)
     {
@@ -134,7 +134,7 @@ void ClassNode::Print(CodeFormatter& formatter)
         s.append(1, ' ');
     }
     s.append("class ").append(id->ToString()).append(templateParameters.ToString());
-    int numBaseClassOrImplIntfTypeExprs = int(baseClassOrImplIntfTypeExprs.size());
+    int numBaseClassOrImplIntfTypeExprs = baseClassOrImplIntfTypeExprs.Count();
     if (numBaseClassOrImplIntfTypeExprs > 0)
     {
         s.append(" : ");

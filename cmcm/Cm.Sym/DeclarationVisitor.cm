@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -15,12 +15,16 @@ namespace Cm.Sym
     public class DeclarationVisitor : Cm.Ast.Visitor
     {
         public nothrow DeclarationVisitor(SymbolTable& symbolTable_) : 
-            base(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(null), markFunctionSymbolAsTemplateSpecialization(false), cidMap(null)
+            base(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(null), markFunctionSymbolAsTemplateSpecialization(false), cidMap(null), iidMap(null)
         {
         }
         public nothrow void SetCidMap(HashMap<string, ulong>* cidMap_)
         {
             cidMap = cidMap_;
+        }
+        public nothrow void SetIidMap(HashMap<string, ulong>* iidMap_)
+        {
+            iidMap = iidMap_;
         }
         public nothrow void SetTemplateType(Cm.Ast.ClassNode* templateClassNode_, TemplateTypeSymbol* templateType_) 
         {
@@ -61,6 +65,14 @@ namespace Cm.Sym
                 symbolTable.EndClassScope();
             }
         }
+        public override void BeginVisit(Cm.Ast.InterfaceNode& interfaceNode)
+        {
+            symbolTable.BeginInterfaceScope(&interfaceNode, iidMap);
+        }
+        public override void EndVisit(Cm.Ast.InterfaceNode& interfaceNode)
+        {
+            symbolTable.EndInterfaceScope();
+        }
         public override void BeginVisit(Cm.Ast.ConstructorNode& constructorNode)
         {
             symbolTable.BeginFunctionScope(&constructorNode, cast<FunctionSymbolFlags>(FunctionSymbolFlags.constructorOrDestructorSymbol | FunctionSymbolFlags.memberFunctionSymbol));
@@ -91,28 +103,48 @@ namespace Cm.Sym
         }
         public override void BeginVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
         {
-            symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags.memberFunctionSymbol);
-            parameterIndex = 0;
-            if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.static_) == Cm.Ast.Specifiers.none)
+            if (symbolTable.Container() is InterfaceTypeSymbol*)
             {
+                symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags.memberFunctionSymbol);
+                parameterIndex = 0;
                 ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
                 if (memberFunctionNode.IsConst())
                 {
-                    TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-                    thisParam->SetType(thisParamType);
+                    thisParam->SetType(symbolTable.GetTypeRepository().MakeConstGenericPtrType(memberFunctionNode.GetSpan()));
                 }
                 else
                 {
-                    TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
-                    thisParam->SetType(thisParamType);
+                    thisParam->SetType(symbolTable.GetTypeRepository().MakeGenericPtrType(memberFunctionNode.GetSpan()));
                 }
                 thisParam->SetBound();
                 symbolTable.AddParameter(thisParam);
-            }
-            if (memberFunctionNode.ReturnTypeExpr() != null)
-            {
                 symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
             }
+            else
+            {
+                symbolTable.BeginFunctionScope(&memberFunctionNode, FunctionSymbolFlags.memberFunctionSymbol);
+                parameterIndex = 0;
+                if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.static_) == Cm.Ast.Specifiers.none)
+                {
+                    ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
+                    if (memberFunctionNode.IsConst())
+                    {
+                        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakeConstPointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+                        thisParam->SetType(thisParamType);
+                    }
+                    else
+                    {
+                        TypeSymbol* thisParamType = symbolTable.GetTypeRepository().MakePointerType(symbolTable.CurrentClass(), memberFunctionNode.GetSpan());
+                        thisParam->SetType(thisParamType);
+                    }
+                    thisParam->SetBound();
+                    symbolTable.AddParameter(thisParam);
+                }
+                if (memberFunctionNode.ReturnTypeExpr() != null)
+                {
+                    symbolTable.AddReturnValueSymbol(memberFunctionNode.ReturnTypeExpr());
+                }
+            }            
         }
         public override void EndVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
         {
@@ -273,5 +305,6 @@ namespace Cm.Sym
         private TemplateTypeSymbol* templateType;
         private bool markFunctionSymbolAsTemplateSpecialization;
         private HashMap<string, ulong>* cidMap;
+        private HashMap<string, ulong>* iidMap;
     }
 }

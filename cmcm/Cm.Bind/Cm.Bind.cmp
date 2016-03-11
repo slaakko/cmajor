@@ -29,6 +29,7 @@ source <Evaluator.cm>;
 source <ExpressionBinder.cm>;
 source <Function.cm>;
 source <InlineFunctionRepository.cm>;
+source <Interface.cm>;
 source <LocalVariable.cm>;
 source <MemberVariable.cm>;
 source <OverloadResolution.cm>;

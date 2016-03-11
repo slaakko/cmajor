@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -19,6 +19,7 @@ namespace Cm.Sym
         {
         }
         public abstract nothrow Symbol* CreateSymbol(const Span& span, const string& name);
+        public abstract Symbol* CreateBasicTypeSymbol();
     }
     
     public class ConcreteSymbolCreator<T> : SymbolCreator where T is SymbolClass
@@ -27,8 +28,24 @@ namespace Cm.Sym
         {
             return new T(span, name);
         }
+        public override Symbol* CreateBasicTypeSymbol()
+        {
+            return null;
+        }
     }
-    
+
+    public class ConcreteBasicTypeSymbolCreator<T> : SymbolCreator where T is SymbolClass
+    {
+        public override nothrow Symbol* CreateSymbol(const Span& span, const string& name)
+        {
+            return null;
+        }
+        public override Symbol* CreateBasicTypeSymbol()
+        {
+            return new T();
+        }
+    }
+        
     public class SymbolFactory
     {
         static SymbolFactory() : instance(new SymbolFactory())
@@ -37,7 +54,24 @@ namespace Cm.Sym
         private SymbolFactory()
         {
             creators.Resize(int(SymbolType.maxSymbol));
+            Register(SymbolType.boolSymbol, new ConcreteBasicTypeSymbolCreator<BoolTypeSymbol>());
+            Register(SymbolType.charSymbol, new ConcreteBasicTypeSymbolCreator<CharTypeSymbol>());
+            Register(SymbolType.wcharSymbol, new ConcreteBasicTypeSymbolCreator<WCharTypeSymbol>());
+            Register(SymbolType.ucharSymbol, new ConcreteBasicTypeSymbolCreator<UCharTypeSymbol>());
+            Register(SymbolType.voidSymbol, new ConcreteBasicTypeSymbolCreator<VoidTypeSymbol>());
+            Register(SymbolType.sbyteSymbol, new ConcreteBasicTypeSymbolCreator<SByteTypeSymbol>());
+            Register(SymbolType.byteSymbol, new ConcreteBasicTypeSymbolCreator<ByteTypeSymbol>());
+            Register(SymbolType.shortSymbol, new ConcreteBasicTypeSymbolCreator<ShortTypeSymbol>());
+            Register(SymbolType.ushortSymbol, new ConcreteBasicTypeSymbolCreator<UShortTypeSymbol>());
+            Register(SymbolType.intSymbol, new ConcreteBasicTypeSymbolCreator<IntTypeSymbol>());
+            Register(SymbolType.uintSymbol, new ConcreteBasicTypeSymbolCreator<UIntTypeSymbol>());
+            Register(SymbolType.longSymbol, new ConcreteBasicTypeSymbolCreator<LongTypeSymbol>());
+            Register(SymbolType.ulongSymbol, new ConcreteBasicTypeSymbolCreator<ULongTypeSymbol>());
+            Register(SymbolType.floatSymbol, new ConcreteBasicTypeSymbolCreator<FloatTypeSymbol>());
+            Register(SymbolType.doubleSymbol, new ConcreteBasicTypeSymbolCreator<DoubleTypeSymbol>());
+            Register(SymbolType.nullptrSymbol, new ConcreteBasicTypeSymbolCreator<NullPtrTypeSymbol>());
             Register(SymbolType.classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+            Register(SymbolType.interfaceTypeSymbol, new ConcreteSymbolCreator<InterfaceTypeSymbol>());
             Register(SymbolType.constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
             Register(SymbolType.declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
             Register(SymbolType.delegateSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());
@@ -78,6 +112,23 @@ namespace Cm.Sym
             {
                 throw Exception("could not create symbol '" + name + "'");
             }
+        }
+        public Symbol* CreateBasicTypeSymbol(SymbolType basicTypeSymbolType)
+        {
+            const UniquePtr<SymbolCreator>& creator = creators[int(basicTypeSymbolType)];
+            if (creator.IsNull())
+            {
+                throw Exception("no creator for basic type symbol '" + string(SymbolTypeStr(basicTypeSymbolType)) + "'");
+            }
+            Symbol* value = creator->CreateBasicTypeSymbol();
+            if (value != null)
+            {
+                return value;
+            }
+            else
+            {
+                throw Exception("could not create basic type symbol");
+            }        
         }
         private void Register(SymbolType symbolType, SymbolCreator* creator)
         {

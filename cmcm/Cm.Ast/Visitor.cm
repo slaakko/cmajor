@@ -107,6 +107,12 @@ namespace Cm.Ast
         public virtual void EndVisit(ClassNode& classNode)
         {
         }
+        public virtual void BeginVisit(InterfaceNode& interfaceNode)
+        {
+        }
+        public virtual void EndVisit(InterfaceNode& interfaceNode)
+        {
+        }
         public virtual void Visit(BooleanLiteralNode& booleanLiteralNode)
         {
         }

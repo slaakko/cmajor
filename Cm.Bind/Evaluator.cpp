@@ -325,7 +325,7 @@ Cm::Sym::Value* Conjunction(Cm::Sym::Value* left, Cm::Sym::Value* right, const S
 
 BinaryOperatorFun conjunction[uint8_t(Cm::Sym::ValueType::max)] =
 {
-    NotSupported, Disjunction<Cm::Sym::BoolValue>, NotSupported, NotSupported,
+    NotSupported, Conjunction<Cm::Sym::BoolValue>, NotSupported, NotSupported,
     NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported, NotSupported
 };
 

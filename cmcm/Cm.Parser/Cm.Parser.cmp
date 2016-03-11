@@ -26,6 +26,8 @@ source <Function.cm>;
 text <Function.parser>;
 source <Identifier.cm>;
 text <Identifier.parser>;
+source <Interface.cm>;
+text <Interface.parser>;
 source <Keyword.cm>;
 text <Keyword.parser>;
 source <Literal.cm>;

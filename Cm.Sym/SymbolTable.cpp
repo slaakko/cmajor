@@ -201,7 +201,7 @@ void SymbolTable::BeginInterfaceScope(Cm::Ast::InterfaceNode* interfaceNode, std
             (*iidMap)[interfaceTypeFullName] = iid;
         }
     }
-    if (iid == noCid)
+    if (iid == noIid)
     {
         iid = GetInterfaceCounter()->GetIid();
     }

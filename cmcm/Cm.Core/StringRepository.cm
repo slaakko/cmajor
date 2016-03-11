@@ -44,7 +44,7 @@ namespace Cm.Core
                 return i->second;
             }
             int id = stringConstants.Count();
-            Ir.Intf.Object* stringConstant = Cm.IrIntf.MakeStringConstant(str);
+            Ir.Intf.Object* stringConstant = Cm.IrIntf.MakeWStringConstant(str);
             stringConstant->SetOwned();
             stringConstants.Add(UniquePtr<Ir.Intf.Object>(stringConstant));
             string stringObjectName = Cm.IrIntf.GetStringValuePrefix() + ToString(id);
@@ -62,7 +62,7 @@ namespace Cm.Core
                 return i->second;
             }
             int id = stringConstants.Count();
-            Ir.Intf.Object* stringConstant = Cm.IrIntf.MakeStringConstant(str);
+            Ir.Intf.Object* stringConstant = Cm.IrIntf.MakeUStringConstant(str);
             stringConstant->SetOwned();
             stringConstants.Add(UniquePtr<Ir.Intf.Object>(stringConstant));
             string stringObjectName = Cm.IrIntf.GetStringValuePrefix() + ToString(id);

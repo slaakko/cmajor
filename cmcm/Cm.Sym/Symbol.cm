@@ -25,6 +25,7 @@ namespace Cm.Sym
         classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
         memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
         conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,
+        interfaceTypeSymbol,
         maxSymbol
     }
     
@@ -49,6 +50,7 @@ namespace Cm.Sym
             case SymbolType.doubleSymbol: return "doubleSymbol";
             case SymbolType.nullptrSymbol: return "nullptrSymbol";
             case SymbolType.classSymbol: return "classSymbol";
+            case SymbolType.interfaceTypeSymbol: return "interfaceSymbol";
             case SymbolType.constantSymbol: return "constantSymbol";
             case SymbolType.declarationBlock: return "declarationBlock";
             case SymbolType.delegateSymbol: return "delegateSymbol";
@@ -74,6 +76,11 @@ namespace Cm.Sym
             case SymbolType.returnValueSymbol : return "returnValueSymbol";
         }
         return "";
+    }
+    
+    public nothrow inline bool IsBasicSymbolType(SymbolType st)
+    {
+        return st >= SymbolType.boolSymbol && st <= SymbolType.nullptrSymbol;
     }
     
     public enum SymbolSource : byte
@@ -357,9 +364,27 @@ namespace Cm.Sym
                 }
             }
         }
-        public nothrow ContainerSymbol* ClassOrNs() const
+        public nothrow InterfaceTypeSymbol* Interface() const
         {
-            if (this is ClassTypeSymbol* || this is NamespaceSymbol*)
+            if (this is InterfaceTypeSymbol*)
+            {
+                return cast<InterfaceTypeSymbol*>(this);
+            }
+            else
+            {
+                if (parent != null)
+                {
+                    return parent->Interface();
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
+        public nothrow ContainerSymbol* ClassInterfaceOrNs() const
+        {
+            if (this is ClassTypeSymbol* || this is InterfaceTypeSymbol* || this is NamespaceSymbol*)
             {
                 return cast<ContainerSymbol*>(this);
             }
@@ -367,7 +392,7 @@ namespace Cm.Sym
             {
                 if (parent != null)
                 {
-                    return parent->ClassOrNs();
+                    return parent->ClassInterfaceOrNs();
                 }
                 else
                 {
@@ -469,7 +494,7 @@ namespace Cm.Sym
         {
             return sid;
         }
-        public virtual void InitVirtualFunctionTables()
+        public virtual void InitVirtualFunctionTablesAndInterfaceTables()
         {
         }
         private Span span;

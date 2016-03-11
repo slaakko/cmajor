@@ -226,13 +226,7 @@ void BoundCompileUnit::Read(Cm::Sym::BcuReader& reader)
         std::cout << bcuPath << ": not all types fetched!" << std::endl;
     }
     reader.GetSymbolReader().MakeIrTypes();
-    reader.GetSymbolReader().InitVTables();
-/*
-    if (irFilePath.find("convert.ll") != std::string::npos)
-    {
-        Cm::Ser::EndLogging();
-    }
-*/
+    reader.GetSymbolReader().InitVTablesAndITables();
 }
 
 void BoundCompileUnit::AddFileScope(Cm::Sym::FileScope* fileScope_)

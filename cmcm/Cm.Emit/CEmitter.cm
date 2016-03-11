@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -17,8 +17,8 @@ namespace Cm.Emit
     public class CEmitter : Emitter
     {
         public CEmitter(const string& irFilePath_, Cm.Sym.TypeRepository& typeRepository_, Cm.Core.IrFunctionRepository& irFunctionRepository_, Cm.Core.IrClassTypeRepository& irClassTypeRepository_, 
-            Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) : 
-            base(irFilePath_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
+            Cm.Core.IrInterfaceTypeRepository& irInterfaceTypeRepository_, Cm.Core.StringRepository& stringRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_) : 
+            base(irFilePath_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, irInterfaceTypeRepository_, stringRepository_, externalConstantRepository_), funLine(1)
         {
         }
         public override void WriteCompileUnitHeader(CodeFormatter& codeFormatter)
@@ -36,7 +36,9 @@ namespace Cm.Emit
             codeFormatter.WriteLine("typedef uint32_t ui32;");
             codeFormatter.WriteLine("typedef int64_t i64;");
             codeFormatter.WriteLine("typedef uint64_t ui64;");
-            codeFormatter.WriteLine("struct rtti_ { const char* class_name; ui64 class_id; };");
+            codeFormatter.WriteLine("struct irec_ { ui64 iid; void* itab; };");
+            codeFormatter.WriteLine("typedef struct irec_ irec;");
+            codeFormatter.WriteLine("struct rtti_ { unsigned const char* class_name; ui64 class_id; irec* irectab; };");
             codeFormatter.WriteLine("typedef struct rtti_ rtti;");
         }
         public override void BeginVisit(Cm.BoundTree.BoundCompileUnit& compileUnit)
@@ -68,6 +70,7 @@ namespace Cm.Emit
             {
                 tdfsTypes.Add(tdf.GetPtr());
             }
+            IrInterfaceTypeRepository().Write(GetCodeFormatter());
             IrClassTypeRepository().Write(GetCodeFormatter(), ExternalFunctions(), IrFunctionRepository(), tdfsTypes);
             List<Ir.Intf.Function*> ef;
             for (Ir.Intf.Function* function : ExternalFunctions())
@@ -147,8 +150,8 @@ namespace Cm.Emit
                 end = currentSourceFile->End();
             }
             CFunctionEmitter functionEmitter(funFormatter, TypeRepository(), IrFunctionRepository(), IrClassTypeRepository(), StringRepository(), CurrentClass(), InternalFunctionNames(), ExternalFunctions(),
-                staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), start, end, 
-                !debugInfoFile.IsNull(), Profile(), &functionMap, cFilePath);
+                staticMemberVariableRepository, ExternalConstantRepository(), CurrentCompileUnit(), EnterFrameFun(), LeaveFrameFun(), EnterTracedCallFun(), LeaveTracedCallFun(), InterfaceLookupFailed(), 
+                start, end, !debugInfoFile.IsNull(), Profile(), &functionMap, cFilePath);
             boundFunction.Accept(functionEmitter);
             List<UniquePtr<C.Typedef>> funTdfs = functionEmitter.Tdfs();
             for (UniquePtr<C.Typedef>& tdf : funTdfs)

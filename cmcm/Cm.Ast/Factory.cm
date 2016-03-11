@@ -49,6 +49,8 @@ namespace Cm.Ast
             Register(NodeType.floatNode, new Creator<FloatNode>());
             Register(NodeType.doubleNode, new Creator<DoubleNode>());
             Register(NodeType.charNode, new Creator<CharNode>());
+            Register(NodeType.wcharNode, new Creator<WCharNode>());
+            Register(NodeType.ucharNode, new Creator<UCharNode>());
             Register(NodeType.voidNode, new Creator<VoidNode>());
             Register(NodeType.booleanLiteralNode, new Creator<BooleanLiteralNode>());
             Register(NodeType.sbyteLiteralNode, new Creator<SByteLiteralNode>());
@@ -170,6 +172,7 @@ namespace Cm.Ast
             Register(NodeType.templateParameterNode, new Creator<TemplateParameterNode>());
             Register(NodeType.functionNode, new Creator<FunctionNode>());
             Register(NodeType.classNode, new Creator<ClassNode>());
+            Register(NodeType.interfaceNode, new Creator<InterfaceNode>());
             Register(NodeType.memberInitializerNode, new Creator<MemberInitializerNode>());
             Register(NodeType.baseInitializerNode, new Creator<BaseInitializerNode>());
             Register(NodeType.thisInitializerNode, new Creator<ThisInitializerNode>());
@@ -190,6 +193,7 @@ namespace Cm.Ast
         }
         public nothrow Node* CreateNode(NodeType nodeType, const Span& span)
         {
+            #assert(!creators[int(nodeType)].IsNull());
             return creators[int(nodeType)]->CreateNode(span);
         }
         private void Register(NodeType nodeType, NodeCreator* creator)

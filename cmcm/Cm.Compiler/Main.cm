@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -13,7 +13,7 @@ using System.IO;
 
 internal nothrow const char* Version()
 {
-    return "1.3.0-m";
+    return "1.4.0-m";
 }
 
 internal nothrow const char* Mode() 

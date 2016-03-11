@@ -578,6 +578,7 @@ void CFunctionEmitter::GenInterfaceCall(Cm::Sym::FunctionSymbol* fun, Cm::Core::
     Ir::Intf::MemberVar* obj = Cm::IrIntf::CreateMemberVar("obj", intfObject, 0, voidPtr);
     emitter->Own(obj);
     Ir::Intf::Object* objRegVar = Cm::IrIntf::CreateTemporaryRegVar(voidPtr);
+    emitter->Own(objRegVar);
     Cm::IrIntf::Assign(*emitter, voidPtr, obj, objRegVar);
     int n = int(memberFunctionResult.Objects().size());
     for (int i = 0; i < n; ++i)

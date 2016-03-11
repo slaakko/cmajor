@@ -123,7 +123,7 @@ void DeclarationVisitor::BeginVisit(Cm::Ast::MemberFunctionNode& memberFunctionN
         ParameterSymbol* thisParam = new ParameterSymbol(memberFunctionNode.GetSpan(), "this");
         if (memberFunctionNode.IsConst())
         {
-            symbolTable.GetTypeRepository().MakeConstGenericPtrType(memberFunctionNode.GetSpan());
+            thisParam->SetType(symbolTable.GetTypeRepository().MakeConstGenericPtrType(memberFunctionNode.GetSpan()));
         }
         else
         {

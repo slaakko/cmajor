@@ -54,7 +54,7 @@ public:
     bool AllTypesFetched();
     void EnqueueMakeIrTypeFor(Symbol* symbol);
     void MakeIrTypes();
-    void InitVTables();
+    void InitVTablesAndITables();
     void SetFetchCidForVirtualClasses() { fetchCidForVirtualClasses = true; }
 private:
     BinaryReader binaryReader;
@@ -70,7 +70,7 @@ private:
     bool markTemplateTypeSymbolsBound;
     bool fetchCidForVirtualClasses;
     std::unordered_set<Symbol*> makeIrTypeSet;
-    std::unordered_set<ClassTypeSymbol*> initVTableSet;
+    std::unordered_set<ClassTypeSymbol*> initVTableAndITableSet;
 };
 
 } } // namespace Cm::Sym

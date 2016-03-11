@@ -120,7 +120,7 @@ void InterfaceObjectCopyCtor::GenerateLlvm(Emitter& emitter, GenResult& result)
     Ir::Intf::MemberVar* itab = Cm::IrIntf::CreateMemberVar("itab", mainObject, 1, i8Ptr);
     emitter.Own(itab);
     Ir::Intf::MemberVar* thatItab = Cm::IrIntf::CreateMemberVar("itab", that, 1, i8Ptr);
-    emitter.Own(itab);
+    emitter.Own(thatItab);
     Cm::IrIntf::Assign(emitter, i8Ptr, thatItab, itab);
 }
 
@@ -318,6 +318,7 @@ void InterfaceObjectOpEqual::GenerateLlvm(Emitter& emitter, GenResult& result)
     emitter.Emit(Cm::IrIntf::ICmp(i8Ptr, result1, Ir::Intf::IConditionCode::eq, temp2, temp3));
     Cm::IrIntf::Assign(emitter, Ir::Intf::GetFactory()->GetI1(), result1, resultStackVar);
     Ir::Intf::LabelObject* commonLabel = Cm::IrIntf::CreateNextLocalLabel();
+    emitter.Own(commonLabel);
     emitter.Emit(Cm::IrIntf::Br(commonLabel));
     emitter.AddNextInstructionLabel(falseLabel);
     Ir::Intf::Object* falseObject = Cm::IrIntf::CreateBooleanConstant(false);
@@ -490,7 +491,6 @@ void InterfaceObjectFromClassPtrCtor::GenerateLlvm(Emitter& emitter, GenResult& 
         Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(vptrContainingPtrIrType);
         emitter.Own(containerPtr);
         Ir::Intf::Type* classTypePtrIrType = ClassPtrType()->GetIrType();
-        emitter.Own(classTypePtrIrType);
         emitter.Emit(Cm::IrIntf::Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
         vptrContainerPtr = containerPtr;
     }
@@ -642,7 +642,6 @@ void InterfaceObjectFromClassPtrCtor::GenerateC(Emitter& emitter, GenResult& res
         Ir::Intf::RegVar* containerPtr = Cm::IrIntf::CreateTemporaryRegVar(vptrContainingPtrIrType);
         emitter.Own(containerPtr);
         Ir::Intf::Type* classTypePtrIrType = ClassPtrType()->GetIrType();
-        emitter.Own(classTypePtrIrType);
         emitter.Emit(Cm::IrIntf::Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
         vptrContainerPtr = containerPtr;
     }
@@ -795,7 +794,7 @@ void InterfaceConstructorOpGroup::CollectViableFunctions(int arity, const std::v
         Cm::Sym::TypeSymbol* firstType = arguments[0].Type();
         if (firstType->IsPointerToInterfaceTypeSymbol())
         {
-            std::pair<Cm::Sym::TypeSymbol*, Cm::Sym::TypeSymbol*> p = std::make_pair(firstType, nullptr);
+            std::pair<Cm::Sym::TypeSymbol*, Cm::Sym::TypeSymbol*> p = std::make_pair(firstType->GetBaseType(), nullptr);
             InterfaceTypeOpCache& cache = interfaceTypeOpCacheMap[p];
             Cm::Sym::FunctionSymbol* ctor = cache.GetDefaultCtor(typeRepository, firstType->GetBaseType());
             viableFunctions.insert(ctor);
