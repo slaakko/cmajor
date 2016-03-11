@@ -1,0 +1,97 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+public const ulong noIid = cast<ulong>(-1);
+
+namespace Cm.Sym
+{
+    public class InterfaceTypeSymbol : TypeSymbol
+    {
+        public nothrow InterfaceTypeSymbol(const Span& span_, const string& name_) : base(span_, name_), iid(noIid), compileUnit(null)
+        {
+        }
+        public nothrow inline ulong Iid() const
+        {
+            return iid;
+        }
+        public nothrow inline void SetIid(ulong iid_)
+        {
+            iid = iid_;
+        }
+        public nothrow override SymbolType GetSymbolType() const
+        {
+            return SymbolType.interfaceTypeSymbol;
+        }
+        public nothrow override string TypeString() const
+        {
+            return "interface";
+        }
+        public override string GetMangleId() const
+        {
+            return Cm.IrIntf.MakeAssemblyName(FullName());
+        }
+        public nothrow inline Cm.Ast.CompileUnitNode* CompileUnit() const
+        {
+            return compileUnit;
+        }
+        public nothrow inline void SetCompileUnit(Cm.Ast.CompileUnitNode* compileUnit_)
+        {
+            compileUnit = compileUnit_;
+        }
+        public nothrow inline const List<FunctionSymbol*>& MemFuns() const
+        {
+            return memFuns;
+        }
+        public nothrow inline const List<MemberVariableSymbol*>& MemberVars() const
+        {
+            return memberVars;
+        }
+        public override void MakeIrType() 
+        {
+            if (IrTypeMade())
+            {
+                return;
+            }
+            SetIrType(Cm.IrIntf.CreateClassTypeName(FullName()));
+        }
+        public override void Write(Writer& writer)
+        {
+            base->Write(writer);
+            writer.GetBinaryWriter().Write(iid);
+        }
+        public override void Read(Reader& reader)
+        {
+            base->Read(reader);
+            iid = reader.GetBinaryReader().ReadULong();
+            reader.EnqueueMakeIrTypeFor(this);
+        }
+        public override void AddSymbol(Symbol* symbol) 
+        {
+            base->AddSymbol(symbol);
+            if (symbol is FunctionSymbol*)
+            {
+                FunctionSymbol* functionSymbol = cast<FunctionSymbol*>(symbol);
+                functionSymbol->SetItblIndex(cast<short>(memFuns.Count()));
+                memFuns.Add(functionSymbol);
+            }
+            else if (symbol is MemberVariableSymbol*)
+            {
+                memberVars.Add(cast<MemberVariableSymbol*>(symbol));
+            }
+        }
+        private ulong iid;
+        private Cm.Ast.CompileUnitNode* compileUnit;
+        private List<FunctionSymbol*> memFuns;
+        private List<MemberVariableSymbol*> memberVars;
+    }
+}

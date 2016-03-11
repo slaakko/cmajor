@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -17,6 +17,10 @@ namespace Cm.IrIntf
         public override string GetExCodeVarName()
         {
             return "_X_ex";
+        }
+        public override string GetIrecPtrName()
+        {
+            return C.GetIrecPtrName();
         }
         public override Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter)
         {
@@ -225,6 +229,15 @@ namespace Cm.IrIntf
         {
             return C.MakeStringConstant(value);
         }
+        public override Ir.Intf.Object* MakeWStringConstant(const string& value)
+        {
+            return C.MakeWStringConstant(value);
+        }
+        public override Ir.Intf.Object* MakeUStringConstant(const string& value)
+        {
+            return C.MakeUStringConstant(value);
+        }
+       
         public override Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)
         {
             return C.MakeNull(ptrType);
@@ -272,6 +285,14 @@ namespace Cm.IrIntf
         public override string MakeStringConstantName(const string& s)
         {
             return C.MakeStringConstantName(s);
+        }
+        public override string MakeWStringConstantName(const string& s)
+        {
+            return C.MakeWStringConstantName(s);
+        }
+        public override string MakeUStringConstantName(const string& s)
+        {
+            return C.MakeUStringConstantName(s);
         }
         public override string MakeDestructionNodeName(const string& assemblyName)
         {

@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -28,7 +28,7 @@ namespace Cm.Core
         }
         public abstract void Write(CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository, const List<Ir.Intf.Type*>& tdfs);
         public abstract void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter);
-        public abstract void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
+        public abstract void WriteItblsAndVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository);
         public abstract void WriteDestructionNodeDef(CodeFormatter& codeFormatter);
         public nothrow const HashMap<string, Cm.Sym.ClassTypeSymbol*>& ClassTypeMap() const
         {
@@ -58,7 +58,25 @@ namespace Cm.Core
                 }
             }
         }
+        public void Own(Ir.Intf.Type* type)
+        {
+            if (!type->Owned())
+            {
+                type->SetOwned();
+                ownedTypes.Add(UniquePtr<Ir.Intf.Type>(type));
+            }
+        }
+        public void Own(Ir.Intf.Object* object)
+        {
+            if (!object->Owned())
+            {
+                object->SetOwned();
+                ownedObjects.Add(UniquePtr<Ir.Intf.Object>(object));
+            }
+        }
         private HashMap<string, Cm.Sym.ClassTypeSymbol*> classTypeMap;
+        private List<UniquePtr<Ir.Intf.Type>> ownedTypes;
+        private List<UniquePtr<Ir.Intf.Object>> ownedObjects;
     }
     
     public class ClassNameLess : Rel<Cm.Sym.ClassTypeSymbol*>
@@ -89,7 +107,7 @@ namespace Cm.Core
                 WriteIrLayout(classType, codeFormatter);
                 if (classType->IsVirtual())
                 {
-                    WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+                    WriteItblsAndVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
                 }
             }
         }
@@ -159,11 +177,86 @@ namespace Cm.Core
             string typeDeclaration = classType->IrType()->Name() + " = type " + irTypeDeclaration->Name();
             codeFormatter.WriteLine(typeDeclaration);
         }
-        public override void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        public override void WriteItblsAndVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
         {
             if (!classType->IsVirtual()) return;
             UniquePtr<Ir.Intf.Type> i8PtrType(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u));
             i8PtrType->SetOwned();
+            List<string> iids;
+            List<Ir.Intf.Type*> itabIrTypes;
+            List<string> itabNames;
+            for (const Cm.Sym.ITable& itab : classType->ITabs())
+            {
+                iids.Add(ToString(itab.Intf()->Iid()));
+                Ir.Intf.Type* itabIrType = Cm.IrIntf.Array(i8PtrType->Clone(), itab.IntfMemFunImpl().Count());
+                Own(itabIrType);
+                itabIrTypes.Add(itabIrType);
+                string itabName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + itab.Intf()->FullName() + Cm.IrIntf.GetPrivateSeparator() + "itab");
+                itabNames.Add("@" + itabName);
+                Ir.Intf.Object* itabIrObject = Cm.IrIntf.MakeGlobal(itabName, itabIrType);
+                Own(itabIrObject);
+                codeFormatter.WriteLine(itabIrObject->Name() + " = linkonce_odr unnamed_addr constant " + itabIrType->Name());
+                codeFormatter.WriteLine("[");
+                codeFormatter.IncIndent();
+                bool first = true;
+                for (Cm.Sym.FunctionSymbol* memFun : itab.IntfMemFunImpl())
+                {
+                    string line;
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        codeFormatter.WriteLine(",");
+                    }
+                    Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+                    externalFunctions.Insert(irFun);
+                    Ir.Intf.Type* irFunPtrType = irFunctionRepository.GetFunPtrIrType(memFun);
+                    line.Append("i8* bitcast (").Append(irFunPtrType->Name()).Append(" @").Append(irFun->Name()).Append(" to ").Append(i8PtrType->Name()).Append(")");
+                    codeFormatter.Write(line);
+                }
+                codeFormatter.WriteLine();
+                codeFormatter.DecIndent();
+                codeFormatter.WriteLine("]");
+            }
+            string irecTabName;
+            Ir.Intf.Type* irecTabIrType = null;
+            Ir.Intf.Object* irecTabIrObject = null;
+            if (!classType->ITabs().IsEmpty())
+            {
+                List<Ir.Intf.Type*> irecElementTypes;
+                List<string> irecElementNames;
+                irecElementTypes.Add(Cm.IrIntf.UI64());
+                irecElementNames.Add("iid");
+                irecElementTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u));
+                irecElementNames.Add("itab");
+                int n = classType->ITabs().Count() + 1;
+                irecTabIrType = Cm.IrIntf.Array(Cm.IrIntf.MakeTypeNameType("irec", false), n);
+                Own(irecTabIrType);
+                irecTabName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "irectab");
+                irecTabIrObject = Cm.IrIntf.MakeGlobal(irecTabName, irecTabIrType);
+                Own(irecTabIrObject);
+                codeFormatter.WriteLine(irecTabIrObject->Name() + " = linkonce_odr unnamed_addr constant " + irecTabIrType->Name());
+                codeFormatter.WriteLine("[");
+                codeFormatter.IncIndent();
+                int nitabs = classType->ITabs().Count();
+                for (int i = 0; i < nitabs; ++i)
+                {
+                    if (i > 0)
+                    {
+                        codeFormatter.WriteLine(",");
+                    }
+                    string irec = "%irec { ";
+                    irec.Append(Ir.Intf.Factory.Instance()->GetUI64()->Name()).Append(" ").Append(iids[i]).Append(", ").Append("i8* bitcast (").Append(itabIrTypes[i]->Name()).Append("* ").Append(itabNames[i]).Append(" to i8*)").Append(" }");
+                    codeFormatter.Write(irec);
+                }
+                codeFormatter.WriteLine(",");
+                string irec = "%irec { i64 " + Ir.Intf.Factory.Instance()->GetUI64()->CreateMinusOne()->Name() + ", i8* null }";
+                codeFormatter.WriteLine(irec);
+                codeFormatter.DecIndent();
+                codeFormatter.WriteLine("]");
+            }
             UniquePtr<Ir.Intf.Type> vtblIrType(Cm.IrIntf.Array(i8PtrType->Clone(), classType->Vtbl().Count()));
             vtblIrType->SetOwned();
             string vtblName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "vtbl");
@@ -178,22 +271,46 @@ namespace Cm.Core
             List<Ir.Intf.Type*> rttiElementTypes;
             rttiElementTypes.Add(i8PtrType->Clone());
             rttiElementTypes.Add(Cm.IrIntf.I64());
+            Ir.Intf.Type* irecTabType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 1u);
+            rttiElementTypes.Add(irecTabType);
             List<string> rttiElementNames;
             rttiElementNames.Add("class_name");
             rttiElementNames.Add("class_id");
+            rttiElementNames.Add("irectab");
             UniquePtr<Ir.Intf.Type> rttiIrType(Cm.IrIntf.Structure("rtti_", rttiElementTypes, rttiElementNames));
             rttiIrType->SetOwned();
             UniquePtr<Ir.Intf.Object> rttiIrObject(Cm.IrIntf.MakeGlobal(classRttiName, rttiIrType.GetPtr()));
             rttiIrObject->SetOwned();
             if (Cm.Core.GlobalSettings.Instance().GetLlvmVersion() < Cm.Ast.ProgramVersion(3, 7, 0, 0, ""))
             {
-                codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + 
-                    ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+                if (irecTabName.IsEmpty())
+                {
+                    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + 
+                        ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + ", %irec* null }");
+                }                    
+                else
+                {
+                    Ir.Intf.Type* irecTabIrObjectPtrType = Cm.IrIntf.Pointer(irecTabIrObject->GetType(), 1u);
+                    Own(irecTabIrObjectPtrType);
+                    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " +
+                    ToString(classType->Cid()) + ", %irec* getelementptr (" + irecTabIrObjectPtrType->Name() + " " + irecTabIrObject->Name() + ", i32 0, i32 0)");
+                }
             }
             else
             {
-                codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
-                    classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + "}");
+                if (irecTabName.IsEmpty())
+                {
+                    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
+                        classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + ", %irec* null }");
+                }                    
+                else
+                {
+                    Ir.Intf.Type* irecTabIrObjectPtrType = Cm.IrIntf.Pointer(irecTabIrObject->GetType(), 1u);
+                    Own(irecTabIrObjectPtrType);
+                    codeFormatter.WriteLine(rttiIrObject->Name() + " = linkonce_odr unnamed_addr constant %rtti { i8* getelementptr (" + classNameIrValue->GetType()->Name() + ", " +
+                        classNameIrObject->GetType()->Name() + " " + classNameIrObject->Name() + ", i32 0, i32 0), i64 " + ToString(classType->Cid()) + 
+                        ", %irec* getelementptr (" + irecTabIrObject->GetType()->Name() + ", " + irecTabIrObjectPtrType->Name() + " " + irecTabIrObject->Name() + ", i32 0, i32 0)}");
+                }
             }                
             string vtblHeader;
             vtblHeader.Append(vtblIrObject->Name()).Append(" = linkonce_odr unnamed_addr constant ").Append(vtblIrType->Name());
@@ -361,7 +478,7 @@ namespace Cm.Core
             }
             for (Cm.Sym.ClassTypeSymbol* classType : classOrder)
             {
-                WriteVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
+                WriteItblsAndVtbl(classType, codeFormatter, externalFunctions, irFunctionRepository);
             }
         }
         public override void WriteIrLayout(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter)
@@ -430,9 +547,89 @@ namespace Cm.Core
             UniquePtr<Ir.Intf.Type> typeName(Cm.IrIntf.CreateClassTypeName(classType->FullName()));
             codeFormatter.WriteLine("typedef " + irTypeDeclaration->Name() + " " + typeName->Name() + ";");
         }
-        public override void WriteVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
+        public override void WriteItblsAndVtbl(Cm.Sym.ClassTypeSymbol* classType, CodeFormatter& codeFormatter, HashSet<Ir.Intf.Function*>& externalFunctions, IrFunctionRepository& irFunctionRepository)
         {
             if (!classType->IsVirtual()) return;
+            UniquePtr<Ir.Intf.Type> voidPtrType(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u));
+            voidPtrType->SetOwned();
+            List<string> iids;
+            List<Ir.Intf.Type*> itabIrTypes;
+            List<string> itabNames;
+            for (const Cm.Sym.ITable& itab : classType->ITabs())
+            {
+                for (Cm.Sym.FunctionSymbol* memFun : itab.IntfMemFunImpl())
+                {
+                    Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+                    irFun->WriteDeclaration(codeFormatter, memFun->IsReplicated(), false);
+                }
+                iids.Add(ToString(itab.Intf()->Iid()));
+                Ir.Intf.Type* itabIrType = Cm.IrIntf.Array(voidPtrType->Clone(), itab.IntfMemFunImpl().Count());
+                Own(itabIrType);
+                itabIrTypes.Add(itabIrType);
+                string itabName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + itab.Intf()->FullName() + Cm.IrIntf.GetPrivateSeparator() + "itab");
+                itabNames.Add(itabName);                
+                Ir.Intf.Object* itabIrObject = Cm.IrIntf.MakeGlobal(itabName, itabIrType);
+                Own(itabIrObject);
+                string itabHeader = "static void* ";
+                itabHeader.Append(itabIrObject->Name()).Append("[").Append(ToString(itab.IntfMemFunImpl().Count())).Append("] =");
+                codeFormatter.WriteLine(itabHeader);
+                codeFormatter.WriteLine("{");
+                codeFormatter.IncIndent();
+                bool first = true;
+                for (Cm.Sym.FunctionSymbol* memFun : itab.IntfMemFunImpl())
+                {
+                    string line;
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        codeFormatter.WriteLine(",");
+                    }
+                    Ir.Intf.Function* irFun = irFunctionRepository.CreateIrFunction(memFun);
+                    externalFunctions.Insert(irFun);
+                    line.Append("&").Append(irFun->Name());
+                    codeFormatter.Write(line);
+                }
+                codeFormatter.WriteLine();
+                codeFormatter.DecIndent();
+                codeFormatter.WriteLine("};");
+            }
+            string irecTabName;
+            if (!classType->ITabs().IsEmpty())
+            {
+                irecTabName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "irectab");
+                string irecTabHeader = "static irec " + irecTabName + "[" + ToString(classType->ITabs().Count() + 1) + "] =";
+                codeFormatter.WriteLine(irecTabHeader);
+                codeFormatter.WriteLine("{");
+                codeFormatter.IncIndent();
+                bool first = true;
+                int index = 0;
+                for (const Cm.Sym.ITable& itab : classType->ITabs())
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        codeFormatter.WriteLine(",");
+                    }
+                    string line = "{ ";
+                    line.Append(ToString(itab.Intf()->Iid())).Append(", ").Append(itabNames[index]);
+                    line.Append(" }");
+                    codeFormatter.Write(line);
+                    ++index;
+                }
+                codeFormatter.WriteLine(",");
+                string line = "{ ";
+                line.Append(Ir.Intf.Factory.Instance()->GetUI64()->CreateMinusOne()->Name()).Append(", null");
+                line.Append(" }");
+                codeFormatter.WriteLine(line);
+                codeFormatter.DecIndent();
+                codeFormatter.WriteLine("};");
+            }
             for (Cm.Sym.FunctionSymbol* virtualFunction : classType->Vtbl())
             {
                 if (virtualFunction != null)
@@ -441,8 +638,6 @@ namespace Cm.Core
                     irFun->WriteDeclaration(codeFormatter, virtualFunction->IsReplicated(), false);
                 }
             }
-            UniquePtr<Ir.Intf.Type> voidPtrType(Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u));
-            voidPtrType->SetOwned();
             UniquePtr<Ir.Intf.Type> vtblIrType(Cm.IrIntf.Array(voidPtrType->Clone(), classType->Vtbl().Count()));
             vtblIrType->SetOwned();
             string vtblName = Cm.IrIntf.MakeAssemblyName(classType->FullName() + Cm.IrIntf.GetPrivateSeparator() + "vtbl");
@@ -453,15 +648,24 @@ namespace Cm.Core
             List<Ir.Intf.Type*> rttiElementTypes;
             rttiElementTypes.Add(Cm.IrIntf.Pointer(Cm.IrIntf.Char(), 1u));
             rttiElementTypes.Add(Cm.IrIntf.UI64());
+            Ir.Intf.Type* irecTabType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 1u);
+            rttiElementTypes.Add(irecTabType);
             List<string> rttiElementNames;
             rttiElementNames.Add("class_name");
             rttiElementNames.Add("class_id");
+            rttiElementNames.Add("irectab");
             UniquePtr<Ir.Intf.Type> rttiIrType(Cm.IrIntf.Structure("rtti_", rttiElementTypes, rttiElementNames));
             rttiIrType->SetOwned();
             UniquePtr<Ir.Intf.Object> rttiIrObject(Cm.IrIntf.MakeGlobal(classRttiName, rttiIrType.GetPtr()));
             rttiIrObject->SetOwned();
-            codeFormatter.WriteLine("rtti " + classRttiName + " = {" + System.Text.MakeStringLiteral(classType->FullName()) + ", " + ToString(classType->Cid()) + "};");
-            
+            if (irecTabName.IsEmpty())
+            {
+                codeFormatter.WriteLine("rtti " + classRttiName + " = {" + System.Text.MakeStringLiteral(classType->FullName()) + ", " + ToString(classType->Cid()) + ", null};");
+            }
+            else
+            {
+                codeFormatter.WriteLine("rtti " + classRttiName + " = {" + System.Text.MakeStringLiteral(classType->FullName()) + ", " + ToString(classType->Cid()) + ", " + irecTabName + "};");
+            }            
             string vtblHeader = "static void* ";
             vtblHeader.Append(vtblIrObject->Name()).Append("[").Append(ToString(classType->Vtbl().Count())).Append("] =");
             codeFormatter.WriteLine(vtblHeader);

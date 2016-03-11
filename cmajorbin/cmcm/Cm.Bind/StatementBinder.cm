@@ -138,7 +138,7 @@ namespace Cm.Bind
             resolutionArguments.Add(variableArgument);
             constructionStatement->GetResolutionArguments(localVariableType, resolutionArguments);
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, constructionStatement->LocalVariable()->GetType()->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.ConversionType conversionType = Cm.Sym.ConversionType.implicit;
             Cm.Sym.FunctionSymbol* ctor = ResolveOverload(ContainerScope(), BoundCompileUnit(), "@constructor", resolutionArguments, functionLookups, constructionStatementNode.GetSpan(), conversions, 
@@ -241,7 +241,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(Cm.Core.Argument(functionGroup->ArgumentCategory(), functionGroup->Type()));
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, leftPlainType->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* assignment = ResolveOverload(ContainerScope(), BoundCompileUnit(), "operator=", resolutionArguments, functionLookups, assignmentStatementNode.GetSpan(), conversions);
             PrepareFunctionSymbol(assignment, assignmentStatementNode.GetSpan());
@@ -512,7 +512,7 @@ namespace Cm.Bind
                             }
                         }
                         Cm.Sym.FunctionLookupSet functionLookups;
-                        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, returnType->GetContainerScope()->ClassOrNsScope()));
+                        functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, returnType->GetContainerScope()->ClassInterfaceOrNsScope()));
                         List<Cm.Sym.FunctionSymbol*> conversions;
                         Cm.Sym.ConversionType conversionType = Cm.Sym.ConversionType.implicit;
                         if (returnValue is Cm.BoundTree.BoundCast*)
@@ -544,7 +544,8 @@ namespace Cm.Bind
                         {
                             returnValue = CreateBoundConversion(ContainerScope(), BoundCompileUnit(), &returnStatementNode, returnValue, conversionFun, CurrentFunction());
                         }
-                        if ((returnValue->Type() is Cm.Sym.ClassTypeSymbol*) && (returnType->IsReferenceType() || (returnType is Cm.Sym.ClassTypeSymbol*)))
+                        if ((returnValue->Type() is Cm.Sym.ClassTypeSymbol* || returnValue->Type() is Cm.Sym.InterfaceTypeSymbol*) && 
+                            (returnType->IsReferenceType() || (returnType is Cm.Sym.ClassTypeSymbol* || returnType is Cm.Sym.InterfaceTypeSymbol*)))
                         {
                             returnValue->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
                         }

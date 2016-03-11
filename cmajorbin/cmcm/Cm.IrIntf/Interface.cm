@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -15,6 +15,10 @@ namespace Cm.IrIntf
     public inline string GetExCodeVarName()
     {
         return GetBackendImpl()->GetExCodeVarName();
+    }
+    public inline string GetIrecPtrName()
+    {
+        return GetBackendImpl()->GetIrecPtrName();
     }
     public inline Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter)
     {
@@ -204,6 +208,14 @@ namespace Cm.IrIntf
     {
         return GetBackendImpl()->MakeStringConstant(value);
     }
+    public inline Ir.Intf.Object* MakeWStringConstant(const string& value)
+    {
+        return GetBackendImpl()->MakeWStringConstant(value);
+    }
+    public inline Ir.Intf.Object* MakeUStringConstant(const string& value)
+    {
+        return GetBackendImpl()->MakeUStringConstant(value);
+    }
     public inline Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType)
     {
         return GetBackendImpl()->MakeNull(ptrType);
@@ -251,6 +263,14 @@ namespace Cm.IrIntf
     public inline string MakeStringConstantName(const string& s)
     {
         return GetBackendImpl()->MakeStringConstantName(s);
+    }
+    public inline string MakeWStringConstantName(const string& s)
+    {
+        return GetBackendImpl()->MakeWStringConstantName(s);
+    }
+    public inline string MakeUStringConstantName(const string& s)
+    {
+        return GetBackendImpl()->MakeUStringConstantName(s);
     }
     public inline string MakeDestructionNodeName(const string& assemblyName)
     {

@@ -56,10 +56,6 @@ uint8_t BinaryReader::ReadByte()
     {
         uint8_t x = *reinterpret_cast<const uint8_t*>(pos);
         Log() << seq << " : byte : " << int(x) << std::endl;
-        if (seq == 126)
-        {
-            int x = 0;
-        }
         ++seq;
     }
     if (pos == end)

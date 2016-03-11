@@ -27,6 +27,10 @@ namespace Cm.Bind
                 Cm.Sym.ClassTypeSymbol* returnClassType = cast<Cm.Sym.ClassTypeSymbol*>(returnType->GetBaseType());
                 AddClassTypeToIrClassTypeRepository(returnClassType, boundCompileUnit, containerScope);
             }
+            else if (returnType != null && (returnType->GetBaseType() is Cm.Sym.InterfaceTypeSymbol*))
+            {
+                boundCompileUnit.IrInterfaceTypeRepository().Add(cast<Cm.Sym.InterfaceTypeSymbol*>(returnType->GetBaseType()));
+            }
         }
         int n = arguments.Count();
         for (int i = 0; i < n; ++i)
@@ -41,6 +45,10 @@ namespace Cm.Bind
                     Cm.Sym.ClassTypeSymbol* paramClassType = cast<Cm.Sym.ClassTypeSymbol*>(paramBaseType);
                     AddClassTypeToIrClassTypeRepository(paramClassType, boundCompileUnit, containerScope);
                 }
+                else if (paramBaseType is Cm.Sym.InterfaceTypeSymbol*)
+                {
+                    boundCompileUnit.IrInterfaceTypeRepository().Add(cast<Cm.Sym.InterfaceTypeSymbol*>(paramBaseType));
+                }
             }
             Cm.BoundTree.BoundExpression* argument = arguments[i].GetPtr();
             Cm.Sym.TypeSymbol* argumentBaseType = argument->Type()->GetBaseType();
@@ -50,6 +58,10 @@ namespace Cm.Bind
                 {
                     Cm.Sym.ClassTypeSymbol* argumentClassType = cast<Cm.Sym.ClassTypeSymbol*>(argumentBaseType);
                     AddClassTypeToIrClassTypeRepository(argumentClassType, boundCompileUnit, containerScope);
+                }
+                else if (argumentBaseType is Cm.Sym.InterfaceTypeSymbol*)
+                {
+                    boundCompileUnit.IrInterfaceTypeRepository().Add(cast<Cm.Sym.InterfaceTypeSymbol*>(argumentBaseType));
                 }
             }
             if (!isBasicTypeOp)
@@ -108,7 +120,7 @@ namespace Cm.Bind
                 {
                     argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
                 }
-                else if ((paramType is Cm.Sym.ClassTypeSymbol*) || paramType->IsArrayType() || argument->Type()->IsArrayType())
+                else if ((paramType is Cm.Sym.ClassTypeSymbol*) || (paramType is Cm.Sym.InterfaceTypeSymbol*) || paramType->IsArrayType() || argument->Type()->IsArrayType())
                 {
                     argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
                 }
@@ -130,7 +142,11 @@ namespace Cm.Bind
                 }
                 else 
                 {
-                    if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
+                    if (argument->Type() is Cm.Sym.InterfaceTypeSymbol*)
+                    {
+                        argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+                    }
+                    else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
                     {
                         argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
                     }
@@ -163,6 +179,10 @@ namespace Cm.Bind
             {
                 argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
             }
+            else if (paramType is Cm.Sym.InterfaceTypeSymbol*)
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
             else if (!paramType->IsReferenceType() && !paramType->IsRvalueRefType() && argument->Type()->IsNonClassReferenceType())
             {
                 argument->SetFlag(Cm.BoundTree.BoundNodeFlags.refByValue);
@@ -171,6 +191,10 @@ namespace Cm.Bind
         else 
         {
             if (paramType is Cm.Sym.ClassTypeSymbol*)
+            {
+                argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
+            }
+            else if (paramType is Cm.Sym.InterfaceTypeSymbol*)
             {
                 argument->SetFlag(Cm.BoundTree.BoundNodeFlags.argByRef);
             }
@@ -1029,9 +1053,36 @@ namespace Cm.Bind
                         throw Cm.Core.Error("class '" + classType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
                     }
                 }
+                else if (type is Cm.Sym.InterfaceTypeSymbol*)
+                {
+                    Cm.Sym.InterfaceTypeSymbol* interfaceType = cast<Cm.Sym.InterfaceTypeSymbol*>(type);
+                    Cm.Sym.ContainerScope* containerScope = interfaceType->GetContainerScope();
+                    Cm.Sym.Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm.Sym.ScopeLookup.this_, Cm.Sym.SymbolTypeSetId.lookupFunctionGroup);
+                    if (symbol != null)
+                    {
+                        Cm.BoundTree.BoundExpression* interfaceObject = expression.Release();
+                        BindSymbol(&dotNode, symbol);
+                        UniquePtr<Cm.BoundTree.BoundExpression> symbolExpr(stack.Pop());
+                        if (symbolExpr.GetPtr() is Cm.BoundTree.BoundFunctionGroup*)
+                        {
+                            stack.Push(symbolExpr.Release());
+                            interfaceObject->SetFlag(Cm.BoundTree.BoundNodeFlags.lvalue);
+                            interfaceObject->SetFlag(Cm.BoundTree.BoundNodeFlags.classObjectArg);
+                            stack.Push(interfaceObject);
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("symbol '" + symbolExpr->SyntaxNode()->ToString() + "' does not denote a function group", dotNode.GetSpan(), symbolExpr->SyntaxNode()->GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("interface '" + interfaceType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+                    }
+                }
                 else
                 {
-                    throw Cm.Core.Error("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, or enumerated type object", dotNode.Subject()->GetSpan());
+                    throw Cm.Core.Error("expression '" + expression->SyntaxNode()->ToString() + "' must denote a namespace, class type, interface type or enumerated type object", dotNode.Subject()->GetSpan());
                 }
             }
         }
@@ -1478,7 +1529,7 @@ namespace Cm.Bind
             List<Cm.Sym.FunctionSymbol*> conversions;
             bool firstArgByRef = false;
             bool constructTemporary = false;
-            bool returnClassObjectByValue = false;
+            bool returnClassOrInterfaceObjectByValue = false;
             Cm.Sym.LocalVariableSymbol* temporary = null;
             if (subject.GetPtr() is Cm.BoundTree.BoundFunctionGroup*)
             {
@@ -1492,8 +1543,8 @@ namespace Cm.Bind
                 List<Cm.Sym.FunctionSymbol*> conversions2;
                 bool firstArgByRef1 = false;
                 bool firstArgByRef2 = false;
-                bool returnClassObjectByValue1 = false;
-                bool returnClassObjectByValue2 = false;
+                bool returnClassOrInterfaceObjectByValue1 = false;
+                bool returnClassOrInterfaceObjectByValue2 = false;
                 UniquePtr<Cm.Core.Error> exception1;
                 UniquePtr<Cm.Core.Error> exception2;
                 FunctionMatch bestMatch1;
@@ -1519,9 +1570,9 @@ namespace Cm.Bind
                     if (fun1 != null)
                     {
                         type1 = fun1->GetReturnType();
-                        if (type1 is Cm.Sym.ClassTypeSymbol*)
+                        if (type1 is Cm.Sym.ClassTypeSymbol* || type1 is Cm.Sym.InterfaceTypeSymbol*)
                         {
-                            returnClassObjectByValue1 = true;
+                            returnClassOrInterfaceObjectByValue1 = true;
                         }
                         firstArg.Reset(arguments.ReleaseFirst());
                     }
@@ -1531,9 +1582,9 @@ namespace Cm.Bind
                 if (fun2 != null)
                 {
                     type2 = fun2->GetReturnType();
-                    if (type2 is Cm.Sym.ClassTypeSymbol*)
+                    if (type2 is Cm.Sym.ClassTypeSymbol* || type2 is Cm.Sym.InterfaceTypeSymbol*)
                     {
-                        returnClassObjectByValue2 = true;
+                        returnClassOrInterfaceObjectByValue2 = true;
                     }
                 }
                 if (fun1 != null && fun2 != null)
@@ -1564,7 +1615,7 @@ namespace Cm.Bind
                     firstArgByRef = firstArgByRef1;
                     generateVirtualCall = generateVirtualCall1;
                     type = type1;
-                    returnClassObjectByValue = returnClassObjectByValue1;
+                    returnClassOrInterfaceObjectByValue = returnClassOrInterfaceObjectByValue1;
                 }
                 else if (fun2 != null && fun1 == null)
                 {
@@ -1573,7 +1624,7 @@ namespace Cm.Bind
                     firstArgByRef = firstArgByRef2;
                     generateVirtualCall = generateVirtualCall2;
                     type = type2;
-                    returnClassObjectByValue = returnClassObjectByValue2;
+                    returnClassOrInterfaceObjectByValue = returnClassOrInterfaceObjectByValue2;
                 }
                 else if (fun1 != null && fun2 != null)
                 {
@@ -1698,7 +1749,7 @@ namespace Cm.Bind
             functionCall->SetFunctionCallSid(functionCallSid);
             functionCall->SetFun(fun);
             functionCall->SetType(type);
-            if (fun->ReturnsClassObjectByValue())
+            if (fun->ReturnsClassOrInterfaceObjectByValue())
             {
                 Cm.Sym.LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(type);
                 classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
@@ -1708,7 +1759,7 @@ namespace Cm.Bind
             {
                 functionCall->SetFlag(Cm.BoundTree.BoundNodeFlags.genVirtualCall);
             }
-            if (returnClassObjectByValue)
+            if (returnClassOrInterfaceObjectByValue)
             {
                 functionCall->SetFlag(Cm.BoundTree.BoundNodeFlags.argIsTemporary);
             }
@@ -1727,7 +1778,7 @@ namespace Cm.Bind
             Cm.Sym.ParameterSymbol* thisParam = currentFunction->FunctionSymbol()->Parameters()[0];
             Cm.Sym.TypeSymbol* thisParamType = thisParam->GetType();
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParamType));
-            memberFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            memberFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, thisParamType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
             bool first = true;
             for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
             {
@@ -1784,7 +1835,7 @@ namespace Cm.Bind
                 Cm.Sym.TypeSymbol* plainArgumentType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(argumentType);
                 if (qualifiedScope == null)
                 {
-                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassOrNsScope()));
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainArgumentType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 }
                 if (argument->GetFlag(Cm.BoundTree.BoundNodeFlags.classObjectArg) && argument->GetFlag(Cm.BoundTree.BoundNodeFlags.lvalue))
                 {
@@ -1856,7 +1907,7 @@ namespace Cm.Bind
             Cm.Sym.LocalVariableSymbol*& temporary, int& numArgs)
         {
             Cm.Sym.FunctionLookupSet ctorLookups;
-            ctorLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, typeSymbol->GetContainerScope()->ClassOrNsScope()));
+            ctorLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, typeSymbol->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Core.Argument> ctorResolutionArguments;
             List<Cm.Sym.TypeSymbol*> boundTemplateArguments;
             temporary = currentFunction->CreateTempLocalVariable(typeSymbol);
@@ -2005,7 +2056,7 @@ namespace Cm.Bind
         {
             Cm.Sym.FunctionLookupSet functionLookups;
             List<Cm.Core.Argument> resolutionArguments;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainSubjectType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainSubjectType->GetContainerScope()->ClassInterfaceOrNsScope()));
             Cm.Sym.TypeSymbol* subjectPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainSubjectType, node->GetSpan());
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, subjectPtrType));
             for (const UniquePtr<Cm.BoundTree.BoundExpression>& argument : arguments)
@@ -2066,7 +2117,7 @@ namespace Cm.Bind
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(targetType, node->GetSpan())));
             resolutionArguments.Add(Cm.Core.Argument(sourceExpr->ArgumentCategory(), sourceExpr->Type()));
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, targetType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, targetType->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* convertingCtor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions, 
                 Cm.Sym.ConversionType.explicit_, OverloadResolutionFlags.none);
@@ -2153,7 +2204,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(resolutionArgument);
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, type->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, node->GetSpan(), conversions);
             PrepareFunctionSymbol(ctor, node->GetSpan());
@@ -2317,6 +2368,12 @@ namespace Cm.Bind
                     BindClassTypeSymbol(node, classTypeSymbol);
                     break;
                 }
+                case Cm.Sym.SymbolType.interfaceTypeSymbol:
+                {
+                    Cm.Sym.InterfaceTypeSymbol* interfaceTypeSymbol = cast<Cm.Sym.InterfaceTypeSymbol*>(symbol);
+                    BindInterfaceTypeSymbol(node, interfaceTypeSymbol);
+                    break;
+                }
                 case Cm.Sym.SymbolType.delegateSymbol:
                 {
                     Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol = cast<Cm.Sym.DelegateTypeSymbol*>(symbol);
@@ -2466,6 +2523,26 @@ namespace Cm.Bind
             boundType->SetType(classTypeSymbol);
             stack.Push(boundType);
         }
+        private void BindInterfaceTypeSymbol(Cm.Ast.Node* idNode, Cm.Sym.InterfaceTypeSymbol* interfaceTypeSymbol)
+        {
+            if (!interfaceTypeSymbol->IsBound())
+            {
+                Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(interfaceTypeSymbol);
+                if (node is Cm.Ast.InterfaceNode*)
+                {
+                    Cm.Ast.InterfaceNode* interfaceNode = cast<Cm.Ast.InterfaceNode*>(node);
+                    Cm.Sym.ContainerScope* interfaceScope = boundCompileUnit.SymbolTable().GetContainerScope(interfaceNode);
+                    BindInterface(boundCompileUnit.SymbolTable(), interfaceScope, interfaceNode);
+                }
+                else
+                {
+                    throw Exception("interface node expected");
+                }
+            }
+            Cm.BoundTree.BoundTypeExpression* boundType = new Cm.BoundTree.BoundTypeExpression(idNode, interfaceTypeSymbol);
+            boundType->SetType(interfaceTypeSymbol);
+            stack.Push(boundType);
+        }
         private void BindDelegateTypeSymbol(Cm.Ast.Node* idNode, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol)
         {
             Cm.BoundTree.BoundTypeExpression* boundType = new Cm.BoundTree.BoundTypeExpression(idNode, delegateTypeSymbol);
@@ -2536,11 +2613,11 @@ namespace Cm.Bind
             Cm.Sym.TypeSymbol* plainLeftType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(left->Type());
             if (groupName == "operator==")
             {
-                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, plainLeftType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
             }
             else
             {
-                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+                memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainLeftType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
             }
             List<Cm.Core.Argument> memFunArguments;
             memFunArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainLeftType, node->GetSpan())));
@@ -2560,8 +2637,8 @@ namespace Cm.Bind
                 Cm.Sym.FunctionLookupSet freeFunLookups;
                 freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
                 Cm.Sym.TypeSymbol* plainRightType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(right->Type());
-                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainLeftType->GetContainerScope()->ClassOrNsScope()));
-                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainRightType->GetContainerScope()->ClassOrNsScope()));
+                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainLeftType->GetContainerScope()->ClassInterfaceOrNsScope()));
+                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainRightType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
                 fun = ResolveOverload(containerScope, boundCompileUnit, groupName, freeFunArguments, freeFunLookups, node->GetSpan(), conversions);
             }
@@ -2593,7 +2670,7 @@ namespace Cm.Bind
             Cm.BoundTree.BoundBinaryOp* op = new Cm.BoundTree.BoundBinaryOp(node, leftOperand, rightOperand);
             op->SetFun(fun);
             op->SetType(fun->GetReturnType());
-            if (fun->ReturnsClassObjectByValue())
+            if (fun->ReturnsClassOrInterfaceObjectByValue())
             {
                 Cm.Sym.LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
                 classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());
@@ -2611,7 +2688,7 @@ namespace Cm.Bind
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionLookupSet memFunLookups;
             Cm.Sym.TypeSymbol* plainOperandType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePlainType(operand->Type());
-            memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassOrNsScope()));
+            memFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, plainOperandType->GetBaseType()->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Core.Argument> memFunArguments;
             memFunArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(plainOperandType, node->GetSpan())));
             bool firstArgByRef = false;
@@ -2625,7 +2702,7 @@ namespace Cm.Bind
             {
                 Cm.Sym.FunctionLookupSet freeFunLookups;
                 freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
-                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainOperandType->GetContainerScope()->ClassOrNsScope()));
+                freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, plainOperandType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 freeFunLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
                 List<Cm.Core.Argument> freeFunArguments;
                 freeFunArguments.Add(Cm.Core.Argument(operand->ArgumentCategory(), operand->Type()));
@@ -2651,7 +2728,7 @@ namespace Cm.Bind
             Cm.BoundTree.BoundUnaryOp* op = new Cm.BoundTree.BoundUnaryOp(node, unaryOperand);
             op->SetFun(fun);
             op->SetType(fun->GetReturnType());
-            if (fun->ReturnsClassObjectByValue() && !(fun is Cm.Core.BasicTypeOp*))
+            if (fun->ReturnsClassOrInterfaceObjectByValue() && !(fun is Cm.Core.BasicTypeOp*))
             {
                 Cm.Sym.LocalVariableSymbol* classObjectResultVar = currentFunction->CreateTempLocalVariable(fun->GetReturnType());
                 classObjectResultVar->SetSid(boundCompileUnit.SymbolTable().GetSid());

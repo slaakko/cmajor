@@ -761,11 +761,8 @@ void ConvertingCtor::Generate(Emitter& emitter, GenResult& result)
                 }
                 else if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm && sourceType->GetBaseType()->IsInterfaceTypeSymbol())
                 {
-                    if (sourceType->GetBaseType()->IsInterfaceTypeSymbol())
-                    {
-                        pointerSourceType = Cm::IrIntf::Pointer(sourceType->GetBaseType()->GetIrType(), 1);
-                        emitter.Own(pointerSourceType);
-                    }
+                    pointerSourceType = Cm::IrIntf::Pointer(sourceType->GetBaseType()->GetIrType(), 1);
+                    emitter.Own(pointerSourceType);
                 }
                 emitter.Emit(Cm::IrIntf::Bitcast(pointerSourceType, to, from, targetType->GetIrType()));
             }

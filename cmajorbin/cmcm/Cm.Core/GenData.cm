@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -191,7 +191,9 @@ namespace Cm.Core
     
     public class Emitter : Ir.Intf.Emitter
     {
-        public Emitter() : base(), irFunction(null), gotoTargetLabel(null), cDebugNode(null), activeCfgNode(null), profilingHandler(null), newLlvmSyntax(false)
+        public Emitter() : 
+            base(), irFunction(null), gotoTargetLabel(null), cDebugNode(null), activeCfgNode(null), profilingHandler(null), newLlvmSyntax(false), irecPtrAllocated(false), tempBoolVarAllocted(false),
+            interfaceLookupFailed(null)
         {
             if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && Cm.Core.GlobalSettings.Instance().GetLlvmVersion() >= Cm.Ast.ProgramVersion(3, 7, 0, 0, ""))
             {
@@ -355,6 +357,30 @@ namespace Cm.Core
         {
             profilingHandler = profilingHandler_;
         }
+        public nothrow inline bool IrecPtrAllocated() const
+        {
+            return irecPtrAllocated;
+        }
+        public nothrow inline void SetIrecPtrAllocated()
+        {
+            irecPtrAllocated = true;
+        }
+        public nothrow inline bool TempBoolVarAllocted() const 
+        { 
+            return tempBoolVarAllocted; 
+        }
+        public nothrow void SetTempBoolVarAllocted() 
+        { 
+            tempBoolVarAllocted = true; 
+        }
+        public nothrow inline void SetInterfaceLookupFailed(Ir.Intf.Function* interfaceLookupFailed_)
+        {
+            interfaceLookupFailed = interfaceLookupFailed_;
+        }
+        public nothrow inline Ir.Intf.Function* InterfaceLookupFailed() const
+        {
+            return interfaceLookupFailed;
+        }
         private Ir.Intf.Function* irFunction;
         private HashSet<SharedPtr<GenData>, GenDataHash> labelRequestSet;
         private Ir.Intf.LabelObject* gotoTargetLabel;
@@ -367,6 +393,9 @@ namespace Cm.Core
         private CfgNode* activeCfgNode;
         private ProfilingHandler* profilingHandler;
         private bool newLlvmSyntax;
+        private bool irecPtrAllocated;
+        private bool tempBoolVarAllocted;
+        private Ir.Intf.Function* interfaceLookupFailed;
     }
     
     public class GenResult

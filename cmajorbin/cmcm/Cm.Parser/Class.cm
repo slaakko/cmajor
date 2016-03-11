@@ -98,8 +98,8 @@ namespace Cm.Parser
                 identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
                 NonterminalParser* templateParameterListNonterminalParser = GetNonterminal("TemplateParameterList");
                 templateParameterListNonterminalParser->SetPreCall(PreCall(PreTemplateParameterList));
-                NonterminalParser* inheritanceNonterminalParser = GetNonterminal("Inheritance");
-                inheritanceNonterminalParser->SetPreCall(PreCall(PreInheritance));
+                NonterminalParser* inheritanceAndImplIntfsNonterminalParser = GetNonterminal("InheritanceAndImplIntfs");
+                inheritanceAndImplIntfsNonterminalParser->SetPreCall(PreCall(PreInheritanceAndImplIntfs));
                 NonterminalParser* whereConstraintNonterminalParser = GetNonterminal("WhereConstraint");
                 whereConstraintNonterminalParser->SetPreCall(PreCall(PreWhereConstraint));
                 whereConstraintNonterminalParser->SetPostCall(PostCall(PostWhereConstraint));
@@ -137,7 +137,7 @@ namespace Cm.Parser
                 stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
                 stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.value)));
             }
-            public throw void PreInheritance(Stack<UniquePtr<Object>>& stack)
+            public throw void PreInheritanceAndImplIntfs(Stack<UniquePtr<Object>>& stack)
             {
                 stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
                 stack.Push(UniquePtr<Object>(new ValueObject<ClassNode*>(context.value)));
@@ -172,9 +172,9 @@ namespace Cm.Parser
             private Stack<Context> contextStack;
             private Context context;
         }
-        private class InheritanceRule: System.Text.Parsing.Rule
+        private class InheritanceAndImplIntfsRule: System.Text.Parsing.Rule
         {
-            public InheritanceRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+            public InheritanceAndImplIntfsRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
                 base(name_, enclosingScope_, definition_), contextStack(), context()
             {
                 AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
@@ -200,9 +200,9 @@ namespace Cm.Parser
                 ActionParser* a1ActionParser = GetAction("A1");
                 a1ActionParser->SetAction(ParsingAction(A1Action));
                 a1ActionParser->SetFailureAction(FailureAction(A1ActionFail));
-                NonterminalParser* baseClassTypeExprNonterminalParser = GetNonterminal("BaseClassTypeExpr");
-                baseClassTypeExprNonterminalParser->SetPreCall(PreCall(PreBaseClassTypeExpr));
-                baseClassTypeExprNonterminalParser->SetPostCall(PostCall(PostBaseClassTypeExpr));
+                NonterminalParser* baseClassTypeExprOrImplIntfNonterminalParser = GetNonterminal("BaseClassTypeExprOrImplIntf");
+                baseClassTypeExprOrImplIntfNonterminalParser->SetPreCall(PreCall(PreBaseClassTypeExprOrImplIntf));
+                baseClassTypeExprOrImplIntfNonterminalParser->SetPostCall(PostCall(PostBaseClassTypeExprOrImplIntf));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -210,37 +210,37 @@ namespace Cm.Parser
             }
             public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.cls->SetBaseClassTypeExpr(context.fromBaseClassTypeExpr);
+                context.cls->AddBaseClassOrImplIntfTypeExpr(context.fromBaseClassTypeExprOrImplIntf);
                 context.ctx->EndParsingTypeExpr();
             }
             public throw void A1ActionFail()
             {
                 context.ctx->EndParsingTypeExpr();
             }
-            public throw void PreBaseClassTypeExpr(Stack<UniquePtr<Object>>& stack)
+            public throw void PreBaseClassTypeExprOrImplIntf(Stack<UniquePtr<Object>>& stack)
             {
                 stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
             }
-            public throw void PostBaseClassTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            public throw void PostBaseClassTypeExprOrImplIntf(Stack<UniquePtr<Object>>& stack, bool matched)
             {
                 if (matched)
                 {
-                    UniquePtr<Object> fromBaseClassTypeExpr_value = stack.Pop();
-                    context.fromBaseClassTypeExpr = *cast<ValueObject<Node*>*>(fromBaseClassTypeExpr_value.GetPtr());
+                    UniquePtr<Object> fromBaseClassTypeExprOrImplIntf_value = stack.Pop();
+                    context.fromBaseClassTypeExprOrImplIntf = *cast<ValueObject<Node*>*>(fromBaseClassTypeExprOrImplIntf_value.GetPtr());
                 }
             }
             private class Context
             {
                 public ParsingContext* ctx;
                 public ClassNode* cls;
-                public Node* fromBaseClassTypeExpr;
+                public Node* fromBaseClassTypeExprOrImplIntf;
             }
             private Stack<Context> contextStack;
             private Context context;
         }
-        private class BaseClassTypeExprRule: System.Text.Parsing.Rule
+        private class BaseClassTypeExprOrImplIntfRule: System.Text.Parsing.Rule
         {
-            public BaseClassTypeExprRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+            public BaseClassTypeExprOrImplIntfRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
                 base(name_, enclosingScope_, definition_), contextStack(), context()
             {
                 AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
@@ -1803,22 +1803,22 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
             if (grammar0 == null)
             {
-                grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar0 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
             Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
@@ -1827,34 +1827,34 @@ namespace Cm.Parser
                 grammar3 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
-            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar6 == null)
             {
-                grammar6 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+                grammar6 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
-            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar7 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar7 == null)
             {
-                grammar7 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar7 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar7);
-            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar8 == null)
             {
-                grammar8 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar8 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar8);
             Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
@@ -1863,22 +1863,22 @@ namespace Cm.Parser
                 grammar9 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar9);
-            Grammar* grammar10 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar10 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar10 == null)
             {
-                grammar10 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar10 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar10);
-            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
+            Grammar* grammar11 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
             if (grammar11 == null)
             {
-                grammar11 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
+                grammar11 = Cm.Parser.StatementGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar11);
-            Grammar* grammar12 = parsingDomain->GetGrammar("Cm.Parser.StatementGrammar");
+            Grammar* grammar12 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
             if (grammar12 == null)
             {
-                grammar12 = Cm.Parser.StatementGrammar.Create(parsingDomain);
+                grammar12 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar12);
             Grammar* grammar13 = parsingDomain->GetGrammar("Cm.Parser.TemplateGrammar");
@@ -1890,23 +1890,23 @@ namespace Cm.Parser
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
             AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
-            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
-            AddRuleLink(new RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
             AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
             AddRuleLink(new RuleLink("WhereConstraint", this, "ConceptGrammar.WhereConstraint"));
+            AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
+            AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRuleLink(new RuleLink("TemplateParameterList", this, "TemplateGrammar.TemplateParameterList"));
+            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+            AddRuleLink(new RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
             AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
             AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
-            AddRuleLink(new RuleLink("CompoundStatement", this, "StatementGrammar.CompoundStatement"));
-            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
-            AddRuleLink(new RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
-            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-            AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
             AddRule(new ClassRule("Class", GetScope(),
                 new SequenceParser(
                     new SequenceParser(
@@ -1923,7 +1923,7 @@ namespace Cm.Parser
                                         new OptionalParser(
                                             new NonterminalParser("TemplateParameterList", "TemplateParameterList", 2))),
                                     new OptionalParser(
-                                        new NonterminalParser("Inheritance", "Inheritance", 2))),
+                                        new NonterminalParser("InheritanceAndImplIntfs", "InheritanceAndImplIntfs", 2))),
                                 new OptionalParser(
                                     new ActionParser("A1",
                                         new NonterminalParser("WhereConstraint", "WhereConstraint", 1)))),
@@ -1933,14 +1933,18 @@ namespace Cm.Parser
                             new NonterminalParser("ClassContent", "ClassContent", 3))),
                     new ExpectationParser(
                         new CharParser('}')))));
-            AddRule(new InheritanceRule("Inheritance", GetScope(),
+            AddRule(new InheritanceAndImplIntfsRule("InheritanceAndImplIntfs", GetScope(),
                 new SequenceParser(
-                    new ActionParser("A0",
-                        new CharParser(':')),
-                    new ActionParser("A1",
-                        new ExpectationParser(
-                            new NonterminalParser("BaseClassTypeExpr", "BaseClassTypeExpr", 1))))));
-            AddRule(new BaseClassTypeExprRule("BaseClassTypeExpr", GetScope(),
+                    new CharParser(':'),
+                    new ListParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new EmptyParser()),
+                            new ActionParser("A1",
+                                new ExpectationParser(
+                                    new NonterminalParser("BaseClassTypeExprOrImplIntf", "BaseClassTypeExprOrImplIntf", 1)))),
+                        new CharParser(',')))));
+            AddRule(new BaseClassTypeExprOrImplIntfRule("BaseClassTypeExprOrImplIntf", GetScope(),
                 new AlternativeParser(
                     new ActionParser("A0",
                         new NonterminalParser("TemplateId", "TemplateId", 1)),

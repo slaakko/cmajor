@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -75,7 +75,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, baseClassType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, baseClassType->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* baseClassCtor = null;
             try
@@ -160,7 +160,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, classType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, classType->GetContainerScope()->ClassInterfaceOrNsScope()));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* thisClassCtor = null;
             try
@@ -280,7 +280,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassInterfaceOrNsScope()));
             if (memberVariableType is Cm.Sym.ClassTypeSymbol*)
             {
                 Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);
@@ -442,7 +442,7 @@ namespace Cm.Bind
         mutexGuardResolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, mutexGuardPointerType));
         mutexGuardResolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, intType));
         Cm.Sym.FunctionLookupSet mutexGuardFunctionLookups;
-        mutexGuardFunctionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, mutexGuardClassType->ClassOrNs()->GetContainerScope()));
+        mutexGuardFunctionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, mutexGuardClassType->ClassInterfaceOrNs()->GetContainerScope()));
         List<Cm.Sym.FunctionSymbol*> mutexGuardConversions;
         Cm.Sym.FunctionSymbol* mutexGuardConstructor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", mutexGuardResolutionArguments, mutexGuardFunctionLookups, staticConstructorNode->GetSpan(),
             mutexGuardConversions);
@@ -628,7 +628,7 @@ namespace Cm.Bind
                 resolutionArguments.Add(Cm.Core.Argument(argument->ArgumentCategory(), argument->Type()));
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_, memberVariableType->GetContainerScope()->ClassInterfaceOrNsScope()));
             if (memberVariableType is Cm.Sym.ClassTypeSymbol*)
             {
                 Cm.Sym.ClassTypeSymbol* memberVarClassType = cast<Cm.Sym.ClassTypeSymbol*>(memberVariableType);

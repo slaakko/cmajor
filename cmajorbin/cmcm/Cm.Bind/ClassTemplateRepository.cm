@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -373,6 +373,21 @@ namespace Cm.Bind
                         }
                     }
                 }
+            }
+        }
+        public override void AutoBindTemplates()
+        {
+            Cm.Ast.Node* stringNode = new Cm.Ast.TemplateIdNode(Span(), new Cm.Ast.IdentifierNode(Span(), "System.string"));
+            boundCompileUnit.Own(stringNode);
+            Cm.Sym.TypeSymbol* stringTypeSymbol = ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.FileScopes(), *this, stringNode);
+            if (stringTypeSymbol is Cm.Sym.TemplateTypeSymbol*)
+            {
+                Cm.Sym.TemplateTypeSymbol* stringTemplate = cast<Cm.Sym.TemplateTypeSymbol*>(stringTypeSymbol);
+                BindTemplateTypeSymbol(stringTemplate, boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.FileScopes());
+            }
+            else
+            {
+                throw Exception("template type symbol expected");
             }
         }
         private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;

@@ -890,10 +890,6 @@ Cm::Sym::FunctionSymbol* ResolveVirtualCall(Cm::Sym::TypeRepository& typeReposit
 
 void FunctionEmitter::Visit(Cm::BoundTree::BoundFunctionCall& functionCall)
 {
-    if (functionCall.GetFunction()->GroupName() == "Write")
-    {
-        int x = 0;
-    }
     std::shared_ptr<Cm::Core::GenResult> result(new Cm::Core::GenResult(emitter.get(), genFlags));
     bool functionReturnsClassOrInterfaceObjectByValue = functionCall.GetFunction()->ReturnsClassOrInterfaceObjectByValue();
     if (functionReturnsClassOrInterfaceObjectByValue)

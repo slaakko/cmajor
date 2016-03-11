@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -14,6 +14,33 @@ using Span = System.Text.Parsing.Span;
 namespace Cm.Sym
 {
     public const ulong noCid = cast<ulong>(-1);
+    
+    public class ITable
+    {
+        public ITable(InterfaceTypeSymbol* intf_) : intf(intf_)
+        {
+            intfMemFunImpl.Resize(intf->MemFuns().Count());
+        }
+        public nothrow inline InterfaceTypeSymbol* Intf() const
+        {
+            return intf;
+        }
+        public nothrow inline const List<FunctionSymbol*>& IntfMemFunImpl() const
+        {
+            return intfMemFunImpl;
+        }
+        public void SetImplementedMemFun(int index, FunctionSymbol* memFun)
+        {
+            if (index < 0 || index >= intfMemFunImpl.Count())
+            {
+                throw Exception("invalid interface mem fun index");
+            }
+            intfMemFunImpl[index] = memFun;
+        }
+        private InterfaceTypeSymbol* intf;
+        private List<FunctionSymbol*> intfMemFunImpl;
+        
+    }
     
     public enum ClassTypeSymbolFlags : uint
     {
@@ -43,7 +70,12 @@ namespace Cm.Sym
         generateMoveAssignment = 1u << 22u,
         generateOpEqual = 1u << 23u,
         generateDestructor = 1u << 24u,
-        debugInfoGenerated = 1u << 25u
+        debugInfoGenerated = 1u << 25u,
+        nonLeaf = 1u << 26u,
+        live = 1u << 27u,
+        baseClassSet = 1u << 28u,
+        implementedInterfacesSet = 1u << 29u,
+        itblsInitialized = 1u << 30u
     }
     
     public class PersistentClassData
@@ -301,14 +333,49 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.debugInfoGenerated);
         }
+        public nothrow inline bool BaseClassSet() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.baseClassSet);
+        }
+        public nothrow inline void SetBaseClassSet()
+        {
+            SetFlag(ClassTypeSymbolFlags.baseClassSet);
+        }
+        public nothrow inline bool ImplementedInterfacesSet() const
+        {
+            return GetFlag(ClassTypeSymbolFlags.implementedInterfacesSet);
+        }
+        public nothrow inline void SetImplementedInterfacesSet()
+        {
+            SetFlag(ClassTypeSymbolFlags.implementedInterfacesSet);
+        }
+        public void AddImplementedInterface(Cm.Sym.InterfaceTypeSymbol* interfaceTypeSymbol)
+        {
+            implementedInterfaces.Add(interfaceTypeSymbol);
+        }
         public nothrow bool DoGenerateDestructor() const
         {
             if (destructor != null) return false;   // already has one, don't generate
             if (GenerateDestructor()) return true;  // asked to generate one, so generate
-            if (IsVirtual()) return true;           // virtual classes need to have one
+            if (HasVirtualFunctions()) return true; // classes that have virtual functions need to have one
             if (HasNonTrivialMemberDestructor()) return true;   // member has one => need to have one
             if (baseClass != null && baseClass->Destructor() != null) return true;  // base class has one => need to have one
             return false;                           // else don't generate
+        }
+        public nothrow bool HasVirtualFunctions() const
+        {
+            for (Symbol* symbol : Symbols())
+            {
+                if (symbol is FunctionSymbol*)
+                {
+                    FunctionSymbol* fun = cast<FunctionSymbol*>(symbol);
+                    if (fun->IsVirtual())
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
         public nothrow bool HasNonTrivialMemberDestructor() const
         {
@@ -334,6 +401,10 @@ namespace Cm.Sym
         {
             baseClass = baseClass_;
         }
+        public nothrow inline const List<InterfaceTypeSymbol*>& ImplementedInterfaces() const
+        {
+            return implementedInterfaces;
+        }    
         public nothrow override bool IsClassTemplateSymbol() const 
         { 
             return !typeParameters.IsEmpty(); 
@@ -392,6 +463,11 @@ namespace Cm.Sym
             {
                 reader.FetchTypeFor(this, -2);
             }
+            int numImplementedInterfaces = reader.GetBinaryReader().ReadInt();
+            for (int i = 0; i < numImplementedInterfaces; ++i)
+            {
+                reader.FetchTypeFor(this, -2);
+            }
             bool hasInitializedVar = reader.GetBinaryReader().ReadBool();
             if (hasInitializedVar)
             {
@@ -424,10 +500,6 @@ namespace Cm.Sym
         }
         public override void Write(Writer& writer)
         {
-            if (Name() == "ExDeleter")
-            {
-                int x = 0;
-            }
             base->Write(writer);
             writer.GetBinaryWriter().Write(cid);
             uint outputFlags = flags & ~ClassTypeSymbolFlags.vtblInitialized;
@@ -437,6 +509,12 @@ namespace Cm.Sym
             if (hasBaseClass)
             {
                 writer.Write(baseClass->Id());
+            }
+            int numImplementedInterfaces = implementedInterfaces.Count();
+            writer.GetBinaryWriter().Write(numImplementedInterfaces);
+            for (InterfaceTypeSymbol* implementedInterface : implementedInterfaces)
+            {
+                writer.Write(implementedInterface->Id());
             }
             bool hasInitializedVar = !initializedVar.IsNull();
             writer.GetBinaryWriter().Write(hasInitializedVar);
@@ -503,8 +581,22 @@ namespace Cm.Sym
         {
             if (index == -2)
             {
-                baseClass = cast<ClassTypeSymbol*>(typeSymbol);
-                GetContainerScope()->SetBase(baseClass->GetContainerScope());
+                if (typeSymbol is ClassTypeSymbol*)
+                {
+                    baseClass = cast<ClassTypeSymbol*>(typeSymbol);
+                    SetBaseClassSet();
+                    GetContainerScope()->SetBase(baseClass->GetContainerScope());
+                }
+                else if (typeSymbol is InterfaceTypeSymbol*)
+                {
+                    InterfaceTypeSymbol* interfaceTypeSymbol = cast<InterfaceTypeSymbol*>(typeSymbol);
+                    implementedInterfaces.Add(interfaceTypeSymbol);
+                    SetImplementedInterfacesSet();
+                }
+                else
+                {
+                    throw Exception("class or interface type expected");
+                }
             }            
         }
         public nothrow bool HasBaseClass(ClassTypeSymbol* cls) const
@@ -722,10 +814,58 @@ namespace Cm.Sym
                 baseClass = replica->GetPrimaryTemplateTypeSymbol();
             }
         }
-        public override void InitVirtualFunctionTables()
+        public override void InitVirtualFunctionTablesAndInterfaceTables()
         {
-            base->InitVirtualFunctionTables();
+            base->InitVirtualFunctionTablesAndInterfaceTables();
+            InitItbls();
             InitVtbl();
+        }
+        public void InitItbls()
+        {
+            if (GetFlag(ClassTypeSymbolFlags.itblsInitialized)) return;
+            SetFlag(ClassTypeSymbolFlags.itblsInitialized);
+            if (implementedInterfaces.IsEmpty()) return;
+            SetVirtual();
+            if (!HasVirtualFunctions())
+            {
+                vtbl.Add(null); // generate vtbl although has no virtual functions because rtti needed...
+            }
+            for (InterfaceTypeSymbol* intf : implementedInterfaces)
+            {
+                itabs.Add(ITable(intf));
+            }
+            for (Symbol* symbol : Symbols())
+            {
+                if (symbol is FunctionSymbol*)
+                {
+                    FunctionSymbol* memFun = cast<FunctionSymbol*>(symbol);
+                    for (ITable& itab : itabs)
+                    {
+                        InterfaceTypeSymbol* intf = itab.Intf();
+                        for (FunctionSymbol* intfMemFun : intf->MemFuns())
+                        {
+                            if (Implements(memFun, intfMemFun))
+                            {
+                                itab.SetImplementedMemFun(intfMemFun->ItblIndex(), memFun);
+                            }
+                        }
+                    }
+                }
+            }
+            for (const ITable& itab : itabs)
+            {
+                int index = 0;
+                for (FunctionSymbol* memFun : itab.IntfMemFunImpl())
+                {
+                    if (memFun == null)
+                    {
+                        string intfMemFunSignature = itab.Intf()->MemFuns()[index]->ParsingName();
+                        throw Error("class '" + FullName() + "' does not implement interface '" + itab.Intf()->FullName() + "' because implementation of interface function '" + 
+                            intfMemFunSignature + "' is missing", GetSpan(), itab.Intf()->MemFuns()[index]->GetSpan());
+                    }
+                    ++index;
+                }
+            }
         }
         public nothrow inline const List<MemberVariableSymbol*>& MemberVariables() const
         {
@@ -763,12 +903,18 @@ namespace Cm.Sym
         { 
             return conversions; 
         }
+        public nothrow inline const List<ITable>& ITabs() const
+        {
+            return itabs;
+        }
         private ulong cid;
         private ulong key;
         private int level;
         private int priority;
         private ClassTypeSymbolFlags flags;
         private ClassTypeSymbol* baseClass;
+        private List<InterfaceTypeSymbol*> implementedInterfaces;
+        private List<ITable> itabs;
         private UniquePtr<PersistentClassData> persistentClassData;
         private string sourceFilePath;
         private List<MemberVariableSymbol*> memberVariables;
@@ -797,6 +943,28 @@ namespace Cm.Sym
             if (!TypesEqual(p->GetType(), q->GetType()))
             {
                 return false;
+            }
+        }
+        return true;
+    }
+    
+    public bool Implements(FunctionSymbol* memFun, FunctionSymbol* intfMemFun)
+    {
+        if (memFun->GetReturnType() == null) return false;
+        if (!TypesEqual(memFun->GetReturnType(), intfMemFun->GetReturnType())) return false;
+        int n = memFun->Parameters().Count();
+        if (n != intfMemFun->Parameters().Count()) return false;
+        for (int i = 0; i < n; ++i)
+        {
+            TypeSymbol* memFunParamType = memFun->Parameters()[i]->GetType();
+            TypeSymbol* intfMemFunParamType = intfMemFun->Parameters()[i]->GetType();
+            if (i == 0)
+            {
+                if (intfMemFunParamType->IsConstType() && !memFunParamType->IsConstType() || !intfMemFunParamType->IsConstType() && memFunParamType->IsConstType()) return false;
+            }
+            else
+            {
+                if (!TypesEqual(memFunParamType, intfMemFunParamType)) return false;
             }
         }
         return true;

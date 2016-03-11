@@ -301,6 +301,15 @@ namespace Cm.Sym
             derivations.Add(Cm.Ast.Derivation.pointer);
             return MakeDerivedType(derivations, voidType, List<int>(), span);
         }
+        public TypeSymbol* MakeConstGenericPtrType(const Span& span)
+        {
+            TypeId voidTypeId(ShortBasicTypeId.voidId);
+            TypeSymbol* voidType = GetType(voidTypeId);
+            Cm.Ast.DerivationList derivations;
+            derivations.Add(Cm.Ast.Derivation.const_);
+            derivations.Add(Cm.Ast.Derivation.pointer);
+            return MakeDerivedType(derivations, voidType, List<int>(), span);
+        }
         public TypeSymbol* MakeTemplateType(TypeSymbol* subjectType, const List<TypeSymbol*>& typeArguments, const Span& span)
         {
             TypeId typeId = ComputeTemplateTypeId(subjectType, typeArguments);

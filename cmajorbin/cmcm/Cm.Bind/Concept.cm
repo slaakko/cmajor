@@ -315,7 +315,7 @@ namespace Cm.Bind
                 parameterTypes.Add(parameterType);
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassInterfaceOrNsScope()));
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, "@constructor", resolutionArguments, functionLookups, constructorConstraintNode.GetSpan(), conversions,
@@ -376,7 +376,7 @@ namespace Cm.Bind
                 parameterTypes.Add(parameterType);
             }
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, type->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, type->GetContainerScope()->ClassInterfaceOrNsScope()));
             functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
             List<Cm.Sym.FunctionSymbol*> conversions;
             Cm.Sym.FunctionSymbol* functionSymbol = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, functionLookups, memberFunctionConstraintNode.GetSpan(), conversions,
@@ -416,7 +416,7 @@ namespace Cm.Bind
             {
                 Cm.Sym.TypeSymbol* thisParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(firstTypeArgument, functionConstraintNode.GetSpan());
                 resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
-                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassOrNsScope()));
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, firstTypeArgument->GetContainerScope()->ClassInterfaceOrNsScope()));
                 int n = functionConstraintNode.Parameters().Count();
                 for (int i = 0; i < n; ++i)
                 {
@@ -429,7 +429,7 @@ namespace Cm.Bind
                         argumentCategory = Cm.Core.ArgumentCategory.lvalue;
                     }
                     resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
-                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 }
                 functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
                 List<Cm.Sym.FunctionSymbol*> conversions;
@@ -474,7 +474,7 @@ namespace Cm.Bind
                     }
                     resolutionArguments.Add(Cm.Core.Argument(argumentCategory, parameterType));
                     parameterTypes.Add(parameterType);
-                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassOrNsScope()));
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, parameterType->GetContainerScope()->ClassInterfaceOrNsScope()));
                 }
                 functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, containerScope));
                 List<Cm.Sym.FunctionSymbol*> conversions;
@@ -755,7 +755,7 @@ namespace Cm.Bind
                 Cm.Sym.TypeSymbol* thatParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(firstTypeArgument, explicitlyConvertibleConstraintNode.GetSpan());
                 List<Cm.Core.Argument> resolutionArguments;
                 Cm.Sym.FunctionLookupSet functionLookups;
-                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondTypeArgument->GetContainerScope()->ClassOrNsScope()));
+                functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondTypeArgument->GetContainerScope()->ClassInterfaceOrNsScope()));
                 resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
                 resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thatParameterType));
                 List<Cm.Sym.FunctionSymbol*> conversions;
@@ -830,7 +830,7 @@ namespace Cm.Bind
             Cm.Sym.TypeSymbol* thatParameterType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstReferenceType(firstType, span);
             List<Cm.Core.Argument> resolutionArguments;
             Cm.Sym.FunctionLookupSet functionLookups;
-            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondType->GetContainerScope()->ClassOrNsScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, secondType->GetContainerScope()->ClassInterfaceOrNsScope()));
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thisParameterType));
             resolutionArguments.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, thatParameterType));
             List<Cm.Sym.FunctionSymbol*> conversions;

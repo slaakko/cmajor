@@ -15,7 +15,7 @@ project <Interface/Interface.cmp>;
 project <jsonschemagen/jsonschemagen.cmp>;
 project <print_args/print_args.cmp>;
 project <simplegrep/simplegrep.cmp>;
-activeProject Calculator;
+activeProject Interface;
 dependency Calculator();
 dependency CmXmlSerGen();
 dependency CopyFile();

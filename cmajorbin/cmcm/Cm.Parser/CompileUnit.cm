@@ -485,6 +485,8 @@ namespace Cm.Parser
                 a7ActionParser->SetAction(ParsingAction(A7Action));
                 ActionParser* a8ActionParser = GetAction("A8");
                 a8ActionParser->SetAction(ParsingAction(A8Action));
+                ActionParser* a9ActionParser = GetAction("A9");
+                a9ActionParser->SetAction(ParsingAction(A9Action));
                 NonterminalParser* namespaceDefinitionNonterminalParser = GetNonterminal("NamespaceDefinition");
                 namespaceDefinitionNonterminalParser->SetPreCall(PreCall(PreNamespaceDefinition));
                 namespaceDefinitionNonterminalParser->SetPostCall(PostCall(PostNamespaceDefinition));
@@ -503,6 +505,9 @@ namespace Cm.Parser
                 NonterminalParser* classDefinitionNonterminalParser = GetNonterminal("ClassDefinition");
                 classDefinitionNonterminalParser->SetPreCall(PreCall(PreClassDefinition));
                 classDefinitionNonterminalParser->SetPostCall(PostCall(PostClassDefinition));
+                NonterminalParser* interfaceDefinitionNonterminalParser = GetNonterminal("InterfaceDefinition");
+                interfaceDefinitionNonterminalParser->SetPreCall(PreCall(PreInterfaceDefinition));
+                interfaceDefinitionNonterminalParser->SetPostCall(PostCall(PostInterfaceDefinition));
                 NonterminalParser* delegateDefinitionNonterminalParser = GetNonterminal("DelegateDefinition");
                 delegateDefinitionNonterminalParser->SetPreCall(PreCall(PreDelegateDefinition));
                 delegateDefinitionNonterminalParser->SetPostCall(PostCall(PostDelegateDefinition));
@@ -539,13 +544,17 @@ namespace Cm.Parser
             }
             public throw void A6Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromDelegateDefinition;
+                context.value = context.fromInterfaceDefinition;
             }
             public throw void A7Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromClassDelegateDefinition;
+                context.value = context.fromDelegateDefinition;
             }
             public throw void A8Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromClassDelegateDefinition;
+            }
+            public throw void A9Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = context.fromConceptDefinition;
             }
@@ -625,6 +634,19 @@ namespace Cm.Parser
                     context.fromClassDefinition = *cast<ValueObject<Node*>*>(fromClassDefinition_value.GetPtr());
                 }
             }
+            public throw void PreInterfaceDefinition(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<CompileUnitNode*>(context.compileUnit)));
+            }
+            public throw void PostInterfaceDefinition(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInterfaceDefinition_value = stack.Pop();
+                    context.fromInterfaceDefinition = *cast<ValueObject<Node*>*>(fromInterfaceDefinition_value.GetPtr());
+                }
+            }
             public throw void PreDelegateDefinition(Stack<UniquePtr<Object>>& stack)
             {
                 stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
@@ -673,6 +695,7 @@ namespace Cm.Parser
                 public Node* fromEnumerationDefinition;
                 public Node* fromTypedefDefinition;
                 public Node* fromClassDefinition;
+                public Node* fromInterfaceDefinition;
                 public Node* fromDelegateDefinition;
                 public Node* fromClassDelegateDefinition;
                 public Node* fromConceptDefinition;
@@ -1037,6 +1060,67 @@ namespace Cm.Parser
             private Stack<Context> contextStack;
             private Context context;
         }
+        private class InterfaceDefinitionRule: System.Text.Parsing.Rule
+        {
+            public InterfaceDefinitionRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("CompileUnitNode*", "compileUnit"));
+                SetValueTypeName("Node*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> compileUnit_value = stack.Pop();
+                context.compileUnit = *cast<ValueObject<CompileUnitNode*>*>(compileUnit_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* interfaceNonterminalParser = GetNonterminal("Interface");
+                interfaceNonterminalParser->SetPreCall(PreCall(PreInterface));
+                interfaceNonterminalParser->SetPostCall(PostCall(PostInterface));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.fromInterface;
+            }
+            public throw void PreInterface(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.CompileUnitNode*>(context.compileUnit)));
+            }
+            public throw void PostInterface(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInterface_value = stack.Pop();
+                    context.fromInterface = *cast<ValueObject<Cm.Ast.InterfaceNode*>*>(fromInterface_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public CompileUnitNode* compileUnit;
+                public Node* value;
+                public Cm.Ast.InterfaceNode* fromInterface;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
         private class DelegateDefinitionRule: System.Text.Parsing.Rule
         {
             public DelegateDefinitionRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
@@ -1208,40 +1292,40 @@ namespace Cm.Parser
         public override void GetReferencedGrammars()
         {
             ParsingDomain* parsingDomain = GetParsingDomain();
-            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.ClassGrammar");
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.InterfaceGrammar");
             if (grammar0 == null)
             {
-                grammar0 = Cm.Parser.ClassGrammar.Create(parsingDomain);
+                grammar0 = Cm.Parser.InterfaceGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
             if (grammar1 == null)
             {
-                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+                grammar1 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
+                grammar2 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
-            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.ConceptGrammar");
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
             if (grammar3 == null)
             {
-                grammar3 = Cm.Parser.ConceptGrammar.Create(parsingDomain);
+                grammar3 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.EnumerationGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.ClassGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.EnumerationGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.ClassGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
             Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.DelegateGrammar");
@@ -1250,32 +1334,39 @@ namespace Cm.Parser
                 grammar6 = Cm.Parser.DelegateGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
-            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            Grammar* grammar7 = parsingDomain->GetGrammar("Cm.Parser.ConstantGrammar");
             if (grammar7 == null)
             {
-                grammar7 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+                grammar7 = Cm.Parser.ConstantGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar7);
-            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
+            Grammar* grammar8 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
             if (grammar8 == null)
             {
-                grammar8 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
+                grammar8 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar8);
+            Grammar* grammar9 = parsingDomain->GetGrammar("Cm.Parser.TypedefGrammar");
+            if (grammar9 == null)
+            {
+                grammar9 = Cm.Parser.TypedefGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar9);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
-            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
-            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
-            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
-            AddRuleLink(new RuleLink("Function", this, "FunctionGrammar.Function"));
+            AddRuleLink(new RuleLink("Interface", this, "InterfaceGrammar.Interface"));
             AddRuleLink(new RuleLink("Typedef", this, "TypedefGrammar.Typedef"));
-            AddRuleLink(new RuleLink("Concept", this, "ConceptGrammar.Concept"));
-            AddRuleLink(new RuleLink("Class", this, "ClassGrammar.Class"));
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("ClassDelegate", this, "DelegateGrammar.ClassDelegate"));
+            AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("Function", this, "FunctionGrammar.Function"));
             AddRuleLink(new RuleLink("EnumType", this, "EnumerationGrammar.EnumType"));
+            AddRuleLink(new RuleLink("Class", this, "ClassGrammar.Class"));
+            AddRuleLink(new RuleLink("Concept", this, "ConceptGrammar.Concept"));
             AddRuleLink(new RuleLink("Delegate", this, "DelegateGrammar.Delegate"));
             AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Constant", this, "ConstantGrammar.Constant"));
             AddRule(new CompileUnitRule("CompileUnit", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -1330,23 +1421,26 @@ namespace Cm.Parser
                                     new AlternativeParser(
                                         new AlternativeParser(
                                             new AlternativeParser(
-                                                new ActionParser("A0",
-                                                    new NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 3)),
-                                                new ActionParser("A1",
-                                                    new NonterminalParser("FunctionDefinition", "FunctionDefinition", 2))),
-                                            new ActionParser("A2",
-                                                new NonterminalParser("ConstantDefinition", "ConstantDefinition", 1))),
-                                        new ActionParser("A3",
-                                            new NonterminalParser("EnumerationDefinition", "EnumerationDefinition", 1))),
-                                    new ActionParser("A4",
-                                        new NonterminalParser("TypedefDefinition", "TypedefDefinition", 1))),
-                                new ActionParser("A5",
-                                    new NonterminalParser("ClassDefinition", "ClassDefinition", 2))),
-                            new ActionParser("A6",
+                                                new AlternativeParser(
+                                                    new ActionParser("A0",
+                                                        new NonterminalParser("NamespaceDefinition", "NamespaceDefinition", 3)),
+                                                    new ActionParser("A1",
+                                                        new NonterminalParser("FunctionDefinition", "FunctionDefinition", 2))),
+                                                new ActionParser("A2",
+                                                    new NonterminalParser("ConstantDefinition", "ConstantDefinition", 1))),
+                                            new ActionParser("A3",
+                                                new NonterminalParser("EnumerationDefinition", "EnumerationDefinition", 1))),
+                                        new ActionParser("A4",
+                                            new NonterminalParser("TypedefDefinition", "TypedefDefinition", 1))),
+                                    new ActionParser("A5",
+                                        new NonterminalParser("ClassDefinition", "ClassDefinition", 2))),
+                                new ActionParser("A6",
+                                    new NonterminalParser("InterfaceDefinition", "InterfaceDefinition", 2))),
+                            new ActionParser("A7",
                                 new NonterminalParser("DelegateDefinition", "DelegateDefinition", 1))),
-                        new ActionParser("A7",
+                        new ActionParser("A8",
                             new NonterminalParser("ClassDelegateDefinition", "ClassDelegateDefinition", 1))),
-                    new ActionParser("A8",
+                    new ActionParser("A9",
                         new NonterminalParser("ConceptDefinition", "ConceptDefinition", 1)))));
             AddRule(new NamespaceDefinitionRule("NamespaceDefinition", GetScope(),
                 new SequenceParser(
@@ -1378,6 +1472,9 @@ namespace Cm.Parser
             AddRule(new ClassDefinitionRule("ClassDefinition", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Class", "Class", 2))));
+            AddRule(new InterfaceDefinitionRule("InterfaceDefinition", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("Interface", "Interface", 2))));
             AddRule(new DelegateDefinitionRule("DelegateDefinition", GetScope(),
                 new ActionParser("A0",
                     new NonterminalParser("Delegate", "Delegate", 1))));

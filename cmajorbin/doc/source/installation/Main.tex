@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\title{Getting Started Guide for Cmajor 1.3.0}
+\title{Getting Started Guide for Cmajor 1.4.0}
 \author{Seppo Laakko}
 \maketitle
 
@@ -17,7 +17,7 @@
 
 Note:
 You must uninstall any previous Cmajor version before installing
-this version (1.3.0).
+this version (1.4.0).
 
 It is also recommended that you delete the
 \verb|%APPDATA%\Cmajor| directory before installing
@@ -65,8 +65,8 @@ In my system this is\\
 
 \item
 Download and install Visual C++ Redistributable for Visual Studio 2015:\\
-64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.3.0/vcredist_x64.exe/download}\\
-32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.3.0/vcredist_x86.exe/download}
+64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.4.0/vcredist_x64.exe/download}\\
+32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.4.0/vcredist_x86.exe/download}
 \end{itemize}
 
 \subsection{Cmajor Installation}
@@ -74,8 +74,8 @@ Download and install Visual C++ Redistributable for Visual Studio 2015:\\
 \begin{itemize}
 
 \item
-Download and run \textbf{cmajor-1.3.0-win-x86-setup.exe} (for 32-bit Windows) or
-\textbf{cmajor-1.3.0-win-x64-setup.exe} (for 64-bit Windows).
+Download and run \textbf{cmajor-1.4.0-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.4.0-win-x64-setup.exe} (for 64-bit Windows).
 
 \item
 Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
@@ -193,9 +193,12 @@ Build seems to succeed but program does not work, or other mysterious error.
 Try \textbf{rebuild} command (-R option) or \textbf{clean} and then \textbf{build}.
 
 \item
-IDE messes up things.
+Sometimes IDE messes up things or error messages from command line compiler are not propagated to IDE properly.
 
-Try using the command line compiler (cmc.exe).
+Try using the command line compiler (cmc.exe) if you can get more information.
+
+Programs compiled for C backend both in debug and release configuration have debug symbols in them,
+so that they can be debugged also using gdb.
 
 \item
 How to generate 32-bit executables in a 64-bit system.
@@ -252,7 +255,7 @@ contains instructions how to obtain and build them.
 \begin{itemize}
 
 \item
-Download and extract \textbf{cmajor-1.3.0.tar.gz} or \textbf{cmajor-1.3.0.tar.bz2}
+Download and extract \textbf{cmajor-1.4.0.tar.gz} or \textbf{cmajor-1.4.0.tar.bz2}
 to some directory here called \verb|<cmajor>|.
 
 \item

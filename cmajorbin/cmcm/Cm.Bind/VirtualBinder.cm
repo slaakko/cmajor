@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -35,6 +35,7 @@ namespace Cm.Bind
                 staticConstructor->SetPublic();
                 classTypeSymbol->AddSymbol(staticConstructor);
             }
+            classTypeSymbol->InitItbls();
             classTypeSymbol->InitVtbl();
         }
         private void BindTemplateTypeSymbols(Cm.Sym.ClassTypeSymbol* classTypeSymbol, Cm.Sym.ContainerScope* containerScope)

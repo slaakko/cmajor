@@ -173,7 +173,7 @@ Ir::Intf::Object* CreateWStringConstant(const std::string& value)
 std::string MakeWStringConstantName(const std::string& s)
 {
     std::vector<uint16_t> utf16Str = Cm::Util::ToUtf16(s);
-    std::string name;
+    std::string name("{");
     int n = int(utf16Str.size());
     for (int i = 0; i < n; ++i)
     {
@@ -187,7 +187,7 @@ std::string MakeWStringConstantName(const std::string& s)
     {
         name.append(", ");
     }
-    name.append("0");
+    name.append("0}");
     return name;
 }
 
@@ -200,7 +200,7 @@ int UStringConstantLength(const std::string& s)
 std::string MakeUStringConstantName(const std::string& s)
 {
     std::vector<uint32_t> utf32Str = Cm::Util::ToUtf32(s);
-    std::string name;
+    std::string name("{");
     int n = int(utf32Str.size());
     for (int i = 0; i < n; ++i)
     {
@@ -214,7 +214,7 @@ std::string MakeUStringConstantName(const std::string& s)
     {
         name.append(", ");
     }
-    name.append("0");
+    name.append("0}");
     return name;
 }
 

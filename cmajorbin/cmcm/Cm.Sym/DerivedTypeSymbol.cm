@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -78,6 +78,10 @@ namespace Cm.Sym
         public nothrow override bool IsPointerToClassType() const
         {
             return GetPointerCount() == 1 && (baseType is ClassTypeSymbol*);
+        }
+        public nothrow override bool IsPointerToInterfaceTypeSymbol() const
+        {
+            return GetPointerCount() == 1 && (baseType is InterfaceTypeSymbol*);
         }
         public nothrow override bool IsPointerToTemplateType() const
         {

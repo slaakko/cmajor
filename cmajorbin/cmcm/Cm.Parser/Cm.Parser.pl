@@ -7,8 +7,8 @@ namespace Cm.Parser
     grammar ClassGrammar
     {
         Class(ParsingContext* ctx, CompileUnitNode* compileUnit): ClassNode*;
-        Inheritance(ParsingContext* ctx, ClassNode* cls);
-        BaseClassTypeExpr(ParsingContext* ctx): Node*;
+        InheritanceAndImplIntfs(ParsingContext* ctx, ClassNode* cls);
+        BaseClassTypeExprOrImplIntf(ParsingContext* ctx): Node*;
         ClassContent(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit);
         ClassMember(ParsingContext* ctx, ClassNode* cls, CompileUnitNode* compileUnit): Node*;
         InitializerList(ParsingContext* ctx, Node* owner);
@@ -39,6 +39,7 @@ namespace Cm.Parser
         EnumerationDefinition(ParsingContext* ctx): Node*;
         TypedefDefinition(ParsingContext* ctx): Node*;
         ClassDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): Node*;
+        InterfaceDefinition(ParsingContext* ctx, CompileUnitNode* compileUnit): Node*;
         DelegateDefinition(ParsingContext* ctx): Node*;
         ClassDelegateDefinition(ParsingContext* ctx): Node*;
         ConceptDefinition(ParsingContext* ctx): Node*;
@@ -120,6 +121,14 @@ namespace Cm.Parser
     {
         Identifier: IdentifierNode*;
         QualifiedId: IdentifierNode*;
+    }
+    grammar InterfaceGrammar
+    {
+        Interface(ParsingContext* ctx, Cm.Ast.CompileUnitNode* compileUnit): Cm.Ast.InterfaceNode*;
+        InterfaceContent(ParsingContext* ctx, Cm.Ast.InterfaceNode* intf, Cm.Ast.CompileUnitNode* compileUnit);
+        InterfaceMemFun(ParsingContext* ctx, Cm.Ast.CompileUnitNode* compileUnit, var UniquePtr<Cm.Ast.MemberFunctionNode> memFun): Cm.Ast.MemberFunctionNode*;
+        InterfaceMemFunSpecifiers: Cm.Ast.Specifiers;
+        InterfaceFunctionGroupId: Cm.Ast.FunctionGroupIdNode*;
     }
     grammar KeywordGrammar
     {

@@ -96,7 +96,7 @@ namespace C
     public string MakeWStringConstantName(const string& s)
     {
         wstring ws = System.Unicode.ToUtf16(s);
-        string name;
+        string name("{");
         bool first = true;
         for (wchar c : ws)
         {
@@ -108,20 +108,20 @@ namespace C
             {
                 name.Append(", ");
             }
-            name.Append(ToString(cast<ushort>(c)) + "u");
+            name.Append(ToString(cast<ushort>(c)));
         }
         if (!s.IsEmpty())
         {
             name.Append(", ");
         }
-        name.Append("0u");
+        name.Append("0}");
         return name;
     }
 
     public string MakeUStringConstantName(const string& s)
     {
         ustring us = System.Unicode.ToUtf32(s);
-        string name;
+        string name("{");
         bool first = true;
         for (uchar c : us)
         {
@@ -133,13 +133,13 @@ namespace C
             {
                 name.Append(", ");
             }
-            name.Append(ToString(cast<uint>(c)) + "u");
+            name.Append(ToString(cast<uint>(c)));
         }
         if (!s.IsEmpty())
         {
             name.Append(", ");
         }
-        name.Append("0u");
+        name.Append("0}");
         return name;
     }
     

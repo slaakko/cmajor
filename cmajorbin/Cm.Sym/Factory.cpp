@@ -22,6 +22,7 @@
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/ClassTypeSymbol.hpp>
+#include <Cm.Sym/InterfaceTypeSymbol.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
 #include <Cm.Sym/ConceptSymbol.hpp>
 #include <stdexcept>
@@ -79,7 +80,7 @@ Value* ValueFactory::CreateValue(ValueType valueType)
     const std::unique_ptr<ValueCreator>& creator = creators[int(valueType)];
     if (creator)
     {
-        Value* value = creators[int(valueType)]->CreateValue();
+        Value* value = creator->CreateValue();
         return value;
     }
     else
@@ -149,14 +150,22 @@ void SymbolFactory::Register(SymbolType symbolType, SymbolCreator* creator)
 
 Symbol* SymbolFactory::CreateBasicTypeSymbol(SymbolType basicTypeSymbolType)
 {
-    Symbol* value = creators[int(basicTypeSymbolType)]->CreateBasicTypeSymbol();
-    if (value)
+    const std::unique_ptr<SymbolCreator>& creator = creators[int(basicTypeSymbolType)];
+    if (creator)
     {
-        return value;
+        Symbol* value = creator->CreateBasicTypeSymbol();
+        if (value)
+        {
+            return value;
+        }
+        else
+        {
+            throw std::runtime_error("could not create basic type symbol");
+        }
     }
     else
     {
-        throw std::runtime_error("could not create basic type symbol");
+        throw std::runtime_error("no creator for basic type symbol " + std::to_string(int(basicTypeSymbolType)));
     }
 }
 
@@ -216,6 +225,7 @@ void InitFactory()
     SymbolFactory::Instance().Register(SymbolType::doubleSymbol, new ConcreteBasicTypeSymbolCreator<DoubleTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::nullptrSymbol, new ConcreteBasicTypeSymbolCreator<NullPtrTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::classSymbol, new ConcreteSymbolCreator<ClassTypeSymbol>());
+    SymbolFactory::Instance().Register(SymbolType::interfaceTypeSymbol, new ConcreteSymbolCreator<InterfaceTypeSymbol>());
     SymbolFactory::Instance().Register(SymbolType::constantSymbol, new ConcreteSymbolCreator<ConstantSymbol>());
     SymbolFactory::Instance().Register(SymbolType::declarationBlock, new ConcreteSymbolCreator<DeclarationBlock>());
     SymbolFactory::Instance().Register(SymbolType::delegateSymbol, new ConcreteSymbolCreator<DelegateTypeSymbol>());

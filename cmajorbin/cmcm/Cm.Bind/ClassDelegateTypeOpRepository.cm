@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -461,7 +461,7 @@ namespace Cm.Bind
             resolutionArguments.Add(Cm.Core.Argument(category, parameterType));
         }
         Cm.Sym.FunctionLookupSet resolutionLookups;
-        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, classObjectType->GetContainerScope()->ClassOrNsScope()));
+        resolutionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, classObjectType->GetContainerScope()->ClassInterfaceOrNsScope()));
         List<Cm.Sym.FunctionSymbol*> conversions;
         Cm.Sym.FunctionSymbol* overload = ResolveOverload(containerScope, boundCompileUnit, groupName, resolutionArguments, resolutionLookups, span, conversions);
         if (classDelegateType->IsNothrow() && overload->CanThrow())

@@ -83,15 +83,15 @@ namespace Cm.Sym
             commonTypeMap.Add(Rvalue(charValues));
             
             List<ValueType> wcharValues = None();
-            charValues[cast<int>(ValueType.charValue)] = ValueType.wcharValue;
-            charValues[cast<int>(ValueType.wcharValue)] = ValueType.wcharValue;
-            charValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
+            wcharValues[cast<int>(ValueType.charValue)] = ValueType.wcharValue;
+            wcharValues[cast<int>(ValueType.wcharValue)] = ValueType.wcharValue;
+            wcharValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
             commonTypeMap.Add(Rvalue(wcharValues));
 
             List<ValueType> ucharValues = None();
-            charValues[cast<int>(ValueType.charValue)] = ValueType.ucharValue;
-            charValues[cast<int>(ValueType.wcharValue)] = ValueType.ucharValue;
-            charValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
+            ucharValues[cast<int>(ValueType.charValue)] = ValueType.ucharValue;
+            ucharValues[cast<int>(ValueType.wcharValue)] = ValueType.ucharValue;
+            ucharValues[cast<int>(ValueType.ucharValue)] = ValueType.ucharValue;
             commonTypeMap.Add(Rvalue(ucharValues));
                         
             List<ValueType> sbyteValues = None();

@@ -6,10 +6,12 @@ namespace Interface
     {
         string Read();
     }
+    
     public interface Writer
     {
         void Write(const string& s);
     }
+    
     public class ConsoleIo : Reader, Writer
     {
         public string Read()
@@ -22,11 +24,21 @@ namespace Interface
         }
     }
     
-    public void Up(Reader reader, Writer writer)
+    public class UpCase
     {
-        writer.Write("enter line:");
-        string s = reader.Read();
-        writer.Write(ToUpper(s));
+        public void SetReaderAndWriter(Reader reader_, Writer writer_)
+        {
+            reader = reader_;
+            writer = writer_;
+        }
+        public void Execute()
+        {
+            writer.Write("enter line:");
+            string s = reader.Read();
+            writer.Write(ToUpper(s));
+        }
+        private Reader reader;
+        private Writer writer;
     }
     
     internal void main()
@@ -34,7 +46,9 @@ namespace Interface
         try
         {
             ConsoleIo console;
-            Up(Reader(&console), Writer(&console));
+            UpCase upCase;
+            upCase.SetReaderAndWriter(Reader(&console), Writer(&console));
+            upCase.Execute();
         }        
         catch (const Exception& ex)
         {

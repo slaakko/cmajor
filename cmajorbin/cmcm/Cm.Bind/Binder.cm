@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -88,6 +88,20 @@ namespace Cm.Bind
                 boundClass = Rvalue(boundClassStack.Pop());
             }
         }
+        public override void BeginVisit(Cm.Ast.InterfaceNode& interfaceNode)
+        {
+            if (!boundCompileUnit.IsPrebindCompileUnit())
+            {
+                Cm.Sym.ContainerScope* containerScope = boundCompileUnit.SymbolTable().GetContainerScope(&interfaceNode);
+                Cm.Sym.InterfaceTypeSymbol* interfaceTypeSymbol = containerScope->Interface();
+                boundCompileUnit.IrInterfaceTypeRepository().Add(interfaceTypeSymbol);
+                BeginContainerScope(containerScope);
+            }
+        }
+        public override void EndVisit(Cm.Ast.InterfaceNode& interfaceNode)
+        {
+            EndContainerScope();
+        }
         public override void BeginVisit(Cm.Ast.ConstructorNode& constructorNode)
         {
             if ((constructorNode.GetSpecifiers() & (Cm.Ast.Specifiers.default_ | Cm.Ast.Specifiers.suppress_)) == Cm.Ast.Specifiers.none)
@@ -157,59 +171,73 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
         {
-            if ((memberFunctionNode.GetSpecifiers() & (Cm.Ast.Specifiers.default_ | Cm.Ast.Specifiers.suppress_)) == Cm.Ast.Specifiers.none)
+            if (!boundClass.IsNull())
             {
-                Cm.Sym.FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
-                BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
-                boundFunction.Reset(new Cm.BoundTree.BoundFunction(&memberFunctionNode, functionSymbol));
-                if (!functionSymbol->IsVirtualAbstractOrOverride() && !functionSymbol->IsNew())
+                if ((memberFunctionNode.GetSpecifiers() & (Cm.Ast.Specifiers.default_ | Cm.Ast.Specifiers.suppress_)) == Cm.Ast.Specifiers.none)
                 {
-                    Cm.Sym.ClassTypeSymbol* ownerClass = boundClass->Symbol();
-                    if (ownerClass != null && ownerClass->BaseClass() != null)
+                    Cm.Sym.FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
+                    BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
+                    boundFunction.Reset(new Cm.BoundTree.BoundFunction(&memberFunctionNode, functionSymbol));
+                    if (!functionSymbol->IsVirtualAbstractOrOverride() && !functionSymbol->IsNew())
                     {
-                        Cm.Sym.ClassTypeSymbol* baseClass = ownerClass->BaseClass();
-                        for (Cm.Sym.FunctionSymbol* f : baseClass->Vtbl())
+                        Cm.Sym.ClassTypeSymbol* ownerClass = boundClass->Symbol();
+                        if (ownerClass != null && ownerClass->BaseClass() != null)
                         {
-                            if (f != null && f->IsVirtualAbstractOrOverride())
+                            Cm.Sym.ClassTypeSymbol* baseClass = ownerClass->BaseClass();
+                            for (Cm.Sym.FunctionSymbol* f : baseClass->Vtbl())
                             {
-                                if (Cm.Sym.Overrides(functionSymbol, f))
+                                if (f != null && f->IsVirtualAbstractOrOverride())
                                 {
-                                    string warningMessage = "function '" + functionSymbol->FullName() + "' hides base class virtual function '" + f->FullName() + "'. " +
-                                        "To get rid of this warning declare the function either 'override' or 'new'.";
-                                    Console.Out() << "warning: " << warningMessage << endl();
-                                    Cm.Sym.Warning warning(Cm.Sym.CompileWarningCollection.Instance().GetCurrentProjectName(), warningMessage);
-                                    warning.SetDefined(functionSymbol->GetSpan());
-                                    warning.SetReferenced(f->GetSpan());
-                                    Cm.Sym.CompileWarningCollection.Instance().AddWarning(warning);
+                                    if (Cm.Sym.Overrides(functionSymbol, f))
+                                    {
+                                        string warningMessage = "function '" + functionSymbol->FullName() + "' hides base class virtual function '" + f->FullName() + "'. " +
+                                            "To get rid of this warning declare the function either 'override' or 'new'.";
+                                        Console.Out() << "warning: " << warningMessage << endl();
+                                        Cm.Sym.Warning warning(Cm.Sym.CompileWarningCollection.Instance().GetCurrentProjectName(), warningMessage);
+                                        warning.SetDefined(functionSymbol->GetSpan());
+                                        warning.SetReferenced(f->GetSpan());
+                                        Cm.Sym.CompileWarningCollection.Instance().AddWarning(warning);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+            }            
+            else
+            {
+                BeginContainerScope(boundCompileUnit.SymbolTable().GetContainerScope(&memberFunctionNode));
             }
         }
         public override void EndVisit(Cm.Ast.MemberFunctionNode& memberFunctionNode)
         {
-            if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
+            if (!boundClass.IsNull())
             {
-                Cm.Sym.FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
-                bool unique = !(boundClass->Symbol() is Cm.Sym.TemplateTypeSymbol*);
-                GenerateSynthesizedFunctionImplementation(functionSymbol, memberFunctionNode.GetSpan(), boundClass->Symbol(), currentContainerScope, boundCompileUnit, unique);
-            }
-            else if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.suppress_) == Cm.Ast.Specifiers.none)
-            {
-                if (!boundFunction->FunctionSymbol()->IsAbstract() && boundFunction->Body() != null)
+                if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.default_) != Cm.Ast.Specifiers.none)
                 {
-                    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol(), 
-                        &memberFunctionNode);
-                    CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
-                    GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
-                    if (boundFunction->FunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor() != null)
-                    {
-                        GenerateStaticConstructorCall(boundCompileUnit, boundFunction.GetPtr(), boundClass->Symbol(), &memberFunctionNode);
-                    }
-                    boundClass->AddMember(boundFunction.Release());
+                    Cm.Sym.FunctionSymbol* functionSymbol = boundCompileUnit.SymbolTable().GetFunctionSymbol(&memberFunctionNode);
+                    bool unique = !(boundClass->Symbol() is Cm.Sym.TemplateTypeSymbol*);
+                    GenerateSynthesizedFunctionImplementation(functionSymbol, memberFunctionNode.GetSpan(), boundClass->Symbol(), currentContainerScope, boundCompileUnit, unique);
                 }
+                else if ((memberFunctionNode.GetSpecifiers() & Cm.Ast.Specifiers.suppress_) == Cm.Ast.Specifiers.none)
+                {
+                    if (!boundFunction->FunctionSymbol()->IsAbstract() && boundFunction->Body() != null)
+                    {
+                        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol(), 
+                            &memberFunctionNode);
+                        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+                        GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
+                        if (boundFunction->FunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor() != null)
+                        {
+                            GenerateStaticConstructorCall(boundCompileUnit, boundFunction.GetPtr(), boundClass->Symbol(), &memberFunctionNode);
+                        }
+                        boundClass->AddMember(boundFunction.Release());
+                    }
+                    EndContainerScope();
+                }
+            }
+            else
+            {
                 EndContainerScope();
             }
         }

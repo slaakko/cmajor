@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -20,9 +20,9 @@ namespace Cm.Emit
             Cm.Core.IrClassTypeRepository& irClassTypeRepository_, Cm.Core.StringRepository& stringRepository_, Cm.BoundTree.BoundClass* currentClass_, HashSet<string>& internalFunctionNames_, 
             HashSet<Ir.Intf.Function*>& externalFunctions_, Cm.Core.StaticMemberVariableRepository& staticMemberVariableRepository_, Cm.Core.ExternalConstantRepository& externalConstantRepository_,
             Cm.Ast.CompileUnitNode* currentCompileUnit_, Cm.Sym.FunctionSymbol* enterFrameFun_, Cm.Sym.FunctionSymbol* leaveFrameFun_, Cm.Sym.FunctionSymbol* enterTracedCallFun_, 
-            Cm.Sym.FunctionSymbol* leaveTracedCallFun_, bool profile_) :
+            Cm.Sym.FunctionSymbol* leaveTracedCallFun_, Cm.Sym.FunctionSymbol* interfaceLookupFailed_, bool profile_) :
             base(codeFormatter_, typeRepository_, irFunctionRepository_, irClassTypeRepository_, stringRepository_, currentClass_, internalFunctionNames_, externalFunctions_, staticMemberVariableRepository_,
-            externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCallFun_, leaveTracedCallFun_, false, profile_)
+            externalConstantRepository_, currentCompileUnit_, enterFrameFun_, leaveFrameFun_, enterTracedCallFun_, leaveTracedCallFun_, interfaceLookupFailed_, false, profile_)
         {
         }
         public override void Visit(Cm.BoundTree.BoundDynamicTypeNameExpression& boundDynamicTypeNameExpression)
@@ -402,6 +402,69 @@ namespace Cm.Emit
             emitter->Own(loadedFunctionPtr);
             emitter->Emit(Cm.IrIntf.Bitcast(i8Ptr, loadedFunctionPtr, loadedFunctionI8Ptr, functionPtrType));
             emitter->Emit(Cm.IrIntf.IndirectCall(memberFunctionResult.MainObject(), loadedFunctionPtr, memberFunctionResult.Args()));
+        }
+        public override void GenInterfaceCall(Cm.Sym.FunctionSymbol* fun, Cm.Core.GenResult& memberFunctionResult)
+        {
+            Cm.Core.Emitter* emitter = GetEmitter();
+            SharedPtr<Cm.Core.GenResult> result(new Cm.Core.GenResult(emitter, GenFlags()));
+            Cm.Sym.Symbol* funParent = fun->Parent();
+            if (!(funParent is Cm.Sym.InterfaceTypeSymbol*))
+            {
+                throw Exception("interface type expected");
+            }
+            Cm.Sym.InterfaceTypeSymbol* intf = cast<Cm.Sym.InterfaceTypeSymbol*>(funParent);
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter->Own(i8Ptr);
+            Ir.Intf.Type* i8PtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u);
+            emitter->Own(i8PtrPtr);
+            Ir.Intf.Object* mainObject = memberFunctionResult.Arg1();
+            Ir.Intf.Type* intfPtrType = Cm.IrIntf.Pointer(intf->IrType(), 1u);
+            emitter->Own(intfPtrType);
+            Ir.Intf.Object* intfObject = Cm.IrIntf.MakeTemporaryRegVar(intfPtrType);
+            emitter->Own(intfObject);
+            emitter->Emit(Cm.IrIntf.Bitcast(i8Ptr, intfObject, mainObject, intfPtrType));
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", intfObject, 0, i8Ptr);
+            emitter->Own(obj);
+            Ir.Intf.Object* objRegVar = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            Cm.IrIntf.Assign(*emitter, i8Ptr, obj, objRegVar);
+            int n = memberFunctionResult.Objects().Count();
+            for (int i = 0; i < n; ++i)
+            {
+                if (i == 1)
+                {
+                    result->AddObject(objRegVar);
+                }
+                else
+                {
+                    result->AddObject(memberFunctionResult.Objects()[i]);
+                }
+            }
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", intfObject, 1, i8Ptr);
+            emitter->Own(itab);
+            Ir.Intf.Object* loadedItab = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter->Own(loadedItab);
+            Cm.IrIntf.Assign(*emitter, i8Ptr, itab, loadedItab);
+            Ir.Intf.Object* itabPtrPtr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter->Own(itabPtrPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(i8Ptr, itabPtrPtr, loadedItab, i8PtrPtr));
+            Ir.Intf.Object* funIndex = Cm.IrIntf.MakeI32Constant(fun->ItblIndex());
+            emitter->Own(funIndex);
+            Ir.Intf.Object* funI8PtrPtr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter->Own(funI8PtrPtr);
+            Ir.Intf.Object* zero = Cm.IrIntf.MakeI32Constant(0);
+            emitter->Own(zero);
+            emitter->Emit(Cm.IrIntf.GetElementPtr(i8PtrPtr, funI8PtrPtr, itabPtrPtr, funIndex));
+            Ir.Intf.Object* funI8Ptr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter->Own(funI8Ptr);
+            Ir.Intf.RegVar* loadedFunI8Ptr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter->Own(loadedFunI8Ptr);
+            Cm.IrIntf.Assign(*emitter, i8Ptr, funI8PtrPtr, loadedFunI8Ptr);
+            Ir.Intf.Type* funPtrType = IrFunctionRepository().GetFunPtrIrType(fun);
+            Ir.Intf.Object* funPtr = Cm.IrIntf.MakeTemporaryRegVar(funPtrType);
+            emitter->Own(funPtr);
+            emitter->Emit(Cm.IrIntf.Bitcast(i8Ptr, funPtr, loadedFunI8Ptr, funPtrType));
+            emitter->Emit(Cm.IrIntf.IndirectCall(result->MainObject(), funPtr, result->Args()));
+            ResultStack().Push(result);
         }
         public override void DoNothing(Cm.Core.GenResult& genResult)
         {

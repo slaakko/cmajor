@@ -1,0 +1,493 @@
+using System;
+using System.Collections;
+using System.Text.Parsing;
+using Cm.Ast;
+
+namespace Cm.Parser
+{
+    public class InterfaceGrammar: System.Text.Parsing.Grammar
+    {
+        public static InterfaceGrammar* Create()
+        {
+            return Create(new ParsingDomain());
+        }
+        public static InterfaceGrammar* Create(ParsingDomain* parsingDomain)
+        {
+            RegisterParsingDomain(parsingDomain);
+            InterfaceGrammar* grammar = new InterfaceGrammar(parsingDomain);
+            parsingDomain->AddGrammar(grammar);
+            grammar->CreateRules();
+            grammar->Link();
+            return grammar;
+        }
+        private InterfaceGrammar(ParsingDomain* parsingDomain): base("InterfaceGrammar", parsingDomain->GetNamespaceScope("Cm.Parser"), parsingDomain)
+        {
+            SetOwner(0);
+        }
+        public Cm.Ast.InterfaceNode* Parse(const char* start, const char* end, int fileIndex, const string& fileName, ParsingContext* ctx, Cm.Ast.CompileUnitNode* compileUnit)
+        {
+            Scanner scanner(start, end, fileIndex, fileName, SkipRule());
+            System.IO.OutputStream* log = Log();
+            UniquePtr<XmlLog> xmlLog;
+            if (log != null)
+            {
+                xmlLog.Reset(new XmlLog(*log, MaxLogLineLength()));
+                scanner.SetLog(xmlLog.GetPtr());
+                xmlLog->WriteBeginRule("parse");
+            }
+            Stack<UniquePtr<Object>> stack;
+            stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(ctx)));
+            stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.CompileUnitNode*>(compileUnit)));
+            Match match = Parse(scanner, stack);
+            Span stop = scanner.GetSpan();
+            if (log != null)
+            {
+                xmlLog->WriteEndRule("parse");
+            }
+            if (!match.Hit() || stop.Start() != int(end - start))
+            {
+                Rule* startRule = StartRule();
+                if (startRule != null)
+                {
+                    throw ExpectationFailure(startRule->Info(), fileName, stop, start, end);
+                }
+                else
+                {
+                    throw ParsingException("grammar '" + Name() + "' has no start rule", fileName, stop, start, end);
+                }
+            }
+            UniquePtr<Object> value = stack.Pop();
+            Cm.Ast.InterfaceNode* result = *cast<ValueObject<Cm.Ast.InterfaceNode*>*>(value.GetPtr());
+            return result;
+        }
+        private class InterfaceRule: System.Text.Parsing.Rule
+        {
+            public InterfaceRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("Cm.Ast.CompileUnitNode*", "compileUnit"));
+                SetValueTypeName("Cm.Ast.InterfaceNode*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> compileUnit_value = stack.Pop();
+                context.compileUnit = *cast<ValueObject<Cm.Ast.CompileUnitNode*>*>(compileUnit_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.InterfaceNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* specifiersNonterminalParser = GetNonterminal("Specifiers");
+                specifiersNonterminalParser->SetPostCall(PostCall(PostSpecifiers));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(PostIdentifier));
+                NonterminalParser* interfaceContentNonterminalParser = GetNonterminal("InterfaceContent");
+                interfaceContentNonterminalParser->SetPreCall(PreCall(PreInterfaceContent));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new Cm.Ast.InterfaceNode(span, context.fromSpecifiers, context.fromIdentifier);
+                context.value->SetCompileUnit(context.compileUnit);
+            }
+            public throw void PostSpecifiers(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromSpecifiers_value = stack.Pop();
+                    context.fromSpecifiers = *cast<ValueObject<Specifiers>*>(fromSpecifiers_value.GetPtr());
+                }
+            }
+            public throw void PostIdentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromIdentifier_value = stack.Pop();
+                    context.fromIdentifier = *cast<ValueObject<IdentifierNode*>*>(fromIdentifier_value.GetPtr());
+                }
+            }
+            public throw void PreInterfaceContent(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.InterfaceNode*>(context.value)));
+                stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.CompileUnitNode*>(context.compileUnit)));
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Cm.Ast.CompileUnitNode* compileUnit;
+                public Cm.Ast.InterfaceNode* value;
+                public Specifiers fromSpecifiers;
+                public IdentifierNode* fromIdentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class InterfaceContentRule: System.Text.Parsing.Rule
+        {
+            public InterfaceContentRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("Cm.Ast.InterfaceNode*", "intf"));
+                AddInheritedAttribute(AttrOrVariable("Cm.Ast.CompileUnitNode*", "compileUnit"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> compileUnit_value = stack.Pop();
+                context.compileUnit = *cast<ValueObject<Cm.Ast.CompileUnitNode*>*>(compileUnit_value.GetPtr());
+                UniquePtr<Object> intf_value = stack.Pop();
+                context.intf = *cast<ValueObject<Cm.Ast.InterfaceNode*>*>(intf_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* interfaceMemFunNonterminalParser = GetNonterminal("InterfaceMemFun");
+                interfaceMemFunNonterminalParser->SetPreCall(PreCall(PreInterfaceMemFun));
+                interfaceMemFunNonterminalParser->SetPostCall(PostCall(PostInterfaceMemFun));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.intf->AddMember(context.fromInterfaceMemFun);
+            }
+            public throw void PreInterfaceMemFun(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.CompileUnitNode*>(context.compileUnit)));
+            }
+            public throw void PostInterfaceMemFun(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInterfaceMemFun_value = stack.Pop();
+                    context.fromInterfaceMemFun = *cast<ValueObject<Cm.Ast.MemberFunctionNode*>*>(fromInterfaceMemFun_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Cm.Ast.InterfaceNode* intf;
+                public Cm.Ast.CompileUnitNode* compileUnit;
+                public Cm.Ast.MemberFunctionNode* fromInterfaceMemFun;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class InterfaceMemFunRule: System.Text.Parsing.Rule
+        {
+            public InterfaceMemFunRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                AddInheritedAttribute(AttrOrVariable("Cm.Ast.CompileUnitNode*", "compileUnit"));
+                SetValueTypeName("Cm.Ast.MemberFunctionNode*");
+                AddLocalVariable(AttrOrVariable("UniquePtr<Cm.Ast.MemberFunctionNode>", "memFun"));
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> compileUnit_value = stack.Pop();
+                context.compileUnit = *cast<ValueObject<Cm.Ast.CompileUnitNode*>*>(compileUnit_value.GetPtr());
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.MemberFunctionNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* interfaceMemFunSpecifiersNonterminalParser = GetNonterminal("InterfaceMemFunSpecifiers");
+                interfaceMemFunSpecifiersNonterminalParser->SetPostCall(PostCall(PostInterfaceMemFunSpecifiers));
+                NonterminalParser* typeExprNonterminalParser = GetNonterminal("TypeExpr");
+                typeExprNonterminalParser->SetPreCall(PreCall(PreTypeExpr));
+                typeExprNonterminalParser->SetPostCall(PostCall(PostTypeExpr));
+                NonterminalParser* interfaceFunctionGroupIdNonterminalParser = GetNonterminal("InterfaceFunctionGroupId");
+                interfaceFunctionGroupIdNonterminalParser->SetPostCall(PostCall(PostInterfaceFunctionGroupId));
+                NonterminalParser* parameterListNonterminalParser = GetNonterminal("ParameterList");
+                parameterListNonterminalParser->SetPreCall(PreCall(PreParameterList));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = context.memFun.Release();
+                context.value->SetCompileUnit(context.compileUnit);
+            }
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.memFun.Reset(new Cm.Ast.MemberFunctionNode(span, context.fromInterfaceMemFunSpecifiers, context.fromTypeExpr, context.fromInterfaceFunctionGroupId));
+            }
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.memFun->SetConst();
+            }
+            public throw void PostInterfaceMemFunSpecifiers(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInterfaceMemFunSpecifiers_value = stack.Pop();
+                    context.fromInterfaceMemFunSpecifiers = *cast<ValueObject<Cm.Ast.Specifiers>*>(fromInterfaceMemFunSpecifiers_value.GetPtr());
+                }
+            }
+            public throw void PreTypeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostTypeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromTypeExpr_value = stack.Pop();
+                    context.fromTypeExpr = *cast<ValueObject<Node*>*>(fromTypeExpr_value.GetPtr());
+                }
+            }
+            public throw void PostInterfaceFunctionGroupId(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInterfaceFunctionGroupId_value = stack.Pop();
+                    context.fromInterfaceFunctionGroupId = *cast<ValueObject<Cm.Ast.FunctionGroupIdNode*>*>(fromInterfaceFunctionGroupId_value.GetPtr());
+                }
+            }
+            public throw void PreParameterList(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+                stack.Push(UniquePtr<Object>(new ValueObject<Node*>(context.memFun.GetPtr())));
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public Cm.Ast.CompileUnitNode* compileUnit;
+                public Cm.Ast.MemberFunctionNode* value;
+                public UniquePtr<Cm.Ast.MemberFunctionNode> memFun;
+                public Cm.Ast.Specifiers fromInterfaceMemFunSpecifiers;
+                public Node* fromTypeExpr;
+                public Cm.Ast.FunctionGroupIdNode* fromInterfaceFunctionGroupId;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class InterfaceMemFunSpecifiersRule: System.Text.Parsing.Rule
+        {
+            public InterfaceMemFunSpecifiersRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Cm.Ast.Specifiers");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.Specifiers>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                ActionParser* a1ActionParser = GetAction("A1");
+                a1ActionParser->SetAction(ParsingAction(A1Action));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Cm.Ast.Specifiers.throw_;
+            }
+            public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Cm.Ast.Specifiers.nothrow_;
+            }
+            private class Context
+            {
+                public Cm.Ast.Specifiers value;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class InterfaceFunctionGroupIdRule: System.Text.Parsing.Rule
+        {
+            public InterfaceFunctionGroupIdRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                SetValueTypeName("Cm.Ast.FunctionGroupIdNode*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<Cm.Ast.FunctionGroupIdNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* identifierNonterminalParser = GetNonterminal("identifier");
+                identifierNonterminalParser->SetPostCall(PostCall(Postidentifier));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new Cm.Ast.FunctionGroupIdNode(span, string(matchBegin, matchEnd));
+            }
+            public throw void Postidentifier(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromidentifier_value = stack.Pop();
+                    context.fromidentifier = *cast<ValueObject<string>*>(fromidentifier_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public Cm.Ast.FunctionGroupIdNode* value;
+                public string fromidentifier;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        public override void GetReferencedGrammars()
+        {
+            ParsingDomain* parsingDomain = GetParsingDomain();
+            Grammar* grammar0 = parsingDomain->GetGrammar("Cm.Parser.KeywordGrammar");
+            if (grammar0 == null)
+            {
+                grammar0 = Cm.Parser.KeywordGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar0);
+            Grammar* grammar1 = parsingDomain->GetGrammar("System.Text.Parsing.stdlib");
+            if (grammar1 == null)
+            {
+                grammar1 = System.Text.Parsing.stdlib.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar1);
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
+            if (grammar2 == null)
+            {
+                grammar2 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar2);
+            Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            if (grammar3 == null)
+            {
+                grammar3 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar3);
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            if (grammar4 == null)
+            {
+                grammar4 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar4);
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            if (grammar5 == null)
+            {
+                grammar5 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+            }
+            AddGrammarReference(grammar5);
+        }
+        public override void CreateRules()
+        {
+            AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
+            AddRuleLink(new RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("identifier", this, "System.Text.Parsing.stdlib.identifier"));
+            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRule(new InterfaceRule("Interface", GetScope(),
+                new SequenceParser(
+                    new SequenceParser(
+                        new SequenceParser(
+                            new ActionParser("A0",
+                                new SequenceParser(
+                                    new SequenceParser(
+                                        new NonterminalParser("Specifiers", "Specifiers", 0),
+                                        new KeywordParser("interface")),
+                                    new ExpectationParser(
+                                        new NonterminalParser("Identifier", "Identifier", 0)))),
+                            new ExpectationParser(
+                                new CharParser('{'))),
+                        new NonterminalParser("InterfaceContent", "InterfaceContent", 3)),
+                    new ExpectationParser(
+                        new CharParser('}')))));
+            AddRule(new InterfaceContentRule("InterfaceContent", GetScope(),
+                new KleeneStarParser(
+                    new ActionParser("A0",
+                        new NonterminalParser("InterfaceMemFun", "InterfaceMemFun", 2)))));
+            AddRule(new InterfaceMemFunRule("InterfaceMemFun", GetScope(),
+                new ActionParser("A0",
+                    new SequenceParser(
+                        new SequenceParser(
+                            new SequenceParser(
+                                new ActionParser("A1",
+                                    new SequenceParser(
+                                        new SequenceParser(
+                                            new OptionalParser(
+                                                new NonterminalParser("InterfaceMemFunSpecifiers", "InterfaceMemFunSpecifiers", 0)),
+                                            new NonterminalParser("TypeExpr", "TypeExpr", 1)),
+                                        new NonterminalParser("InterfaceFunctionGroupId", "InterfaceFunctionGroupId", 0))),
+                                new NonterminalParser("ParameterList", "ParameterList", 2)),
+                            new OptionalParser(
+                                new ActionParser("A2",
+                                    new KeywordParser("const")))),
+                        new ExpectationParser(
+                            new CharParser(';'))))));
+            AddRule(new InterfaceMemFunSpecifiersRule("InterfaceMemFunSpecifiers", GetScope(),
+                new AlternativeParser(
+                    new ActionParser("A0",
+                        new KeywordParser("throw")),
+                    new ActionParser("A1",
+                        new KeywordParser("nothrow")))));
+            AddRule(new InterfaceFunctionGroupIdRule("InterfaceFunctionGroupId", GetScope(),
+                new ActionParser("A0",
+                    new TokenParser(
+                        new DifferenceParser(
+                            new NonterminalParser("identifier", "identifier", 0),
+                            new NonterminalParser("Keyword", "Keyword", 0))
+                        ))));
+            SetSkipRuleName("spaces_and_comments");
+        }
+    }
+}

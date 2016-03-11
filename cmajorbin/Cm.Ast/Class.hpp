@@ -25,7 +25,7 @@ public:
     NodeType GetNodeType() const override { return NodeType::classNode; }
     virtual bool IsClassNode() const { return true; }
     void AddTemplateParameter(TemplateParameterNode* templateParameter) override;
-    void AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr_);
+    void AddBaseClassOrImplIntfTypeExpr(Node* baseClassOrImplIntfTypeExpr);
     void SetConstraint(WhereConstraintNode* constraint_);
     void AddMember(Node* member);
     Node* Clone(CloneContext& cloneContext) const override;
@@ -38,7 +38,7 @@ public:
     IdentifierNode* Id() const { return id.get(); }
     void SetId(IdentifierNode* id_);
     const TemplateParameterNodeList& TemplateParameters() const { return templateParameters; }
-    const std::vector<std::unique_ptr<Node>>& BaseClassOrImplIntfTypeExprs() const { return baseClassOrImplIntfTypeExprs; }
+    const NodeList& BaseClassOrImplIntfTypeExprs() const { return baseClassOrImplIntfTypeExprs; }
     WhereConstraintNode* Constraint() const { return constraint.get(); }
     void Accept(Visitor& visitor) override;
     void SetCompileUnit(CompileUnitNode* compileUnit_) { compileUnit = compileUnit_; }
@@ -47,7 +47,7 @@ private:
     Specifiers specifiers;
     std::unique_ptr<IdentifierNode> id;
     TemplateParameterNodeList templateParameters;
-    std::vector<std::unique_ptr<Node>> baseClassOrImplIntfTypeExprs;
+    NodeList baseClassOrImplIntfTypeExprs;
     std::unique_ptr<WhereConstraintNode> constraint;
     NodeList members;
     CompileUnitNode* compileUnit;

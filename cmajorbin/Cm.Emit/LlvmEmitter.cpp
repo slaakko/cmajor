@@ -71,8 +71,8 @@ struct FunctionNameLess
 
 void LlvmEmitter::EndVisit(Cm::BoundTree::BoundCompileUnit& compileUnit)
 {
-    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), std::vector<Ir::Intf::Type*>());
     IrInterfaceTypeRepository().Write(CodeFormatter());
+    IrClassTypeRepository().Write(CodeFormatter(), ExternalFunctions(), IrFunctionRepository(), std::vector<Ir::Intf::Type*>());
     std::vector<Ir::Intf::Function*> ef;
     for (Ir::Intf::Function* function : ExternalFunctions())
     {

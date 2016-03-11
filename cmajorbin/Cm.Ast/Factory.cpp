@@ -22,6 +22,7 @@
 #include <Cm.Ast/Statement.hpp>
 #include <Cm.Ast/Concept.hpp>
 #include <Cm.Ast/Class.hpp>
+#include <Cm.Ast/Interface.hpp>
 #include <Cm.Ast/Namespace.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 
@@ -70,6 +71,10 @@ void Factory::Register(NodeType nodeType, NodeCreator* creator)
 
 Node* Factory::CreateNode(NodeType nodeType, Span span)
 {
+    if (!creators[int(nodeType)])
+    {
+        throw std::runtime_error("no creator for node type " + std::to_string(int(nodeType)));
+    }
     Node* node = creators[int(nodeType)]->CreateNode(span);
     return node;
 }
@@ -89,6 +94,8 @@ void InitFactory()
     Factory::Instance().Register(NodeType::floatNode, new Creator<FloatNode>());
     Factory::Instance().Register(NodeType::doubleNode, new Creator<DoubleNode>());
     Factory::Instance().Register(NodeType::charNode, new Creator<CharNode>());
+    Factory::Instance().Register(NodeType::wcharNode, new Creator<WCharNode>());
+    Factory::Instance().Register(NodeType::ucharNode, new Creator<UCharNode>());
     Factory::Instance().Register(NodeType::voidNode, new Creator<VoidNode>());
     Factory::Instance().Register(NodeType::booleanLiteralNode, new Creator<BooleanLiteralNode>());
     Factory::Instance().Register(NodeType::sbyteLiteralNode, new Creator<SByteLiteralNode>());
@@ -103,6 +110,8 @@ void InitFactory()
     Factory::Instance().Register(NodeType::doubleLiteralNode, new Creator<DoubleLiteralNode>());
     Factory::Instance().Register(NodeType::charLiteralNode, new Creator<CharLiteralNode>());
     Factory::Instance().Register(NodeType::stringLiteralNode, new Creator<StringLiteralNode>());
+    Factory::Instance().Register(NodeType::wstringLiteralNode, new Creator<WStringLiteralNode>());
+    Factory::Instance().Register(NodeType::ustringLiteralNode, new Creator<UStringLiteralNode>());
     Factory::Instance().Register(NodeType::nullLiteralNode, new Creator<NullLiteralNode>());
     Factory::Instance().Register(NodeType::derivedTypeExprNode, new Creator<DerivedTypeExprNode>());
     Factory::Instance().Register(NodeType::equivalenceNode, new Creator<EquivalenceNode>());
@@ -208,6 +217,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::templateParameterNode, new Creator<TemplateParameterNode>());
     Factory::Instance().Register(NodeType::functionNode, new Creator<FunctionNode>());
     Factory::Instance().Register(NodeType::classNode, new Creator<ClassNode>());
+    Factory::Instance().Register(NodeType::interfaceNode, new Creator<InterfaceNode>());
     Factory::Instance().Register(NodeType::memberInitializerNode, new Creator<MemberInitializerNode>());
     Factory::Instance().Register(NodeType::baseInitializerNode, new Creator<BaseInitializerNode>());
     Factory::Instance().Register(NodeType::thisInitializerNode, new Creator<ThisInitializerNode>());

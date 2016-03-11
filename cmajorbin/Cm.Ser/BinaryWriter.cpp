@@ -112,10 +112,6 @@ void BinaryWriter::Write(uint8_t x)
     if (log)
     {
         Log() << seq << " : byte : " << int(x) << std::endl;
-        if (seq == 271)
-        {
-            int x = 0;
-        }
         ++seq;
     }
     int result = fputc(x, file);

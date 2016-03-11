@@ -16,6 +16,7 @@ source <Expression.cm>;
 source <Factory.cm>;
 source <Function.cm>;
 source <Identifier.cm>;
+source <Interface.cm>;
 source <IntrinsicConcept.cm>;
 source <Literal.cm>;
 source <Namespace.cm>;

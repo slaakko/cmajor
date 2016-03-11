@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -101,6 +101,7 @@ namespace Cm.IrIntf
         {
         }
         public abstract string GetExCodeVarName();
+        public abstract string GetIrecPtrName();
         public abstract Ir.Intf.LabelObject* CreateTempLabel(int tempLabelCounter);
         public abstract string CreateTempVarName(int tempVarCounter);
         public abstract Ir.Intf.LabelObject* CreateNextLocalLabel();
@@ -147,6 +148,8 @@ namespace Cm.IrIntf
         public abstract string GetPrivateSeparator();
         public abstract string GetStringValuePrefix();
         public abstract Ir.Intf.Object* MakeStringConstant(const string& value);
+        public abstract Ir.Intf.Object* MakeWStringConstant(const string& value);
+        public abstract Ir.Intf.Object* MakeUStringConstant(const string& value);
         public abstract Ir.Intf.Object* MakeNull(Ir.Intf.Type* ptrType);
         public abstract Ir.Intf.Object* MakeI8Constant(sbyte value);
         public abstract Ir.Intf.Object* MakeUI8Constant(byte value);
@@ -159,6 +162,8 @@ namespace Cm.IrIntf
         public abstract Ir.Intf.Object* MakeFloatConstant(float value);
         public abstract Ir.Intf.Object* MakeDoubleConstant(double value);
         public abstract string MakeStringConstantName(const string& s);
+        public abstract string MakeWStringConstantName(const string& s);
+        public abstract string MakeUStringConstantName(const string& s);
         public abstract string MakeDestructionNodeName(const string& assemblyName);
         public abstract string GetDestructionNodeTypeName();
         public abstract string GetRegisterDestructorFunctionName();

@@ -344,7 +344,7 @@ namespace C
     
     public class CharType : Ir.Intf.Type
     {
-        public nothrow CharType() : base("usngined char")
+        public nothrow CharType() : base("unsigned char")
         {
         }
         public override Ir.Intf.Type* Clone() const

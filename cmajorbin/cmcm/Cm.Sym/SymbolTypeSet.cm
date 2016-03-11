@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -21,6 +21,7 @@ namespace Cm.Sym
         lookupContainerSymbols,
         lookupClassAndNamespaceSymbols,
         lookupClassSymbols,
+        lookupInterfaceSymbols,
         lookupFunctionGroupAndMemberVariable,
         lookupLocalVariable,
         lookupMemberVariable,
@@ -88,6 +89,7 @@ namespace Cm.Sym
             typeSymbols.Insert(SymbolType.floatSymbol);
             typeSymbols.Insert(SymbolType.doubleSymbol);
             typeSymbols.Insert(SymbolType.classSymbol);
+            typeSymbols.Insert(SymbolType.interfaceTypeSymbol);
             typeSymbols.Insert(SymbolType.delegateSymbol);
             typeSymbols.Insert(SymbolType.classDelegateSymbol);
             typeSymbols.Insert(SymbolType.enumTypeSymbol);
@@ -113,6 +115,7 @@ namespace Cm.Sym
             typeAndFunctionGroupSymbols.Insert(SymbolType.floatSymbol);
             typeAndFunctionGroupSymbols.Insert(SymbolType.doubleSymbol);
             typeAndFunctionGroupSymbols.Insert(SymbolType.classSymbol);
+            typeAndFunctionGroupSymbols.Insert(SymbolType.interfaceTypeSymbol);
             typeAndFunctionGroupSymbols.Insert(SymbolType.delegateSymbol);
             typeAndFunctionGroupSymbols.Insert(SymbolType.classDelegateSymbol);
             typeAndFunctionGroupSymbols.Insert(SymbolType.enumTypeSymbol);
@@ -126,6 +129,7 @@ namespace Cm.Sym
             //  lookupDotSubjectSymbols:
             HashSet<SymbolType, SymbolTypeHash> dotSubjectSymbols;
             dotSubjectSymbols.Insert(SymbolType.classSymbol);
+            dotSubjectSymbols.Insert(SymbolType.interfaceTypeSymbol);
             dotSubjectSymbols.Insert(SymbolType.typedefSymbol);
             dotSubjectSymbols.Insert(SymbolType.enumTypeSymbol);
             dotSubjectSymbols.Insert(SymbolType.namespaceSymbol);
@@ -139,6 +143,7 @@ namespace Cm.Sym
             //  lookupContainerSymbols:
             HashSet<SymbolType, SymbolTypeHash> containerSymbols;
             containerSymbols.Insert(SymbolType.classSymbol);
+            containerSymbols.Insert(SymbolType.interfaceTypeSymbol);
             containerSymbols.Insert(SymbolType.typedefSymbol);
             containerSymbols.Insert(SymbolType.enumTypeSymbol);
             containerSymbols.Insert(SymbolType.namespaceSymbol);
@@ -149,6 +154,7 @@ namespace Cm.Sym
             //  lookupClassAndNamespaceSymbols:
             HashSet<SymbolType, SymbolTypeHash> classAndNamespaceSymbols;
             classAndNamespaceSymbols.Insert(SymbolType.classSymbol);
+            classAndNamespaceSymbols.Insert(SymbolType.interfaceTypeSymbol);
             classAndNamespaceSymbols.Insert(SymbolType.typedefSymbol);
             classAndNamespaceSymbols.Insert(SymbolType.namespaceSymbol);
             classAndNamespaceSymbols.Insert(SymbolType.templateTypeSymbol);
@@ -158,11 +164,18 @@ namespace Cm.Sym
             //  lookupClassSymbols:
             HashSet<SymbolType, SymbolTypeHash> classSymbols;
             classSymbols.Insert(SymbolType.classSymbol);
+            classSymbols.Insert(SymbolType.interfaceTypeSymbol);
             classSymbols.Insert(SymbolType.typedefSymbol);
             classSymbols.Insert(SymbolType.templateTypeSymbol);
             classSymbols.Insert(SymbolType.typeParameterSymbol);
             classSymbols.Insert(SymbolType.boundTypeParameterSymbol);
             symbolTypeSets.Add(Rvalue(classSymbols));
+            //  lookupInterfaceSymbols
+            HashSet<SymbolType, SymbolTypeHash> interfaceSymbols;
+            interfaceSymbols.Insert(SymbolType.classSymbol);
+            interfaceSymbols.Insert(SymbolType.interfaceTypeSymbol);
+            interfaceSymbols.Insert(SymbolType.typedefSymbol);
+            symbolTypeSets.Add(Rvalue(interfaceSymbols));
             //  lookupFunctionGroupAndMemberVariable:
             HashSet<SymbolType, SymbolTypeHash> functionGroupAndMemberVariable;
             functionGroupAndMemberVariable.Insert(SymbolType.functionGroupSymbol);
@@ -206,6 +219,7 @@ namespace Cm.Sym
             invokeSubject.Insert(SymbolType.floatSymbol);
             invokeSubject.Insert(SymbolType.doubleSymbol);
             invokeSubject.Insert(SymbolType.classSymbol);
+            invokeSubject.Insert(SymbolType.interfaceTypeSymbol);
             invokeSubject.Insert(SymbolType.delegateSymbol);
             invokeSubject.Insert(SymbolType.classDelegateSymbol);
             invokeSubject.Insert(SymbolType.enumTypeSymbol);
@@ -317,6 +331,7 @@ namespace Cm.Sym
             typeAndConceptSymbols.Insert(SymbolType.floatSymbol);
             typeAndConceptSymbols.Insert(SymbolType.doubleSymbol);
             typeAndConceptSymbols.Insert(SymbolType.classSymbol);
+            typeAndConceptSymbols.Insert(SymbolType.interfaceTypeSymbol);
             typeAndConceptSymbols.Insert(SymbolType.delegateSymbol);
             typeAndConceptSymbols.Insert(SymbolType.classDelegateSymbol);
             typeAndConceptSymbols.Insert(SymbolType.enumTypeSymbol);
