@@ -300,6 +300,10 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));
     boundCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(boundCompileUnit));
     boundCompileUnit.AddFileScope(fileScopes[0].release());
+    if (project->Name() != "os" && project->Name() != "support")
+    {
+        boundCompileUnit.ClassTemplateRepository().AutoBindTemplates();
+    }
     Cm::Build::Bind(testUnit, boundCompileUnit);
     if (boundCompileUnit.HasGotos())
     {

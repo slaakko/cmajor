@@ -24,7 +24,7 @@ namespace Test.System.Support.Utility
 
     public unit_test void StrLenTest()
     {
-        #assert(StrLen(null) == 0);
+        #assert(StrLen(cast<const char*>(null)) == 0);
         #assert(StrLen("") == 0);
         #assert(StrLen("a") == 1);
         #assert(StrLen("ab") == 2);
@@ -188,7 +188,7 @@ namespace Test.System.Support.Utility
             }
         }
         #assert(buf[4095] == '\0');
-    }   
+    }
 
     public unit_test void MemGrowTest()
     {

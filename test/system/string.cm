@@ -219,15 +219,15 @@ namespace Test
         #assert(ToLower(s7) == s6);
 
         string s8 = "alpha.beta.gamma";
-        #assert(LastComponentsEqual(s8, "gamma", '.'));
-        #assert(!LastComponentsEqual(s8, "gammax", '.'));
-        #assert(!LastComponentsEqual(s8, "gamma.delta", '.'));
-        #assert(LastComponentsEqual(s8, "beta.gamma", '.'));
-        #assert(!LastComponentsEqual(s8, "beta.gammax", '.'));
-        #assert(!LastComponentsEqual(s8, "betax.gamma", '.'));
-        #assert(LastComponentsEqual(s8, "alpha.beta.gamma", '.'));
-        #assert(!LastComponentsEqual(s8, "alpha.beta.gammax", '.'));
-        #assert(!LastComponentsEqual(s8, "alpha.betax.gamma", '.'));
-        #assert(!LastComponentsEqual(s8, "alphax.beta.gamma", '.'));
+        #assert(LastComponentsEqual(s8, string("gamma"), '.'));
+        #assert(!LastComponentsEqual(s8, string("gammax"), '.'));
+        #assert(!LastComponentsEqual(s8, string("gamma.delta"), '.'));
+        #assert(LastComponentsEqual(s8, string("beta.gamma"), '.'));
+        #assert(!LastComponentsEqual(s8, string("beta.gammax"), '.'));
+        #assert(!LastComponentsEqual(s8, string("betax.gamma"), '.'));
+        #assert(LastComponentsEqual(s8, string("alpha.beta.gamma"), '.'));
+        #assert(!LastComponentsEqual(s8, string("alpha.beta.gammax"), '.'));
+        #assert(!LastComponentsEqual(s8, string("alpha.betax.gamma"), '.'));
+        #assert(!LastComponentsEqual(s8, string("alphax.beta.gamma"), '.'));
     }
 }
