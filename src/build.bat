@@ -47,4 +47,5 @@ cmpdf ../system/thread.cm
 cmpdf ../system/time.cm
 cmpdf ../system/tracer.cm
 cmpdf ../system/uhuge.cm
+cmpdf ../system/unicode.cm
 cmpdf ../system/utility.cm
