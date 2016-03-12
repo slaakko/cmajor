@@ -1,0 +1,989 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Core
+{
+    public class InterfaceTypeOpRepository
+    {
+        public InterfaceTypeOpRepository(Cm.Sym.TypeRepository& typeRepository_) : typeRepository(typeRepository_)
+        {
+            groupMap["@constructor"] = &ctorOpGroup;
+            groupMap["operator="] = &assignmentOpGroup;
+            groupMap["operator=="] = &equalOpGroup;
+        }
+        public void CollectViableFunctions(Cm.Sym.ContainerScope* containerScope, const string& groupName, int arity, List<Cm.Core.Argument>& arguments, const Span& span, 
+            HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            HashMap<string, InterfaceTypeOpGroup*>.ConstIterator i = groupMap.CFind(groupName);
+            if (i != groupMap.CEnd())
+            {
+                InterfaceTypeOpGroup* group = i->second;
+                group->CollectViableFunctions(arity, arguments, span, typeRepository, cacheMap, caches, viableFunctions);
+            }
+        }
+        private Cm.Sym.TypeRepository& typeRepository;
+        private InterfaceTypeOpConstructorGroup ctorOpGroup;
+        private InterfaceTypeOpAssignmentGroup assignmentOpGroup;
+        private InterfaceTypeOpEqualGroup equalOpGroup;
+        private HashMap<string, InterfaceTypeOpGroup*> groupMap;
+        private Map<Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*>, InterfaceTypeOpCache*> cacheMap;
+        private List<UniquePtr<InterfaceTypeOpCache>> caches;
+    }
+    
+    public abstract class InterfaceTypeOpGroup
+    {
+        public virtual ~InterfaceTypeOpGroup()
+        {
+        }
+        public abstract void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            Map<Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*>, InterfaceTypeOpCache*>& cacheMap, List<UniquePtr<InterfaceTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions);
+    }
+    
+    public class InterfaceTypeOpConstructorGroup : InterfaceTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            Map<Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*>, InterfaceTypeOpCache*>& cacheMap, List<UniquePtr<InterfaceTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 1)
+            {
+                Cm.Sym.TypeSymbol* firstType = arguments[0].Type();
+                if (firstType->IsPointerToInterfaceTypeSymbol())
+                {
+                    Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), cast<Cm.Sym.TypeSymbol*>(null));
+                    InterfaceTypeOpCache* cache = cacheMap[p];
+                    if (cache == null)
+                    {
+                        cache = new InterfaceTypeOpCache();
+                        caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                        cacheMap[p] = cache;
+                    }
+                    Cm.Sym.FunctionSymbol* ctor = cache->GetDefaultCtor(typeRepository, firstType->GetBaseType());
+                    viableFunctions.Insert(ctor);
+                }
+            }
+            else if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* firstType = arguments[0].Type();
+                if (firstType->IsPointerToInterfaceTypeSymbol())
+                {
+                    Cm.Sym.TypeSymbol* secondType = arguments[1].Type();
+                    Cm.Sym.TypeSymbol* constRefIntfType = typeRepository.MakeConstReferenceType(firstType->GetBaseType(), Span());
+                    if (Cm.Sym.TypesEqual(secondType, constRefIntfType))
+                    {
+                        Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), cast<Cm.Sym.TypeSymbol*>(null));
+                        InterfaceTypeOpCache* cache = cacheMap[p];
+                        if (cache == null)
+                        {
+                            cache = new InterfaceTypeOpCache();
+                            caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                            cacheMap[p] = cache;
+                        }
+                        Cm.Sym.FunctionSymbol* ctor = cache->GetCopyCtor(typeRepository, firstType->GetBaseType());
+                        viableFunctions.Insert(ctor);
+                    }
+                    else if (Cm.Sym.TypesEqual(secondType, firstType->GetBaseType()))
+                    {
+                        Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), cast<Cm.Sym.TypeSymbol*>(null));
+                        InterfaceTypeOpCache* cache = cacheMap[p];
+                        if (cache == null)
+                        {
+                            cache = new InterfaceTypeOpCache();
+                            caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                            cacheMap[p] = cache;
+                        }
+                        Cm.Sym.FunctionSymbol* ctor = cache->GetCopyCtor(typeRepository, firstType->GetBaseType());
+                        viableFunctions.Insert(ctor);
+                    }
+                    else if (secondType->IsPointerToClassType())
+                    {
+                        Cm.Sym.InterfaceTypeSymbol* intfType = cast<Cm.Sym.InterfaceTypeSymbol*>(firstType->GetBaseType());
+                        Cm.Sym.ClassTypeSymbol* classType = cast<Cm.Sym.ClassTypeSymbol*>(secondType->GetBaseType());
+                        bool found = false;
+                        for (Cm.Sym.InterfaceTypeSymbol* implIntf : classType->ImplementedInterfaces())
+                        {
+                            if (Cm.Sym.TypesEqual(implIntf, intfType))
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) return;
+                        Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), secondType);
+                        InterfaceTypeOpCache* cache = cacheMap[p];
+                        if (cache == null)
+                        {
+                            cache = new InterfaceTypeOpCache();
+                            caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                            cacheMap[p] = cache;
+                        }
+                        Cm.Sym.FunctionSymbol* ctor = cache->GetInterfaceObjectFromClassPtrCtor(typeRepository, firstType->GetBaseType(), secondType);
+                        viableFunctions.Insert(ctor);
+                    }
+                }
+            }
+        }
+    }
+    
+    public class InterfaceTypeOpAssignmentGroup : InterfaceTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            Map<Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*>, InterfaceTypeOpCache*>& cacheMap, List<UniquePtr<InterfaceTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* firstType = arguments[0].Type();
+                if (firstType->IsPointerToInterfaceTypeSymbol())
+                {
+                    Cm.Sym.TypeSymbol* secondType = arguments[1].Type();
+                    Cm.Sym.TypeSymbol* constRefIntfType = typeRepository.MakeConstReferenceType(firstType->GetBaseType(), Span());
+                    if (Cm.Sym.TypesEqual(secondType, constRefIntfType))
+                    {
+                        Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), cast<Cm.Sym.TypeSymbol*>(null));
+                        InterfaceTypeOpCache* cache = cacheMap[p];
+                        if (cache == null)
+                        {
+                            cache = new InterfaceTypeOpCache();
+                            caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                            cacheMap[p] = cache;
+                        }
+                        Cm.Sym.FunctionSymbol* assignment = cache->GetCopyAssignment(typeRepository, firstType->GetBaseType());
+                        viableFunctions.Insert(assignment);
+                    }
+                    else if (Cm.Sym.TypesEqual(secondType, firstType->GetBaseType()))
+                    {
+                        Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(firstType->GetBaseType(), cast<Cm.Sym.TypeSymbol*>(null));
+                        InterfaceTypeOpCache* cache = cacheMap[p];
+                        if (cache == null)
+                        {
+                            cache = new InterfaceTypeOpCache();
+                            caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                            cacheMap[p] = cache;
+                        }
+                        Cm.Sym.FunctionSymbol* assignment = cache->GetCopyAssignment(typeRepository, firstType->GetBaseType());
+                        viableFunctions.Insert(assignment);
+                    }
+                }                
+            }
+        }
+    }
+    
+    public class InterfaceTypeOpEqualGroup : InterfaceTypeOpGroup
+    {
+        public override void CollectViableFunctions(int arity, const List<Cm.Core.Argument>& arguments, const Span& span, Cm.Sym.TypeRepository& typeRepository, 
+            Map<Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*>, InterfaceTypeOpCache*>& cacheMap, List<UniquePtr<InterfaceTypeOpCache>>& caches, HashSet<Cm.Sym.FunctionSymbol*>& viableFunctions)
+        {
+            if (arity == 2)
+            {
+                Cm.Sym.TypeSymbol* firstType = arguments[0].Type();
+                Cm.Sym.TypeSymbol* plainFirstType = typeRepository.MakePlainType(firstType);
+                if (plainFirstType is Cm.Sym.InterfaceTypeSymbol*)
+                {
+                    Cm.Sym.TypeSymbol* secondType = arguments[1].Type();
+                    Cm.Sym.TypeSymbol* plainSecondType = typeRepository.MakePlainType(secondType);
+                    if (plainSecondType is Cm.Sym.InterfaceTypeSymbol*)
+                    {
+                        if (Cm.Sym.TypesEqual(plainFirstType, plainSecondType))
+                        {
+                            Pair<Cm.Sym.TypeSymbol*, Cm.Sym.TypeSymbol*> p = MakePair(plainFirstType, cast<Cm.Sym.TypeSymbol*>(null));
+                            InterfaceTypeOpCache* cache = cacheMap[p];
+                            if (cache == null)
+                            {
+                                cache = new InterfaceTypeOpCache();
+                                caches.Add(UniquePtr<InterfaceTypeOpCache>(cache));
+                                cacheMap[p] = cache;
+                            }
+                            Cm.Sym.FunctionSymbol* opEqual = cache->GetOpEqual(typeRepository, plainFirstType);
+                            viableFunctions.Insert(opEqual);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    public class InterfaceTypeOpCache
+    {
+        public Cm.Sym.FunctionSymbol* GetDefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType)
+        {
+            if (defaultCtor.IsNull())
+            {
+                defaultCtor.Reset(new InterfaceObjectDefaultCtor(typeRepository, interfaceType));
+            }
+            return defaultCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType)
+        {
+            if (copyCtor.IsNull())
+            {
+                copyCtor.Reset(new InterfaceObjectCopyCtor(typeRepository, interfaceType));
+            }
+            return copyCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType)
+        {
+            if (copyAssignment.IsNull())
+            {
+                copyAssignment.Reset(new InterfaceObjectCopyAssignment(typeRepository, interfaceType));
+            }
+            return copyAssignment.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetInterfaceObjectFromClassPtrCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType, Cm.Sym.TypeSymbol* classPtrType)
+        {
+            if (interfaceObjectFromClassPtrCtor.IsNull())
+            {
+                interfaceObjectFromClassPtrCtor.Reset(new InterfaceObjectFromClassPtrCtor(typeRepository, interfaceType, classPtrType));
+            }
+            return interfaceObjectFromClassPtrCtor.GetPtr();
+        }
+        public Cm.Sym.FunctionSymbol* GetOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType)
+        {
+            if (opEqual.IsNull())
+            {
+                opEqual.Reset(new InterfaceObjectOpEqual(typeRepository, interfaceType));
+            }
+            return opEqual.GetPtr();
+        }
+        private UniquePtr<InterfaceObjectDefaultCtor> defaultCtor;
+        private UniquePtr<InterfaceObjectCopyCtor> copyCtor;
+        private UniquePtr<InterfaceObjectCopyAssignment> copyAssignment;
+        private UniquePtr<InterfaceObjectFromClassPtrCtor> interfaceObjectFromClassPtrCtor;
+        private UniquePtr<InterfaceObjectOpEqual> opEqual;
+    }
+    
+    public class InterfaceObjectDefaultCtor : BasicTypeOp
+    {
+        public InterfaceObjectDefaultCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType_) : base(interfaceType_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thisParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result) 
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                GenerateLlvm(emitter, result);
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                GenerateC(emitter, result);
+            }
+        }
+        private void GenerateLlvm(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter.Own(i8Ptr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, i8Ptr);
+            emitter.Own(obj);
+            Ir.Intf.Object* nullPtr = i8Ptr->CreateDefaultValue();
+            emitter.Own(nullPtr);
+            Cm.IrIntf.Assign(emitter, i8Ptr, nullPtr, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, i8Ptr);
+            emitter.Own(itab);
+            Cm.IrIntf.Assign(emitter, i8Ptr, nullPtr, itab);
+        }
+        private void GenerateC(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter.Own(voidPtr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, voidPtr);
+            emitter.Own(obj);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                obj->SetDotMember();
+            }
+            Ir.Intf.Object* nullPtr = voidPtr->CreateDefaultValue();
+            Cm.IrIntf.Assign(emitter, voidPtr, nullPtr, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, voidPtr);
+            emitter.Own(itab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                itab->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, nullPtr, itab);
+        }
+    }
+    
+    public class InterfaceObjectCopyCtor : BasicTypeOp
+    {
+        public InterfaceObjectCopyCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType_) : base(interfaceType_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeConstReferenceType(Type(), Span()));
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thatParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result) 
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                GenerateLlvm(emitter, result);
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                GenerateC(emitter, result);
+            }
+        }
+        private void GenerateLlvm(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter.Own(i8Ptr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, i8Ptr);
+            emitter.Own(obj);
+            Ir.Intf.Object* that = result.Arg1();
+            Ir.Intf.MemberVar* thatObj = Cm.IrIntf.MakeMemberVar("obj", that, 0, i8Ptr);
+            emitter.Own(thatObj);
+            Cm.IrIntf.Assign(emitter, i8Ptr, thatObj, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, i8Ptr);
+            emitter.Own(itab);
+            Ir.Intf.MemberVar* thatItab = Cm.IrIntf.MakeMemberVar("itab", that, 1, i8Ptr);
+            emitter.Own(thatItab);
+            Cm.IrIntf.Assign(emitter, i8Ptr, thatItab, itab);
+        }
+        private void GenerateC(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter.Own(voidPtr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, voidPtr);
+            emitter.Own(obj);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                obj->SetDotMember();
+            }
+            Ir.Intf.Object* that = result.Arg1();
+            Ir.Intf.MemberVar* thatObj = Cm.IrIntf.MakeMemberVar("obj", that, 0, voidPtr);
+            emitter.Own(thatObj);
+            if (!that->GetType()->IsPointerType())
+            {
+                thatObj->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, thatObj, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, voidPtr);
+            emitter.Own(itab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                itab->SetDotMember();
+            }
+            Ir.Intf.MemberVar* thatItab = Cm.IrIntf.MakeMemberVar("itab", that, 1, voidPtr);
+            emitter.Own(thatItab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                thatItab->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, thatItab, itab);
+        }
+    }
+    
+    public class InterfaceObjectCopyAssignment : BasicTypeOp
+    {
+        public InterfaceObjectCopyAssignment(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType_) : base(interfaceType_)
+        {
+            SetGroupName("operator=");
+            Cm.Sym.TypeSymbol* voidType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.voidId));
+            SetReturnType(voidType);
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(typeRepository.MakeConstReferenceType(Type(), Span()));
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thatParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                GenerateLlvm(emitter, result);
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                GenerateC(emitter, result);
+            }
+        }
+        private void GenerateLlvm(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter.Own(i8Ptr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, i8Ptr);
+            emitter.Own(obj);
+            Ir.Intf.Object* that = result.Arg1();
+            Ir.Intf.MemberVar* thatObj = Cm.IrIntf.MakeMemberVar("obj", that, 0, i8Ptr);
+            emitter.Own(thatObj);
+            Cm.IrIntf.Assign(emitter, i8Ptr, thatObj, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, i8Ptr);
+            emitter.Own(itab);
+            Ir.Intf.MemberVar* thatItab = Cm.IrIntf.MakeMemberVar("itab", that, 1, i8Ptr);
+            emitter.Own(thatItab);
+            Cm.IrIntf.Assign(emitter, i8Ptr, thatItab, itab);
+        }
+        private void GenerateC(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter.Own(voidPtr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, voidPtr);
+            emitter.Own(obj);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                obj->SetDotMember();
+            }
+            Ir.Intf.Object* that = result.Arg1();
+            Ir.Intf.MemberVar* thatObj = Cm.IrIntf.MakeMemberVar("obj", that, 0, voidPtr);
+            emitter.Own(thatObj);
+            if (!that->GetType()->IsPointerType())
+            {
+                thatObj->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, thatObj, obj);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, voidPtr);
+            emitter.Own(itab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                itab->SetDotMember();
+            }
+            Ir.Intf.MemberVar* thatItab = Cm.IrIntf.MakeMemberVar("itab", that, 1, voidPtr);
+            emitter.Own(thatItab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                thatItab->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, thatItab, itab);
+        }
+    }
+    
+    public class InterfaceObjectOpEqual : BasicTypeOp
+    {
+        public InterfaceObjectOpEqual(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType_) : base(interfaceType_)
+        {
+            SetGroupName("operator==");
+            Cm.Sym.TypeSymbol* boolType = typeRepository.GetType(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            SetReturnType(boolType);
+            Cm.Sym.ParameterSymbol* leftParam = new Cm.Sym.ParameterSymbol(Span(), "left");
+            leftParam->SetType(Type());
+            leftParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(leftParam);
+            Cm.Sym.ParameterSymbol* rightParam = new Cm.Sym.ParameterSymbol(Span(), "right");
+            rightParam->SetType(Type());
+            rightParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(rightParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                GenerateLlvm(emitter, result);
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                GenerateC(emitter, result);
+            }
+        }
+        private void GenerateLlvm(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* boolPtr = Cm.IrIntf.Pointer(Cm.IrIntf.I1(), 1u);
+            emitter.Own(boolPtr);
+            Ir.Intf.Object* resultStackVar = Cm.IrIntf.MakeStackVar("intf$compare$result", boolPtr);
+            emitter.Own(resultStackVar);
+            if (!emitter.TempBoolVarAllocted())
+            {
+                emitter.SetTempBoolVarAllocted();
+                emitter.Emit(Cm.IrIntf.Alloca(Cm.IrIntf.I1(), resultStackVar));
+            }
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter.Own(i8Ptr);
+            Ir.Intf.Object* leftObject = result.Arg1();
+            Ir.Intf.MemberVar* leftObj = Cm.IrIntf.MakeMemberVar("obj", leftObject, 0, i8Ptr);
+            emitter.Own(leftObj);
+            Ir.Intf.Object* temp0 = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(temp0);
+            Cm.IrIntf.Assign(emitter, i8Ptr, leftObj, temp0);
+            Ir.Intf.Object* rightObject = result.Arg2();
+            Ir.Intf.MemberVar* rightObj = Cm.IrIntf.MakeMemberVar("obj", rightObject, 0, i8Ptr);
+            emitter.Own(rightObj);
+            Ir.Intf.Object* temp1 = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(temp1);
+            Cm.IrIntf.Assign(emitter, i8Ptr, rightObj, temp1);
+            Ir.Intf.Object* result0 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(result0);
+            emitter.Emit(Cm.IrIntf.ICmp(i8Ptr, result0, Ir.Intf.IConditionCode.eq, temp0, temp1));
+            Ir.Intf.LabelObject* nextLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(nextLabel);
+            Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(falseLabel);
+            emitter.Emit(Cm.IrIntf.Br(result0, nextLabel, falseLabel));
+            emitter.AddNextInstructionLabel(nextLabel);
+            Ir.Intf.MemberVar* leftItab = Cm.IrIntf.MakeMemberVar("itab", leftObject, 1, i8Ptr);
+            emitter.Own(leftItab);
+            Ir.Intf.Object* temp2 = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(temp2);
+            Cm.IrIntf.Assign(emitter, i8Ptr, leftItab, temp2);
+            Ir.Intf.MemberVar* rightItab = Cm.IrIntf.MakeMemberVar("itab", rightObject, 1, i8Ptr);
+            emitter.Own(rightItab);
+            Ir.Intf.Object* temp3 = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(temp3);
+            Cm.IrIntf.Assign(emitter, i8Ptr, rightItab, temp3);
+            Ir.Intf.Object* result1 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(result1);
+            emitter.Emit(Cm.IrIntf.ICmp(i8Ptr, result1, Ir.Intf.IConditionCode.eq, temp2, temp3));
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), result1, resultStackVar);
+            Ir.Intf.LabelObject* commonLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(commonLabel);
+            emitter.Emit(Cm.IrIntf.Br(commonLabel));
+            emitter.AddNextInstructionLabel(falseLabel);
+            Ir.Intf.Object* falseObject = Cm.IrIntf.MakeBooleanConstant(false);
+            emitter.Own(falseObject);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), falseObject, resultStackVar);
+            emitter.AddNextInstructionLabel(commonLabel);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), resultStackVar, result.MainObject());
+            if (result.GenJumpingBoolCode())
+            {
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(trueLabel);
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(falseLabel);
+                emitter.Emit(Cm.IrIntf.Br(result.MainObject(), trueLabel, falseLabel));
+                result.AddTrueTarget(trueLabel);
+                result.AddFalseTarget(falseLabel);
+            }
+        }
+        private void GenerateC(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Object* resultStackVar = Cm.IrIntf.MakeStackVar("intf_X_compare_X_result", Cm.IrIntf.I1());
+            emitter.Own(resultStackVar);
+            if (!emitter.TempBoolVarAllocted())
+            {
+                emitter.SetTempBoolVarAllocted();
+                emitter.Emit(Cm.IrIntf.Alloca(Cm.IrIntf.I1(), resultStackVar));
+            }
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter.Own(voidPtr);
+            Ir.Intf.Object* leftObject = result.Arg1();
+            Ir.Intf.MemberVar* leftObj = Cm.IrIntf.MakeMemberVar("obj", leftObject, 0, voidPtr);
+            emitter.Own(leftObj);
+            if (!leftObject->GetType()->IsPointerType())
+            {
+                leftObj->SetDotMember();
+            }
+            Ir.Intf.Object* temp0 = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(temp0);
+            Cm.IrIntf.Assign(emitter, voidPtr, leftObj, temp0);
+            Ir.Intf.Object* rightObject = result.Arg2();
+            Ir.Intf.MemberVar* rightObj = Cm.IrIntf.MakeMemberVar("obj", rightObject, 0, voidPtr);
+            emitter.Own(rightObj);
+            if (!rightObject->GetType()->IsPointerType())
+            {
+                rightObj->SetDotMember();
+            }
+            Ir.Intf.Object* temp1 = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(temp1);
+            Cm.IrIntf.Assign(emitter, voidPtr, rightObj, temp1);
+            Ir.Intf.Object* result0 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(result0);
+            emitter.Emit(Cm.IrIntf.ICmp(voidPtr, result0, Ir.Intf.IConditionCode.eq, temp0, temp1));
+            Ir.Intf.LabelObject* nextLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(nextLabel);
+            Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(falseLabel);
+            emitter.Emit(Cm.IrIntf.Br(result0, nextLabel, falseLabel));
+            emitter.AddNextInstructionLabel(nextLabel);
+            Ir.Intf.MemberVar* leftItab = Cm.IrIntf.MakeMemberVar("itab", leftObject, 1, voidPtr);
+            emitter.Own(leftItab);
+            if (!leftObject->GetType()->IsPointerType())
+            {
+                leftItab->SetDotMember();
+            }
+            Ir.Intf.Object* temp2 = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(temp2);
+            Cm.IrIntf.Assign(emitter, voidPtr, leftItab, temp2);
+            Ir.Intf.MemberVar* rightItab = Cm.IrIntf.MakeMemberVar("itab", rightObject, 1, voidPtr);
+            if (!rightObject->GetType()->IsPointerType())
+            {
+                rightItab->SetDotMember();
+            }
+            emitter.Own(rightItab);
+            Ir.Intf.Object* temp3 = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(temp3);
+            Cm.IrIntf.Assign(emitter, voidPtr, rightItab, temp3);
+            Ir.Intf.Object* result1 = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(result1);
+            emitter.Emit(Cm.IrIntf.ICmp(voidPtr, result1, Ir.Intf.IConditionCode.eq, temp2, temp3));
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), result1, resultStackVar);
+            Ir.Intf.LabelObject* commonLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(commonLabel);
+            emitter.Emit(Cm.IrIntf.Br(commonLabel));
+            emitter.AddNextInstructionLabel(falseLabel);
+            Ir.Intf.Object* falseObject = Cm.IrIntf.MakeBooleanConstant(false);
+            emitter.Own(falseObject);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), falseObject, resultStackVar);
+            emitter.AddNextInstructionLabel(commonLabel);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetI1(), resultStackVar, result.MainObject());
+            if (result.GenJumpingBoolCode())
+            {
+                Ir.Intf.LabelObject* trueLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(trueLabel);
+                Ir.Intf.LabelObject* falseLabel = Cm.IrIntf.CreateLabel();
+                emitter.Own(falseLabel);
+                emitter.Emit(Cm.IrIntf.Br(result.MainObject(), trueLabel, falseLabel));
+                result.AddTrueTarget(trueLabel);
+                result.AddFalseTarget(falseLabel);
+            }
+        }
+    }
+    
+    public class InterfaceObjectFromClassPtrCtor : BasicTypeOp
+    {
+        public InterfaceObjectFromClassPtrCtor(Cm.Sym.TypeRepository& typeRepository, Cm.Sym.TypeSymbol* interfaceType_, Cm.Sym.TypeSymbol* classPtrType_) : base(interfaceType_), classPtrType(classPtrType_)
+        {
+            SetGroupName("@constructor");
+            Cm.Sym.ParameterSymbol* thisParam = new Cm.Sym.ParameterSymbol(Span(), "this");
+            thisParam->SetType(typeRepository.MakePointerType(Type(), Span()));
+            thisParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thisParam);
+            Cm.Sym.ParameterSymbol* thatParam = new Cm.Sym.ParameterSymbol(Span(), "that");
+            thatParam->SetType(classPtrType);
+            thatParam->SetSid(typeRepository.GetSymbolTable().GetSid());
+            AddSymbol(thatParam);
+            ComputeName();
+            Cm.Sym.EntrySymbol* entry = new Cm.Sym.EntrySymbol(Span());
+            AddSymbol(entry);
+        }
+        public override void Generate(Emitter& emitter, GenResult& result)
+        {
+            if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
+            {
+                GenerateLlvm(emitter, result);
+            }
+            else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.c)
+            {
+                GenerateC(emitter, result);
+            }
+        }
+        private void GenerateLlvm(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* i8Ptr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 1u);
+            emitter.Own(i8Ptr);
+            Ir.Intf.Type* i8PtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.I8(), 2u);
+            emitter.Own(i8PtrPtr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, i8Ptr);
+            emitter.Own(obj);
+            Ir.Intf.Object* objectPtr = result.Arg1();
+            Ir.Intf.Type* interfacePtrType = Cm.IrIntf.Pointer(Type()->IrType(), 1u);
+            emitter.Own(interfacePtrType);
+            Ir.Intf.RegVar* ptrReg = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter.Own(ptrReg);
+            Ir.Intf.Object* zero = Cm.IrIntf.MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* index = Cm.IrIntf.MakeI32Constant(obj->Index());
+            emitter.Own(index);
+            emitter.Emit(Cm.IrIntf.GetElementPtr(interfacePtrType, ptrReg, obj->Ptr(), zero, index));
+            Ir.Intf.Object* objAsI8Ptr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Emit(Cm.IrIntf.Bitcast(objectPtr->GetType(), objAsI8Ptr, objectPtr, i8Ptr));
+            emitter.Emit(Cm.IrIntf.Store(i8Ptr, objAsI8Ptr, ptrReg));
+            Ir.Intf.Object* vptrContainerPtr = objectPtr;
+            Cm.Sym.TypeSymbol* classPtrBaseType = ClassPtrType()->GetBaseType();
+            Cm.Sym.ClassTypeSymbol* classType = null;
+            if (classPtrBaseType is Cm.Sym.ClassTypeSymbol*)
+            {
+                classType = cast<Cm.Sym.ClassTypeSymbol*>(classPtrBaseType);
+            }
+            else
+            {
+                throw Exception("class type expected");
+            }
+            short vptrIndex = classType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+                vptrIndex = vptrContainingType->VPtrIndex();
+                Ir.Intf.Type* vptrContainingPtrIrType = Cm.IrIntf.Pointer(vptrContainingType->IrType(), 1u);
+                emitter.Own(vptrContainingPtrIrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(vptrContainingPtrIrType);
+                emitter.Own(containerPtr);
+                Ir.Intf.Type* classTypePtrIrType = ClassPtrType()->IrType();
+                emitter.Emit(Cm.IrIntf.Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
+                vptrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vptrContainerPtr, vptrIndex, i8PtrPtr);
+            emitter.Own(vptr);
+            Ir.Intf.Object* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(i8PtrPtr);
+            emitter.Own(loadedVptr);
+            Cm.IrIntf.Assign(emitter, i8PtrPtr, vptr, loadedVptr);
+            Ir.Intf.Object* i8rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(i8rttiPtr);
+            Cm.IrIntf.Assign(emitter, i8Ptr, loadedVptr, i8rttiPtr);
+            List<Ir.Intf.Type*> rttiElementTypes;
+            rttiElementTypes.Add(i8Ptr->Clone());
+            rttiElementTypes.Add(Cm.IrIntf.UI64());
+            Ir.Intf.Type* irecPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 1u);
+            emitter.Own(irecPtrType);
+            Ir.Intf.Type* irecPtrPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 2u);
+            emitter.Own(irecPtrPtrType);
+            rttiElementTypes.Add(irecPtrType->Clone());
+            List<string> rttiElementNames;
+            rttiElementNames.Add("class_name");
+            rttiElementNames.Add("class_id");
+            rttiElementNames.Add("irectab");
+            Ir.Intf.Type* rttiPtrIrType = Cm.IrIntf.Pointer(Cm.IrIntf.Structure("rtti_", rttiElementTypes, rttiElementNames), 1u);
+            emitter.Own(rttiPtrIrType);
+            Ir.Intf.RegVar* rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(rttiPtrIrType);
+            emitter.Own(rttiPtr);
+            emitter.Emit(Cm.IrIntf.Bitcast(i8Ptr, rttiPtr, i8rttiPtr, rttiPtrIrType));
+            Ir.Intf.Object* two = Cm.IrIntf.MakeI32Constant(2);
+            emitter.Own(two);
+            Ir.Intf.Object* irecTabPtrPtr = Cm.IrIntf.MakeTemporaryRegVar(irecPtrPtrType);
+            emitter.Own(irecTabPtrPtr);
+            emitter.Emit(Cm.IrIntf.GetElementPtr(rttiPtrIrType, irecTabPtrPtr, rttiPtr, zero, two));
+            Ir.Intf.RegVar* irecTabPtr = Cm.IrIntf.MakeTemporaryRegVar(irecPtrType);
+            emitter.Own(irecTabPtr);
+            Cm.IrIntf.Assign(emitter, irecPtrType, irecTabPtrPtr, irecTabPtr);
+            Ir.Intf.Object* irecPtr = Cm.IrIntf.MakeStackVar(Cm.IrIntf.GetIrecPtrName(), irecPtrPtrType);
+            emitter.Own(irecPtr);
+            if (!emitter.IrecPtrAllocated())
+            {
+                emitter.SetIrecPtrAllocated();
+                emitter.Emit(Cm.IrIntf.Alloca(irecPtrType, irecPtr));
+            }
+            emitter.Emit(Cm.IrIntf.Store(irecPtrType, irecTabPtr, irecPtr));
+            Ir.Intf.LabelObject* loopLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(loopLabel);
+            emitter.AddNextInstructionLabel(loopLabel);
+            Ir.Intf.Object* loopVar = Cm.IrIntf.MakeTemporaryRegVar(irecPtrType);
+            Cm.IrIntf.Assign(emitter, irecPtrType, irecPtr, loopVar);
+            Ir.Intf.MemberVar* iid = Cm.IrIntf.MakeMemberVar("iid", loopVar, 0, Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(iid);
+            Ir.Intf.Object* iidReg = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(iidReg);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), iid, iidReg);
+            Ir.Intf.Object* sentinelIid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(sentinelIid);
+            Ir.Intf.Object* minusOne = Ir.Intf.Factory.Instance()->GetUI64()->CreateMinusOne();
+            emitter.Own(minusOne);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), minusOne, sentinelIid);
+            Ir.Intf.Object* isMinusOne = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(isMinusOne);
+            emitter.Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), isMinusOne, Ir.Intf.IConditionCode.eq, iidReg, sentinelIid));
+            Ir.Intf.LabelObject* outLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(outLabel);
+            Ir.Intf.LabelObject* nextLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(nextLabel);
+            emitter.Emit(Cm.IrIntf.Br(isMinusOne, outLabel, nextLabel));
+            emitter.AddNextInstructionLabel(nextLabel);
+            Cm.Sym.InterfaceTypeSymbol* interfaceType = cast<Cm.Sym.InterfaceTypeSymbol*>(Type());
+            Ir.Intf.Object* intfIid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(intfIid);
+            Ir.Intf.Object* intfIidConstant = Cm.IrIntf.MakeUI64Constant(interfaceType->Iid());
+            emitter.Own(intfIidConstant);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), intfIidConstant, intfIid);
+            Ir.Intf.Object* iidMatches = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(iidMatches);
+            emitter.Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), iidMatches, Ir.Intf.IConditionCode.eq, iidReg, intfIid));
+            Ir.Intf.LabelObject* matchLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(matchLabel);
+            Ir.Intf.LabelObject* next2Label = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(next2Label);
+            emitter.Emit(Cm.IrIntf.Br(iidMatches, matchLabel, next2Label));
+            emitter.AddNextInstructionLabel(next2Label);
+            Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+            emitter.Own(one);
+            Ir.Intf.Object* nextIrecValue = Cm.IrIntf.MakeTemporaryRegVar(irecPtrType);
+            emitter.Own(nextIrecValue);
+            emitter.Emit(Cm.IrIntf.GetElementPtr(irecPtrType, nextIrecValue, loopVar, one));
+            emitter.Emit(Cm.IrIntf.Store(irecPtrType, nextIrecValue, irecPtr));
+            emitter.Emit(Cm.IrIntf.Br(loopLabel));
+            emitter.AddNextInstructionLabel(outLabel);
+            Ir.Intf.Function* interfaceLookupFailed = emitter.InterfaceLookupFailed();
+            List<Ir.Intf.Object*> interfaceLookupFailedArgs;
+            emitter.Emit(Cm.IrIntf.Call(null, interfaceLookupFailed, interfaceLookupFailedArgs));
+            emitter.AddNextInstructionLabel(matchLabel);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", loopVar, 1, i8Ptr);
+            emitter.Own(itab);
+            Ir.Intf.Object* itabPtr = Cm.IrIntf.MakeTemporaryRegVar(i8Ptr);
+            emitter.Own(itabPtr);
+            Cm.IrIntf.Assign(emitter, i8Ptr, itab, itabPtr);
+            Ir.Intf.MemberVar* mainItab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, i8Ptr);
+            emitter.Own(mainItab);
+            Cm.IrIntf.Assign(emitter, i8Ptr, itabPtr, mainItab);
+        }
+        private void GenerateC(Emitter& emitter, GenResult& result)
+        {
+            Ir.Intf.Type* voidPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 1u);
+            emitter.Own(voidPtr);
+            Ir.Intf.Type* voidPtrPtr = Cm.IrIntf.Pointer(Cm.IrIntf.Void(), 2u);
+            emitter.Own(voidPtrPtr);
+            Ir.Intf.Object* mainObject = result.MainObject();
+            Ir.Intf.MemberVar* obj = Cm.IrIntf.MakeMemberVar("obj", mainObject, 0, voidPtr);
+            emitter.Own(obj);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                obj->SetDotMember();
+            }
+            Ir.Intf.Object* objectPtr = result.Arg1();
+            Ir.Intf.Type* interfacePtrType = Cm.IrIntf.Pointer(Type()->IrType(), 1u);
+            emitter.Own(interfacePtrType);
+            Ir.Intf.Object* zero = Cm.IrIntf.MakeI32Constant(0);
+            emitter.Own(zero);
+            Ir.Intf.Object* objAsVoidPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(objAsVoidPtr);
+            emitter.Emit(Cm.IrIntf.Bitcast(objectPtr->GetType(), objAsVoidPtr, objectPtr, voidPtr));
+            Ir.Intf.RegVar* ptrReg = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter.Own(ptrReg);
+            emitter.Emit(Cm.IrIntf.Load(voidPtrPtr, ptrReg, obj, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+            emitter.Emit(Cm.IrIntf.Store(voidPtr, objAsVoidPtr, ptrReg, Ir.Intf.Indirection.none, Ir.Intf.Indirection.deref));
+            Ir.Intf.Object* vptrContainerPtr = objectPtr;
+            Cm.Sym.TypeSymbol* classPtrBaseType = ClassPtrType()->GetBaseType();
+            Cm.Sym.ClassTypeSymbol* classType = null;
+            if (classPtrBaseType is Cm.Sym.ClassTypeSymbol*)
+            {
+                classType = cast<Cm.Sym.ClassTypeSymbol*>(classPtrBaseType);
+            }
+            else
+            {
+                throw Exception("class type expected");
+            }
+            short vptrIndex = classType->VPtrIndex();
+            if (vptrIndex == -1)
+            {
+                Cm.Sym.ClassTypeSymbol* vptrContainingType = classType->VPtrContainerClass();
+                vptrIndex = vptrContainingType->VPtrIndex();
+                Ir.Intf.Type* vptrContainingPtrIrType = Cm.IrIntf.Pointer(vptrContainingType->IrType(), 1u);
+                emitter.Own(vptrContainingPtrIrType);
+                Ir.Intf.RegVar* containerPtr = Cm.IrIntf.MakeTemporaryRegVar(vptrContainingPtrIrType);
+                emitter.Own(containerPtr);
+                Ir.Intf.Type* classTypePtrIrType = ClassPtrType()->IrType();
+                emitter.Emit(Cm.IrIntf.Bitcast(classTypePtrIrType, containerPtr, objectPtr, vptrContainingPtrIrType));
+                vptrContainerPtr = containerPtr;
+            }
+            Ir.Intf.MemberVar* vptr = Cm.IrIntf.MakeMemberVar(Cm.IrIntf.GetVPtrVarName(), vptrContainerPtr, vptrIndex, voidPtrPtr);
+            emitter.Own(vptr);
+            Ir.Intf.RegVar* loadedVptr = Cm.IrIntf.MakeTemporaryRegVar(voidPtrPtr);
+            emitter.Own(loadedVptr);
+            Cm.IrIntf.Assign(emitter, voidPtrPtr, vptr, loadedVptr);
+            Ir.Intf.RegVar* voidrttiPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(voidrttiPtr);
+            Cm.IrIntf.Assign(emitter, voidPtr, loadedVptr, voidrttiPtr);
+            Ir.Intf.Type* rttiPtrIrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("rtti", false), 1u);
+            emitter.Own(rttiPtrIrType);
+            Ir.Intf.RegVar* rttiPtr = Cm.IrIntf.MakeTemporaryRegVar(rttiPtrIrType);
+            emitter.Own(rttiPtr);
+            emitter.Emit(Cm.IrIntf.Bitcast(voidPtr, rttiPtr, voidrttiPtr, rttiPtrIrType));
+            Ir.Intf.Type* irecTabPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 1u);
+            emitter.Own(irecTabPtrType);
+            Ir.Intf.MemberVar* irecTabMemberVar = Cm.IrIntf.MakeMemberVar("irectab", rttiPtr, 2, irecTabPtrType);
+            emitter.Own(irecTabMemberVar);
+            Ir.Intf.Type* irecPtrType = Cm.IrIntf.Pointer(Cm.IrIntf.MakeTypeNameType("irec", false), 1u);
+            emitter.Own(irecPtrType);
+            Ir.Intf.RegVar* irecTabPtr = Cm.IrIntf.MakeTemporaryRegVar(irecPtrType);
+            emitter.Own(irecTabPtr);
+            Cm.IrIntf.Assign(emitter, irecPtrType, irecTabMemberVar, irecTabPtr);
+            Ir.Intf.Object* irecPtr = Cm.IrIntf.MakeStackVar(Cm.IrIntf.GetIrecPtrName(), irecPtrType);
+            emitter.Own(irecPtr);
+            if (!emitter.IrecPtrAllocated())
+            {
+                emitter.SetIrecPtrAllocated();
+                emitter.Emit(Cm.IrIntf.Alloca(irecPtrType, irecPtr));
+            }
+            emitter.Emit(Cm.IrIntf.Store(irecPtrType, irecTabPtr, irecPtr));
+            Ir.Intf.LabelObject* loopLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(loopLabel);
+            emitter.AddNextInstructionLabel(loopLabel);
+            Ir.Intf.Object* loopVar = Cm.IrIntf.MakeTemporaryRegVar(irecPtrType);
+            Cm.IrIntf.Assign(emitter, irecPtrType, irecPtr, loopVar);
+            Ir.Intf.MemberVar* iid = Cm.IrIntf.MakeMemberVar("iid", loopVar, 0, Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(iid);
+            Ir.Intf.Object* iidReg = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(iidReg);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), iid, iidReg);
+            Ir.Intf.Object* sentinelIid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(sentinelIid);
+            Ir.Intf.Object* minusOne = Ir.Intf.Factory.Instance()->GetUI64()->CreateMinusOne();
+            emitter.Own(minusOne);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), minusOne, sentinelIid);
+            Ir.Intf.Object* isMinusOne = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(isMinusOne);
+            emitter.Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), isMinusOne, Ir.Intf.IConditionCode.eq, iidReg, sentinelIid));
+            Ir.Intf.LabelObject* outLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(outLabel);
+            Ir.Intf.LabelObject* nextLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(nextLabel);
+            emitter.Emit(Cm.IrIntf.Br(isMinusOne, outLabel, nextLabel));
+            emitter.AddNextInstructionLabel(nextLabel);
+            Cm.Sym.InterfaceTypeSymbol* interfaceType = cast<Cm.Sym.InterfaceTypeSymbol*>(Type());
+            Ir.Intf.Object* intfIid = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetUI64());
+            emitter.Own(intfIid);
+            Ir.Intf.Object* intfIidConstant = Cm.IrIntf.MakeUI64Constant(interfaceType->Iid());
+            emitter.Own(intfIidConstant);
+            Cm.IrIntf.Assign(emitter, Ir.Intf.Factory.Instance()->GetUI64(), intfIidConstant, intfIid);
+            Ir.Intf.Object* iidMatches = Cm.IrIntf.MakeTemporaryRegVar(Ir.Intf.Factory.Instance()->GetI1());
+            emitter.Own(iidMatches);
+            emitter.Emit(Cm.IrIntf.ICmp(Ir.Intf.Factory.Instance()->GetUI64(), iidMatches, Ir.Intf.IConditionCode.eq, iidReg, intfIid));
+            Ir.Intf.LabelObject* matchLabel = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(matchLabel);
+            Ir.Intf.LabelObject* next2Label = Cm.IrIntf.CreateNextLocalLabel();
+            emitter.Own(next2Label);
+            emitter.Emit(Cm.IrIntf.Br(iidMatches, matchLabel, next2Label));
+            emitter.AddNextInstructionLabel(next2Label);
+            Ir.Intf.Object* one = Cm.IrIntf.MakeI32Constant(1);
+            emitter.Own(one);
+            emitter.Emit(Cm.IrIntf.Add(irecPtrType, irecPtr, irecPtr, one));
+            emitter.Emit(Cm.IrIntf.Br(loopLabel));
+            emitter.AddNextInstructionLabel(outLabel);
+            Ir.Intf.Function* interfaceLookupFailed = emitter.InterfaceLookupFailed();
+            List<Ir.Intf.Object*> interfaceLookupFailedArgs;
+            emitter.Emit(Cm.IrIntf.Call(null, interfaceLookupFailed, interfaceLookupFailedArgs));
+            emitter.AddNextInstructionLabel(matchLabel);
+            Ir.Intf.MemberVar* itab = Cm.IrIntf.MakeMemberVar("itab", loopVar, 1, voidPtr);
+            emitter.Own(itab);
+            Ir.Intf.Object* itabPtr = Cm.IrIntf.MakeTemporaryRegVar(voidPtr);
+            emitter.Own(itabPtr);
+            Cm.IrIntf.Assign(emitter, voidPtr, itab, itabPtr);
+            Ir.Intf.MemberVar* mainItab = Cm.IrIntf.MakeMemberVar("itab", mainObject, 1, voidPtr);
+            emitter.Own(mainItab);
+            if (!mainObject->GetType()->IsPointerType())
+            {
+                mainItab->SetDotMember();
+            }
+            Cm.IrIntf.Assign(emitter, voidPtr, itabPtr, mainItab);
+        }
+        public nothrow inline Cm.Sym.TypeSymbol* ClassPtrType() const
+        {
+            return classPtrType;
+        }
+        private Cm.Sym.TypeSymbol* classPtrType;
+    }
+}
