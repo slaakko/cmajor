@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.4}
+\title{Cmajor Programming Language Specification\\Version 3.5}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -89,13 +89,14 @@ Keywords have reserved context-dependent meaning in a program and they cannot be
 \bf{char} & \bf{class} & \bf{concept} & \bf{const} & \bf{construct} & \bf{continue}\\
 \bf{default} & \bf{delegate} & \bf{delete} & \bf{destroy} & \bf{do} & \bf{double}\\
 \bf{else} & \bf{enum} & \bf{explicit} & \bf{extern} & \bf{false} & \bf{float}\\
-\bf{for} & \bf{goto} & \bf{if} & \bf{inline} & \bf{int}& \bf{internal}\\
-\bf{is} & \bf{long} & \bf{namespace} & \bf{new} & \bf{not} & \bf{nothrow}\\
-\bf{null} & \bf{operator} & \bf{or} & \bf{override} & \bf{private} & \bf{protected}\\
-\bf{public} & \bf{return} & \bf{sbyte} & \bf{short} & \bf{sizeof} & \bf{static}\\
-\bf{suppress} & \bf{switch} & \bf{this} & \bf{throw} & \bf{true} & \bf{try}\\
-\bf{typedef} & \bf{typename} & \bf{uint} & \bf{ulong} & \bf{unit\_test} & \bf{ushort}\\
-\bf{using} & \bf{virtual} & \bf{void} & \bf{where} & \bf{while}
+\bf{for} & \bf{goto} & \bf{if} & \bf{inline} & \bf{int}& \bf{interface}\\
+\bf{internal} & \bf{is} & \bf{long} & \bf{namespace} & \bf{new} & \bf{not}\\
+\bf{nothrow} & \bf{null} & \bf{operator} & \bf{or} & \bf{override} & \bf{private}\\
+\bf{protected} & \bf{public} & \bf{return} & \bf{sbyte} & \bf{short} & \bf{sizeof}\\
+\bf{static} & \bf{suppress} & \bf{switch} & \bf{this} & \bf{throw} & \bf{true}\\
+\bf{try} & \bf{typedef} & \bf{typename} & \bf{uchar} & \bf{uint} & \bf{ulong}\\
+\bf{unit\_test} & \bf{ushort} & \bf{using} & \bf{virtual} & \bf{void} & \bf{wchar}\\
+\bf{where} & \bf{while}
 \end{tabular}
 \end{table}
 
@@ -227,6 +228,12 @@ The backslash character provides an escaping mechanism for ordinary string liter
 \begin{grammar}
 \label{string-literal}<string-literal> ::= \verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
 \end{grammar}
+\begin{grammar}
+\label{utf16-string-literal}<utf16-string-literal> ::= \lit*{w}\verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
+\end{grammar}
+\begin{grammar}
+\label{utf32-string-literal}<utf32-string-literal> ::= \lit*{u}\verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
+\end{grammar}
 
 There is no escapes in raw string literals. The content is taken literally.
 
@@ -235,6 +242,8 @@ There is no escapes in raw string literals. The content is taken literally.
 \end{grammar}
 
 The type of a string literal and raw string literal is \bf{const char*}.
+The type of UTF-16 string literal is \bf{const wchar*}.
+The type of UTF-32 string literal is \bf{const uchar*}.
 
 \subsubsection{Null-literal}
 
@@ -262,6 +271,8 @@ and for expressing lack of type.
 \alt \lit*{float}
 \alt \lit*{double}
 \alt \lit*{char}
+\alt \lit*{wchar}
+\alt \lit*{uchar}
 \alt \lit*{void}
 \end{grammar}
 
@@ -321,14 +332,22 @@ A floating-point type value can be converted to integer type, \bf{char} type or 
 Operators unary $-$, $+$, binary $+$, $-$, $*$, $/$, $==$ and $<$ operate on floating-point type operands.
 A floating-point type value can be converted to an integer type with an explicit \bf{cast} operator.
 
-\subsection{Character Type}
+\subsection{Character Types}
 
-The character type \bf{char} is a 8-bit integral ASCII code type for representing character code values in range $0 \ldots 255$.
+The character type \bf{char} is a 8-bit integral unsigned type for representing character code values in range $0 \ldots 255$.
 The default value of a \bf{char} type object is '$\backslash$0'.
+The character type \bf{wchar} is a 16-bit integral unsigned type for representing UTF-16 Unicode code point in range $0 \ldots 65535$.
+The default value of a \bf{wchar} type object is '$\backslash$0'.
+The character type \bf{uchar} is a 32-bit integral unsigned type for representing UTF-32 Unicode code point in range $0 \ldots 4294967295$.
+The default value of a \bf{uchar} type object is '$\backslash$0'.
 
 Character code values can be compared for equality with operator $==$ and for less-than relationship with operator $<$.
 
-A \bf{char} value can be converted to an integer type, floating-point type or \bf{bool} type with an explicit \bf{cast}.
+There are implicit conversions from \bf{char} to \bf{wchar} and \bf{uchar} type and from \bf{wchar} to \bf{uchar} type and
+explicit conversions from \bf{wchar} to \bf{char} and from \bf{uchar} to \bf{wchar} and \bf{char} type.
+In addition all character types can be explicitly converted an integer type, floating-point type or \bf{bool} type with a \bf{cast}.
+There are also explicit conversions from integer types to character types so that you can construct a character if you know
+its code value by using a cast.
 
 \subsection{Void Type}
 
@@ -1295,11 +1314,14 @@ A class type is used to define a user-defined type that can contain data members
 
 \begin{grammar}
 \label{class-definition}<class-definition> ::= <class-specifiers> \lit*{class} <identifier>\ref{identifier} <template-parameter-list>\ref{template-parameter-list}?\\
-<inheritance>? <where-constraint>\ref{where-constraint}? '\{' <class-content> '\}'
+<inheritance-and-implemented-interfaces>? <where-constraint>\ref{where-constraint}? '\{' <class-content> '\}'
 
 <class-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{static} | \lit*{abstract})*
 
-<inheritance> ::= ":" (<template-id>\ref{template-id} | <qualified-id>\ref{qualified-id})
+<inheritance-and-implemented-interfaces> ::= ":" <base-class-or-implemented-interface>\\
+("," <base-class-or-implemented-interface>)*
+
+<base-class-or-implemented-interface> ::= <template-id>\ref{template-id} | <qualified-id>\ref{qualified-id}
 
 <class-content> ::= (<static-constructor>\ref{static-constructor}
 \alt <constructor>\ref{constructor}
@@ -1349,11 +1371,16 @@ When a template name (\ref{sec:templateid}) is specified with the type argument 
 the class template is instantiated, and becomes a concrete class.
 The type-checking of a class template is deferred until instantiation time.
 
-\subsubsection{Inheritance}
+\subsubsection{Inheritance and implemented interfaces}
 
-A class or a class template can derive from a class or a class template.
+A class or a class template can derive at most from one class or a class template.
 Derived class \emph{inherits} members of the \emph{base class}.
 A derived class can \emph{override} virtual, overridden and abstract member functions of the base class.
+
+A class can implement any number of \emph{interfaces}\ref{sec:interface}.
+When a class implements an interface it provides an implementation for all of the member functions of the interface.
+The signatures of the class member functions must match the interface member function signatures and possible \bf{nothrow}-specifications
+exactly.
 
 \subsubsection{Constrained Class Templates}
 
@@ -1647,6 +1674,92 @@ An object of a class delegate type is a pair consisting of a pointer to a class 
 \label{class-delegate-definition}<class-delegate-definition> ::= (<access-specifier>\ref{access-specifier} | \lit*{throw} | \lit*{nothrow})* \lit*{class} \lit*{delegate}\\
 <type-expression>\ref{type-expression} <identifier>\ref{identifier} <parameters>\ref{parameters} ";"
 \end{grammar}
+
+\subsection{Interface Types}\label{sec:interface}
+
+An interface type contains member function signatures.
+A class (\ref{sec:classtypes}) can \emph{implement} an interface by mentioning the name of the interface in its inheritance list and
+providing implementations for all of the member function signatures of the interface.
+
+\begin{grammar}
+<interface-definition> ::= <access-specifier>\ref{access-specifier}?\\
+\lit*{interface} <identifier>\ref{identifier} "{" <interface-content> "}"
+\end{grammar}
+
+\begin{grammar}
+<interface-content> ::= <interface-member-function>*
+\end{grammar}
+
+\begin{grammar}
+<interface-member-function> ::= (\lit*{throw} | \lit*{nothrow})? <type-expression>\ref{type-expression} <identifier>\ref{identifier}\\
+<parameters>\ref{parameters} \lit*{const}? ";"
+\end{grammar}
+
+\subsubsection{Interface Objects}
+
+An object of an interface type is constructed from a pointer to a class object by writing the name of the interface followed by
+a left parenthesis, a pointer to a class object and a right parenthesis.
+
+For example:
+
+\begin{lstlisting}[frame=trBL]
+using System;
+
+public interface Reader
+{
+    string Read();
+}
+
+public class ConsoleReader : Reader
+{
+    public string Read()
+    {
+        return Console.ReadLine();
+    }
+}
+
+public class ModelClass
+{
+    public void SetReader(Reader reader_)
+    {
+        reader = reader_;
+    }
+    public void Act()
+    {
+        string s = reader.Read();
+    }
+    private Reader reader;
+}
+
+public void main()
+{
+    ConsoleReader consoleReader;
+    ModelClass model;
+    model.SetReader(Reader(&consoleReader));
+    model.Act();
+}
+\end{lstlisting}
+
+An interface object holds two pointers: one pointing to a class object and another pointing to a table of function pointers.
+Because interface objects are so small they should be passed by value (not by const reference).
+
+Default constructed interface object does not point to any class object -- it is empty.
+Interface objects can be copied, passed to functions and returned by functions.
+They can also be compared for equality and inequality.
+
+For example:
+
+\begin{lstlisting}[frame=trBL]
+public void main()
+{
+    Reader reader; // an empty interface object
+    Reader another = reader; // copy of an interface object
+    if (another == Reader()) // comparing an interface object
+    {
+        Console.Out() << "another is empty" << endl();
+    }
+}
+\end{lstlisting}
 
 \section{Concepts}
 

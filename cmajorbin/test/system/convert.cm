@@ -48,7 +48,7 @@ namespace Test.System.Convert
         #assert(ToString(-0.1) == "-0.1");
 
         #assert(ToString('x') == "x");
-        
+
         #assert(ToString(true) == "true");
         #assert(ToString(false) == "false");
 
@@ -81,37 +81,6 @@ namespace Test.System.Convert
         #assert(ToHexString(0x1234u) == "1234");
         #assert(ToHexString(0x12345678u) == "12345678");
         #assert(ToHexString(0x123456789abcdeffu) == "123456789ABCDEFF");
-
-        string s1("x");
-        s1[0] = cast<char>(0x41);
-        #assert(ToUtf8(0x41u) == s1);
-        string s2("xxx");
-        s2[0] = cast<char>(0xe2);
-        s2[1] = cast<char>(0x89);
-        s2[2] = cast<char>(0xa2);
-        #assert(ToUtf8(0x2262u) == s2);
-        string s3("xx");
-        s3[0] = cast<char>(0xce);
-        s3[1] = cast<char>(0x91);
-        #assert(ToUtf8(0x0391u) == s3);
-        string s4("x");
-        s4[0] = cast<char>(0x2e);
-        #assert(ToUtf8(0x2eu) == s4);
-        string s5("xxx");
-        s5[0] = cast<char>(0xed);
-        s5[1] = cast<char>(0x95);
-        s5[2] = cast<char>(0x9c);
-        #assert(ToUtf8(0xd55cu) == s5);
-        string s6("xxx");
-        s6[0] = cast<char>(0xea);
-        s6[1] = cast<char>(0xb5);
-        s6[2] = cast<char>(0xad);
-        #assert(ToUtf8(0xad6du) == s6);
-        string s7("xxx");
-        s7[0] = cast<char>(0xec);
-        s7[1] = cast<char>(0x96);
-        s7[2] = cast<char>(0xb4);
-        #assert(ToUtf8(0xc5b4u) == s7);
 
         int xf;
         #assert(!ParseInt("", xf));
@@ -156,7 +125,7 @@ namespace Test.System.Convert
         ulong ul1;
         #assert(ParseULong("18446744073709551615", ul1));
         #assert(ul1 == MaxValue<ulong>());
-        #assert(ParseULong("18446744073709551615") == MaxValue<ulong>()); 
+        #assert(ParseULong("18446744073709551615") == MaxValue<ulong>());
 
         ulong hex0;
         #assert(ParseHex("0", hex0));
