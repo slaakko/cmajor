@@ -256,11 +256,6 @@ int Wait(unsigned long long processHandle)
 
 unsigned long long Spawn(const std::string& filename, const std::vector<std::string>& args)
 {
-    return Spawn(filename, args, std::vector<std::string>());
-}
-
-unsigned long long Spawn(const std::string& filename, const std::vector<std::string>& args, const std::vector<std::string>& environment)
-{
     pid_t pid = fork();
     if (pid == -1)
     {
