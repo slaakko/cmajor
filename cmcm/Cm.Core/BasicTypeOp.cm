@@ -754,7 +754,14 @@ namespace Cm.Core
                             Ir.Intf.Object* origFrom = from;
                             from = Cm.IrIntf.MakeTemporaryRegVar(pointerSourceType);
                             emitter.Own(from);
-                            emitter.Emit(Cm.IrIntf.Load(pointerSourceType, from, origFrom, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+                            if (sourceType->GetBaseType() is Cm.Sym.InterfaceTypeSymbol*)
+                            {
+                                emitter.Emit(Cm.IrIntf.Load(pointerSourceType, from, origFrom, Ir.Intf.Indirection.none, Ir.Intf.Indirection.none));
+                            }
+                            else
+                            {
+                                emitter.Emit(Cm.IrIntf.Load(pointerSourceType, from, origFrom, Ir.Intf.Indirection.none, Ir.Intf.Indirection.addr));
+                            }
                         }
                         else if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm && sourceType->GetBaseType() is Cm.Sym.InterfaceTypeSymbol*)
                         {

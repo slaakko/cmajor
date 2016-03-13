@@ -164,6 +164,13 @@ Now the Cmajor system is ready for building user projects.
 \begin{itemize}
 
 \item
+\textbf{could not obtain LLVM compiler version (llc --version)...}
+
+Setup seems not to properly notify change of environment variables and paths.
+Often restarting the Cmajor Development Environment helps.
+If that doesn't help, logging out and back in seems to solve the problem.
+
+\item
 \textbf{library reference 'system.cml' not found.}
 
 You have to build the System Library for the used configuration (debug/release/profile/full) and backend (LLVM/C) first.
