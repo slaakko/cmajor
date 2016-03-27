@@ -1,0 +1,1955 @@
+\documentclass[a4paper,oneside,11pt]{book}
+\usepackage{CmBook}
+\usepackage{graphics}
+\usepackage{amsthm}
+\lstdefinelanguage{cmpg}
+{
+	morekeywords={namespace,using,grammar,start,skip,token,keyword,keyword_list,empty,space,anychar,letter,digit,hexdigit,punctuation,var},
+	sensitive=true,
+	morecomment=[l]{//},
+	morecomment=[s]{/*}{*/},
+	morestring=[b]",
+	morestring=[b]',
+}
+\theoremstyle{definition}
+\newtheorem{exmp}{Example}[section]
+\newtheorem{grmr}{Grammar}[section]
+\newtheorem{algo}{Algorithm}[section]
+\begin{document}
+
+\frontmatter
+\title{Implementation of the Cmajor Compiler}
+\author{Seppo Laakko}
+\date{\today}
+\maketitle
+\tableofcontents
+
+\mainmatter
+
+\chapter{Introduction}
+
+In classical compiler text books the compilation consists in principle of the following phases:
+
+\begin{enumerate}
+
+\item
+In the lexical analysis phase a stream of characters of source code of a program is broken into lexical units called \emph{lexemes} and
+an integer or enumerated value called a \emph{token} is assigned to each lexeme.
+
+\item
+In the syntax analysis phase the grammatical structure of tokens are analyzed, and \emph{abstract syntax trees} are generated.
+
+\item
+In the semantic analysis phase the syntax trees are traversed and the program is type-checked and verified that it consists
+of semantically meaningful elements.
+
+\item
+In the intermediate code generation phase intermediate code for program elements are generated.
+
+\item
+In the machine-independent code optimization phase intermediate code is processed and optimized using various passes.
+
+\item
+In the code generation phase machine code is generated.
+
+\item
+In the machine-dependent code optimization phase the machine code is optimized further and target machine code is generated.
+
+\end{enumerate}
+
+The compiler collects information\footnote{type for example} about identifiers encountered in the program into a \emph{symbol table} and
+consults the symbol table when information about an identifier is needed.
+
+\begin{exmp}
+Consider the following source code fragment:
+
+\begin{lstlisting}
+x = 10 * x + (cast<int>(c) - cast<int>('0'));
+\end{lstlisting}
+
+We are now going to have a taste of what the input and output of each phase of the compilation looks like.
+
+\begin{enumerate}
+\item
+Lexical analysis. The lexical analyzer might produce the following lexemes for the code fragment above:
+\begin{flushleft}
+\verb|x|, \verb|=|, \verb|10|, \verb|*|, \verb|x|, \verb|+|, \verb|(|,
+\verb|cast|, \verb|<|, \verb|int|, \verb|>|, \verb|(|, \verb|c|, \verb|)|, \verb|-|, \verb|cast|,
+\verb|<|, \verb|int|, \verb|>|, \verb|(|, \verb|'0'| \verb|)|, \verb|)| and \verb|;|.
+\end{flushleft}
+
+If we represent punctuation and other symbolic lexemes with token values equal to themselves and
+other lexemes with upper case identifiers, the lexical analyzer may assign the following tokens
+to the lexemes that do not represent themselves:
+
+\begin{itemize}
+\item
+\verb|x| : \textbf{ID} (identifier)
+\item
+\verb|10| : \textbf{INTLIT} (integer literal)
+\item
+\verb|cast| : \textbf{CAST} (reserved word)
+\item
+\verb|int| : \textbf{INT} (reserved word)
+\item
+\verb|c| : \textbf{ID} (identifier)
+\item
+\verb|'0'| : \textbf{CHARLIT} (character literal)
+\end{itemize}
+
+\item
+Syntactic analysis.
+The syntax analyzer or \emph{parser} receives the following
+token stream from the lexical analyzer or \emph{lexer}:
+\begin{flushleft}
+\textbf{ID}, \verb|=|, \textbf{INTLIT}, \verb|*|, \textbf{ID}, \verb|+|, \verb|(|,
+\textbf{CAST}, \verb|<|, \textbf{INT}, \verb|>|, \verb|(|, \textbf{ID}, \verb|)|, \verb|-|,
+\textbf{CAST}, \verb|<|, \textbf{INT}, \verb|>|, \verb|(|, \textbf{CHARLIT}, \verb|)|,
+\verb|)| and \verb|;|.
+\end{flushleft}
+
+The result of phase 2 is an abstract syntax tree or \emph{AST} that reveals
+the syntactic structure of the source code.
+Thus the parser may produce the following abstract syntax tree for the code fragment:
+
+\begin{verbatim}
+AssignmentStatementNode
+    IdentifierNode(x)
+    AddNode
+        MulNode
+            SByteLiteralNode(10)
+            IdentifierNode(x)
+        SubNode
+            CastNode
+                IntNode
+                IdentifierNode(c)
+            CastNode
+                IntNode
+                CharLiteralNode('0')
+\end{verbatim}
+
+\item
+Semantic analysis. The abstract syntax trees generated in phase 2 are traversed and the
+program is type-checked.
+Assuming that identifier \verb|x| has been declared earlier to be a variable of type \textbf{int} and
+identifier \verb|c| to be a variable of type \textbf{char},
+the type-checker finds this information in the symbol table, when it walks the syntax tree.
+
+When encountering the \verb|MulNode| the type-checker checks whether it is legal to multiply an \textbf{sbyte} literal 10 by
+a variable \emph{x} of type \textbf{int}. This is the case so it records that the result of this multiplication produces a value
+of type \textbf{int}.
+
+When encountering the first \verb|CastNode| it checks if it is legal to convert a variable \emph{c} of type \textbf{char} to type \textbf{int}.
+Similarly for the second \verb|CastNode|, the conversion of the character literal '0' to type \textbf{int} is checked.
+They are both legal so the \verb|SubNode| produces a value of type \textbf{int}.
+
+When encountering the \verb|AddNode| two \textbf{int} values are added and the result is of type \textbf{int}.
+
+Finally when encountering the \verb|AssignmentStatementNode| the type-checker checks whether it is legal to assign a value of \textbf{int}
+to a variable \verb|x| of type \textbf{int}. This is the case so the type-checking succeeds.
+
+\item
+Intermediate code generation.
+The following intermediate code\footnote{this is LLVM intermediate code \cite{LLVM}}
+may be produced from the abstract syntax tree and from information stored in the symbol table:
+
+\begin{verbatim}
+%1 = sext i8 10 to i32
+%2 = load i32, i32* %x
+%3 = mul i32 %1, %2
+%4 = load i8, i8* %c
+%5 = zext i8 %4 to i32
+%6 = zext i8 48 to i32
+%7 = sub i32 %5, %6
+%8 = add i32 %3, %7
+store i32 %8, i32* %x
+\end{verbatim}
+
+Quick introduction to intermediate instructions:
+
+\begin{itemize}
+
+\item
+\verb|%1|, \verb|%2|, etc. represent intermediate results of computation.
+They may be regarded as registers. There are inifinite number of them.
+
+\item
+\textbf{i8}, \textbf{i16} and \textbf{i32} are 8-bit, 16-bit and 32-bit integer types.
+
+\item
+\textbf{sext} instruction \emph{sign extends} its operand to a target type.
+
+\item
+\textbf{load} instruction loads a value of a variable.
+
+\item
+\textbf{mul} instruction multiplies two values.
+
+\item
+\textbf{zext} instruction \emph{zero extends} its operand to a target type.
+
+\item
+\textbf{sub} instruction subtracts a value from another.
+
+\item
+\textbf{add} instruction adds two values.
+
+\item
+\textbf{store} instruction stores a value to a variable.
+
+\end{itemize}
+
+\item
+Code optimization. The following optimized intermediate code may be generated from the intermediate code produced in phase 4:
+
+\begin{verbatim}
+%1 = load i32, i32* %x
+%2 = mul i32 %1, 10
+%3 = load i8, i8* %c
+%4 = zext i8 %3 to i32
+%5 = add i32 %2, -48
+%6 = add i32 %5, %4
+store i32 %6, i32* %x
+\end{verbatim}
+
+\item
+Machine code generation. The following fragment of assembly code may be generated:
+
+\begin{verbatim}
+movl	8(%rsp), %eax
+leal	(%rax,%rax,4), %eax
+movzbl	7(%rsp), %ecx
+leal	-48(%rcx,%rax,2), %eax
+movl	%eax, 8(%rsp)
+\end{verbatim}
+
+\end{enumerate}
+\end{exmp}
+
+\chapter{Lexical Analysis}
+
+The first phase of compilation is to break the character stream into tokens that are passed along to the parser.
+Here a token is defined to be a name and an attribute value.
+For example, \textbf{INTLIT} with a value 10.
+
+Typically these tokens are described as \emph{patterns} that define the form
+that the lexemes of a token may take. Here a lexeme is the actual sequence of
+characters in an input stream that match that pattern.
+One way to describe those patterns is to use \emph{regular expressions}.
+
+\section{A Bit of Language Theory}
+
+To describe regular expressions we take a small break and define a few fundamental concepts.
+
+\subsection{Alphabets}
+
+An \emph{alphabet} is a finite, nonempty set of symbols.
+Conventionally, we use the symbol $\Sigma$ for an alphabet (\cite{AUTOMATA} pg. 28).
+
+Typical alphabets are:
+\begin{itemize}
+\item
+$\Sigma = \{0, 1\}$, a binary alphabet.
+
+\item
+$\Sigma = \{a, \ldots z\}$, the alphabet of lowercase latin letters.
+
+\item
+The set of ASCII characters.
+
+\item
+The set of Unicode characters.
+\end{itemize}
+
+\subsection{Strings}
+
+A \emph{string} is a finite sequence of symbols chosen from some alphabet (\cite{AUTOMATA} pg. 29).
+An \emph{empty string} is the string of zero occurrences of symbols. It is denoted $\epsilon$.
+
+\subsubsection{Powers of an Alphabet}
+
+If $\Sigma$ is an alphabet, we define $\Sigma^k$ to be the set of strings of length \emph{k}, each of whose
+symbols is in $\Sigma$ (\cite{AUTOMATA} pg. 29).
+
+Thus if $\Sigma = \{0, 1\}$, the binary alphabet:
+\begin{itemize}
+\item
+$\Sigma^2$ = \{00, 01, 10, 11\}
+
+\item
+$\Sigma^3$ = \{000, 001, 010, 011, 100, 101, 110, 111\}
+\end{itemize}
+
+The set of all strings over an alphabet is denoted $\Sigma^*$.
+
+\subsection{Languages}
+
+A set of strings all of which are chosen from some $\Sigma^*$, where $\Sigma$ is a particular alphabet,
+is called a \emph{language} (\cite{AUTOMATA} pg. 30).
+If $\Sigma$ is an alphabet, and $L \subseteq \Sigma^*$, then $L$ is a language over $\Sigma$.
+
+Examples of languages:
+\begin{itemize}
+\item
+English: the collection of legal English words is a set of strings over the alphabet that consists of all
+the letters.
+
+\item
+The language of legal C programs:
+the alphabet is a subset of ASCII characters, and the language is a subset of all possible strings over
+that alphabet.
+
+\item
+The set of binary numbers whose value is prime:
+$$\{10, 11, 101, 111, 1011, \ldots\}$$
+
+\item
+$\emptyset$, the empty language, is a language over any alphabet.
+
+\item
+$\Sigma^*$ is a language over any alphabet.
+
+\item
+The language of all possible UTF-8 encoded strings of Unicode characters, denoted $L_{UTF8}$.
+
+\item
+The language of syntactically valid Cmajor programs, $L_{Cmajor} \subset L_{UTF8}$.
+\end{itemize}
+
+\subsection{Regular Expressions}
+
+Regular expressions define languages.
+
+Before describing the notation of regular expressions,
+we need to define three operations on languages that the operators of regular expressions represent:
+
+\begin{enumerate}
+
+\item
+The \emph{union} of two languages $L$ and $M$, denoted $L \cup M$, is the set of strings that are in
+either $L$ or $M$, or both (\cite{AUTOMATA} pg. 84).
+For example, if $L = \{01, 10\}$ and $M = \{10, 100\}$, $L \cup M = \{01, 10, 100\}$.
+
+\item
+The \emph{concatenation} of languages $L$ and $M$ is the set of strings that can be formed by taking
+any string in $L$ and concatenating it with any string in $M$ (\cite{AUTOMATA} pg. 84).
+We denote concatenation of $L$ and $M$ $LM$.
+For example, if $L = \{01, 10\}$ and $M = \{10, 100\}$, $LM = \{0110, 01100, 1010, 10100\}$.
+
+\item
+The \emph{closure} of a language $L$, denoted $L^*$, is the infinite union $\cup _{i\ge0}L^i$,
+where $L^0 = \{\epsilon\}$, the set containing the empty string, $L^1 = L$, and
+$L^i$, for $i > 1$, is $LL \cdots L$, the concatenation of $i$ copies of $L$ (\cite{AUTOMATA} pg. 85).
+For example, if $L = \{01, 10\}$, $L^* = \{\epsilon, 01, 10, 0101, 0110, 1010, \ldots\}$.
+That is: $L^0$ gives $\{\epsilon\}$, the empty string, $L^1 = L$ gives $\{01, 10\}$;
+$L^2 = LL$ gives $\{0101, 0110, 1001, 1010\}$ and so on.
+
+\end{enumerate}
+
+Now regular expressions can be defined recursively as follows:
+
+\begin{flushleft}
+\textbf{BASIS}: There are three parts:
+\begin{enumerate}
+\item
+The constants $\epsilon$ and $\emptyset$ are regular expressions that denote languages $\{\epsilon\}$ and $\emptyset$ respectively.
+That is, $L(\epsilon) = \{\epsilon\}$ and $L(\emptyset) = \emptyset$.
+
+\item
+If $a$ is any symbol, then \textbf{a}
+is a regular expression \footnote{Here we denote regular expressions using \textbf{bold typeface} and symbols using \emph{italics}.}.
+This regular expression denotes the language $\{a\}$.
+That is, $L(\textbf{a}) = \{a\}$.
+
+\item
+A variable $L$ represents any language.
+\end{enumerate}
+
+\clearpage
+\textbf{INDUCTION}: There are four parts:
+\begin{enumerate}
+\item
+If $E$ and $F$ are regular expressions, then $E | F$ is a regular expression that denotes a union of $L(E)$ and $L(F)$.
+That is, $L(E | F) = L(E) \cup L(F)$.
+
+\item
+If $E$ and $F$ are regular expressions, then $EF$ is a regular expression that denotes the concatenation of $L(E)$ and $L(F)$.
+That is, $L(EF) = L(E)L(F)$.
+
+\item
+If $E$ is a regular expression, then $E^*$ is a regular expression that denotes the closure of $L(E)$. That is, $L(E^*) = (L(E))^*$.
+
+\item
+If $E$ is a regular expression, then $(E)$, a parenthesized regular expression, is also a regular expression,
+that denotes the same language as $E$. That is, $L((E)) = L(E)$.
+
+\end{enumerate}
+
+\begin{exmp}
+
+Let us use the formal theory to build a regular expression for sequence of one or more decimal digits.
+First we use the basis rule 2 to build regular expressions for decimal digits:
+$$\textbf{0}, \textbf{1}, \textbf{2}, \textbf{3}, \textbf{4}, \textbf{5}, \textbf{6}, \textbf{7}, \textbf{8}, \textbf{9}$$
+Now we have languages $$L(\textbf{0}) = \{0\}, \ldots, L(\textbf{9}) = \{9\}$$
+
+Next we use induction step 1 to build a regular expression for any decimal digit, denoted by $D$:
+$$D = \textbf{0} | \textbf{1} | \textbf{2} | \textbf{3} | \textbf{4} | \textbf{5} | \textbf{6} | \textbf{7} | \textbf{8} | \textbf{9}$$
+Now we have a language for a single decimal digit: $$L(D) = \{0, 1, \ldots, 9\}$$
+
+Next we use induction step 3 to build a regular expression of any number, including zero, decimal digits:
+$$E = D^*$$
+Now we have a language for any number of decimal digits: $$L(E) = \{\epsilon, 0, 1, \ldots, 9, 00, 01, \ldots, 09, \ldots \}$$
+
+Finally we exclude the empty string by concatenating one decimal digit with any number of decimal digits:
+$$F = DD^*$$
+The language for nonempty sequence of decimal digits is thus $$L(F) = \{0, 1, \ldots, 9, 00, 01, \ldots, 09, \ldots \}$$
+\end{exmp}
+
+\end{flushleft}
+
+\clearpage
+
+\section{Tools for Lexical Analysis}
+
+Regular expressions can be used to describe patterns that form tokens.
+But using regular expressions, one can describe only relatively simple kind of languages, namely \emph{regular languages}.
+
+Strings that belong to a particular regular language can be recognized by constructing a \emph{finite automaton}.
+A finite automaton is a kind of \emph{state machine}, it has states and transitions between the states,
+but it has limited ``memory''. It cannot for example recognize the language of arbitrary long strings of balanced parentheses.
+
+Many fundamental programming language constructs such as identifiers and literals are regular,
+but to recognize potentially infinitely deep block structures, one needs to have a more powerful kind of language recognizer,
+a finite automaton with a stack, or a \emph{pushdown automaton}.
+
+A pushdown automaton can recognize a language that is
+\emph{context-free}. The languages for syntactic structures in many programming languages are mostly context-free,
+but for some constructs one may need to provide lexical information to guide the parser.
+
+Finite automata can be constructed by hand, but there are also tools that take regular expression patterns as input and construct a
+lexical analyzer that recognize those patterns. Such a tool is called a \emph{lexical-analyzer generator}.
+Most famous is the Unix tool \verb|lex| and its GNU version \verb|flex|.
+
+The Cmajor compiler includes a tool called Cmajor Parser Generator, \verb|cmpg|, that combines the role of a parser generator and
+a lexical-analyzer generator, or more truly, it is a parser generator that can be used without the need to have a separate
+lexical-analyzer generator.
+
+\section{Lexical Analysis in Cmajor}
+
+\subsection{Introduction to Cmajor Parser Generator}
+
+The following table summarises some \verb|cmpg| expressions:
+
+\begin{flushleft}
+\begin{tabular}{lll}
+\textbf{Expression}& \textbf{Matches}& \textbf{Example}\\
+\hline
+\textbf{empty}& empty string& \textbf{empty}\\
+\textbf{space}& any white space character& \textbf{space}\\
+\textbf{anychar}& any single character& \textbf{anychar}\\
+\textbf{letter}& any latin letter& \textbf{letter}\\
+\textbf{digit}& any decimal digit& \textbf{digit}\\
+\textbf{hexdigit}& any hexadecimal digit& \textbf{hexdigit}\\
+\textbf{punctuation}& any ASCII punctuation character& \textbf{punctuation}\\
+'c'& character c& 'a'\\
+$\backslash$c& character c literally& $\backslash$(\\
+"s"& string s& "0x"\\
+$[$s$]$& any one of characters in s& $[$abc$]$\\
+$[$\verb|^|s$]$& any one character not in s& $[$\verb|^|abc$]$\\
+$r*$& zero or more strings matching $r$& a*\\
+$r+$& one or more strings matching $r$& a+\\
+$r?$& zero or one r& a?\\
+$r_1r_2$& an $r_1$ followed by an $r_2$& ab\\
+$r_1 | r_2$& an $r_1$ or an $r_2$& a$|$b\\
+$r_1 - r_2$& $r_1$ but not $r_2$& \textbf{anychar} $-$ "*/"\\
+\hline
+\end{tabular}
+\end{flushleft}
+
+To use \verb|cmpg|, one prepares \emph{.parser} files that contain \verb|cmpg| grammar definitions,
+and a \emph{.pp} file that lists the \emph{.parser} files, and issues a command
+
+\begin{verbatim}
+cmpg file.pp
+\end{verbatim}
+
+The \verb|cmpg| reads and validates the grammar definitions in the \emph{.parser} files and
+generates a C++ source and header files that contain C++ classes for each defined grammar.
+When the resulting C++ source files are compiled and linked with \emph{Cm.Parsing} library,
+the result is a top-down backtracking parser.
+
+\subsection{Tokens in Cmajor}
+
+We are now going to take a look of some classes of tokens in Cmajor programming language,
+and how they are defined using \verb|cmpg| expressions.
+
+\subsubsection{Skipping Whitespace and Comments}
+
+We are not interested in contents of comments or whitespace during parsing, so they are skipped.
+In a \verb|cmpg| grammar, one can define a \emph{skip} clause, to set a \emph{skip rule}
+that is in effect during parsing. The parser alternates between parsing other tokens and skip tokens.
+In the main compile unit grammar the skip rule is set to spaces_and_comments rule:
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+grammar CompileUnitGrammar
+{
+    // ...
+    skip spaces_and_comments;
+    // ...
+}
+\end{lstlisting}
+\end{flushleft}
+
+The \emph{spaces_and_comments} rule is defined here.
+Note that the end of the block comment, "*/", is not matched
+inside string or character literals.
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+spaces_and_comments
+    ::= (space | comment)+
+    ;
+
+comment
+    ::= line_comment | block_comment
+    ;
+
+line_comment
+    ::= "//" [^\r\n]* newline
+    ;
+
+newline
+    ::= "\r\n" | "\n" | "\r"
+    ;
+
+block_comment
+    ::= "/*" (StringLiteral | CharLiteral | (anychar - "*/"))* "*/"
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+\subsubsection{Identifiers and Keywords}
+
+When parsing an identifier, for example, we must disable the skip rule.
+Otherwise the parser would accept string ``iden ti fier'' as an identifier,
+because whitespace is skipped.
+For that, the \verb|cmpg| language has a \textbf{token} expression.
+The \textbf{token} expression suppresses the skip rule when parsing the contents of the expression.
+
+The difference expression, $r_1 - r_2$, matches $r_1$ but not $r_2$.
+In this case $id\_chars - Keyword$ in line 2 rejects keywords as identifiers.
+
+The \textbf{keyword\_list} expression in line 10 has two components.
+The first is a name of a rule that selects a token, in this case $id\_chars$, and the
+second is a list of keyword strings that are matched against the selected token.
+If the selected token is found among the keyword strings,
+the \textbf{keyword_list} expression accepts the selected token, otherwise it rejects it.
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+Identifier
+    ::= token(id_chars - Keyword)
+    ;
+
+id_chars
+    ::= token((letter | '_') (letter | digit | '_')*)
+    ;
+
+Keyword
+    ::= keyword_list(id_chars,
+        ["abstract", "and", "as", "axiom", "base", "bool", ...,
+         "where", "while"])
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+\subsubsection{Literals}
+
+Literals in Cmajor, as in many other programming languages, can be parsed with regular expressions.
+
+\begin{itemize}
+\item
+Let us start one of the simplest, a Boolean literal:
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+BooleanLiteral
+    ::= keyword("true")
+    |   keyword("false")
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+The \textbf{keyword} expression matches the input to its parameter string,
+but it accepts the input only if the input does \emph{not} continue with an identifier character:
+a letter, a digit or an underscore.
+If the \emph{BooleanLiteral} rule were defined using plain strings, like this:
+\begin{flushleft}
+\verb/BooleanLiteral ::= "true" | "false"/
+\end{flushleft}
+input like "truely" or "falsely" would be accepted as a \emph{BooleanLiteral} followed by "ly"
+suffix. This is not what we want, so we use the \textbf{keyword} expression.
+
+\item
+Floating point numbers have many forms.
+The \emph{fractional\_real} rule accepts inputs having a fractional part like
+"1.23", ".987", "1.23e3" and "3.".
+The \emph{exponent\_real} rule accepts decimal digits followed by exponent part like
+"1e-2".
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+FloatingLiteral
+    ::= token((fractional_real | exponent_real)('f' | 'F')?)
+    ;
+
+fractional_real
+    ::= token(digit_sequence? '.' digit_sequence exponent_part?)
+    |   token(digit_sequence '.')
+    ;
+
+digit_sequence
+    ::= token(digit+)
+    ;
+
+sign
+    ::= '+' | '-'
+    ;
+
+exponent_real
+    ::= token(digit_sequence exponent_part)
+    ;
+
+exponent_part
+    ::= token([eE] sign? digit_sequence)
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+An optional 'f' or 'F' suffix denotes floating point literal that has type \textbf{float}.
+Without the suffix floating point literals have type \textbf{double}.
+
+\item
+An integer literal can have either hexadecimal or decimal form.
+The "0x" or "0X" prefix denotes hexadecimal integer literal.
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+IntegerLiteral
+    ::= (hex_literal | digit_sequence) ('u' | 'U')?
+    ;
+
+hex_literal
+    ::= token(("0x" | "0X") hex)
+    ;
+
+hex
+    ::= token(hexdigit+)
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+In Cmajor the type of an integer literal is the first of the of the following types in which its value can be represented:
+\textbf{sbyte}, \textbf{byte}, \textbf{short}, \textbf{ushort}, \textbf{int}, \textbf{uint}, \textbf{long}, \textbf{ulong}.
+
+The 'u' or 'U' suffix denotes an integer literal with an unsigned type. The type of it is the first of the following types
+in which its value can be represented: \textbf{byte}, \textbf{ushort}, \textbf{uint}, \textbf{ulong}.
+
+\item
+The character literal rule accepts regular characters like 'a' or 'X', simple escapes like '$\backslash$n' and '$\backslash$r',
+hexadecimal escapes like '$\backslash$xef', and decimal escapes  like '$\backslash$d100'.
+Other escaped characters represent themselves.
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+CharLiteral
+    ::= token('\'' ([^\\\r\n] | escape)'\'')
+    ;
+
+escape
+    ::= token('\\' ([xX] hex | [dD] digit_sequence | [^dDxX]))
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+\item
+String literals can have four forms.
+
+\begin{enumerate}
+\item
+Regular strings like "abc", or strings containing escaped characters like "line$\backslash$n".
+The type of regular string literal is \textbf{const char*}.
+
+\item
+Wide strings like w"abc", or wide strings containing escapes. The type of wide string literal is \textbf{const wchar*}.
+
+\item
+Unicode strings like u"abc", or Unicode strings containing escapes. The type of Unicode string literal is \textbf{const uchar*}.
+
+\item
+Raw strings, that have @-prefix and have no escapes in them, like @"abc$\backslash$". The contents of raw string is taken literally.
+The type of raw string literal is \textbf{const char*}.
+\end{enumerate}
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+StringLiteral
+    ::= string
+    |   'w'string
+    |   'u'string
+    |   raw_string
+    ;
+
+string
+    ::= token('"' (([^"\\\r\n]+) | escape)* '"')
+    ;
+
+raw_string
+    ::= '@' token('"' [^"]* '"')
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+\item
+The last literal is the simplest, it's the null literal:
+
+\begin{flushleft}
+\begin{lstlisting}[language=cmpg,frame=trBL]
+NullLiteral
+    ::= keyword("null")
+    ;
+\end{lstlisting}
+\end{flushleft}
+
+\end{itemize}
+
+\chapter{Syntax Analysis}
+
+We are now going to explore a class of languages that are suitable for defining the grammatical structure of a programming language,
+namely \emph{context-free languages}.
+Context-free languages extend the notion of regular languages so that with a context-free language one can express also recursive
+structures like nesting blocks or balanced parentheses.
+
+\section{Example}
+
+\begin{exmp}
+A \emph{palindrome} is a string that reads the same forward or backward, such as \verb|otto| or
+\verb|madamimadam| (``Madam, I'm Adam'', the first words that Adam said to Eve in the Garden of Eden.)
+We can define palindromes for the binary alphabet, $\Sigma = \{0, 1\}$, recursively as follows:
+
+\begin{flushleft}
+\textbf{BASIS}\\
+$\epsilon$, i.e. the empty string, $0$, and $1$ are palindromes.
+\end{flushleft}
+
+\begin{flushleft}
+\textbf{INDUCTION}\\
+If $P$ is a palindrome, so are $0P0$ and $1P1$. No string is a palindrome of 0's and 1's unless it follows from this basis and induction rule.
+\end{flushleft}
+
+A context-free grammar is a formal notation for expressing such recursive definitions of languages (\cite{AUTOMATA} pg. 170).
+A grammar consists of one or more variables that represent classes of strings, i.e. languages. In previous example we have only one variable, $P$,
+which represents the set of palindromes; that is the class of strings forming the language $L_{pal}$. There are rules that say how the strings in
+each class are constructed. The construction can use symbols of the alphabet, strings that are known to be in one of the classes, or both.
+
+\begin{grmr}\label{pgram}
+The rules that define the palindromes, expressed in the context-free grammar notation, are:
+\begin{align}
+P &\rightarrow \epsilon\\
+P &\rightarrow 0\\
+P &\rightarrow 1\\
+P &\rightarrow 0P0\\
+P &\rightarrow 1P1
+\end{align}
+\end{grmr}
+
+The first three rules for the basis. They tell us that a class of palindromes includes the strings $\epsilon$, $0$, and $1$.
+None of the right sides of these rules contains a variable, which is why they for a basis for the definition.
+
+The last two rules form the inductive part of the definition. For instance, rule 3.4 says that if we take any string $\omega$ from the class $P$,
+then $0\omega0$ is also in class $P$. Rule 3.5 likewise tells us that $1\omega1$ is also in class $P$.
+\end{exmp}
+
+\section{Definition of Context-Free Grammars}
+
+There are four important components in a grammatical description of a language (\cite{AUTOMATA} pg. 171):
+
+\begin{enumerate}
+
+\item
+There is a finite set of symbols that form the strings of the language being defined. This set was $\{0, 1\}$ in the palindrome example.
+We call this alphabet the \emph{terminals}, or \emph{terminal symbols}.
+
+\item
+There is a finite set of \emph{variables}, sometimes called \emph{nonterminals}. Each variable represents a language; i.e. a set of strings.
+In the last example, there was only one variable, $P$, which we used to represent the class of palindromes over alphabet $\{0, 1\}$.
+
+\item
+One of the variables represents the language being defined; it is called the \emph{start symbol}. Other variables represent auxiliary classes of
+strings that are used to help define the language of the start symbol. In our example, $P$, the only variable, is the start symbol.
+
+\item
+There is a finite set of \emph{productions} or \emph{rules} that represent the recursive definitiion of the language.
+Each production consists of:
+\begin{enumerate}
+\item
+A variable that is being (partially) defined by the production. This variable is often called the \emph{head} of the production.
+
+\item
+The production symbol $\rightarrow$.
+
+\item
+A string of zero or more terminals and variables. This string, called the \emph{body} of the production,
+represents one way to form strings in the of the variable of the head. In doing so, we leave terminals unchanged and substitute for each variable
+of the body any string that is known to be in the language of that variable.
+\end{enumerate}
+\end{enumerate}
+
+We follow a convention that if the start symbol is not explicitly specified, the head of the first production of the grammar is the start symbol.
+
+\subsection{Derivations Using a Grammar}
+
+To infer that a certain string is in the language of a grammar, we start with the start symbol of the grammar
+and expand it using one of its productions, i.e. by replacing the head of the production with its body.
+Then we further expand the resulting string by replacing one of its variables by the body of one of its productions,
+and so on, until we derive a string consisting entirely of terminals. The language of the is all strings of terminals that
+we can obtain this way. This use of grammar is called a \emph{derivation}.
+
+To see that string 0110 is in the language of binary palindromes $L_{pal}$, for example, we start from the start symbol $P$,
+and replace it with the body of the production 4 of grammar \ref{pgram}: $P \Rightarrow 0P0$. We then replace the variable $P$ between the 0's with
+the body of the production 5: $0P0 \Rightarrow 01P10$. Finally we replace the variable $P$ in the obtained string with
+the body of the production 1: $01P10 \Rightarrow 01 \epsilon 10$.
+That way we have the derivation $P \Rightarrow 0P0 \Rightarrow 01P10 \Rightarrow 0110$ and we have inferred that
+$0110 \in L_{pal}$.
+
+We denote that there is a derivation that requires zero or more derivation steps with $\overset{*}{\Rightarrow}$ symbol.
+For example, to indicate that there is a derivation of string $0110$ from variable $P$ using some number of steps,
+is denoted $P \overset{*}{\Rightarrow} 0110$.
+
+\subsection{Parse Trees for a Grammar}
+
+There is a tree representation for derivations that show explicitly how terminal symbol are grouped into substrings,
+each of which belongs to the language of one of the variables of the grammar. These trees are called \emph{parse trees}.
+There might be more than one parse tree for a terminal string that belongs to the language of some grammar.
+In that case the grammar is called \emph{ambiguous}. Ambiguous grammars are not suitable for representing a syntax
+of a programming language unless the ambiguities are resolved somehow.
+
+The parse trees of a specific grammar G are trees with the following conditions:
+
+\begin{enumerate}
+\item
+Each interior node is labeled by a variable of the grammar.
+
+\item
+Each leaf is labeled by either a variable, a terminal, or $\epsilon$.
+However, if the leaf is labeled $\epsilon$, then it must be the only child of its parent.
+
+\item
+If an interior node is labeled $A$, and its children are labeled
+$$X_1, X_2, \ldots, X_k$$
+
+respectively, from the left, then $A \rightarrow X_1 X_2 \cdots X_k$ is a production of the grammar $G$.
+\end{enumerate}
+
+Figure \ref{fig:parsetree} shows a parse tree of derivation $P \overset{*}{\Rightarrow} 0110$ for the
+grammar \ref{pgram}.
+
+\begin{figure}[htb]
+\caption{A parse tree for derivation $P \overset{*}{\Rightarrow} 0110$ }
+\label{fig:parsetree}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{parsetree}
+\end{center}
+\end{figure}
+
+\clearpage
+\subsection{Compact Notation for Grammars}
+
+Let $\omega_1, \omega_2, \ldots, \omega_k$ be strings of grammar symbols (i.e. strings of terminals and nonterminals).
+If we have productions
+
+\begin{align*}
+P &\rightarrow \omega_1\\
+P &\rightarrow \omega_2\\
+&\ldots\\
+P &\rightarrow \omega_k\\
+\end{align*}
+
+in some grammar G, we may represent the $P$-productions (i.e. the productions whose head is $P$) by grouping them together as follows:
+
+\begin{flushleft}
+$P \rightarrow \omega_1\, | \, \omega_2 \, | \, \cdots \, | \, \omega_k$
+\end{flushleft}
+
+For example, the grammar \ref{pgram} may be represented more compactly as
+$$P \rightarrow \epsilon \, | \, 0 \, | \, 1 \, | \, 0P0 \, | \, 1P1$$
+
+\clearpage
+
+\section{Syntax-Directed Translation}
+
+Consider the following grammar:
+
+\begin{grmr}\label{g:infix}
+\begin{align*}
+expr &\rightarrow expr + term\, |\, expr - term \,| \, term\\
+term &\rightarrow term * factor\, |\, term / factor \, | \, factor\\
+factor &\rightarrow 0\,|\,1\,|\,2\,|\,3\,|\,4\,|\,5\,|\,6\,|\,7\,|\,8\,|\,9\,|\,(\, expr \,)
+\end{align*}
+\end{grmr}
+
+The language defined by this grammar consists of expressions that are lists of terms separated by
+operator symbols $+$ and $-$. Terms are in turn lists of factors separated by operator symbols $*$ and $/$.
+Factors consist of single digits and parenthesized expressions.
+The alphabet of this language is $\{+, -, *, /, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, (, ) \}$.
+
+To see that an expression "1+3*(4-2)", for example, is in this language, we may construct a
+derivation for it:
+
+\begin{align*}
+expr &\Rightarrow expr + term\\
+&\Rightarrow term + term\\
+&\Rightarrow factor + term\\
+&\Rightarrow 1 + term\\
+&\Rightarrow 1 + term * factor\\
+&\Rightarrow 1 + factor * factor\\
+&\Rightarrow 1 + 3 * factor\\
+&\Rightarrow 1 + 3 * ( expr )\\
+&\Rightarrow 1 + 3 * ( expr - term )\\
+&\Rightarrow 1 + 3 * ( term - term )\\
+&\Rightarrow 1 + 3 * ( factor - term )\\
+&\Rightarrow 1 + 3 * ( 4 - term )\\
+&\Rightarrow 1 + 3 * ( 4 - factor )\\
+&\Rightarrow 1 + 3 * ( 4 - 2 )\\
+\end{align*}
+
+Suppose now that we need to translate infix expressions of this kind into \emph{postfix notation}.
+The postfix notation of an expression $E$ can be defined inductively as follows:
+
+\begin{enumerate}
+\item
+If $E$ is a digit, the postfix notation of $E$ is $E$ itself.
+\item
+If $E$ is of the form $E_1 + E_2$, the postfix notation of $E$ is the postfix notation of $E_1$ followed by the postfix notation of $E_2$ followed by +.
+\item
+If $E$ is of the form $E_1 * E_2$, the postfix notation of $E$ is the postfix notation of $E_1$ followed by the postfix notation of $E_2$ followed by *.
+\item
+If $E$ is of the form $(E)$, the postfix notation of $(E)$ is the postfix notation of $E$.
+\end{enumerate}
+
+For example, postfix notation for infix expression "1+3*(4-2)" is "1342-*+".
+
+In computing the postfix notation from infix expressions, we can take advantage of the grammar \ref{g:infix} by associating
+\emph{attributes} to each nonterminal of the grammar. Attributes can in principle be of any kind: numbers, structures or strings, for example.
+In this case we may represent the value of a postfix expression with one string attribute.
+A parse tree that shows the values of the attributes of nonterminals is called an \emph{annotated} parse tree.
+
+Figure \ref{fig:annotated} shows an annotated parse tree with an attribute \emph{pf} associated with nonterminals $expr$, $term$ and $factor$.
+
+\begin{figure}[htb]
+\caption{Annotated parse tree for expression "1+3*(4-2)"}
+\label{fig:annotated}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{annotated}
+\end{center}
+\end{figure}
+
+There can be two kinds of attributes for nonterminals: (\cite{COMPILERS} pg. 304)
+
+\begin{enumerate}
+\item
+A \emph{synthesized attribute} for a nonterminal $A$ at a parse-tree node $N$ is defined by a semantic action associated with the production at $N$.
+A synthesized attribute at node $N$ is defined in terms of attribute values at the children of $N$ and at $N$ itself.
+The \emph{pf} attribute in Fig. \ref{fig:annotated} is an example of a synthesized attribute.
+
+\item
+An \emph{inherited attribute} for a nonterminal $B$ at a parse-tree node $N$ is defined by a semantic action associated with the production at the
+\emph{parent} of $N$. An inherited attribute at node $N$ is defined in terms of attribute values at $N$'s parent, $N$ itself, and $N$'s siblings.
+\end{enumerate}
+
+The attributes can be computed by visiting the nodes of the parse tree in some order.
+Synthesized attributes have the nice property that their values can be computed by a single bottom-up travelsal of the parse tree.
+
+\section{Parsing}
+
+Parsing is the process of determining how a string of terminals can be generated by a grammar. (\cite{COMPILERS} pg. 60).
+Most parsing methods fall into one of two classes, called the \emph{top-down} and \emph{bottom-up} methods.
+These terms refer to the order in which nodes in the parse tree are constructed. In top-down parsers,
+construction starts at the root and proceeds towards the leaves, while in  bottom-up parsers, construction starts the the
+leaves and proceeds towards the root. Most handwritten parsers use top-down methods, while many parser-generator tools
+generate a bottom-up parser.
+
+\subsection{Recursive Descent Parsing}
+
+A \emph{recursive-descent parsing} is a top-down method in which a set of recursive procedures is used to process the input.
+For example, consider the following grammar:
+
+\begin{grmr}\label{g:if}
+$$
+stmt \rightarrow \textbf{if} \, \textbf{(} \, expr \, \textbf{)} \, stmt \, \textbf{else} \, stmt
+$$
+\end{grmr}
+
+To write a recursive-descent parser for this grammar, one writes a procedure that is used to match tokens and obtain more input,
+and then a procedure for each nonterminal.
+The following listing shows the structure of these procedures:
+
+\begin{lstlisting}[language=C++]
+int lookahead;
+
+void match(int token)
+{
+    if (token == lookahead)
+    {
+        // read next token into lookahead;
+    }
+    else
+    {
+        throw std::runtime_error("syntax error");
+    }
+}
+
+void expr()
+{
+    // match an expression...
+}
+
+void stmt()
+{
+    match(IF); match('('); expr(); match(')'); stmt(); match(ELSE); stmt();
+}
+
+\end{lstlisting}
+
+\clearpage
+\subsection{Left Recursion}
+
+A recursive-descent parser cannot directly use grammars like the grammar \ref{g:infix}, because it has ``left-recursive'' productions
+such as $expr \rightarrow expr + term$, where the leftmost symbol of the body is the same as the nonterminal at the head of
+the production. Suppose the procedure for \emph{expr} decides to apply this production. The body begins with \emph{expr} so
+the procedure for \emph{expr} is called recursively. Since the lookahead symbol changes only when a terminal is matched,
+no change to the input took place between recursive calls of \emph{expr}. As a result, the second call to \emph{expr} does
+exactly what the first call did, which means a third call, and so on.
+
+A left-recursive production can be eliminated by rewriting the offending production.
+Conside a nonterminal $A$ with two productions $$A \rightarrow A\alpha \,|\, \beta$$
+where $\alpha$ and $\beta$ are sequences of terminals and nonterminals that do not start with $A$.
+For example, in $$expr \rightarrow expr + term \, | \, term$$ nonterminal $A = expr$, string $\alpha = + term$, and string $\beta = term$.
+
+The nonterminal $A$ and its production are said to be \emph{left recursive} (\cite{COMPILERS} pg. 67), because the production $A \rightarrow A\alpha$
+has $A$ itself as the leftmost symbol of the right side. Repeated application of this production builds up a sequence of $\alpha$'s
+to the right of $A$. When $A$ is finally replaced by $\beta$, we have a $\beta$ followed by a sequence of zero or more $\alpha$'s.
+
+We can achieve the same effect by rewriting the productions for $A$ in the following manner, using a new nonterminal $R$:
+\begin{align*}
+A &\rightarrow \beta R\\
+R &\rightarrow \alpha R \,|\, \epsilon
+\end{align*}
+
+
+\section{Extending the Grammar Notation}
+
+We have found it useful to extend the context-free grammar notation with regular-expression like operations.
+\footnote{$\alpha$ and $\beta$ denote strings of grammar symbols, and $X$ and $Y$ single grammar symbols.}
+\footnote{Since asterisk, plus, question mark, parentheses and square brackets belong to regular expression syntax,
+they must now be quoted when they appear as terminals in productions of extended notation.}
+In the following definitions the expression in the middle is in the extended form, and the productions on the right
+express the same language using conventional context-free grammar notation.
+
+\begin{enumerate}
+\item X or Y:
+\begin{align*}
+P &\rightarrow \alpha\, (X\,|\,Y)\, \beta & P &\rightarrow \alpha R \beta\\
+  &                             & R & \rightarrow \, X \, | \, Y
+\end{align*}
+\item Closure of $X$, $X$ occurs zero or more times:
+\begin{align*}
+P &\rightarrow \alpha X^* \beta & P &\rightarrow \alpha R \beta\\
+  &                             & R & \rightarrow RR\, | \, X \, | \, \epsilon
+\end{align*}
+\item Positive $X$, $X$ occurs one or more times:
+\begin{align*}
+P &\rightarrow \alpha X^+ \beta & P &\rightarrow \alpha R \beta\\
+  &                             & R & \rightarrow RR\, | \, X
+\end{align*}
+\item Optional $X$, $X$ occurs zero or one times:
+\begin{align*}
+P &\rightarrow \alpha X? \beta & P &\rightarrow \alpha R \beta\\
+  &                            & R & \rightarrow X \,|\, \epsilon
+\end{align*}
+\item Class [abc], one of the characters in the class occurs:
+\begin{align*}
+P & \rightarrow \alpha \, [abc] \, \beta & P &\rightarrow \alpha R \beta\\
+  &                            & R & \rightarrow a \,|\, b \, | \, c
+\end{align*}
+\end{enumerate}
+
+In the definitions above, $X$ denotes a single grammar symbol, i.e. either terminal or nonterminal,
+but we may extend the notation further by substituting $X$ with arbitrary expressions containing
+grammar symbols and other expressions, much the same way we can use regular expressions.
+We can now replace left recursion with iteration using the extended notation.
+The left-recursive productions
+$$A \rightarrow A\alpha \,|\, \beta$$
+become an iterative production:
+$$A \rightarrow \beta (\alpha)^*$$
+meaning $\beta$ followed by zero or more $\alpha$'s.
+
+We can rewrite the grammar \ref{g:infix} without left recursion using the extended notation as follows:
+
+\begin{grmr}\label{g:expr}
+\begin{align*}
+expr &\rightarrow term \,(\,('+'|'-')\, term \,)^*\\
+term &\rightarrow factor \,(\,('*'|'/')\, factor \,)^*\\
+factor &\rightarrow [0-9] \,|\,'('\, expr \,')'
+\end{align*}
+\end{grmr}
+
+\section{Parsing in Cmajor}
+
+The parsers in Cmajor are written using the Cmajor Parser Generator, or \verb|cmpg|, notation,
+that is much like the extended grammar notation of the previous section.
+The \verb|cmpg| reads grammar definitions in \emph{.parser} files, validates them,
+and generates C++ classes that represent the grammars. To become familiar with the grammar definition syntax,
+we write the grammar \ref{g:expr} using the \verb|cmpg| notation.
+
+\clearpage
+\begin{exmp} Postfix Translation Grammar.\label{ex:postfix}
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar PostfixTranslationGrammar
+{
+    expr: std::string
+        ::= term:t{ value = t; }
+        (   '+' term:pt{ value.append(pt).append(1, '+'); }
+        |   '-' term:mt{ value.append(mt).append(1, '-'); }
+        )*
+        ;
+
+    term: std::string
+        ::= factor:f{ value = f; }
+        (   '*' factor:tf{ value.append(tf).append(1, '*'); }
+        |   '/' factor:df{ value.append(df).append(1, '/'); }
+        )*
+        ;
+
+    factor: std::string
+        ::= digit{ value = std::string(1, *matchBegin); }
+        |   '(' expr{ value = expr; } ')'
+        ;
+}
+\end{lstlisting}
+
+The grammar has a list of \emph{rules}. In this case \emph{expr}, \emph{term} and \emph{factor}.
+If the start rule is not explicitly defined by the \textbf{start} clause, the first rule of the grammar
+is taken as the start rule.
+
+A rule may have one synthesized attribute whose type is denoned by a colon and a name of a C++ type after
+the head of the rule, \verb|std::string| in this case. In this example each of the rules of the grammar have a
+synthesized attribute of type \verb|std::string|.
+If multiple synthesized attributes are needed, one can specify a structure of values,
+or a dynamically created object holding the values.
+
+The ::= symbol corresponds to the $\rightarrow$ symbol in the formal grammars.
+
+If the same nonterminal occurs many times inside the body of a rule, and that nonterminal refers to a rule that has a synthesized attribute,
+the synthesized attribute has to be named explicitly by a colon and an identifier after the name of the nonterminal.
+In the body of the \emph{expr} rule, for example, one can refer to many occurrences of \emph{term}'s synthesized attribute,
+the first of which is named \emph{t}, the second \emph{pt}, and the third \emph{mt}.
+
+A grammar symbol in a body of a rule may have an associated semantic action, i.e. a block of C++ code.
+For example in line 4, the first \emph{term} nonterminal has a semantic action \verb|{ value = t; }| associated with it.
+The semantic action is executed only if input matches the rule that it is associated with.
+
+The synthesized attribute of the rule is exposed as an identifier \emph{value} inside the body of a rule.
+It can be read and assigned to many times inside the body of a rule.
+For example in line 4, the value of the synthesized attribute of the \emph{expr} rule is initialized to a value of the synthesized attribute of the
+\emph{term} rule. When more \emph{term}s are matched, the synthesized attributes of these are appended to the synthesized attribute the \emph{expr} rule.
+
+The matched lexeme of a grammar symbol is exposed as two character pointers to the semantic action associated with a grammar symbol.
+The \emph{matchBegin} pointer points to the start of the matched lexeme and the \emph{matchEnd} pointer points to one past the end of the matched lexeme.
+For example, in line 18, the value of the matched digit is assigned to the synthesized attribute of the \emph{factor} rule.
+
+If the nonterminal occurs only once inside the body of a rule, one can refer the synthesized attribute of it with the name of the nonterminal.
+Example of this appears in the line 19, where the synthesized attribute of \emph{expr} rule is referred in the semantic action by its name \emph{expr}.
+\end{exmp}
+
+\subsection{Internal Representation of \texttt{cmpg} Grammar Definitions}
+
+The \verb|cmpg| reads grammar definitions and constructs an internal representation for them.
+The internal representation of a grammar is a list of rules, one of which is set as a start rule.
+Each rule has a \emph{name} and a \emph{definition}.
+The definition of a rule is represented as a \emph{tree of parsing nodes}.
+
+There are many kinds of parsing nodes. Each kind of parsing node has either zero, one, or two child nodes.
+A node that has zero child nodes is also called a \emph{leaf} parsing node,
+a node that has one child node is called a \emph{unary} parsing node,
+and a node that has two child nodes is called a \emph{binary} parsing node.
+
+\begin{itemize}
+
+\item
+The definition of a rule consists of nonempty sequence of \emph{alternative} expressions:
+
+$$R \rightarrow \omega_1 \, | \, \omega_2 \, | \, \cdots \, | \, \omega_k$$
+
+If input matches one of the alternatives, it matches the rule.
+The alternatives are tested from left to right, and if a match is found, the rest of the alternatives are not tested.
+
+If the definition of a rule is represented as a tree of parsing nodes, it consists of \emph{alternative} binary parsing nodes,
+where the left and right subtrees of an alternative nodes represent expressions $\omega_i$ and $\omega_{i + 1}$.
+Figure \ref{fig:alternatives} shows two alternative nodes.
+
+\begin{figure}[htb]
+\caption{Alternative Nodes}
+\label{fig:alternatives}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{alternatives}
+\end{center}
+\end{figure}
+
+\item
+Each alternative expression $\omega_i$ consists of catenation of expressions :
+
+$$\alpha_1 \alpha_2 \cdots \alpha_k$$
+
+If input consists of a nonempty sequence of strings $s_1, s_2, \ldots, s_k$ of terminal symbols where $s_1$ matches expression $\alpha_1$,
+$s_2$ matches expression $\alpha_2$, etc., and $s_k$ matches expression $\alpha_k$,
+the input matches the whole alternative expression.
+
+A \emph{catenate} node is a binary parsing node, whose left and right subtree represent expressions $\alpha_i$ and $\alpha_{i + 1}$.
+Figure \ref{fig:catenate} shows two catenate nodes.
+
+\begin{figure}[htb]
+\caption{Catenate Nodes}
+\label{fig:catenate}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{sequences}
+\end{center}
+\end{figure}
+
+\item
+A \emph{difference} expression is denoted by $\alpha_i$ in a catenate expression $\alpha_1 \alpha_2 \cdots \alpha_k$.
+The difference expression consists of nonempty sequence of expressions separated by the $-$ symbol:
+
+$$\beta_1 \,-\, \beta_2 \,-\, \cdots \,-\, \beta_k$$
+
+Usually $k=1$ or $k=2$.
+If a string $s$ of terminal symbols matches expression $\beta_1$, but does not match expression $\beta_2$,
+the string $s$ matches expression $\beta_1 - \beta_2$.
+
+A \emph{difference} node is a binary parsing node whose left and right subtrees represent expressions $\beta_1$ and $\beta_2$ respectively.
+Figure \ref{fig:difference} shows a difference node.
+
+\begin{figure}[htb]
+\caption{Difference Node}
+\label{fig:difference}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{difference}
+\end{center}
+\end{figure}
+
+\item
+An \emph{xor} expression is denoted by $\beta_i$ in a difference expression $\beta_1 \,-\, \beta_2 \,-\, \cdots \,-\, \beta_k$.
+The xor expression consists of nonempty sequence of expressions separated by the $\hat{}$ symbol:
+
+$$\gamma_1 \, \hat{} \, \gamma_2\, \hat{} \, \cdots \, \hat{} \, \gamma_k$$
+
+Usually $k=1$ or $k=2$.
+If a string $s$ of terminal symbols either matches expression $\gamma_1$, but does not match expression $\gamma_2$,
+or matches expression $\gamma_2$, but does not match expression $\gamma_1$, the string $s$ matches expression $\gamma_1\, \hat{}\, \gamma_2$.
+
+An \emph{xor} node is a binary parsing node whose left and right subtrees represent expressions $\gamma1$ and $\gamma2$ respectively.
+Figure \ref{fig:xor} shows an xor node.
+
+\begin{figure}[htb]
+\caption{Xor Node}
+\label{fig:xor}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{xor}
+\end{center}
+\end{figure}
+
+\item
+An \emph{intersection} expression is denoted by $\gamma_i$ in an xor expression $\gamma_1 \, \hat{} \, \gamma_2\, \hat{} \, \cdots \, \hat{} \, \gamma_k$.
+The intersection expression consists of nonempty sequence of expressions separated by the $\&$ symbol:
+
+$$\mu_1 \, \& \, \mu_2 \, \& \, \cdots \, \& \mu_k$$
+
+Usually $k = 1$ or $k = 2$.
+If a string $s$ of terminal symbols matches both expression $\mu_1$ and expression $\mu_2$, the string $s$ matches expression $\mu_1 \& \mu_2$.
+
+An \emph{intersection} node is a binary parsing node whose left and right subtrees represent expressions $\mu_1$ and $\mu_2$ respectively.
+Figure \ref{fig:and} shows an intersection node.
+
+\begin{figure}[htb]
+\caption{Intersection Node}
+\label{fig:and}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{and}
+\end{center}
+\end{figure}
+
+\clearpage
+\item
+A \emph{list} expression is denoted by $\mu_i$ in an intersection expression $\mu_1 \, \& \, \mu_2 \, \& \, \cdots \, \& \mu_k$:
+The list expression is an expression optionally followed by the $\%$ symbol and an expression:
+
+$$\theta_1 \, (\% \, \theta_2)?$$
+
+In the previous expression the parentheses and the $?$ symbol are metasymbols, not terminal symbols.
+
+Expression $\theta_1 \% \theta_2$ denotes a nonempty sequence of $\theta_1$'s separated by $\theta_2$'s.
+
+A list node is a unary parsing node, whose child subtree is set to nodes corresponding to expression
+$\theta_1 (\theta_2 \theta_1)^*$. Figure \ref{fig:list} shows a list node with a child subtree.
+
+\begin{figure}[htb]
+\caption{List Node}
+\label{fig:list}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{list}
+\end{center}
+\end{figure}
+
+\item
+A \emph{postfix} expression is denoted by $\theta_i$ in a list expression $\theta_1 (\, \% \, \theta_2)?$
+A postfix expression is an expression optionally followed by one of the symbols $*$, $+$, or $?$:
+
+$$\eta ('*' | '+' | '?')?$$
+
+In the previous expression the parentheses and the last $?$ symbol are metasymbols, not terminal symbols.
+
+The postfix expressions containing symbols $*$, $+$, and $?$ are:
+
+\begin{enumerate}
+\item
+$\eta^*$:
+If the input consists of a possibly empty sequence of strings $s_i$ of terminal symbols where each string $s_i$ mathes expression $\eta$,
+the input matches expression $\eta^*$. For example, strings $\{\epsilon, \verb|a|, \verb|aa|, \verb|aaa|\}$ match expression $\textbf{a}^*$.
+
+A \emph{closure} node is a unary parsing node whose subtree represents expression $\eta$.
+
+\item
+$\eta^+$:
+If the input consists of a nonempty sequence of strings $s_i$ of terminal symbols where each string $s_i$ mathes expression $\eta$,
+the input matches expression $\eta^+$. For example, strings $\{\verb|a|, \verb|aa|, \verb|aaa|\}$ match expression $\textbf{a}^+$.
+
+A \emph{positive} node is a unary parsing node whose subtree represents expression $\eta$.
+
+\item
+$\eta?$:
+If the input consists either an empty string $\epsilon$, or a string $s$ of terminal symbols where $s$ matches expression $\eta$,
+the input matches expression $\eta?$. For example, strings $\{\epsilon, \verb|a|\}$ match expression $\textbf{a}?$.
+
+An \emph{optional} node is a unary parsing node whose subtree represents expression $\eta$.
+
+\end{enumerate}
+
+Figure \ref{fig:postfix} shows the postfix nodes.
+
+\begin{figure}[htb]
+\caption{Postfix Nodes}
+\label{fig:postfix}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{postfix}
+\end{center}
+\end{figure}
+
+\item
+A \emph{primary} expression is denoted by $\eta$ in a postfix expression $\eta ('*' | '+' | '?')?$.
+
+Using extended context-free grammar notation, a primary expression can be expressed as:
+
+$$primary \rightarrow (\> primitive \> | \> nonterminal \> | \> grouping \> | \> token \>) \> expectation? \> action?$$
+
+That is, a primary expression is one of:
+
+\begin{enumerate}
+\item
+a \emph{primitive} expression, that is an atomic \verb|cmpg| expression.
+\item
+a \emph{nonterminal} expression that matches input to a rule recursively.
+\item
+a \emph{grouping} expressions that is a parenthesized alternative expression.
+\item
+a \emph{token} expression that prevents skipping.
+\end{enumerate}
+
+Previous expressions can be optionally followed by an
+\emph{expectation} expression that prevents backtracking,
+and an \emph{action} expression that associates a semantic action to a primary expression.
+
+\item
+The primitive expressions defined using the extended context-free notation are:
+
+\begin{align*}
+primitive &\rightarrow \> char |\> string |\> charset |\> keyword |\> keyword\_list \> |\\
+&\textbf{empty} |\> \textbf{space} |\> \textbf{anychar} |\> \textbf{letter} |\> \textbf{digit} |\> \textbf{hexdigit} |\> \textbf{punctuation}
+\end{align*}
+
+Figure \ref{fig:primitives} shows the primitive expressions, what input they match, and the corresponding node types.
+
+\begin{figure}[htb]
+\caption{Primite Expressions}
+\label{fig:primitives}
+\begin{tabular}{lp{10cm}l}
+\textbf{Expression}&\textbf{Matches}&\textbf{Node}\\
+\hline
+\emph{char}& matches a single terminal symbol to a character specified in the expression. & \framebox[2cm][c]{'x'}\\
+\emph{string}& matches a string of terminal symbols to a string specified in the expression. &\framebox[2cm][c]{"abc"}\\
+\emph{charset} & matches a single terminal symbol to set of characters specified in the expression. &\framebox[2cm][c]{[abc]}\\
+\emph{keyword} & matches a string of terminal symbols to a keyword string specified in the expression. &\framebox[2cm][c]{\textbf{for}}\\
+\emph{keyword_list} & matches a string of terminal symbols to a list of keyword strings specified in the expression &\framebox[2cm][c]{\textbf{for,if}}\\
+\textbf{empty} & matches always &\framebox[2cm][c]{\textbf{empty}}\\
+\textbf{space} & matches a single terminal symbol to any whitespace character&\framebox[2cm][c]{\textbf{space}}\\
+\textbf{anychar} & matches a single terminal symbol to any single character&\framebox[2cm][c]{\textbf{anychar}}\\
+\textbf{letter} & matches a single terminal symbol to any latin letter&\framebox[2cm][c]{\textbf{letter}}\\
+\textbf{digit} & matches a single terminal symbol to any decimal digit&\framebox[2cm][c]{\textbf{digit}}\\
+\textbf{hexdigit} & matches a single terminal symbol to any hexadecimal digit&\framebox[2cm][c]{\textbf{hexdigit}}\\
+\textbf{punctuation} & matches a single terminal symbol any ASCII punctuation symbol&\framebox[2cm][c]{\textbf{punct}}
+\end{tabular}
+\end{figure}
+
+\item
+A \emph{nonterminal} expression is defined using extended context-free notation as follows:
+
+\begin{align*}
+nonterminal &\rightarrow \> (\> identifier \>| \> identifier \> arguments \>) \> alias?\\
+arguments &\rightarrow \> '(' argument (\> ',' \> argument\>)^* \> ')'\\
+alias &\rightarrow \> ':' \> identifier
+\end{align*}
+
+The nonterminal expression names a rule that is matched recursively.
+It can contain a parenthesized list of \emph{argument}s, that become the inherited attributes of the ``called'' rule.
+We used the word ``called'' because the recursive matching process can be thought as procedures that call each other recursively,
+as in recursive-descent parser.
+
+If the called rule has a synthersized attribute and the rule is called many times inside a body of a rule,
+the synthesized attribute of the called rule must be given a unique name. That is the use of an \emph{alias} expression.
+
+The node for the nonterminal is represented as $$\framebox[2cm][c]{\emph{nt}(\emph{foo})}$$
+
+where \emph{foo} is the name of the rule matched recursively.
+
+\clearpage
+\item
+A \emph{grouping} expression is a parenthesized sequence of alternative expressions.
+
+\begin{align*}
+grouping &\rightarrow \> '(' \> alternatives \> ')'
+\end{align*}
+
+\item
+A \emph{token} expression consists of a keyword \textbf{token} followed by a parenthesized sequence of alternative expressions.
+It prevents skipping of tokens that match the \emph{skip rule} of the grammar.
+
+\begin{align*}
+token &\rightarrow \> \textbf{token} \>'(' \> alternatives \> ')'
+\end{align*}
+
+\item
+An \emph{expectation} expression is a single '!' symbol associated with the preceding primary expression.
+It forces the matching of its preceding expression without backtracking.
+If its associated expression does not match, an exception is thrown.
+
+\begin{align*}
+expectation &\rightarrow \> '!'
+\end{align*}
+
+\item
+An \emph{action} expression is a block of C++ code in braces.
+It represents a semantic action that is executed if input matches its associated primary expression.
+
+\begin{align*}
+action &\rightarrow \> '\{' \> \texttt{C++ code} \> '\}'
+\end{align*}
+
+\end{itemize}
+
+Figure \ref{fig:token} shows the token, expectation and action unary parsing nodes.
+
+\begin{figure}[htb]
+\caption{Token, Expectation, and Action Nodes}
+\label{fig:token}
+\vspace{0.5cm}
+\begin{center}
+\includegraphics{token}
+\end{center}
+\end{figure}
+
+\clearpage
+\begin{exmp} Example of Internal Representation.
+\begin{flushleft}
+Let us recall the Postfix Translation Grammar of Example \ref{ex:postfix}. For ease of reference it is repeated here:
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar PostfixTranslationGrammar
+{
+    expr: std::string
+        ::= term:t{ value = t; }
+        (   '+' term:pt{ value.append(pt).append(1, '+'); }
+        |   '-' term:mt{ value.append(mt).append(1, '-'); }
+        )*
+        ;
+
+    term: std::string
+        ::= factor:f{ value = f; }
+        (   '*' factor:tf{ value.append(tf).append(1, '*'); }
+        |   '/' factor:df{ value.append(df).append(1, '/'); }
+        )*
+        ;
+
+    factor: std::string
+        ::= digit{ value = std::string(1, *matchBegin); }
+        |   '(' expr{ value = expr; } ')'
+        ;
+}
+\end{lstlisting}
+
+Figure \ref{fig:parsers} shows the internal representation of the \emph{expr} rule.
+
+\begin{figure}[htb]
+\caption{Internal Representation of \emph{expr} Rule}
+\label{fig:parsers}
+\begin{center}
+\includegraphics{parsers}
+\end{center}
+\end{figure}
+\end{flushleft}
+\end{exmp}
+
+\clearpage
+\subsection{\texttt{cmpg} Language Grammar}
+
+\begin{flushleft}
+Here the syntax of the \verb|cmpg| language is presented in extended context-free notation:
+
+\begin{grmr}
+\verb|cmpg| Language Grammar.
+\begin{align*}
+grammar &\rightarrow \> \textbf{grammar} \> identifier \> '\{' \> grammarcontent \> '\}'\\
+grammarcontent &\rightarrow \> ( \> startclause \> | \> skipclause \> | \> rulelink \> | \> rule \> )^*\\
+startclause &\rightarrow \> \textbf{start} \> identifier \> ';'\\
+skipclause &\rightarrow \> \textbf{skip} \> qualifiedid \> ';'\\
+rulelink &\rightarrow \> \textbf{using} \> ( \> identifier \> '=' \> qualifiedid \> | \> qualifiedid \> ) \> ';'\\
+rule &\rightarrow \> identifier \> locals? \> returns? \> "::=" \> alternatives \> ';'\\
+locals &\rightarrow '(' \> (variable \> | \> parameter) \>( \>',' \> (variable \> | \> parameter)) ^* \> ')'\\
+variable &\rightarrow \> \textbf{var} \> cpptype \> cppdeclarator\\
+parameter &\rightarrow \> cpptype \> cppdeclarator\\
+returns &\rightarrow \> ':' cpptype\\
+alternatives &\rightarrow catenate \> (\> '|' \> catenate \>)^*\\
+catenate &\rightarrow diff^+\\
+diff &\rightarrow xor \> ( \> '-' \> xor)^*\\
+xor &\rightarrow and \> ( \> \hat{} \> and)^*\\
+and &\rightarrow list \> (\> '\&' \> list)^*\\
+list &\rightarrow postfix \> (\> '\%' list)?\\
+postfix &\rightarrow primary \> ( \> '*' \> | \> '+' \> | \> '?' \>)?\\
+primary &\rightarrow (\> primitive \> | \> nonterminal \> | \> grouping \> | \> token \>) \> expectation? \> action?\\
+primitive &\rightarrow \> char |\> string |\> charset |\> keyword |\> keyword\_list\\
+&| \> \textbf{empty} |\> \textbf{space} |\> \textbf{anychar} |\> \textbf{letter} |\> \textbf{digit} |\> \textbf{hexdigit} |\> \textbf{punctuation}\\
+nonterminal &\rightarrow \> (\> identifier \>| \> identifier \> arguments \>) \> alias?\\
+arguments &\rightarrow \> '(' argument (\> ',' \> argument\>)^* \> ')'\\
+alias &\rightarrow \> ':' \> identifier\\
+grouping &\rightarrow \> '(' \> alternatives \> ')'\\
+token &\rightarrow \> \textbf{token} \> '(' alternatives \> ')'\\
+expectation &\rightarrow \> '!'\\
+action &\rightarrow \> '\{' \> \texttt{C++ code} \> '\}'\\
+identifier &\rightarrow \> id \> - \> keyword\\
+qualifiedid &\rightarrow \> identifier \> ( \> '.' \> identifier)^*\\
+id & \rightarrow \> ( \> \textbf{letter} \> | \> '\_' \> ) \> ( \> \textbf{letter} \> | \> \textbf{digit} \> | \> '\_' \> )^*\\
+keyword &\rightarrow \> \textbf{using}|\textbf{grammar}|\textbf{start}|\textbf{skip}|\textbf{token}|\textbf{keyword}|\textbf{keyword\_list}\\
+&|\textbf{empty}|\textbf{space}|\textbf{anychar}|\textbf{letter}|\textbf{digit}|\textbf{hexdigit}|\textbf{punctuation}|\textbf{var}
+\end{align*}
+The \emph{cpptype} denotes a \verb|C++| type expression, and the \emph{cppdeclarator} denotes a \verb|C++| declarator.
+\end{grmr}
+\end{flushleft}
+
+\subsection{Informal Description of Operation of a Parser Generated Using \texttt{cmpg}}
+
+A parser generated using \verb|cmpg| works much the same way than a handwritten recursive-descent parser would operate.
+In principle, each rule can be thought as a recursive procedure that receives parameters, or inherited attributes, from its caller, or parent rule,
+matches terminals and maybe calls other recursive procedures, or rules, and finally can return a value, a computed synthesized attribute,
+to its caller, or parent rule.
+
+The parsing begins by trying to match the start of the input to the body of the rule $S$, the start rule of the grammar.
+
+If the current input position is at the start of rule $P$, and there are many $P$-productions,
+$P \rightarrow \omega_1 \,|\, \omega_2 \, | \cdots \, | \, \omega_k$,
+the parser tries to match the the input to the production $P \rightarrow \omega_1$.
+If the input matches, the other $P$-productions are not tried and the parsing proceeds to the successor of the caller of the production $P \rightarrow \omega_1$.
+However, if the input does not match $P \rightarrow \omega_1$, input is backtracked, and the
+production $P \rightarrow \omega_2$ is tried, and so on, until either a match is found, or the input did not match the last
+$P$-production $P \rightarrow \omega_k$. In that case, let $Q \rightarrow \alpha P \beta \Leftrightarrow Q \rightarrow \upsilon_i$ be the parent of $P$.
+At this point the input is backtracked and the next alternative for the caller of the $P$, $Q \rightarrow \upsilon_{i+1}$ is tried.
+This process is repeated until either the entire input matches, or a syntax error is detected.
+
+\subsection{Parsing Algorithm}
+
+The algorithm uses a stack of attribute values, a Boolean variable for skipping state $skip$, a stack of skipping states,
+and keeps track of \emph{current input position}.
+Each rule has a data structure called \emph{context} that contains the current values of inherited attributes,
+synthesized attribute, local variables, and synthesized attributes of the contained nonterminals of the rule.
+Each rule has also a stack of those context structures called a \emph{context stack}.
+
+When input is parsed using the following algorithm \ref{al:parsing} applied to a parsing node, the result of parsing can be either:
+
+\begin{enumerate}
+\item
+\textbf{match}(\textbf{true}, \emph{n}), where $n > 0$, to indicate that input matched, and the length of the match was \emph{n} characters.
+
+\item
+\textbf{match}(\textbf{true}, 0), to indicate a successful empty match. In this case the current input position was not advanced.
+
+\item
+\textbf{match}(\textbf{false}) to indicate that input did not match. In this case we say that the result is a \emph{failure} match.
+\end{enumerate}
+
+In the beginning the attribute stack is empty, the skipping state stack is empty, and the skipping state $skip$ is \textbf{true}.
+The parsing begins by setting the current input position to the start of the input, and
+applying algorithm \ref{al:parsing} to the root node of the parsing node tree that forms
+the definition of the start rule of the grammar.
+Let $m$ be the result of parsing applied to the root node.
+
+If $m$ is:
+\begin{enumerate}
+\item
+\textbf{match}(\textbf{true}, \emph{n}), where $n$ is the length of the input, the parsing succeeds.
+\item
+\textbf{match}(\textbf{true}, \emph{n}), where $n$ is less than the length of the input, the parsing fails.
+\item
+\textbf{match}(\textbf{false}), the parsing fails.
+\end{enumerate}
+
+\begin{algo} Parsing Algorithm.\label{al:parsing} (\cite{SPIRIT})
+
+\begin{flushleft}
+If the type of the node this algorithm is applied to is:
+\begin{enumerate}
+
+\item
+Alternative node (Fig. \ref{fig:alternatives}).
+Let $save$ be the current input position. Apply this algorithm recursively to the left subtree of this node.
+Let $m$ be the result of parsing the left subtree.
+\footnote{When we say that a node, or a subtree, is parsed, we mean that input is parsed in the context of that node, or subtree.}
+If $m$ was a successful match, let the result of parsing this node be $m$.
+
+Otherwise, backtrack by setting the current input position to \emph{save} and
+apply this algorithm recursively to the right subtree of this node.
+Let the result of parsing this node be the result of parsing the right subtree.
+
+\item
+Catenate node (Fig. \ref{fig:catenate}). Apply this algorithm recursively to the left subtree of this node.
+Let $m_1$ be the result of parsing the left subtree.
+If $m_1$ a successful match, unless $skip$ is \textbf{false} skip tokens using the skip rule,
+then apply this algorithm recursively to the right subtree of this node.
+Let $m_2$ be the result of parsing the right subtree.
+If $m_2$ was a successful match, let the result of parsing this node be $\textbf{match}(\textbf{true}, length(m_1) + length(m_2))$.
+
+Otherwise, either $m_1$ was a failure match, or $m_2$ was a failure match. Let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Difference node (Fig. \ref{fig:difference}).
+Let $save$ be the current input position. Apply this algorithm recursively to the left subtree of this node.
+Let $m_1$ be the result of parsing the left subtree.
+If $m_1$ was a successful match, let $tmp$ be the current input position, and backtrack by setting the current input position to $save$;
+then apply this algorithm recursively to the right subtree of this node. Let $m_2$ be the result of parsing the right subtree.
+If $m_2$ was a failure match, or $length(m_2) < length(m_1)$, set the current input position to $tmp$,
+and let the result of parsing this node be $m_1$, a successful match.
+
+Otherwise, either $m_1$ was a failure match, or $m_2$ was a successful match with $length(m_2) \ge length(m_1)$.
+Let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Xor node (Fig. \ref{fig:xor}). Let $save$ be the current input position. Apply this algorithm recursively to the left subtree of this node.
+Let $m_1$ be the result of parsing the left subtree.
+Let $tmp$ be the current input position, and backtrack by setting the current input position to $save$.
+Apply this algorithm recursively to the right subtree of this node.
+Let $m_2$ be the result of parsing the right subtree.
+If $m_1$ was a successful match and $m_2$ was a failure match, or $m_1$ was a failure match and $m_2$ was a successful match,
+do the following:
+\begin{enumerate}
+\item
+If $m_1$ was a successful match, set the current input position to $tmp$.
+\item
+If $m_1$ was a successful match, let the result of parsing this node be $m_1$, otherwise let the result of parsing this node be $m_2$.
+\end{enumerate}
+
+Otherwise, either both $m_1$ and $m_2$ were successful matches, or both were failure matches.
+Let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Intersection node (Fig. \ref{fig:and}).
+Let $save$ be the current input position. Apply this algorithm recursively to the left subtree of this node.
+Let $m_1$ be the result of parsing the left subtree.
+If $m_1$ was a successful match, backtrack by setting the current input position to $save$,
+and apply this algorithm recursively to the right subtree of this node.
+Let $m_2$ be the be the result of parsing the right subtree.
+If $m_2$ was a successful match and $length(m_1) = length(m_2)$, let the result of parsing this node be $m_1$.
+
+Otherwise, either $m_1$ was a failure match, $m_2$ was a failure match, or $length(m_1) \ne length(m_2)$.
+Let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+List node (Fig. \ref{fig:list}). Apply this algorithm recursively to the child subtree of this node.
+Let the result of parsing this node be the result of parsing the child subtree.
+
+\item
+Closure node (Fig. \ref{fig:postfix}). Let $m_1$ be $\textbf{match}(\textbf{true},0)$, and let $first$ be \textbf{true}.
+Do following in a loop until loop exited:
+
+\begin{enumerate}
+\item
+Let $save$ be the current input position.
+\item
+If $first = \textbf{true}$, set $first$ to \textbf{false}, otherwise, unless $skip$ is \textbf{false}, skip tokens using the skip rule.
+\item
+Apply this algorithm recursively to the child subtree of this node.
+Let $m_2$ be the result of parsing the child subtree.
+\item
+If $m_2$ was a successful match, set $m_1$ to $\textbf{match}(\textbf{true}, length(m_1) + length(m_2))$,
+otherwise backtrack by setting the current input position to $save$ and exit the loop.
+\end{enumerate}
+Let the result of parsing this node be $m_1$.
+
+\item
+Positive node (Fig. \ref{fig:postfix}). Apply this algorithm recursively to the child subtree of this node.
+Let $m_1$ be the result of parsing the child subtree.
+
+If $m_1$ was a successful match, do following in a loop until loop exited:
+\begin{enumerate}
+\item
+Let $save$ be the current input position.
+\item
+If $skip$ is \textbf{true}, skip tokens using the skip rule.
+\item
+Apply this algorithm recursively to the child subtree of this node.
+Let $m_2$ be the result of parsing the child subtree.
+\item
+If $m_2$ was a successful match, set $m_1$ to $\textbf{match}(\textbf{true}, length(m_1) + length(m_2))$,
+otherwise backtrack by setting the current input position to $save$ and exit the loop.
+\end{enumerate}
+Let the result of parsing this node be $m_1$.
+
+\item
+Optional node (Fig. \ref{fig:postfix}). Let $save$ be the current input position.
+Apply this algorithm recursively to the child subtree of this node.
+Let $m$ be the result of parsing the child subtree.
+If $m$ was a successful match, let the result of parsing this node be $m$.
+
+Otherwise, backtrack by setting the current input position to $save$.
+Let the result of parsing this node be $\textbf{match}(\textbf{true}, 0)$.
+
+\item
+Char node (Fig. \ref{fig:primitives}). If current input position is not at the end of the input, and the
+character at the current input position is equal to the character contained in this char node,
+advance the current input position by one character, and let the result of parsing this node be
+$\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise, either the current input position is at the end of the input,
+or the character at the current input position is not equal to the character contained in this char node,
+so let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+String node (Fig. \ref{fig:primitives}). Let $m$ be $\textbf{match}(\textbf{true}, 0)$.
+Let $i$ be 0. Let $n$ be the length of the string contained in this string node.
+While $i < n$ and the current input position is not at the end of the input and
+the character at the current input position is equal to the i'th character of the string contained in this string node,
+do the following:
+\begin{enumerate}
+\item
+Advance the current input position by one character.
+\item
+Increment $i$.
+\item
+Set $m$ to $\textbf{match}(\textbf{true}, length(m) + 1)$.
+\end{enumerate}
+If $i = n$, let the result of parsing this node be $m$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+CharSet node (Fig. \ref{fig:primitives}).
+If current input position is not at the end of the input, do the following:
+\begin{enumerate}
+\item
+If the character set is not an inverse set, and the character at the current input position is in the set,
+or the character set is an inverse set, and the character at the current input position is not in the set,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$
+\end{enumerate}
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Keyword node (Fig. \ref{fig:primitives}). If the contained keyword string is denoted by $k$,
+the keyword node contains following expression converted to a tree of parsing nodes:
+$k - \textbf{token}(k c)$, where $c$ is usually expression $(\textbf{letter}|\textbf{digit}|'\_'|'.')^+$,
+but may also be user supplied \emph{continuation rule}.
+Let the result of parsing this node be the result of parsing the contained tree of nodes.
+
+\item
+Keyword list node (Fig. \ref{fig:primitives}). The keyword list node has a \emph{selector rule},
+that is usually $(\textbf{letter}|'\_')(\textbf{letter}|\textbf{digit}|'\_')^*$,
+but may also supplied by the user. The node has also a set of keyword strings $s$.
+
+Let $save$ be the current input position.
+First the input is parsed with the selector rule.
+Let $m$ be the result of this parsing, and $l$ be the matched lexeme.
+If $m$ is a successful match, do the following:
+\begin{enumerate}
+\item
+If the lexeme $l$ matches one of the contained keyword strings $s$,
+let the result of parsing this node be $m$,
+otherwise backtrack by  setting the current input position to $save$.
+\end{enumerate}
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Empty node (Fig. \ref{fig:primitives}). Let the result of parsing this node be $\textbf{match}(\textbf{true}, 0)$.
+
+\item
+Space node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+and the character at the current input position is a whitespace character,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+AnyChar node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Letter node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+and the character at the current input position is a latin letter character,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Digit node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+and the character at the current input position is a decimal digit character,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+HexDigit node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+and the character at the current input position is a hexadecimal digit character,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Punctuation node (Fig. \ref{fig:primitives}). If the current input position is not at the end of the input,
+and the character at the current input position is ASCII punctuation character,
+advance the current input position by one character,
+and let the result of parsing this node be $\textbf{match}(\textbf{true}, 1)$.
+
+Otherwise let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+
+\item
+Nonterminal node.
+Let the rule that the nonterminal is associated with be $r$.
+Parsing proceeds by parsing the rule $r$ recursively as follows:
+
+\begin{enumerate}
+\item
+Parsing rule $r$ begins by pushing values of arguments specified in this nonterminal node to the attribute stack.
+Those arguments will become the inherited attributes of $r$.
+Arguments can be current values of inherited attributes, the synthesized attribute,
+local variables, or synthesized attributes of the contained nonterminals of the current rule,
+i.e. the rule that contains the current nonterminal node.
+\item
+On entry of parsing the rule $r$, the current context structure of $r$ is pushed
+to the context stack of $r$ and the context of $r$ is initialized with default values.
+\item
+Then arguments are popped off from the attribute stack,
+and placed to the context structure of $r$ as inherited attributes.
+\item
+Apply this algorithm recursively to the root node of the
+parsing node tree that forms the definition of the rule $r$.
+Let the result of parsing be $m$.
+\item
+On exit of parsing the rule $r$, if $m$ was a successful match, the value of the synthesized attribute of $r$, if any, is
+pushed to the attribute stack. Then in any case, the previous context of $r$ is popped off from
+the context stack of $r$, and it becomes the current context of $r$.
+\item
+If $m$ was a successful match, the synthesized attribute of $r$, if any, is popped off from the attribute stack and
+placed to the context structure of the current rule as synthesized attribute of this nonterminal.
+\item
+Let the result of parsing this node be $m$.
+\end{enumerate}
+
+\item
+Token node (Fig. \ref{fig:token}). Push the current skipping state $skip$ to the skipping state stack, and set $skip$ to \textbf{false}.
+Apply this algorithm recursively to the child subtree of this node.
+Let $m$ be the result of parsing the child subtree.
+Pop the previous skipping state off from the skipping state stack, and assign it to $skip$.
+Let the result of parsing this node be $m$.
+
+\item
+Expectation node (Fig. \ref{fig:token}). Apply this algorithm recursively to the child subtree of this node.
+Let $m$ be the result of parsing the child subtree.
+If $m$ was a failure match, throw \emph{ExpectationFailure} exception, otherwise, let $m$ be the result of parsing this node.
+
+\item
+Action node (Fig. \ref{fig:token}). Apply this algorithm recursively to the child subtree of this node.
+Let $m$ be the result of parsing the child subtree.
+If $m$ was a successful match, do the following:
+\begin{enumerate}
+\item
+Let $matchBegin$ be the start of the matched lexeme and $matchEnd$ be one past the end of the matched lexeme.
+Let $pass$ be \textbf{true}.
+\item
+Call the semantic action associated with this action node by passing pointers $matchBegin$ and $matchEnd$, and reference to $pass$ as arguments.
+\item
+If the semantic action set $pass$ to \textbf{false}, let the result of parsing this node be $\textbf{match}(\textbf{false})$.
+\end{enumerate}
+Otherwise, $m$ was a failure match, so if this action has an associated failure action, call it.
+
+In any case, let the result of parsing this node be $m$.
+\end{enumerate}
+
+\end{flushleft}
+
+\end{algo}
+
+\clearpage
+\begin{thebibliography}{3}
+
+\bibitem{COMPILERS} \textsc{Aho, A. V., M. S. Lam, R. Sethi, and J. D. Ullman}:
+Compilers: Principles, Techniques, \& Tools. Second Edition. Addison-Wesley, 2007.
+
+\bibitem{AUTOMATA} \textsc{Hopcroft, J. E., R. Motwani, and J. D. Ullman}:
+Introduction to Automata Theory, Languages, and Computation. Second Edition. Addison-Wesley, 2001.
+
+\bibitem{SPIRIT} \textsc{Joel de Guzman}:
+Spirit Parsing Libraries,
+\textit{\url{http://boost-spirit.com/home/}}
+
+\bibitem{LLVM} \textsc{LLVM team}:
+LLVM Language Reference Manual,
+\textit{\url{http://llvm.org/docs/LangRef.html}}
+
+\end{thebibliography}
+
+\end{document}

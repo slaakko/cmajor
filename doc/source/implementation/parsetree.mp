@@ -1,0 +1,23 @@
+input metaobj;
+filenametemplate "%j.mps";
+beginfig(1);
+setCurveDefaultOption("arrows","-");
+newBox.e(btex $\epsilon$ etex) "framed(false)";
+newBox.empty1("") "framed(false)";
+newBox.empty2("") "framed(false)";
+newBox.l1(btex 1 etex) "framed(false)";
+newBox.l2(btex 0 etex) "framed(false)";
+newBox.P1(btex P etex) "framed(false)";
+newBox.P2(btex P etex) "framed(false)";
+newBox.P3(btex P etex) "framed(false)";
+newBox.r1(btex 1 etex) "framed(false)";
+newBox.r2(btex 0 etex) "framed(false)";
+newTree.t0(e)(empty1,empty2) "visible(false)";
+newTree.t1(P1)(t0);
+newTree.t2(P2)(l1,t1,r1);
+newTree.t3(P3)(l2,t2,r2);
+scaleObj(t3,0.75);
+t3.c=origin;
+drawObj(t3);
+endfig;
+end

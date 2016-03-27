@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<latexSolution>
+    <solutionName>Implementation</solutionName>
+    <activeProject>Implementation</activeProject>
+    <projectFiles>
+        <projectFile>
+            <projectName>Implementation</projectName>
+            <projectPath>.\Implementation.lpr</projectPath>
+        </projectFile>
+    </projectFiles>
+</latexSolution>
