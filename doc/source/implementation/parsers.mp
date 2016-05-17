@@ -25,9 +25,12 @@ newTree.t4(alt1)(t1,t3);
 newCircle.closure(btex $*$ etex) "circmargin(.2cm)";
 newTree.t5(closure)(t4);
 
+newCircle.an(btex $a$ etex) "circmargin(.2cm)";
 newBox.nt3(btex $nt(term:t)$ etex);
+newTree.tn(an)(nt3);
+
 newCircle.cat3(btex $\cdot$ etex) "circmargin(.2cm)";
-newTree.t6(cat3)(nt3,t5);
+newTree.t6(cat3)(tn,t5);
 
 t6.c=origin;
 drawObj(t6);

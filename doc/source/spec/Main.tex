@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.5}
+\title{Cmajor Programming Language Specification\\Version 3.5.1}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -55,30 +55,23 @@ $\alpha$? & zero or one $\alpha$'s\\
 
 Lexical elements in program texts can be separated by one or more instance of white space characters and comments.
 
-\begin{grammar}
-<spaces-and-comments> ::= (<space> | <comment>)+
+\begin{align*}
+spaces\textrm{-}and\textrm{-}comments &\rightarrow \> (\> space \> | \> comment \>)^+\\
+space &\rightarrow \> \textrm{'any ASCII whitespace character'}\\
+comment &\rightarrow \> line\textrm{-}comment \> | \> block\textrm{-}comment\\
+line\textrm{-}comment &\rightarrow \> \texttt{//} \> [\> \hat{} \> \backslash r\backslash n\>]^* \> new\textrm{-}line\\
+new\textrm{-}line &\rightarrow \>  "\backslash r\backslash n" \>  | \> "\backslash n" \> | \> "\backslash r"\\
+block\textrm{-}comment &\rightarrow \> \texttt{"/*"}\> ( \> any\textrm{-}char \> - \texttt{"*/"} \> ) \> \texttt{"*/"}\\
+any\textrm{-}char &\rightarrow \> \textrm{'any 8-bit ASCII character'}
+\end{align*}
 
-<space> ::= 'any ASCII character classified as space character according to C isspace function'
-
-<comment> ::= <line-comment> | <block-comment>
-
-<line-comment> ::= \lit*{//} "[^\\r\\n]"* <new-line>
-
-<new-line> ::= "\\r\\n" | "\\n" | "\\r"
-
-<block-comment> ::= \lit{/*} (<any-char> $-$ \lit{*/}) \lit{*/}
-
-<any-char> ::= 'any 8-bit ASCII character'
-
-\end{grammar}
-
-\subsection{Keywords}
+\subsection{Keywords}\label{keyword}
 
 Keywords have reserved context-dependent meaning in a program and they cannot be used as identifiers.
 
-\begin{grammar}
-\label{keyword}<keyword> ::= 'see table \ref{tab:keywords}'
-\end{grammar}
+\begin{align*}
+keyword \rightarrow \> \textrm{'see table \ref{tab:keywords}'}
+\end{align*}
 
 \begin{table}[htb]
 \caption{Keywords}\label{tab:keywords}
@@ -100,63 +93,49 @@ Keywords have reserved context-dependent meaning in a program and they cannot be
 \end{tabular}
 \end{table}
 
-\subsection{Identifiers}
+\subsection{Identifiers}\label{identifier}\label{qualifiedid}
 
 Identifiers are used to name entities in a program.
 Identifiers that begin with double underscores are reserved for the compiler.
 
-\begin{grammar}
-\label{identifier}<identifier> ::= <id-char-sequence> $-$ <keyword>\ref{keyword}
+\begin{align*}
+identifier &\rightarrow \> id\textrm{-}char\textrm{-}sequence - \hyperref[keyword]{keyword}\\
+id\textrm{-}char\textrm{-}sequence &\rightarrow \> ( \> letter \> \> | \> \texttt{\_} \> ) \> ( \> letter \> | \> \texttt{\_} \> | \> digit \>)^*\\
+letter &\rightarrow \> [\texttt{A-Za-z}]\\
+digit &\rightarrow [\texttt{0-9}]\\
+qualified\textrm{-}id &\rightarrow \> identifier \> ( \> \texttt{'.'} \> identifier \> )^*
+\end{align*}
 
-<id-char-sequence> ::= (<letter> | _) (<letter> | _ | <digit>)*
-
-<letter> ::= [A-Za-z]
-
-<digit> ::= [0-9]
-
-\label{qualified-id}<qualified-id> ::= <identifier> (. <identifier>)*
-
-\end{grammar}
-
-\subsection{Literals}\label{sec:literals}
+\subsection{Literals}\label{literal}
 
 Literals are used to write values in a program.
 
-\begin{grammar}
-\label{literal}<literal> ::= <boolean-literal>\ref{boolean-literal}
-\alt <integer-literal>\ref{integer-literal}
-\alt <floating-literal>\ref{floating-literal}
-\alt <character-literal>\ref{character-literal}
-\alt <string-literal>\ref{string-literal}
-\alt <raw-string-literal>\ref{raw-string-literal}
-\alt <null-literal>\ref{null-literal}
-\end{grammar}
+\begin{align*}
+literal &\rightarrow \> & &\hyperref[booleanliteral]{boolean\textrm{-}literal} \> | \> \hyperref[integerliteral]{integer\textrm{-}literal} \> | \>
+\hyperref[floatingliteral]{floating\textrm{-}literal} \> | \> \hyperref[characterliteral]{character\textrm{-}literal}\\
+&| & &\hyperref[stringliteral]{string\textrm{-}literal} \> | \> \hyperref[nullliteral]{null\textrm{-}literal}
+\end{align*}
 
-\subsubsection{Boolean Literals}
+\subsubsection{Boolean Literals}\label{booleanliteral}
 
-\begin{grammar}
-\label{boolean-literal}<boolean-literal> ::= \lit*{true} | \lit*{false}
-\end{grammar}
+\begin{align*}
+boolean\textrm{-}literal \rightarrow \> \textbf{true} \> | \> \textbf{false}
+\end{align*}
 
 The type of a boolean literal is \bf{bool}.
 
-\subsubsection{Integer Literals}
+\subsubsection{Integer Literals}\label{integerliteral}\label{decimaldigitsequence}\label{hexadecimaldigitsequence}
 
-\begin{grammar}
-\label{integer-literal}<integer-literal> ::= <decimal-digit-sequence> <unsigned-suffix>?
-\alt ("0x" | "0X") <hexadecimal-digit-sequence> <unsigned-suffix>?
-
-<decimal-digit-sequence> ::= <decimal-digit>+
-
-<decimal-digit> ::= [\lit*{0}-\lit*{9}]
-
-<unsigned-suffix> ::= 'u' | 'U'
-
-<hexadecimal-digit-sequence> ::= <hexadecimal-digit>+
-
-<hexadecimal-digit> ::= [\lit*{0}-\lit*{9}\lit*{a}-\lit*{f}\lit*{A}-\lit*{F}]
-
-\end{grammar}
+\begin{align*}
+integer\textrm{-}literal &\rightarrow & &decimal\textrm{-}digit\textrm{-}sequence \> unsigned\textrm{-}suffix?\\
+&| & &(\> \texttt{"0x"} \> | \> \texttt{"0X"} \>) \> hexadecimal\textrm{-}digit\textrm{-}sequence\\
+& & &unsigned\textrm{-}suffix?\\
+decimal\textrm{-}digit\textrm{-}sequence &\rightarrow & &decimal\textrm{-}digit^+\\
+decimal\textrm{-}digit &\rightarrow & &[\texttt{0-9}]\\
+unsigned\textrm{-}suffix &\rightarrow & &\texttt{'u'} \> | \> \texttt{'U'}\\
+hexadecimal\textrm{-}digit\textrm{-}sequence &\rightarrow & &hexadecimal\textrm{-}digit^+\\
+hexadecimal\textrm{-}digit &\rightarrow & &[\texttt{0-9a-fA-F}]
+\end{align*}
 
 If integer literal has no unsigned suffix, the type of the integer literal
 is first of the following types that can represent the value:
@@ -166,41 +145,33 @@ If integer literal has an unsigned suffix, the type of the integer literal is
 first of the following types that can represent the value:
 \bf{byte}, \bf{ushort}, \bf{uint}, \bf{ulong}.
 
-\subsubsection{Floating Literals}
+\subsubsection{Floating Literals}\label{floatingliteral}
 
-\begin{grammar}
-\label{floating-literal}<floating-literal> ::= (<fractional-floating-literal> | <exponent-floating-literal>) <floating-suffix>?
-
-<fractional-floating-literal> ::= <decimal-digit-sequence>? \lit*{.} <decimal-digit-sequence> <exponent-part>?
-\alt <decimal-digit-sequence> \lit*{.}
-
-<exponent-part> ::= (\lit*{e} | \lit*{E}) <sign>? <decimal-digit-sequence>
-
-<sign> ::= \lit*{+} | \lit*{-}
-
-<exponent-floating-literal> ::= <decimal-digit-sequence> <exponent-part>
-
-<floating-suffix> ::= 'f' | 'F'
-
-\end{grammar}
+\begin{align*}
+floating\textrm{-}literal &\rightarrow & &( \> fractional\textrm{-}floating\textrm{-}literal \> | \> exponent\textrm{-}floating\textrm{-}literal \>)\\
+& & &floating\textrm{-}suffix?\\
+fractional\textrm{-}floating\textrm{-}literal &\rightarrow & &\hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence}? \> \texttt{.}
+\> \hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence}\\
+& & &exponent\textrm{-}part?\\
+&| & &\hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence} \> \texttt{.}\\
+exponent\textrm{-}part &\rightarrow & &(\> \texttt{e} \> | \> \texttt{E} \>) \> sign? \> \hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence}\\
+sign &\rightarrow & &\texttt{+} \> | \> \texttt{-}\\
+exponent\textrm{-}floating\textrm{-}literal &\rightarrow & &\hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence} \> exponent\textrm{-}part\\
+floating\textrm{-}suffix &\rightarrow & &\texttt{'f'} \> | \> \texttt{'F'}
+\end{align*}
 
 If a floating literal has a floating suffix, the type of it is \bf{float},
 otherwise the type of the floating literal is \bf{double}.
 
-\subsubsection{Character Literals}
+\subsubsection{Character Literals}\label{characterliteral}\label{escape}
 
-\begin{grammar}
-\label{character-literal}<character-literal> ::= \lit*{'} ("[^\\r\\n]" | <escape>) \lit*{'}
-
-<escape> ::= "\\" (<hex-escape> | <decimal-escape> | <char-escape>)
-
-<hex-escape> ::= "[xX]" <hexadecimal-digit-sequence>
-
-<decimal-escape> ::= "[dD]" <decimal-digit-sequence>
-
-<char-escape> ::= "[^dDxX\\r\\n]" 'see table \ref{tab:charescape}'
-
-\end{grammar}
+\begin{align*}
+character\textrm{-}literal &\rightarrow \texttt{'} \> ( \> [\> \hat{}\> \backslash r \backslash n] \> | \> escape \>) \> \texttt{'}\\
+escape &\rightarrow \backslash \> ( \> hex\textrm{-}escape \> | \> decimal\textrm{-}escape \> | \> char\textrm{-}escape \>)\\
+hex\textrm{-}escape &\rightarrow [\texttt{xX}] \> \hyperref[hexadecimaldigitsequence]{hexadecimal\textrm{-}digit\textrm{-}sequence}\\
+decimal\textrm{-}escape & \rightarrow [\texttt{dD}] \> \hyperref[decimaldigitsequence]{decimal\textrm{-}digit\textrm{-}sequence}\\
+char\textrm{-}escape &\rightarrow [\> \hat{}\> \texttt{dDxX} \backslash r \backslash n] \> | \> \texttt{'see table \ref{tab:charescape}'}
+\end{align*}
 
 \begin{table}[htb]
 \caption{Character Escape Sequences}\label{tab:charescape}
@@ -221,60 +192,50 @@ otherwise the type of the floating literal is \bf{double}.
 \end{table}
 The type of a character literals is \bf{char}.
 
-\subsubsection{String Literals}
+\subsubsection{String Literals}\label{stringliteral}
 
-The backslash character provides an escaping mechanism for ordinary string literals.
+The backslash character provides an escaping mechanism for regular string literals, UTF-16 string literals and UTF-32 string literals.
+There are no escapes in raw string literals. The content is taken literally.
 
-\begin{grammar}
-\label{string-literal}<string-literal> ::= \verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
-\end{grammar}
-\begin{grammar}
-\label{utf16-string-literal}<utf16-string-literal> ::= \lit*{w}\verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
-\end{grammar}
-\begin{grammar}
-\label{utf32-string-literal}<utf32-string-literal> ::= \lit*{u}\verb|"| ("[^\"\\r\\n]" | <escape>)* \verb|"|
-\end{grammar}
-
-There is no escapes in raw string literals. The content is taken literally.
-
-\begin{grammar}
-\label{raw-string-literal}<raw-string-literal> ::= "@" \verb|"| ("[^\"]")* \verb|"|
-\end{grammar}
+\begin{align*}
+string\textrm{-}literal &\rightarrow & &regular\textrm{-}string\textrm{-}literal\\
+&| & &utf16\textrm{-}string\textrm{-}literal\\
+&| & &utf32\textrm{-}string\textrm{-}literal\\
+&| & &raw\textrm{-}string\textrm{-}literal\\
+regular\textrm{-}string\textrm{-}literal &\rightarrow & &\texttt{"} \> ( \> [\> \hat{} \> \texttt{"} \backslash r \backslash n] \> | \>
+\hyperref[escape]{escape} \>)^* \>
+\texttt{"}\\
+utf16\textrm{-}string\textrm{-}literal &\rightarrow & &\texttt{w}\texttt{"} \>
+( \> [\> \hat{} \> \texttt{"} \backslash r \backslash n] \> | \> \hyperref[escape]{escape} \>)^*
+\> \texttt{"}\\
+utf32\textrm{-}tring\textrm{-}literal &\rightarrow & &\texttt{u}\texttt{"} \> ( \> [\> \hat{} \> \texttt{"} \backslash r \backslash n] \> | \>
+\hyperref[escape]{escape} \>)^*
+\> \texttt{"}\\
+raw\textrm{-}string\textrm{-}literal &\rightarrow  & &\texttt{@} \texttt{"} \> ( \> [\> \hat{} \> \texttt{"} \backslash r \backslash n] \> )^* \> \texttt{"}
+\end{align*}
 
 The type of a string literal and raw string literal is \bf{const char*}.
 The type of UTF-16 string literal is \bf{const wchar*}.
 The type of UTF-32 string literal is \bf{const uchar*}.
 
-\subsubsection{Null-literal}
+\subsubsection{Null-literal}\label{nullliteral}
 
-\begin{grammar}
-\label{null-literal}<null-literal> ::= \lit*{null}
-\end{grammar}
+\begin{align*}
+null\textrm{-}literal &\rightarrow \texttt{null}
+\end{align*}
 
 The null literal can be implicitly converted to any pointer or delegate type.
 
-\section{Basic Types}\label{sec:basictypes}
+\section{Basic Types}\label{sec:basictypes}\label{basictype}
 
 Cmajor has basic types for representing Boolean, integer, floating-point and character values,
 and for expressing lack of type.
 
-\begin{grammar}
-\label{basic-type}<basic-type> ::= \lit*{bool}
-\alt \lit*{sbyte}
-\alt \lit*{byte}
-\alt \lit*{short}
-\alt \lit*{ushort}
-\alt \lit*{int}
-\alt \lit*{uint}
-\alt \lit*{long}
-\alt \lit*{ulong}
-\alt \lit*{float}
-\alt \lit*{double}
-\alt \lit*{char}
-\alt \lit*{wchar}
-\alt \lit*{uchar}
-\alt \lit*{void}
-\end{grammar}
+\begin{align*}
+basic\textrm{-}type &\rightarrow & &\textbf{bool} \> | \> \textbf{sbyte} \> | \> \textbf{byte} \> | \> \textbf{short} \> | \> \textbf{ushort}
+\> | \> \textbf{int} \> | \> \textbf{uint} \> | \> \textbf{long} \> | \> \textbf{ulong}\\
+&| & &\textbf{float} \> | \> \textbf{double} \> | \> \textbf{char} \> | \> \textbf{wchar} \> | \> \textbf{uchar} \> | \> \textbf{void}
+\end{align*}
 
 \subsection{Boolean Type}
 
@@ -353,40 +314,40 @@ its code value by using a cast.
 
 The type \bf{void} represents lack of type. It is an incomplete type that cannot be completed, meaning you cannot have an object of type \bf{void}.
 
-\section{Expressions}
+\section{Expressions}\label{expression}
 
 An expression represents a computation that usually produces a value \footnote{Calling a void function does not produce a value.}.
 This grammar accepts a superset of valid expressions. The implementation contains special disambiguation rules that reject syntactically
 valid (according to the grammar) but meaningless expressions.
 The type checking phase of the compiler further rejects semantically invalid expressions.
 
-\begin{grammar}
-\label{expression}<expression> ::= <equivalence>\ref{equivalence}
-\end{grammar}
+\begin{align*}
+expression \rightarrow \hyperref[equivalence]{equivalence}
+\end{align*}
 
-\subsection{Equivalence}
+\subsection{Equivalence}\label{equivalence}
 
-\begin{grammar}
-\label{equivalence}<equivalence> ::= <implication>\ref{implication} ("<=>" <implication>)*
-\end{grammar}
+\begin{align*}
+equivalence \rightarrow \hyperref[implication]{implication} \>( \> \texttt{<=>} \> implication \> )^*
+\end{align*}
 
 The $<=>$ operator is used in axioms (\ref{axiom}) to state that operand expressions are logically equivalent.
 It groups operands from left to right.
 
-\subsection{Implication}
+\subsection{Implication}\label{implication}
 
-\begin{grammar}
-\label{implication}<implication> ::= <disjunction>\ref{disjunction} ("=>" <implication>)?
-\end{grammar}
+\begin{align*}
+implication \rightarrow \hyperref[disjunction]{disjunction} \> ( \> \texttt{=>} \> implication \> )?
+\end{align*}
 
 The $=>$ operator is used in axioms (\ref{axiom}) to state that the right operand is logical implication of the left
 operand. It groups operands from right to left.
 
-\subsection{Disjunction}
+\subsection{Disjunction}\label{disjunction}
 
-\begin{grammar}
-\label{disjunction}<disjunction> ::= <conjunction>\ref{conjunction} (\lit*{||} <conjunction>)*
-\end{grammar}
+\begin{align*}
+disjunction \rightarrow  \hyperref[conjunction]{conjunction} \> ( \> \texttt{||} \> \hyperref[conjunction]{conjunction} \>)^*
+\end{align*}
 
 The $||$ operator takes boolean operands and yields a boolean value. It groups operands from left to right.
 Expression $a || b$ is \bf{true} when \emph{a} is \bf{true}, or \emph{a} is \bf{false} and \emph{b} is \bf{true}
@@ -394,11 +355,11 @@ Expression $a || b$ is \bf{true} when \emph{a} is \bf{true}, or \emph{a} is \bf{
 
 A user-defined class cannot overload the $||$ operator.
 
-\subsection{Conjunction}
+\subsection{Conjunction}\label{conjunction}
 
-\begin{grammar}
-\label{conjunction}<conjunction> ::= <bit-or-expr>\ref{bit-or-expr} (\lit*{\&\&} <bit-or-expr>)*
-\end{grammar}
+\begin{align*}
+conjunction \rightarrow \hyperref[bitor]{bit\textrm{-}or\textrm{-}expr} \> ( \> \texttt{\&\&} \> \hyperref[bitor]{bit\textrm{-}or\textrm{-}expr} \>)^*
+\end{align*}
 
 The $\&\&$ operator takes boolean operands and yields a boolean value. It groups operands from left to right.
 Expression $a \&\& b$ is \bf{false} when \emph{a} is \bf{false}, or \emph{a} is \bf{true} and \emph{b} is \bf{false}
@@ -406,11 +367,12 @@ Expression $a \&\& b$ is \bf{false} when \emph{a} is \bf{false}, or \emph{a} is 
 
 A user-defined class cannot overload the $\&\&$ operator.
 
-\subsection{Bitwise OR-expression}
+\subsection{Bitwise OR-expression}\label{bitor}
 
-\begin{grammar}
-\label{bit-or-expr}<bit-or-expr> ::= <bit-xor-expr>\ref{bit-xor-expr} (\lit*{|} <bit-xor-expr>)*
-\end{grammar}
+\begin{align*}
+bit\textrm{-}or\textrm{-}expr \rightarrow \hyperref[bitxor]{bit\textrm{-}xor\textrm{-}expr} \> ( \> \texttt{|} \>
+\hyperref[bitxor]{bit\textrm{-}xor\textrm{-}expr} \> )^*
+\end{align*}
 
 The $|$ operator with integer operands yields an integer value. It groups operands from left to right.
 The result is a bitwise OR of its operands:
@@ -418,11 +380,12 @@ that is, each bit of the result will be 1 if one or both of the corresponding bi
 
 A user-defined class can overload the $|$ operator by implementing the \bf{operator$|$} function.
 
-\subsection{Bitwise XOR-expression}
+\subsection{Bitwise XOR-expression}\label{bitxor}
 
-\begin{grammar}
-\label{bit-xor-expr}<bit-xor-expr> ::= <bit-and-expr>\ref{bit-and-expr} (\lit*{\^} <bit-and-expr>)*
-\end{grammar}
+\begin{align*}
+bit\textrm{-}xor\textrm{-}expr \rightarrow \hyperref[bitand]{bit\textrm{-}and\textrm{-}expr} \> ( \> \hat{} \>\>
+\hyperref[bitand]{bit\textrm{-}and\textrm{-}expr} \>)^*
+\end{align*}
 
 The \^{} operator with integer operands yields an integer value. It groups operands from left to right.
 The result is a bitwise XOR of its operands:
@@ -430,11 +393,11 @@ that is, each bit of the result will be 1 if either but not both of the correspo
 
 A user-defined class can overload the \^{} operator by implementing the \bf{operator\^{}} function.
 
-\subsection{Bitwise AND-expression}
+\subsection{Bitwise AND-expression}\label{bitand}
 
-\begin{grammar}
-\label{bit-and-expr}<bit-and-expr> ::= <equality-expr>\ref{equality-expr} (\lit*{\&} <equality-expr>)*
-\end{grammar}
+\begin{align*}
+bit\textrm{-}and\textrm{-}expr \rightarrow \hyperref[equality]{equality\textrm{-}expr} \> ( \> \texttt{\&} \> \hyperref[equality]{equality\textrm{-}expr} \> )^*
+\end{align*}
 
 The \& operator with integer operands yields an integer value. It groups operands from left to right.
 The result is a bitwise AND of its operands:
@@ -442,11 +405,12 @@ that is, each bit of the result will be 1 if both of the corresponding bits of t
 
 A user-defined class can overload the \& operator by implementing the \bf{operator\&} function.
 
-\subsection{Equality-expression}
+\subsection{Equality-expression}\label{equality}
 
-\begin{grammar}
-\label{equality-expr}<equality-expr> ::= <relational-expr>\ref{relational-expr} ((\lit*{==} | \lit*{!=}) <relational-expr>)*
-\end{grammar}
+\begin{align*}
+equality\textrm{-}expr \rightarrow \hyperref[relational]{relational\textrm{-}expr} \> ( \> ( \> \texttt{==} \> | \> \texttt{!=} \> ) \>
+\hyperref[relational]{relational\textrm{-}expr} \>)^*
+\end{align*}
 
 The == operator compares equality. It groups operands from left to right.
 
@@ -455,12 +419,13 @@ Then expression a != b will be evaluated as \bf{operator!(operator==(a,b))}.
 
 A user-defined class can overload the == and != operators by implementing the \bf{operator==} function.
 
-\subsection{Relational Expression}
+\subsection{Relational Expression}\label{relational}
 
-\begin{grammar}
-\label{relational-expr}<relational-expr> ::= <shift-expr>\ref{shift-expr} (("<" | ">" | "<=" | ">=") <shift-expr>)*
-\alt <shift-expr> ((\lit*{is} | \lit*{as}) <type-expr>\ref{type-expression})*
-\end{grammar}
+\begin{align*}
+relational\textrm{-}expr &\rightarrow & &\hyperref[shift]{shift\textrm{-}expr} \> ( \> ( \> \texttt{<} \> | \> \texttt{>} \> | \> \texttt{<=} \> |
+\> \texttt{>=} \> ) \> \hyperref[shift]{shift\textrm{-}expr} \> )^*\\
+&| & &\hyperref[shift]{shift\textrm{-}expr} \> ( \> ( \> \textbf{is} \> | \> \textbf{as} \> ) \> \hyperref[typeexpr]{type\textrm{-}expr} \>)^*
+\end{align*}
 
 The $<$ operator compares less-than relationship. It groups operands from left to right.
 
@@ -531,11 +496,12 @@ a single modulo operation in addition to retrieving the class identifier from th
 In the \bf{full} configuration the compiler does whole-program analysis and implements a scheme described in
 \url {http://www.stroustrup.com/fast_dynamic_casting.pdf} by Michael Gibbs and Bjarne Stroustrup.
 
-\subsection{Shift Expression}
+\subsection{Shift Expression}\label{shift}
 
-\begin{grammar}
-\label{shift-expr}<shift-expr> ::= <additive-expr>\ref{additive-expr} (("<<" | ">>") <additive-expr>)*
-\end{grammar}
+\begin{align*}
+shift\textrm{-}expr \rightarrow \hyperref[additive]{additive\textrm{-}expr} \> ( \> ( \> \texttt{<<} \> | \> \texttt{>>} \> ) \>
+\hyperref[additive]{additive\textrm{-}expr} \> )^*
+\end{align*}
 
 The $<<$ operator with integer operands will yield an integer value. It groups operands from left to right.
 Expression $a << b$ with integer operands \emph{a} and \emph{b} will yield a value of \emph{a} shifted \emph{b} bit positions left and
@@ -549,11 +515,12 @@ If \emph{a} is non-negative the result will be $a / 2^b$ (`/' meaning integer di
 
 A user-defined class can overload the $<<$ and $>>$ operators by implementing the \bf{operator$<<$} and \bf{operator$>>$} functions respectively.
 
-\subsection{Additive Expression}
+\subsection{Additive Expression}\label{additive}
 
-\begin{grammar}
-\label{additive-expr}<additive-expr> ::= <multiplicative-expr>\ref{multiplicative-expr} (("+" | '-') <multiplicative-expr>)*
-\end{grammar}
+\begin{align*}
+additive\textrm{-}expr \rightarrow \hyperref[multiplicative]{multiplicative\textrm{-}expr} \> ( \> ( \> \texttt{+} \> | \> \texttt{-} \> ) \>
+\hyperref[multiplicative]{multiplicative\textrm{-}expr} \>)^*
+\end{align*}
 
 The $+$ and $-$ operators with arithmetic type operands will yield same arithmetic type values.
 If one of the operands is integer and one is floating-point type the integer type operand will be first converted to a floating-point type.
@@ -570,11 +537,12 @@ In that case the expression $p-q$ yields an integer counting the number of objec
 A user-defined class can overload the $+$ and $-$ operators by implement
 the \bf{operator$+$} and \bf{operator$-$} functions respectively.
 
-\subsection{Multiplicative Expression}
+\subsection{Multiplicative Expression}\label{multiplicative}
 
-\begin{grammar}
-\label{multiplicative-expr}<multiplicative-expr> ::= <prefix-expr>\ref{prefix-expr} (('*' | "/" | "\%") <prefix-expr>)*
-\end{grammar}
+\begin{align*}
+multiplicative\textrm{-}expr \rightarrow \hyperref[prefix]{prefix\textrm{-}expr} \> ( \> ( \> \texttt{*} \> | \> \texttt{/} \> | \> \texttt{\%} \>) \>
+\hyperref[prefix]{prefix\textrm{-}expr} \>)^*
+\end{align*}
 
 The $*$ and $/$ operators with arithmetic type operands will yield same arithmetic type values. They groups operands from left to right.
 If one of the operands is integer and one is floating-point type the integer type operand will be first converted to a floating-point type.
@@ -587,109 +555,108 @@ The resulting value will be remainder of integer division $a / b$.
 A user-defined class can overload the $*$, $/$ and $\%$ operators by implement the \bf{operator$*$}, \bf{operator$/$}, and \bf{operator$\%$}
 functions respectively.
 
-\subsection{Prefix Expression}
+\subsection{Prefix Expression}\label{prefix}
 
-\begin{grammar}
-\label{prefix-expr}<prefix-expr> ::= ("++" | "--" | "+" | '-' | "!" | "~" | "\&" | '*') <prefix-expr> | <postfix-expr>\ref{postfix-expr}
-\end{grammar}
+\begin{align*}
+prefix\textrm{-}expr \rightarrow \> ( \> \texttt{++} \> | \> \texttt{--} \> | \> \texttt{+} \> | \> \texttt{-} \> | \>
+\texttt{!} \> | \> \sim \> | \> \texttt{\&} \> | \> \texttt{*} \>) \> prefix\textrm{-}expr \> | \> \hyperref[postfix]{postfix\textrm{-}expr}
+\end{align*}
 
-The prefix ++ and $--$ operators can have an integer or pointer type operand.
+The prefix \texttt{++} and \texttt{--} operators can have an integer or pointer type operand.
 The operand shall be an lvalue \footnote{A variable, a reference or a result of a dereference operator.}.
-When the operand is of integer type, the ++ operator will increment its operand by 1 and the operator $--$ will decrement its operand by 1.
+When the operand is of integer type, the \texttt{++} operator will increment its operand by 1 and the operator \texttt{--} will decrement its operand by 1.
 When the operand is of pointer type with pointer \emph{p} pointing to an object of type T,
-the expression ++$p$ increments pointer \emph{p} so that \emph{p} points to next object of type T in memory.
-Correspondingly $--p$ decrements pointer \emph{p} so that \emph{p} points to previous object of type T in memory.
+the expression \texttt{++p} increments pointer \emph{p} so that \emph{p} points to next object of type T in memory.
+Correspondingly \texttt{--p} decrements pointer \emph{p} so that \emph{p} points to previous object of type T in memory.
 The result of an increment or decrement operator is a value of the same type as the operand after incrementing or decrementing it.
 
-The prefix + and - operators can have an arithmetic type operand.
-Expression $+p$ will yield $p$ and $-p$ will yield the negation of $p$.
+The prefix \texttt{+} and \texttt{-} operators can have an arithmetic type operand.
+Expression \texttt{+p} will yield $p$ and \texttt{-p} will yield the negation of $p$.
 
-The prefix ! operator can have a boolean operand. The result of !\bf{true} is \bf{false} and !\bf{false} is \bf{true}.
+The prefix \texttt{!} operator can have a Boolean operand. The result of !\bf{true} is \bf{false} and !\bf{false} is \bf{true}.
 
 The $\sim$ operator can have an integer operand. It will yield a bitwise complement of its operand.
 
-The \& operator shall have an lvalue operand.
+The \texttt{\&} operator shall have an lvalue operand.
 If the operand is an object of type is T, it returns an address or memory location of the object.
-The resulting value will be a pointer pointing to the object and it will have a type T$*$.
+The resulting value will be a pointer pointing to the object and it will have a type \texttt{T*}.
 
-The $*$ operator can have a pointer operand. If the operand \emph{p} is of a type pointer to T,
-the expression $*p$ dereferences \emph{p} yielding an lvalue of type T.
+The \texttt{*} operator can have a pointer operand. If the operand \emph{p} is of a type pointer to T,
+the expression \texttt{*p} dereferences \emph{p} yielding an lvalue of type T.
 
 A user-defined class can overload any prefix operator \emph{op} by implement the \bf{operator\emph{op}} function.
 
-\subsection{Postfix Expression}
+\subsection{Postfix Expression}\label{postfix}\label{expressionlist}\label{argumentlist}
 
-\begin{grammar}
-\label{postfix-expr}<postfix-expr> ::= <primary-expr>\ref{primary-expr}
-("++"\ref{postfix-inc-dec} | "--"\ref{postfix-inc-dec}
-\alt "."\ref{member-access} <identifier>\ref{identifier}
-\alt "->"\ref{ptr-member-access} <identifier>
-\alt \lit{(} <argument-list> \lit{)}\ref{invocation}
-\alt \lit{[} <expression>\ref{expression} \lit{]}\ref{indexing}
-)*
+\begin{align*}
+postfix\textrm{-}expr &\rightarrow & &\hyperref[primary]{primary\textrm{-}expr}\\
+&( & &\hyperref[postfixincdec]{\texttt{++}}\\
+&| & &\hyperref[postfixincdec]{\texttt{--}}\\
+&| & &\hyperref[member]{\texttt{.}} \> \hyperref[identifier]{identifier}\\
+&| & &\hyperref[ptrmember]{\texttt{->}} \> \hyperref[identifier]{identifier}\\
+&| & &\hyperref[invocation]{\texttt{(} argument\textrm{-}list \texttt{)}}\\
+&| & &\hyperref[indexing]{\texttt{[} expression \texttt{]}}\\
+&)^*\\
+argument\textrm{-}list &\rightarrow & &expression\textrm{-}list?\\
+expression\textrm{-}list &\rightarrow & &\hyperref[expression]{expression} \> (\> \texttt{,} \> \hyperref[expression]{expression} \>)^*
+\end{align*}
 
-\label{argument-list}<argument-list> ::= <expression-list>?
+\subsubsection{Postfix Increment and Decrement Operators}\label{postfixincdec}
 
-\label{expression-list}<expression-list> ::= <expression> ("," <expression>)*
-
-\end{grammar}
-
-\subsubsection{Postfix Increment and Decrement Operators}\label{postfix-inc-dec}
-
-The postfix ++ and $--$ operators can have an integer or pointer type operand. The operand shall be an lvalue.
+The postfix \texttt{++} and \texttt{--} operators can have an integer or pointer type operand. The operand shall be an lvalue.
 The result of the operator is the value of the operand before incrementing or decrementing it.
-When the operand is of integer type, the ++ operator will increment its operand by 1 and the operator $--$ will decrement its operand by 1.
+When the operand is of integer type, the \texttt{++} operator will increment its operand by 1 and the operator \texttt{--} will decrement its operand by 1.
 When the operand is of pointer type with pointer \emph{p} pointing to an object of type T,
-the expression $p++$ increments pointer \emph{p} so that \emph{p} points to next object of type T in memory.
-Correspondingly $p--$ decrements pointer \emph{p} so that \emph{p} points to previous object of type T in memory.
+the expression \texttt{p++} increments pointer \emph{p} so that \emph{p} points to next object of type T in memory.
+Correspondingly \texttt{p--} decrements pointer \emph{p} so that \emph{p} points to previous object of type T in memory.
 
-A user-defined class cannot overload the postfix forms of ++ or $--$ operators.
+A user-defined class cannot overload the postfix forms of \texttt{++} or \texttt{--} operators.
 They are automatically implemented by the compiler if the prefix versions of those operators are implemented.
 
-\subsubsection{Member Access Operator}\label{member-access}
+\subsubsection{Member Access Operator}\label{member}
 
-The member access operator . will access the member named by the right operand from the entity specified by the left operand.
+The member access operator \texttt{.} will access the member named by the right operand from the entity specified by the left operand.
 The left operand can be a namespace, a class type, or an enumerated type.
 The type of the expression is the type of the right operand.
 
-\subsubsection{Pointer Member Access Operator}\label{ptr-member-access}
+\subsubsection{Pointer Member Access Operator}\label{ptrmember}
 
-The pointer member access operator $->$ will access a member named by the right operand from the entity specified by the left operand.
-The left operand can be a pointer type or class type object. In the latter case the class type shall implement the \bf{operator$->$}
+The pointer member access operator \texttt{->} will access a member named by the right operand from the entity specified by the left operand.
+The left operand can be a pointer type or class type object. In the latter case the class type shall implement the \texttt{operator->}
 function that returns a pointer or another class type object. The type of the expression is the type of the right operand.
 
 \subsubsection{Invocation Operator}\label{invocation}
 
-The invocation operator () will invoke a function specified by the left operand with the specified list of arguments.
-The left operand can be a function, a member, an object of a class type that implements the \bf{operator$()$} function or a type.
+The invocation operator \texttt{()} will invoke a function specified by the left operand with the specified list of arguments.
+The left operand can be a function, a member, an object of a class type that implements the \texttt{operator()} function or a type.
 The type of the expression is the return type of the function.
 
 \subsubsection{Indexing Operator}\label{indexing}
 
-The the left operand of the indexing operator [] shall be of a pointer type, an array type or a class type object.
-When the left operand is pointer \emph{p}, the expression $p[i]$ is evaluated as *(p + i).
-When the left operand is an array, the expression $a[i]$ returns a reference to the i'th element of array \emph{a},
-where \emph{i} can range 0 to \emph{N} - 1, where \emph{N} is the dimension of the array \emph{a} (see \ref{sec:postfixtypeexpr}).
-When the left operand is of a class type, it shall implement the \bf{operator[]} function taking one parameter.
+The the left operand of the indexing operator \texttt{[]} shall be of a pointer type, an array type or a class type object.
+When the left operand is pointer \emph{p}, the expression \texttt{p[i]} is evaluated as \texttt{*(p + i)}.
+When the left operand is an array, the expression \texttt{a[i]} returns a reference to the i'th element of array \emph{a},
+where \emph{i} can range 0 to \emph{N} - 1, where \emph{N} is the dimension of the array \emph{a} (see \ref{postfixtypeexpr}).
+When the left operand is of a class type, it shall implement the \texttt{operator[]} function taking one parameter.
 
-\subsection{Primary Expression}
+\subsection{Primary Expression}\label{primary}
 
-\begin{grammar}
-\label{primary-expr}<primary-expr> ::= '(' <expression>\ref{expression} ')'
-\alt <literal>\ref{literal}
-\alt <basic-type>\ref{basic-type}
-\alt <identifier>\ref{identifier}
-\alt \lit*{typename} '(' <expression> ')'
-\alt \lit*{this}
-\alt \lit*{base}
-\alt <sizeof-expr>\ref{sizeof-expr}
-\alt <cast-expr>\ref{cast-expr}
-\alt <new-expr>\ref{new-expr}
-\alt <construct-expr>\ref{construct-expr}
-\alt <template-id>\ref{template-id}
-\end{grammar}
+\begin{align*}
+primary\_expr &\rightarrow & &\texttt{(} \> \hyperref[expression]{expression} \> \texttt{)}\\
+&| & &\hyperref[literal]{literal}\\
+&| & &\hyperref[basictype]{basic\textrm{-}type}\\
+&| & &\hyperref[identifier]{identifier}\\
+&| & &\textbf{typename} \> \texttt{(} \> \hyperref[expression]{expression} \> \texttt{)}\\
+&| & &\textbf{this}\\
+&| & &\textbf{base}\\
+&| & &\hyperref[sizeof]{sizeof\textrm{-}expr}\\
+&| & &\hyperref[cast]{cast\textrm{-}expr}\\
+&| & &\hyperref[new]{new\textrm{-}expr}\\
+&| & &\hyperref[construct]{construct\textrm{-}expr}\\
+&| & &\hyperref[templateid]{template\textrm{-}id}
+\end{align*}
 
-An expression in parenthesis, a literal (\ref{sec:literals}), a name of a basic type (\ref{sec:basictypes}) and an identifier are primary expressions.
+An expression in parenthesis, a literal (\ref{literal}), a name of a basic type (\ref{sec:basictypes}) and an identifier are primary expressions.
 
 Keyword \bf{typename} followed by an expression in parenthesis yields the full name of the dynamic type of the expression.
 The type of it is \bf{const char*}.
@@ -698,84 +665,85 @@ Keyword \bf{this} represents a pointer to the current class object in class memb
 
 Keyword \bf{base} represents a pointer to the base class object in class member functions.
 
-\subsection{Size-of Expression}
+\subsection{Size-of Expression}\label{sizeof}
 
-\begin{grammar}
-\label{sizeof-expr}<sizeof-expr> ::= \lit*{sizeof} '(' <expression>\ref{expression} ')'
-\end{grammar}
+\begin{align*}
+sizeof\textrm{-}expr \rightarrow \textbf{sizeof} \> \texttt{(} \> \hyperref[expression]{expression} \> \texttt{)}
+\end{align*}
 
 The operand of the \bf{sizeof} operator can be a type or an entity having a type.
 If the type in question is T, the operator yields constant of type \bf{ulong} that is equal to the size of object of type T in bytes.
 
-\subsection{Cast Expression}\label{sec:castexpression}
+\subsection{Cast Expression}\label{cast}
 
-\begin{grammar}
-\label{cast-expr}<cast-expr> ::= \lit*{cast} "<" <type-expression>\ref{type-expression} ">" '(' <expression>\ref{expression} ')'
-\end{grammar}
+\begin{align*}
+cast\textrm{-}expr \rightarrow \textbf{cast} \> \texttt{<} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \texttt{>} \> \texttt{(} \>
+\hyperref[expression]{expression} \> \texttt{)}
+\end{align*}
 
 The \bf{cast} operator performs explicit type conversion.
-In order to the cast operation to succeeed, there shall be a built-in conversion, a conversion function(\ref{sec:conversionfunctions}) in the source type,
+In order to the cast operation to succeeed, there shall be a built-in conversion, a conversion function (\ref{sec:conversionfunctions}) in the source type,
 or a converting constructor in the target type taking one parameter of type of the source expression.
 
-\subsection{New Expression}
+\subsection{New Expression}\label{new}
 
-\begin{grammar}
-\label{new-expr}<new-expr> ::= \lit*{new} <type-expression>\ref{type-expression} '(' <argument-list>\ref{argument-list} ')'
-\end{grammar}
+\begin{align*}
+new\textrm{-}expr \rightarrow \> \textbf{new} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \texttt{(} \> \hyperref[argumentlist]{argument\textrm{-}list} \> \texttt{)}
+\end{align*}
 
 The \bf{new} operator reserves memory from the free store for an object of the requested type,
 constructs the object by issuing the \bf{construct} operator with the specified arguments,
 and returns a pointer to the newly constructed object.
 
-\subsection{Construct Expression}
+\subsection{Construct Expression}\label{construct}
 
-\begin{grammar}
-\label{construct-expr}<construct-expr> ::= \lit*{construct} "<" <type-expression> ">"\\
-'(' <expression>\ref{expression} ("," <expression-list>\ref{expression-list})? ')'
-
-\end{grammar}
+\begin{align*}
+construct\textrm{-}expr \rightarrow \> &\textbf{construct} \> \texttt{<} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \texttt{>}\\
+&\texttt{(} \> \hyperref[expressionlist]{expression\textrm{-}list} \> \texttt{)}
+\end{align*}
 
 The \bf{construct} operator takes a type, a generic pointer to memory and constructor arguments.
 It constructs an object of requested type to the memory by calling the constructor with arguments,
 and returns a pointer to the newly constructed object.
 
-\subsection{Template Identifier}\label{sec:templateid}
-\begin{grammar}
-\label{template-id}<template-id> ::= <function-or-class-name> "<" <type-expression>\ref{type-expression} ("," <type-expression>)* ">"
+\subsection{Template Identifier}\label{templateid}
 
-<function-or-class-name> ::= <qualified-id>\ref{qualified-id}
-\end{grammar}
+\begin{align*}
+template\textrm{-}id &\rightarrow & &function\textrm{-}or\textrm{-}class\textrm{-}name\\
+& & &\texttt{<} \> \hyperref[typeexpr]{type\textrm{-}expression} \> ( \> \texttt{,} \> \hyperref[typeexpr]{type\textrm{-}expression} \> )^* \> \texttt{>}\\
+function\textrm{-}or\textrm{-}class\textrm{-}name &\rightarrow & &\hyperref[qualifiedid]{qualified\textrm{-}id}
+\end{align*}
 
 A template identifier is a primary expression.
 
-\subsection{Type Expression}\label{sec:typeexpr}
+\subsection{Type Expression}\label{typeexpr}
 
-\begin{grammar}
-\label{type-expression}<type-expression> ::= <prefix-type-expr>
-\end{grammar}
+\begin{align*}
+type\textrm{-}expression \rightarrow \hyperref[prefixtypeexpr]{prefix\textrm{-}type\textrm{-}expr}
+\end{align*}
 
-\subsubsection{Prefix Type Expression}
+\subsubsection{Prefix Type Expression}\label{prefixtypeexpr}
 
-\begin{grammar}
-<prefix-type-expr> ::= \lit*{const} <postfix-type-expr>
-\alt <postfix-type-expr>
-\end{grammar}
+\begin{align*}
+prefix\textrm{-}type\_expr &\rightarrow & &\textbf{const} \> \hyperref[postfixtypeexpr]{postfix\textrm{-}type\textrm{-}expr}\\
+&| & &\hyperref[postfixtypeexpr]{postfix\textrm{-}type\textrm{-}expr}
+\end{align*}
 
 A prefix type expression is either a \bf{const} qualified postfix type expression,
 or sole postfix type expression.
 
-\subsubsection{Postfix Type Expression}\label{sec:postfixtypeexpr}
+\subsubsection{Postfix Type Expression}\label{postfixtypeexpr}
 
-\begin{grammar}
-<postfix-type-expr> ::= <primary-type-expr> ('.' <identifier>\ref{identifier}
-\alt "&&"
-\alt "&"
-\alt "*"
-\alt "[" <array-dimension> "]"
-)*
-
-<array-dimension> ::= <constant-expression>\ref{constant-expression}
-\end{grammar}
+\begin{align*}
+postfix\textrm{-}type\textrm{-}expr &\rightarrow & &\hyperref[primarytypeexpr]{primary\textrm{-}type\textrm{-}expr}\\
+&( & &\texttt{.} \> \hyperref[identifier]{identifier}\\
+&| & &\texttt{\&\&}\\
+&| & &\texttt{\&}\\
+&| & &\texttt{*}\\
+&| & &\texttt{[} \> array\textrm{-}dimension \> \texttt{]}\\
+&)^*\\
+array\textrm{-}dimension &\rightarrow & &\hyperref[constantexpr]{constant\textrm{-}expression}
+\end{align*}
 
 A postfix type expression is a primary type expression optionally followed by sequence of the
 following:
@@ -783,67 +751,69 @@ a member selection operator '.' and an identifier, an rvalue reference type oper
 an lvalue reference type operator (see \ref{sec:lvaluereferencetypes}), a pointer type operator (see \ref{sec:pointertypes}),
 or an array type operator (see \ref{sec:arraytypes}).
 
-\subsubsection{Primary Type Expression}
+\subsubsection{Primary Type Expression}\label{primarytypeexpr}
 
-\begin{grammar}
-<primary-type-expr> ::= <basic-type>\ref{basic-type}
-\alt <template-id>\ref{template-id}
-\alt <identifier>
-\alt '(' <prefix-type-expr> ')'
-\end{grammar}
+\begin{align*}
+primary\textrm{-}type\textrm{-}expr &\rightarrow & &\hyperref[basictype]{basic\textrm{-}type}\\
+&| & &\hyperref[templateid]{template\textrm{-}id}\\
+&| & &\hyperref[identifier]{identifier}\\
+&| & &\texttt{(} \> \hyperref[prefixtypeexpr]{prefix\textrm{-}type\textrm{-}expr} \> \texttt{)}
+\end{align*}
 
 A primary type expression consists of basic types, template identifiers, identifiers and parenthesized
 prefix type expressions.
 
-\subsection{Constant Expression}
+\subsection{Constant Expression}\label{constantexpr}
 
-\begin{grammar}
-\label{constant-expression}<constant-expression> ::= <expression>\ref{expression}
-\end{grammar}
+\begin{align*}
+constant\textrm{-}expression \rightarrow \> \hyperref[expression]{expression}
+\end{align*}
 
 A constant expression is an expression whose value can be obtained at compile time.
 A constant expression can contain literals, constants, enumeration constants and operators that
 do not involve taking an address of an object.
 
-\section{Statements}
+\section{Statements}\label{statement}
 
 Statements control the program execution logic, declare type aliases, evaluate expressions,
 assign values to variables, or construct or destroy them.
 A statement can be labeled by an identifier.
 
-\begin{grammar}
-\label{statement}<statement> ::= (<identifier> ":")? (<control-statement>\ref{control-statement}
-\alt <typedef-statement>\ref{typedef-statement}
-\alt <simple-statement>\ref{simple-statement}
-\alt <assignment-statement>\ref{assignment-statement}
-\alt <construction-statement>\ref{construction-statement}
-\alt <delete-statement>\ref{delete-statement}
-\alt <destroy-statement>\ref{destroy-statement}
-\alt <throw-statement>\ref{throw-statement}
-\alt <try-catch-statement>\ref{try-catch-statement}
-\alt <assert-statement>\ref{assert-statement}
-\alt <conditional-compilation-statement>)\ref{conditional-compilation-statement}
-\end{grammar}
+\begin{align*}
+statement &\rightarrow \> & &( \> \hyperref[identifier]{identifier} \texttt{:} \> )?\\
+&( & &\hyperref[controlstatement]{control\textrm{-}statement}\\
+&| & &\hyperref[typedefstatement]{typedef\textrm{-}statement}\\
+&| & &\hyperref[simplestatement]{simple\textrm{-}statement}\\
+&| & &\hyperref[assignmentstatement]{assignment\textrm{-}statement}\\
+&| & &\hyperref[constructionstatement]{construction\textrm{-}statement}\\
+&| & &\hyperref[deletestatement]{delete\textrm{-}statement}\\
+&| & &\hyperref[destroystatement]{destroy\textrm{-}statement}\\
+&| & &\hyperref[throwstatement]{throw\textrm{-}statement}\\
+&| & &\hyperref[trystatement]{try\textrm{-}catch\textrm{-}statement}\\
+&| & &\hyperref[assertstatement]{assert\textrm{-}statement}\\
+&| & &\hyperref[conditionalcompilationstatement]{conditional\textrm{-}compilation\textrm{-}statement}\\
+&)
+\end{align*}
 
-\subsection{Control Statements}
+\subsection{Control Statements}\label{controlstatement}
 
 The control statements control statement execution order.
 
-\begin{grammar}
-\label{control-statement}<control-statement> ::= <return-statement>\ref{return-statement}
-\alt <conditional-statement>\ref{conditional-statement}
-\alt <switch-statement>\ref{switch-statement}
-\alt <while-statement>\ref{while-statement}
-\alt <do-statement>\ref{do-statement}
-\alt <range-for-statement>\ref{range-for-statement}
-\alt <for-statement>\ref{for-statement}
-\alt <compound-statement>\ref{compound-statement}
-\alt <break-statement>\ref{break-statement}
-\alt <continue-statement>\ref{continue-statement}
-\alt <goto-statement>\ref{goto-statement}
-\end{grammar}
+\begin{align*}
+control\textrm{-}statement &\rightarrow & &\hyperref[returnstatement]{return\textrm{-}statement}\\
+&| & &\hyperref[conditionalstatement]{conditional\textrm{-}statement}\\
+&| & &\hyperref[switchstatement]{switch\textrm{-}statement}\\
+&| & &\hyperref[whilestatement]{while\textrm{-}statement}\\
+&| & &\hyperref[dostatement]{do\textrm{-}statement}\\
+&| & &\hyperref[rangeforstatement]{range\textrm{-}for\textrm{-}statement}\\
+&| & &\hyperref[forstatement]{for\textrm{-}statement}\\
+&| & &\hyperref[compoundstatement]{compound\textrm{-}statement}\\
+&| & &\hyperref[breakstatement]{break\textrm{-}statement}\\
+&| & &\hyperref[continuestatement]{continue\textrm{-}statement}\\
+&| & &\hyperref[gotostatement]{goto\textrm{-}statement}
+\end{align*}
 
-\subsubsection{Return Statement}
+\subsubsection{Return Statement}\label{returnstatement}
 
 The \bf{return} statement returns control from a function to its caller.
 When the return type of the function is other than \bf{void}
@@ -852,21 +822,22 @@ there shall be a return value expression,
 otherwise there shall be no return value expression,
 and the return statement is optional.
 
-\begin{grammar}
-\label{return-statement}<return-statement> ::= \lit*{return} <expression>\ref{expression}? ";"
-\end{grammar}
+\begin{align*}
+return\textrm{-}statement \rightarrow \textbf{return} \> \hyperref[expression]{expression}? \> \texttt{;}
+\end{align*}
 
-\subsubsection{Conditional Statement}
+\subsubsection{Conditional Statement}\label{conditionalstatement}
 
 The conditional statement executes a statement if its condition expression is \bf{true}.
 Otherwise, if there is an else statement, it is executed.
 The condition shall be a Boolean expression.
 
-\begin{grammar}
-\label{conditional-statement}<conditional-statement> ::= \lit*{if} '(' <expression>\ref{expression} ')' <statement>\ref{statement} (\lit*{else} <statement>)?
-\end{grammar}
+\begin{align*}
+conditional\textrm{-}statement \rightarrow \> \textbf{if} \> \texttt{(} \> \hyperref[expression]{expression} \> \texttt{)}
+\> \hyperref[statement]{statement} \> ( \> \textbf{else} \> \hyperref[statement]{statement} \> )?
+\end{align*}
 
-\subsubsection{Switch Statement}
+\subsubsection{Switch Statement}\label{switchstatement}
 
 The \bf{switch} statement evaluates its condition expression
 and executes the matching case statement.
@@ -876,52 +847,49 @@ that is: the control is not allowed to ``fall through''.
 Multiple cases can be grouped into one \bf{case} statement, though.
 The condition expression and each case expression shall evaluate to a compile time constant.
 
-\begin{grammar}
-\label{switch-statement}<switch-statement> ::= \lit*{switch} '(' <constant-expression>\ref{constant-expression} ')'\\
-'\{' (<case-statement> | <default-statement>)* '\}'
+\begin{align*}
+switch\textrm{-}statement &\rightarrow \> & &\textbf{switch} \> \texttt{(} \> \hyperref[constantexp]{constant\textrm{-}expression} \> \texttt{)}\\
+& & &\texttt{\{} \> ( \> case\textrm{-}statement \> | \> default\textrm{-}statement \>)^* \> \texttt{\}}\\
+case\textrm{-}statement &\rightarrow \> & &( \> \textbf{case} \> \hyperref[constantexpr]{constant\textrm{-}expression} \> \texttt{:} \> )^+\\
+& & &( \>  \> goto\textrm{-}case\textrm{-}statement \> | \> goto\textrm{-}default\textrm{-}statement \> | \> \hyperref[statement]{statement} \>)^*\\
+goto\textrm{-}case\textrm{-}statement &\rightarrow & &\textbf{goto} \> \textbf{case} \> \hyperref[constantexpr]{constant\textrm{-}expression} \> \texttt{;}\\
+goto\textrm{-}default\textrm{-}statement & \rightarrow & &\textbf{goto} \> \textbf{default} \> \texttt{;}\\
+default\textrm{-}statement & \rightarrow & &\textbf{default} \> \texttt{:} \> ( \>
+goto\textrm{-}case\textrm{-}statement \> | \> \hyperref[statement]{statement} \> )^*
+\end{align*}
 
-<case-statement> ::= (\lit*{case} <constant-expression> ":")+\\
-((<identifier> ":")? (<goto-case-statement> | <goto-default-statement>) | <statement>\ref{statement})*
-
-<goto-case-statement> ::= \lit*{goto} \lit*{case} <constant-expression> ";"
-
-<goto-default-statement> ::= \lit*{goto} \lit*{default} ";"
-
-<default-statement> ::= \lit*{default} ":" ((<identifier> ":")? <goto-case-statement>) | <statement>)*
-
-\end{grammar}
-
-\subsubsection{While Statement}
+\subsubsection{While Statement}\label{whilestatement}
 
 The \bf{while} statement repeatedly evaluates its condition expression and executes a statement as long as the condition evaluates to \bf{true}.
 The condition shall be a Boolean expression.
 
-\begin{grammar}
-\label{while-statement}<while-statement> ::= \lit*{while} '(' <expression>\ref{expression} ')' <statement>\ref{statement}
-\end{grammar}
+\begin{align*}
+while\textrm{-}statement \rightarrow \> \textbf{while} \> \texttt{(} \> \hyperref[expression]{expression} \> \texttt{)} \> \hyperref[statement]{statement}
+\end{align*}
 
-\subsubsection{Do Statement}
+\subsubsection{Do Statement}\label{dostatement}
 
 The \bf{do} statement repeatedly executes a statement and then evaluates its condition expression until the condition evaluates to \bf{false}.
 The condition shall be a Boolean expression.
 
-\begin{grammar}
-\label{do-statement}<do-statement> ::= \lit*{do} <statement>\ref{statement} \lit*{while} '(' <expression>\ref{expression} ')' ";"
-\end{grammar}
+\begin{align*}
+do\textrm{-}statement \rightarrow \> \textbf{do} \> \hyperref[statement]{statement} \> \textbf{while} \> \texttt{(} \>
+\hyperref[expression]{expression} \> \texttt{)} \> \texttt{;}
+\end{align*}
 
-\subsubsection{Range-for Statement}
+\subsubsection{Range-for Statement}\label{rangeforstatement}
 The \bf{range-for} statement iterates through a container.
 For each iteration, a variable is bound to each value in the container and then a statement is executed.
 The \emph{container} shall be an expression that will yield an object that is a container having \emph{Begin()} and \emph{End()} member functions
 that return iterators to the beginning and one-past-the-end of a container respectively.
 
-\begin{grammar}
-\label{range-for-statement}<range-for-statement> ::= \lit*{for} '(' <type-expression>\ref{type-expression} <identifier>\ref{identifier} ':' <container> ')' <statement>\ref{statement}
+\begin{align*}
+range\textrm{-}for\textrm{-}statement &\rightarrow \> \textbf{for} \> \texttt{(} \hyperref[typeexpr]{type\textrm{-}expression} \>
+\hyperref[identifier]{identifier} \> \texttt{:} \> container \> \texttt{)} \> \hyperref[statement]{statement}\\
+container &\rightarrow \> \hyperref[expression]{expression}
+\end{align*}
 
-<container> ::= <expression>\ref{expression}
-\end{grammar}
-
-\subsubsection{For Statement}
+\subsubsection{For Statement}\label{forstatement}
 
 The \bf{for} statement first initializes a variable and then
 repeatedly evaluates a condition expression and executes a statement as long as the condition evaluates to \bf{true}.
@@ -929,71 +897,72 @@ After each execution cycle an expression that typically increments a condition v
 The condition shall be a Boolean expression.
 The initialization statement is optional as are the condition and increment expressions in which case they are evaluated as \bf{true}.
 
-\begin{grammar}
-\label{for-statement}<for-statement> ::= \lit*{for} '(' <for-init-statement> <expression>\ref{expression}? ";" <expression>? ')' <statement>\ref{statement}
+\begin{align*}
+for\textrm{-}statement &\rightarrow \> \textbf{for} \> \texttt{(} \> for\textrm{-}init\textrm{-}statement \>
+\hyperref[expression]{expression}? \> \texttt{;} \> \hyperref[expression]{expression}? \> \texttt{)} \> \hyperref[statement]{statement}\\
+for\textrm{-}init\textrm{-}statement &\rightarrow \> \hyperref[assignmentstatement]{assignment\textrm{-}statement} \> | \>
+\hyperref[constructionstatement]{construction\textrm{-}statement} \> | \> \texttt{;}
+\end{align*}
 
-<for-init-statement> ::= <assignment-statement>\ref{assignment-statement} | <construction-statement>\ref{construction-statement} | ";"
-\end{grammar}
-
-\subsubsection{Compound Statement}
+\subsubsection{Compound Statement}\label{compoundstatement}
 
 The compound statement executes a sequence of statements in order. The statement sequence can be empty.
 
-\begin{grammar}
-\label{compound-statement}<compound-statement> ::= '\{' <statement>\ref{statement}* '\}'
-\end{grammar}
+\begin{align*}
+compound\textrm{-}statement \rightarrow \> \texttt{\{} \> \hyperref[statement]{statement}^* \> \texttt{\}}
+\end{align*}
 
-\subsubsection{Break Statement}
+\subsubsection{Break Statement}\label{breakstatement}
 
 The \bf{break} statement transfers control to the statement coming after its closest containing \bf{switch}, \bf{while}, \bf{do} or \bf{for} statement,
 if there is one; otherwise to the end of the function.
 
-\begin{grammar}
-\label{break-statement}<break-statement> ::= \lit*{break} ";"
-\end{grammar}
+\begin{align*}
+break\textrm{-}statement \rightarrow \> \textbf{break} \> \texttt{;}
+\end{align*}
 
-\subsubsection{Continue Statement}
+\subsubsection{Continue Statement}\label{continuestatement}
 
 The \bf{continue} statement transfers control to the end of the closest containing \bf{while}, \bf{do} or \bf{for} loop.
 
-\begin{grammar}
-\label{continue-statement}<continue-statement> ::= \lit*{continue} ";"
-\end{grammar}
+\begin{align*}
+continue\textrm{-}statement \rightarrow \> \textbf{continue} \> \texttt{;}
+\end{align*}
 
-\subsubsection{Goto Statement}
+\subsubsection{Goto Statement}\label{gotostatement}
 
 The \bf{goto} statement transfers control to the statement labeled with the matching identifier.
 
-\begin{grammar}
-\label{goto-statement}<goto-statement> ::= \lit*{goto} <identifier>\ref{identifier} ";"
-\end{grammar}
+\begin{align*}
+goto\textrm{-}statement \rightarrow \> \textbf{goto} \> \hyperref[identifier]{identifier} \> \texttt{;}
+\end{align*}
 
-\subsection{Typedef Statement}
+\subsection{Typedef Statement}\label{typedefstatement}
 
 The \bf{typedef} statement declares an alias name to a type expression.
 
-\begin{grammar}
-\label{typedef-statement}<typedef-statement> ::= \lit*{typedef} <type-expression>\ref{type-expression} <identifier>\ref{identifier} ";"
-\end{grammar}
+\begin{align*}
+typedef\textrm{-}statement \rightarrow \> \textbf{typedef} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \> \texttt{;}
+\end{align*}
 
-\subsection{Simple Statement}
+\subsection{Simple Statement}\label{simplestatement}
 
 The simple statement evaluates an expression if there is one, otherwise it does nothing.
 Typically the expression is a function call, or incrementation or decrementation of a variable.
 
-\begin{grammar}
-\label{simple-statement}<simple-statement> ::= <expression>\ref{expression}? ";"
-\end{grammar}
+\begin{align*}
+simple\textrm{-}statement \rightarrow \> \hyperref[expression]{expression}? \> \texttt{;}
+\end{align*}
 
-\subsection{Assignment Statement}
+\subsection{Assignment Statement}\label{assignmentstatement}
 
 The assignment statement assign a value to an target object. The target expression shall be an lvalue expression.
 
-\begin{grammar}
-\label{assignment-statement}<assignment-statement> ::= <expression>\ref{expression} "=" <expression> ";"
-\end{grammar}
+\begin{align*}
+assignment\textrm{-}statement \rightarrow \> \hyperref[expression]{expression} \> \texttt{=} \> \hyperref[expression]{expression} \> \texttt{;}
+\end{align*}
 
-\subsection{Construction Statement}
+\subsection{Construction Statement}\label{constructionstatement}
 
 The construction statement constructs a local variable.
 If the variable is not of a class type, it fits into a register, its address is not taken,
@@ -1002,70 +971,68 @@ otherwise space for the variable is reserved from the execution stack.
 If an initialization expression or expression list is given, the constructor for the variable is called with the given arguments,
 otherwise the variable is default-constructed.
 
-\begin{grammar}
-\label{construction-statement}<construction-statement> ::= <type-expression>\ref{type-expression} <identifier>\ref{identifier} <initialization>? ";"
+\begin{align*}
+construction\textrm{-}statement &\rightarrow \> \hyperref[typeexpr]{type\textrm{-}expression} \>
+\hyperref[identifier]{identifier} \> initialization? \> \texttt{;}\\
+initialization &\rightarrow \> \texttt{(} \> \hyperref[expressionlist]{expression\textrm{-}list} \> \texttt{)} \> | \> \texttt{=} \> \hyperref[expression]{expression}
+\end{align*}
 
-<initialization> ::= '(' <expression-list>\ref{expression-list} ')' | "=" <expression>\ref{expression}
-\end{grammar}
-
-\subsection{Delete Statement}
+\subsection{Delete Statement}\label{deletestatement}
 
 The \bf{delete} statement calls the destructor of an object if there is one, and then releases the memory reserved for the object back to the free store.
 The expression shall evaluate to a pointer to the object.
 If the object has a virtual destructor, it is called, otherwise the destructor for the pointee type of the pointer type is called.
 
-\begin{grammar}
-\label{delete-statement}<delete-statement> := \lit*{delete} <expression>\ref{expression} ";"
-\end{grammar}
+\begin{align*}
+delete\textrm{-}statement \rightarrow \> \textbf{delete} \> \hyperref[expression]{expression} \> \texttt{;}
+\end{align*}
 
-\subsection{Destroy Statement}
+\subsection{Destroy Statement}\label{destroystatement}
 
 The \bf{destroy} statement calls the destructor for an object but does not release memory reserved for the object.
 The expression shall evaluate to a pointer to the object.
 If the object has a virtual destructor, it is called, otherwise the destructor for the pointee type of the pointer type is called.
 
-\begin{grammar}
-\label{destroy-statement}<destroy-statement> ::= \lit*{destroy} <expression>\ref{expression} ";"
-\end{grammar}
+\begin{align*}
+destroy\textrm{-}statement \rightarrow \> \textbf{destroy} \> \hyperref[expression]{expression} \> \texttt{;}
+\end{align*}
 
-\subsection{Throw Statement}
+\subsection{Throw Statement}\label{throwstatement}
 
 The \bf{throw} statement causes an exception object to be thrown. The expression shall construct a class object to throw.
 The exception object includes the source line number and the source file name of the throw statement.
 
-\begin{grammar}
-\label{throw-statement}<throw-statement> ::= \lit*{throw} <expression>\ref{expression} ";"
-\end{grammar}
+\begin{align*}
+throw\textrm{-}statement \rightarrow \> \textbf{throw} \> \hyperref[expression]{expression} \> \texttt{;}
+\end{align*}
 
-\subsection{Try-Catch Statement}
+\subsection{Try-Catch Statement}\label{trystatement}
 
 The \bf{try-catch} statement executes statements in a try-block and if an exception is thrown, control is transfered
 to a matching exception handler. Each exception handler handles exceptions that are the same type as or a type derived from
 the type of the variable of the exception handler. First matching handler is executed, so the handlers should be
 ordered from the most specific to the most general.
 
-\begin{grammar}
-\label{try-catch-statement}<try-catch-statement> ::= \lit*{try} <try-block> <exception-handler>+
+\begin{align*}
+try\textrm{-}catch\textrm{-}statement &\rightarrow \> \textbf{try} \> try\textrm{-}block \> exception\textrm{-}handler^+\\
+try\textrm{-}block &\rightarrow \> \hyperref[compoundstatement]{compound\textrm{-}statement}\\
+exception\textrm{-}handler &\rightarrow \> \textbf{catch} \> \texttt{(} \> \hyperref[typeexpr]{type\textrm{-}expression} \>
+\hyperref[identifier]{identifier} \> \texttt{)} \> catch\textrm{-}block\\
+catch\textrm{-}block &\rightarrow \> \hyperref[compoundstatement]{compound\textrm{-}statement}
+\end{align*}
 
-<try-block> ::= <compound-statement>\ref{compound-statement}
-
-<exception-handler> ::= \lit*{catch} '(' <type-expression>\ref{type-expression} <identifier>\ref{identifier} ')' <catch-block>
-
-<catch-block> ::= <compound-statement>
-\end{grammar}
-
-\subsection{Assert Statement}
+\subsection{Assert Statement}\label{assertstatement}
 
 The \verb|#| \bf{assert} statement tests a condition that should always be true.
 If the condition is false, an error message containing the failed expression, a source line number and a source file name is issued and the program is exited.
 
 Assert statements are skipped when compiling a program using \bf{release} configuration.
 
-\begin{grammar}
-\label{assert-statement}<assert-statement> ::= \lit*{'\#' assert} '(' <expression>\ref{expression} ')' ';'
-\end{grammar}
+\begin{align*}
+assert\textrm{-}statement \rightarrow \> \texttt{\#}\textbf{assert} \> \texttt{(} \hyperref[expression]{expression} \> \texttt{)} \> \texttt{;}
+\end{align*}
 
-\subsection{Conditional Compilation Statement}
+\subsection{Conditional Compilation Statement}\label{conditionalcompilationstatement}
 
 The conditional compilation statement makes it possible to include statements in compilation
 based on conditional compilation symbols.
@@ -1077,27 +1044,21 @@ When compiling a program using Cmajor compiler in Linux, a symbol LINUX is defin
 
 Users can define other conditional compilation symbols in IDE or using the -D command line option.
 
-\begin{grammar}
-\label{conditional-compilation-statement}<conditional-compilation-statement> ::= <cond-comp-if-statememt>
-
-<cond-comp-if-statememt> ::= '\#' \lit*{if} '(' cond-comp-expr ')' <statement-list>\\
-('\#' \lit*{elif} '(' cond-comp-expr ')' <statement-list>)*\\
-('\#' \lit*{else} <statement_list>)? '\#' \lit*{endif}
-
-<cond-comp-expr> ::= <cond-comp-disjunction>
-
-<cond-comp-disjunction> ::= <cond-comp-conjunction> ("||" <cond-comp-conjunction>)*
-
-<cond-comp-conjunction> ::= <cond-comp-prefix> ("&&" <cond-comp-prefix>)*
-
-<cond-comp-prefix> ::= <cond-comp-not> | <cond-comp-primary>
-
-<cond-comp-not> ::= '!' <cond-comp-prefix>
-
-<cond-comp-primary> ::= <identifier>\ref{identifier} | '(' <cond-comp-expr> ')'
-
-<statement-list> ::= <statement>\ref{statement}*
-\end{grammar}
+\begin{align*}
+conditional\textrm{-}compilation\textrm{-}statement &\rightarrow & &cond\textrm{-}comp\textrm{-}if\textrm{-}statement\\
+cond\textrm{-}comp\textrm{-}if\textrm{-}statememt &\rightarrow & &\texttt{\#} \textbf{if} \> \texttt{(} \> cond\textrm{-}comp\textrm{-}expr \> \texttt{)} \>
+statement\textrm{-}list\\
+& & &(\> \texttt{\#} \textbf{elif} \> \texttt{(} \> cond\textrm{-}comp\textrm{-}expr \> \texttt{)} \> statement\textrm{-}list \>)^*\\
+& & &(\> \texttt{\#} \textbf{else} \> statement\textrm{-}list \>)? \> \texttt{\#} \textbf{endif}\\
+cond\textrm{-}comp\textrm{-}expr &\rightarrow & &cond\textrm{-}comp\textrm{-}disjunction\\
+cond\textrm{-}comp\textrm{-}disjunction &\rightarrow & &cond\textrm{-}comp\textrm{-}conjunction \> (\texttt{||} \>
+cond\textrm{-}comp\textrm{-}conjunction )^*\\
+cond\textrm{-}comp\textrm{-}conjunction &\rightarrow & &cond\textrm{-}comp\textrm{-}prefix \> (\texttt{\&\&} \> cond\textrm{-}comp\textrm{-}prefix )^*\\
+cond\textrm{-}comp\textrm{-}prefix &\rightarrow & &cond\textrm{-}comp\textrm{-}not \> | \> cond\textrm{-}comp\textrm{-}primary\\
+cond\textrm{-}comp\textrm{-}not &\rightarrow & &\texttt{!} \> cond\textrm{-}comp\textrm{-}prefix\\
+cond\textrm{-}comp\textrm{-}primary &\rightarrow & &\hyperref[identifier]{identifier} \> | \> \texttt{(} \> cond\textrm{-}comp\textrm{-}expr \> \texttt{)}\\
+statement\textrm{-}list &\rightarrow & &\hyperref[statement]{statement}^*
+\end{align*}
 
 The \bf{cond-comp-if} statement includes a list of statements in compilation
 if its conditional compilation expression evaluates true,
@@ -1123,7 +1084,7 @@ parenthesized conditional compilation expression.
 
 Conditional compilation identifier evaluates to true if it is defined.
 
-\section{Access Specifiers}
+\section{Access Specifiers}\label{accessspecifier}
 
 Most entities defined within a class or a namespace can be given access specifiers that grant or reject access for another entity.
 
@@ -1137,46 +1098,37 @@ Most entities defined within a class or a namespace can be given access specifie
 \item{\bf{internal}} access specifier grants access for an entity defined in the same program or library and rejects it for other entities.
 \end{itemize}
 
-\begin{grammar}
-\label{access-specifiers}<access-specifiers> ::= <access-specifier>*
-
-\label{access-specifier}<access-specifier> ::= \lit*{public} | \lit*{protected} | \lit*{private} | \lit*{internal}
-\end{grammar}
+\begin{align*}
+access\textrm{-}specifier &\rightarrow \textbf{public} \> | \> \textbf{protected} \> | \> \textbf{private} \> | \> \textbf{internal}
+\end{align*}
 
 If no access specifiers are given, the default access for a namespace level entity is \bf{internal} access, and for a class level entity it is \bf{private} access.
 
-\section{Functions}
+\section{Functions}\label{functiondefinition}\label{templateparameterlist}\label{parameters}\label{parameterlist}\label{functionbody}\label{functionname}
 
 A function represents a unit of computation that can be executed from the other parts of the program or from the function body itself.
 When the function is called, each of the argument expressions of the function call is evaluated and bound to the corresponding parameter of the function.
 Then the function body is executed and after that the control returns to the caller.
 
-\begin{grammar}
-\label{function-definition}<function-definition> ::= <function-specifiers> <type-expression>\ref{type-expression} <function-name>\\
-<template-parameter-list>? <parameters> <where-constraint>\ref{where-constraint}? <function-body>
-
-<function-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{inline} | \lit*{cdecl} | \lit*{nothrow} | \lit*{throw} | \lit*{unit\_test})*
-
-\label{function-name}<function-name> ::= <identifier>\ref{identifier} | <operator-function-name>
-
-<operator-function-name> ::= \lit*{operator} ("<<" | ">>" | "==" | "<" | "=" | "++" | "--" | "->" | "+" | '-' | "*" | "/" | "\%" |\\
-"\&" | '|' | "!" | "~" | "[]" | "()")
-
-\label{template-parameter-list}<template-parameter-list> ::= "<" <template-parameter>  ("," <template-parameter>)* ">"
-
-<template-parameter> ::= <identifier> <default-template-parameter>?
-
-<default-template-parameter> ::= '=' <type-expression>
-
-\label{parameters}<parameters> ::= '(' <parameter-list>? ')'
-
-\label{parameter-list}<parameter-list> ::= <parameter> ("," <parameter>)*
-
-<parameter> ::= <type-expression> <identifier>?
-
-\label{function-body}<function-body> ::= <compound-statement>\ref{compound-statement}
-
-\end{grammar}
+\begin{align*}
+function\textrm{-}definition &\rightarrow & &function\textrm{-}specifiers \> \hyperref[typeexpr]{type\textrm{-}expression} \> function\textrm{-}name\\
+& & &template\textrm{-}parameter\textrm{-}list? \> parameters \> \hyperref[wherecontraint]{where\textrm{-}constraint}?\\
+& & &function\textrm{-}body\\
+function\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{inline} \> | \>
+\textbf{cdecl} \> | \> \textbf{nothrow} \> | \> \textbf{throw} \> | \> \textbf{unit\_test})^*\\
+function\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier} \> | \> operator\textrm{-}function\textrm{-}name\\
+operator\textrm{-}function\textrm{-}name &\rightarrow & &\textbf{operator}\\
+& & &( \texttt{<<} \> | \> \texttt{>>} \> | \> \texttt{==} \> | \> \texttt{<} \> | \> \texttt{=} \> | \>
+\texttt{++} \> | \> \texttt{--} \> | \> \texttt{->} \> | \> \texttt{+} \> | \> \texttt{-} \> | \> \texttt{*} \> | \> \texttt{/} \> | \> \texttt{\%} \> | \>
+\texttt{\&} \> | \> \texttt{|} \> | \> \texttt{!} \> | \> \sim | \> \texttt{[]} \> | \> \texttt{()} \>)\\
+template\textrm{-}parameter\textrm{-}list &\rightarrow & &\texttt{<} \> template\textrm{-}parameter \> (\texttt{,} \> template\textrm{-}parameter)^* \> \texttt{>}\\
+template\textrm{-}parameter &\rightarrow & &\hyperref[identifier]{identifier} \> default\textrm{-}template\textrm{-}parameter?\\
+default\textrm{-}template\textrm{-}parameter &\rightarrow & &\texttt{=} \> \hyperref[typeexpr]{type\textrm{-}expression}\\
+parameters &\rightarrow & &\texttt{(} \> parameter\textrm{-}list? \> \texttt{)}\\
+parameter\textrm{-}list &\rightarrow & &parameter (\> \texttt{,} \> parameter \> )^*\\
+parameter &\rightarrow & &\hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier}?\\
+function\textrm{-}body &\rightarrow & &\hyperref[compoundstatement]{compound\textrm{-}statement}
+\end{align*}
 
 \subsection{Function Specifiers}
 
@@ -1213,7 +1165,7 @@ template parameter coming after a default template parameter.
 
 \subsubsection{Constrained Function Templates}
 
-A function template that has a where-constraint (\ref{sec:where-constraint}) is said to be a
+A function template that has a \hyperref[whereconstraint]{where\textrm{-}constraint} is said to be a
 \emph{constrained function template}.
 The where-constraint sets requirements for template type parameters.
 
@@ -1221,7 +1173,7 @@ The where-constraint sets requirements for template type parameters.
 
 Function templates participate overload resolution process.
 In overload resolution the template parameters are deduced from the types of function call arguments.
-The type parameters can also be explicitly specified using a template identifier (\ref{sec:templateid}).
+The type parameters can also be explicitly specified using a \hyperref[templateid]{template identifier}.
 After the type parameters are deduced or explicitly specified, the function template is instantiated,
 and it becomes a concrete function.
 The type-checking of an unconstrained function template is deferred until instantiation time.
@@ -1230,11 +1182,12 @@ The type-checking of an unconstrained function template is deferred until instan
 
 \subsection{Pointer Types}\label{sec:pointertypes}
 
-If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau*$ creates a new type representing a pointer to an object of type $\tau$.
+If $\tau$ is a \hyperref[typeexpr]{type expression}, $\tau*$ creates a new type representing a pointer to an object of type $\tau$.
 The default value of a pointer type object is \bf{null}.
 
-Unary operators $*$ and $->$, prefix operators $++$ and $--$, binary operators $+$, $-$, $==$ and $<$,
-and the indexing operator [] operate on pointer type operands.
+Unary operators \texttt{*} and \texttt{->}, prefix operators \texttt{++} and \texttt{--},
+binary operators \texttt{+}, \texttt{-}, \texttt{==} and \texttt{<},
+and the indexing operator \texttt{[]} operate on pointer type operands.
 
 A pointer type value can be implicitly converted to a generic pointer type \bf{void$*$}.
 
@@ -1245,18 +1198,18 @@ The memory location can hold an object or it can be a location in the free store
 may or may not hold an object.
 The default value of a generic pointer type object is \bf{null}.
 
-Generic pointers can be compared for equality using the $==$ operator.
+Generic pointers can be compared for equality using the \texttt{==} operator.
 The generic pointer type can be converted to any other pointer type with an explicit \bf{cast}.
 
 \subsubsection{Null Pointer Type}
 
 The null pointer type represents a pointer that does not point to any object or any location in the free store.
 The value of a null pointer type object is \bf{null}.
-Any pointer type can be compared with \bf{null} for equality using the $==$ operator.
+Any pointer type can be compared with \bf{null} for equality using the \texttt{==} operator.
 
 \subsection{Lvalue Reference Types}\label{sec:lvaluereferencetypes}
 
-If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau\&$ creates a new type representing an lvalue reference to an object of type $\tau$.
+If $\tau$ is a \hyperref[typeexpr]{type expression}, $\tau\&$ creates a new type representing an lvalue reference to an object of type $\tau$.
 Lvalue reference type objects do not have a default value and they must be initialized to refer to an object in some memory location.
 
 If T is an object type, type T\& supports the same operators as T does.
@@ -1266,22 +1219,22 @@ Type T\& (an lvalue reference to an object of type T) can be implicitly converte
 
 \subsection{Rvalue Reference Types}\label{sec:rvaluereferencetypes}
 
-If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau\&\&$ creates a new type representing an rvalue reference to an object of type $\tau$.
+If $\tau$ is a \hyperref[typeexpr]{type expression}, $\tau\&\&$ creates a new type representing an rvalue reference to an object of type $\tau$.
 Rvalue references are used to implement move semantics.
 
 \subsection{Array Types}\label{sec:arraytypes}
 
-If $\tau$ is a type expression (\ref{sec:typeexpr}), $\tau[N]$ creates a new type representing an array whose element type is $\tau$ and dimension is $N$.
+If $\tau$ is a \hyperref[typeexpr]{type expression}, $\tau[N]$ creates a new type representing an array whose element type is $\tau$ and dimension is $N$.
 
-Currently only single-dimensional arrays whose element type is a basic type (\ref{sec:basictypes}) or
-a class type (\ref{sec:classtypes}) are supported.
-The dimension $N$ must be a constant expression (\ref{constant-expression}).
+Currently only single-dimensional arrays whose element type is a \hyperref[basictype]{basic type} or
+a \hyperref[sec:classtypes]{class type} are supported.
+The dimension $N$ must be a \hyperref[constantexpr]{constant expression}.
 
-Indexing operator [] operates on array type operands (\ref{indexing}).
+Indexing operator \texttt{[]} operates on array type operands (\ref{indexing}).
 
 \subsection{Constant Types}
 
-If $\tau$ is a type expression, \bf{const} $\tau$ creates a new type representing a constant object of type $\tau$.
+If $\tau$ is a \hyperref[typeexpr]{type expression}, \bf{const} $\tau$ creates a new type representing a constant object of type $\tau$.
 The default value of type \bf{const} $\tau$ is the same as the default value of type $\tau$.
 
 If T is an object type, type \bf{const} T supports those operators of type T that do not change the value of object of type T.
@@ -1290,52 +1243,55 @@ Type T can be implicitly converted to type \bf{const} T.
 
 \section{User-defined Types}
 
-\subsection{Enumerated Types}\label{sec:enumerations}
+\subsection{Enumerated Types}\label{sec:enumerations}\label{enumeratedtypedefinition}
 
 An enumerated type is used to create an integral type with a set of named constants.
 Each constant will have a value of type \bf{int} that is distinct
 from the values of other constants within the same enumerated type.
 
-\begin{grammar}
-\label{enumerated-type-definition}<enumerated-type-definition> ::= <access-specifiers>\ref{access-specifiers} \lit*{enum} <identifier>\ref{identifier}\\
-                      \lit{(} <enumeration-constant> (\lit*{,} <enumeration-constant>)* \lit{)}
-
-<enumeration-constant> ::= <identifier> (\lit*{=} <constant-expression>\ref{constant-expression})?
-\end{grammar}
+\begin{align*}
+enumerated\textrm{-}type\textrm{-}definition &\rightarrow & &\hyperref[accessspecifier]{access\textrm{-}specifier}? \> \textbf{enum} \>
+\hyperref[identifier]{identifier}\\
+& & &\texttt{\{} \> enumeration\textrm{-}constant \> (\texttt{,} \> enumeration\textrm{-}constant)^* \> \texttt{\}}\\
+enumeration\textrm{-}constant &\rightarrow & &\hyperref[identifier]{identifier} \> (\texttt{=} \> \hyperref[constantexpr]{constant\textrm{-}expression})?
+\end{align*}
 
 The default value of an enumerated type object is 0, whether it is represented by a named constant or not.
 
 If the first constant is not explicitly given a value, it will have a value 0.
 If any other constant is not explicitly given a value, it will have the value of the previous constant + 1.
 
-\subsection{Class Types}\label{sec:classtypes}
+\subsection{Class Types}\label{sec:classtypes}\label{classdefinition}
 
 A class type is used to define a user-defined type that can contain data members, type aliases, constants, member functions and subtypes.
 
-\begin{grammar}
-\label{class-definition}<class-definition> ::= <class-specifiers> \lit*{class} <identifier>\ref{identifier} <template-parameter-list>\ref{template-parameter-list}?\\
-<inheritance-and-implemented-interfaces>? <where-constraint>\ref{where-constraint}? '\{' <class-content> '\}'
-
-<class-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{static} | \lit*{abstract})*
-
-<inheritance-and-implemented-interfaces> ::= ":" <base-class-or-implemented-interface>\\
-("," <base-class-or-implemented-interface>)*
-
-<base-class-or-implemented-interface> ::= <template-id>\ref{template-id} | <qualified-id>\ref{qualified-id}
-
-<class-content> ::= (<static-constructor>\ref{static-constructor}
-\alt <constructor>\ref{constructor}
-\alt <destructor>\ref{destructor}
-\alt <member-function>\ref{member-function}
-\alt <conversion-function>\ref{conversion-function}
-\alt <enumerated-type-definition>\ref{enumerated-type-definition}
-\alt <constant-declaration>\ref{constant-declaration}
-\alt <member-variable-declaration>\ref{member-variable-declaration}
-\alt <typedef-declaration>\ref{typedef-declaration}
-\alt <delegate-definition>\ref{delegate-definition}
-\alt <class-delegate-definition>\ref{class-delegate-definition}
-\alt <class-definition>)*
-\end{grammar}
+\begin{align*}
+class\textrm{-}definition &\rightarrow & &class\textrm{-}specifiers \> \textbf{class} \> \hyperref[identifier]{identifier}\\
+class\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{static} \> | \> \textbf{abstract})^*\\
+& & &\hyperref[templateparameterlist]{template\textrm{-}parameter\textrm{-}list}?\\
+& & &inheritance\textrm{-}and\textrm{-}implemented\textrm{-}interfaces?\\
+& & &\hyperref[whereconstraint]{where\textrm{-}constraint}? \> \texttt{\{} \> class\textrm{-}content \> \texttt{\}}\\
+%class\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{static} \> | \> \textbf{abstract})^*\\
+inheritance\textrm{-}and\textrm{-}implemented\textrm{-}interfaces &\rightarrow & &\texttt{:} \>
+base\textrm{-}class\textrm{-}or\textrm{-}implemented\textrm{-}interface\\
+& & &(\texttt{,} \> base\textrm{-}class\textrm{-}or\textrm{-}implemented\textrm{-}interface)^*\\
+base\textrm{-}class\textrm{-}or\textrm{-}implemented\textrm{-}interface &\rightarrow & &\hyperref[templateid]{template\textrm{-}id} \> |
+\> \hyperref[qualifiedid]{qualified\textrm{-}id}\\
+class\textrm{-}content &\rightarrow\\
+&( & &\hyperref[staticconstructor]{static\textrm{-}constructor}\\
+&| & &\hyperref[constructor]{constructor}\\
+&| & &\hyperref[destructor]{destructor}\\
+&| & &\hyperref[memberfunction]{member\textrm{-}function}\\
+&| & &\hyperref[conversionfunction]{conversion\textrm{-}function}\\
+&| & &\hyperref[sec:enumerations]{enumerated\textrm{-}type\textrm{-}definition}\\
+&| & &\hyperref[constantdeclaration]{constant\textrm{-}declaration}\\
+&| & &\hyperref[membervariabledeclaration]{member\textrm{-}variable\textrm{-}declaration}\\
+&| & &\hyperref[typedefdeclaration]{typedef\textrm{-}declaration}\\
+&| & &\hyperref[delegatedefinition]{delegate\textrm{-}definition}\\
+&| & &\hyperref[classdelegatedefinition]{class\textrm{-}delegate\textrm{-}definition}\\
+&| & &\hyperref[classdefinition]{class\textrm{-}definition}\\
+&)^*
+\end{align*}
 
 A class type can be regular, \bf{static} or \bf{abstract}.
 
@@ -1377,35 +1333,32 @@ A class or a class template can derive at most from one class or a class templat
 Derived class \emph{inherits} members of the \emph{base class}.
 A derived class can \emph{override} virtual, overridden and abstract member functions of the base class.
 
-A class can implement any number of \emph{interfaces}\ref{sec:interface}.
+A class can implement any number of \hyperref[sec:interface]{\emph{interfaces}}.
 When a class implements an interface it provides an implementation for all of the member functions of the interface.
 The signatures of the class member functions must match the interface member function signatures and possible \bf{nothrow}-specifications
 exactly.
 
 \subsubsection{Constrained Class Templates}
 
-A class template that has a where-constraint (\ref{sec:where-constraint}) is said to a \emph{constrained class template}.
+A class template that has a \hyperref[whereconstraint]{where\textrm{-}constraint} is said to be a \emph{constrained class template}.
 The where-constraint sets requirements for template type parameters.
 
-\subsubsection{Static Constructor}
+\subsubsection{Static Constructor}\label{staticconstructor}
 
 The identifier of the static constructor shall be equal to the name of the class type.
 The purpose of the static constructor is to initialize the static member variables of a class object on its first call.
 The static constructor is called from each constructor and each static member function of a class type
 before taking other actions.
 
-\begin{grammar}
-\label{static-constructor}<static-constructor> ::= \lit*{static} <static-constructor-class-name> '(' ')'\\
-(":" <static-initializer-list>)? <function-body>\ref{function-body}
+\begin{align*}
+static\textrm{-}constructor &\rightarrow & &\textbf{static} \> static\textrm{-}constructor\textrm{-}class\textrm{-}name \> \texttt{(} \> \texttt{)}\\
+& & &(\texttt{:} \> static\textrm{-}initializer\textrm{-}list)? \> \hyperref[functionbody]{function\textrm{-}body}\\
+static\textrm{-}constructor\textrm{-}class\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier}\\
+static\textrm{-}initializer\textrm{-}list &\rightarrow & &static\textrm{-}initializer \> (\> \texttt{,} \> static\textrm{-}initializer \>)^*\\
+static\textrm{-}initializer &\rightarrow & &\hyperref[identifier]{identifier} \> \texttt{(} \> \hyperref[argumentlist]{argument\textrm{-}list} \> \texttt{)}
+\end{align*}
 
-<static-constructor-class-name> ::= <identifier>\ref{identifier}
-
-<static-initializer-list> ::= <static-initializer> (',' <static-initializer>)*
-
-<static-initializer> ::= <identifier> '(' <argument-list>\ref{argument-list} ')'
-\end{grammar}
-
-\subsubsection{Constructors}
+\subsubsection{Constructors}\label{constructor}
 
 The identifier of the constructor shall be equal to the name of the class type.
 The purpose of a constructor is to initialize non-static member variables of a class type,
@@ -1429,19 +1382,19 @@ This automatic generation of default constructor, copy constructor and move cons
 
 Generation of default constructor, copy constructor and move constructor can be explicitly requested by using the \bf{default} keyword.
 
-\begin{grammar}
-\label{constructor}<constructor> ::= <constructor-specifiers> <constructor-class-name>\\
-'(' <parameter-list>\ref{parameter-list}? ')' (":" <initializer-list>)? <function-body>\ref{function-body}
+\begin{align*}
+constructor &\rightarrow & &constructor\textrm{-}specifiers \> constructor\textrm{-}class\textrm{-}name\\
+& & &\texttt{(} \> \hyperref[parameterlist]{parameter\textrm{-}list}? \> \texttt{)} \> (\texttt{:} \> initializer\textrm{-}list)? \>
+\hyperref[functionbody]{function\textrm{-}body}\\
+constructor\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \>
+\textbf{suppress} \> | \> \textbf{default} \> | \> \textbf{inline} \> | \> \textbf{nothrow} \> | \> \textbf{throw})^*\\
+constructor\textrm{-}class\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier}\\
+initializer\textrm{-}list &\rightarrow & &initializer \> (\texttt{,} \> initializer)^*\\
+initializer &\rightarrow & &(\hyperref[identifier]{identifier} \> | \> \textbf{this} \> | \> \textbf{base}) \> \texttt{(} \>
+\hyperref[argumentlist]{argument\textrm{-}list} \> \texttt{)}
+\end{align*}
 
-<constructor-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{suppress} | \lit*{default} | \lit*{inline} | \lit*{nothrow} | \lit*{throw})*
-
-<constructor-class-name> ::= <identifier>\ref{identifier}
-
-<initializer-list> ::= <initializer> (',' <initializer>)*
-
-<initializer>  ::= (<identifier> | \lit*{this} | \lit*{base}) '(' <argument-list>\ref{argument-list} ')'
-\end{grammar}
-
+\clearpage
 \begin{lstlisting}[frame=trBL]
 public class Foo
 {
@@ -1474,19 +1427,19 @@ public class Baz
 }
 \end{lstlisting}
 
-\subsubsection{Destructor}
+\subsubsection{Destructor}\label{destructor}
 
 The identifier of the destructor shall be equal to the name of the class type.
-The purpose of a destructor is to destroy non-static member variables of a class type,
+The purpose of a destructor is to destroy non-static member variables of a class type, release allocated resources,
 and to tear down the class invariant.
 
-\begin{grammar}
-\label{destructor}<destructor> ::= <destructor-specifiers> $\sim$ <destructor-class-name> '(' ')' <function-body>\ref{function-body}
-
-<destructor-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{virtual} | \lit*{override} | \lit*{default} | \lit*{inline})*
-
-<destructor-class-name> ::= <identifier>\ref{identifier}
-\end{grammar}
+\begin{align*}
+destructor &\rightarrow & &destructor\textrm{-}specifiers \> \sim{}destructor\textrm{-}class\textrm{-}name \> \texttt{(} \> \texttt{)}\\
+& & &\hyperref[functionbody]{function\textrm{-}body}\\
+destructor\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{virtual} \> | \>
+\textbf{override} \> | \> \textbf{default} \> | \> \textbf{inline})^*\\
+destructor\textrm{-}class\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier}
+\end{align*}
 
 If the class type has a base class that has a virtual destructor, the destructor shall be declared with override specifier;
 otherwise, if the class type contains virtual functions, the destructor is automatically set virtual.
@@ -1515,20 +1468,20 @@ public class Bar
 }
 \end{lstlisting}
 
-\subsubsection{Member Functions}
+\subsubsection{Member Functions}\label{memberfunction}
 
 A member function operates on member variables a class object or class type and can call
 other member functions of its class.
 A member function can be virtual, overridden, abstract, static or regular.
 
-\begin{grammar}
-\label{member-function}<member-function> ::= <member-function-specifiers> <type-expression>\ref{type-expression}\\
-<function-name>\ref{function-name} '(' <parameter-list>\ref{parameter-list}? ')' \lit*{const}?
-(<function-body>\ref{function-body} | ";")
-
-<member-function-specifiers> ::= (<access-specifier>\ref{access-specifier}
-\alt \lit*{virtual} | \lit*{override} | \lit*{abstract} | \lit*{static} | \lit*{suppress} | \lit*{default} | \lit*{inline} | \lit*{nothrow} | \lit*{throw})*
-\end{grammar}
+\begin{align*}
+member\textrm{-}function &\rightarrow & &member\textrm{-}function\textrm{-}specifiers \> \hyperref[typeexpr]{type\textrm{-}expression}\\
+& & &\hyperref[functionname]{function\textrm{-}name} \> \texttt{(} \> \hyperref[parameterlist]{parameter\textrm{-}list}? \> \texttt{)} \> \textbf{const}?\\
+& & &(\hyperref[functionbody]{function\textrm{-}body} \> | \> \texttt{;})\\
+member\textrm{-}function\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{virtual} \>
+| \> \textbf{override} \> | \> \textbf{abstract} \> | \> \textbf{static} \>\\
+&| & &\textbf{suppress} \> | \> \textbf{default} \> | \> \textbf{inline} \> | \> \textbf{nothrow} \> | \> \textbf{throw})^*
+\end{align*}
 
 A regular member function may have access specifiers but no other member function specifiers.
 A regular member function operates on a class object.
@@ -1591,58 +1544,60 @@ public class Baz
 }
 \end{lstlisting}
 
-\subsubsection{Conversion Functions}\label{sec:conversionfunctions}
+\subsubsection{Conversion Functions}\label{sec:conversionfunctions}\label{conversionfunction}
 
 A conversion function converts a class type object to the specified target type.
-Conversion functions participate type conversions in cast-expressions(\ref{sec:castexpression}) and in function overloading.
+Conversion functions participate type conversions in \hyperref[cast]{cast\textrm{-}expressions} and in function overloading.
 
-\begin{grammar}
-\label{conversion-function}<conversion-function> ::= <conversion-function-specifiers> \lit*{operator}
-<type-expression>\ref{type-expression} '(' ')' \lit*{const}? (<function-body>\ref{function-body} | ";")
+\begin{align*}
+conversion\textrm{-}function &\rightarrow & &conversion\textrm{-}function\textrm{-}specifiers\\
+& & &\textbf{operator} \>
+\hyperref[typeexpr]{type\textrm{-}expression} \> \texttt{(} \> \texttt{)} \> \textbf{const}?\\
+& & &(\> \hyperref[functionbody]{function\textrm{-}body} \> | \> \texttt{;} \>)\\
+conversion\textrm{-}function\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{nothrow} \> | \>
+\textbf{throw} \> | \> \textbf{inline})^*
+\end{align*}
 
-<conversion-function-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{nothrow} | \lit*{throw} | \lit*{inline})*
-\end{grammar}
-
-\subsubsection{Synthesized equality operator for classes}\label{sec:synthesizedeq}
+\subsubsection{Synthesized Equality Operator for Classes}\label{sec:synthesizedeq}
 
 The compiler automatically implements a memberwise equality operator for a class if it is called.
 This automatic generation of equality operator can be suppressed by using the \bf{suppress} keyword.
 Generation of memberwise equality operator can be explicitly requested by using the \bf{default} keyword.
 
-
-\subsubsection{Member Variable Declarations}
+\subsubsection{Member Variable Declarations}\label{membervariabledeclaration}
 
 A class can have non-static and static member variables.
 
-\begin{grammar}
-\label{member-variable-declaration}<member-variable-declaration> ::= <member-variable-specifiers> <type-expression>\ref{type-expression} <identifier>\ref{identifier} ";"
-
-<member-variable-specifiers> ::= (<access-specifier>\ref{access-specifier} | \lit*{static})*
-\end{grammar}
+\begin{align*}
+member\textrm{-}variable\textrm{-}declaration &\rightarrow \> member\textrm{-}variable\textrm{-}specifiers \> \hyperref[typeexpr]{type\textrm{-}expression} \>
+\hyperref[identifier]{identifier} \> \texttt{;}\\
+member\textrm{-}variable\textrm{-}specifiers &\rightarrow (\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{static})^*
+\end{align*}
 
 A non-static member variable is a member of each class object of its class.
 
 A static member variable is a member of its class type.
 
-\subsubsection{Constant Declarations}
+\subsubsection{Constant Declarations}\label{constantdeclaration}
 
 A constant is an object whose value can be obtained at compile time.
 
-\begin{grammar}
-\label{constant-declaration}<constant-declaration> ::= <access-specifiers>\ref{access-specifiers}\\
-\lit*{const} <type-expression>\ref{type-expression} <identifier>\ref{identifier} \lit*{=} <constant-expression>\ref{constant-expression} \lit*{;}
-
-\end{grammar}
+\begin{align*}
+constant\textrm{-}declaration &\rightarrow  & &\hyperref[accessspecifier]{access\textrm{-}specifier}?\\
+& & &\textbf{const} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \> \texttt{=} \>
+\hyperref[constantexpr]{constant\textrm{-}expression} \> \texttt{;}
+\end{align*}
 
 The type of a constant can be a basic value type or an enumerated type (see \ref{sec:enumerations}).
 
-\subsubsection{Typedef Declarations}
+\subsubsection{Typedef Declarations}\label{typedefdeclaration}
 
 The \bf{typedef} declaration inserts an alias name for a type expression into its scope.
 
-\begin{grammar}
-\label{typedef-declaration}<typedef-declaration> ::= <access-specifiers>\ref{access-specifiers} \lit*{typedef} <type-expression>\ref{type-expression} <identifier>\ref{identifier} ";"
-\end{grammar}
+\begin{align*}
+typedef\textrm{-}declaration \rightarrow \hyperref[accessspecifier]{access\textrm{-}specifier}? \> \textbf{typedef} \>
+\hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \> \texttt{;}
+\end{align*}
 
 \subsection{Delegate Types}
 
@@ -1653,54 +1608,53 @@ Delegates are typically used to implement callbacks and events.
 Delegate types come in two flavors: regular delegates that capture a function pointer and
 class delegates that capture a pointer to a class object and a pointer to a member function.
 
-\subsubsection{Delegates}
+\subsubsection{Delegates}\label{delegatedefinition}
 
 A delegate type is defined using the keyword \bf{delegate} followed by a return type, the name of the delegate type and a
 list of function parameters.
 An object of a delegate type is a pointer to a free function or to a static member function.
 
-\begin{grammar}
-\label{delegate-definition}<delegate-definition> ::= (<access-specifier>\ref{access-specifier} | \lit*{throw} | \lit*{nothrow})* \lit*{delegate}\\
-<type-expression>\ref{type-expression} <identifier>\ref{identifier} <parameters>\ref{parameters} ";"
-\end{grammar}
+\begin{align*}
+delegate\textrm{-}definition &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{throw} \> | \> \textbf{nothrow})?\\
+& & &\textbf{delegate} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \> \hyperref[parameters]{parameters} \> \texttt{;}
+\end{align*}
 
-\subsubsection{Class Delegates}
+\subsubsection{Class Delegates}\label{classdelegatedefinition}
 
 A class delegate type is defined using the keyword pair \bf{class} \bf{delegate} followed by a return type, the name of the
 class delegate type and a list of member function parameters.
 An object of a class delegate type is a pair consisting of a pointer to a class object and a pointer to a member function.
 
-\begin{grammar}
-\label{class-delegate-definition}<class-delegate-definition> ::= (<access-specifier>\ref{access-specifier} | \lit*{throw} | \lit*{nothrow})* \lit*{class} \lit*{delegate}\\
-<type-expression>\ref{type-expression} <identifier>\ref{identifier} <parameters>\ref{parameters} ";"
-\end{grammar}
+\begin{align*}
+class\textrm{-}delegate\textrm{-}definition &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{throw} \> | \> \textbf{nothrow})?\\
+& & &\textbf{class} \> \textbf{delegate} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \>
+\hyperref[parameters]{parameters} \> \texttt{;}
+\end{align*}
 
-\subsection{Interface Types}\label{sec:interface}
+\subsection{Interface Types}\label{interface}
 
 An interface type contains member function signatures.
-A class (\ref{sec:classtypes}) can \emph{implement} an interface by mentioning the name of the interface in its inheritance list and
+A \hyperref[classtypes]{class} can \emph{implement} an interface by mentioning the name of the interface in its inheritance list and
 providing implementations for all of the member function signatures of the interface.
 
-\begin{grammar}
-<interface-definition> ::= <access-specifier>\ref{access-specifier}?\\
-\lit*{interface} <identifier>\ref{identifier} "{" <interface-content> "}"
-\end{grammar}
+\begin{align*}
+interface\textrm{-}definition &\rightarrow & &\hyperref[accessspecifier]{access\textrm{-}specifier}?\\
+& & &\textbf{interface} \> \hyperref[identifier]{identifier} \> \texttt{\{} \> interface\textrm{-}content \> \texttt{\}}\\
+interface\textrm{-}content &\rightarrow & &interface\textrm{-}member\textrm{-}function^*\\
+interface\textrm{-}member\textrm{-}function &\rightarrow & &(\textbf{throw} \> | \> \textbf{nothrow})?\\
+& & &\hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[identifier]{identifier} \>
+\hyperref[parameters]{parameters} \> \textbf{const}? \> \texttt{;}
+\end{align*}
 
-\begin{grammar}
-<interface-content> ::= <interface-member-function>*
-\end{grammar}
-
-\begin{grammar}
-<interface-member-function> ::= (\lit*{throw} | \lit*{nothrow})? <type-expression>\ref{type-expression} <identifier>\ref{identifier}\\
-<parameters>\ref{parameters} \lit*{const}? ";"
-\end{grammar}
-
+\clearpage
 \subsubsection{Interface Objects}
 
 An object of an interface type is constructed from a pointer to a class object by writing the name of the interface followed by
 a left parenthesis, a pointer to a class object and a right parenthesis.
 
+\begin{flushleft}
 For example:
+\end{flushleft}
 
 \begin{lstlisting}[frame=trBL]
 using System;
@@ -1761,7 +1715,7 @@ public void main()
 }
 \end{lstlisting}
 
-\section{Concepts}
+\section{Concepts}\label{conceptdefinition}\label{conceptname}
 
 Concepts are used to set requirements for template type arguments in function and class templates.
 The concept design is influenced by the Concept Design for the STL (\cite{STLCONCEPTS}).
@@ -1774,136 +1728,139 @@ A concept can \emph{refine} another concept by setting additional requirements a
 When overriding existing requirements, the refining concept can set an associated type equal to a more constrained type,
 or to model a more constrained concept than in the refined concept.
 
-\begin{grammar}
-\label{concept-definition}<concept-definition> ::= <access-specifiers>\ref{access-specifiers}\\
-\lit*{concept} <identifier>\ref{identifier} "<" <identifer> ("," <identifier>)* ">"\\
-<refinement>? <where-constraint>\ref{where-constraint}? "{" <concept-body> "}"
+\begin{align*}
+concept\textrm{-}definition &\rightarrow & &\hyperref[accessspecifier]{access\textrm{-}specifier}?\\
+& & &\textbf{concept} \> \hyperref[identifier]{identifier} \> \texttt{<} \> \hyperref[identifier]{identifier} \> (\> \texttt{,} \>
+\hyperref[identifier]{identifier} \>)^* \> \texttt{>}\\
+& & &refinement? \> \hyperref[whereconstraint]{where\textrm{-}constraint}? \> \texttt{\{} \> concept\textrm{-}body \> \texttt{\}}\\
+refinement &\rightarrow & &\texttt{:} \> concept\textrm{-}name \> \texttt{<} \hyperref[identifier]{identifier} \>
+(\> \texttt{,} \> \hyperref[identifier]{identifier})^* \texttt{>}\\
+concept\textrm{-}name &\rightarrow & &\hyperref[qualifiedid]{qualified\textrm{-}id}\\
+concept\textrm{-}body &\rightarrow\\
+&( & &\hyperref[typenameconstraint]{typename\textrm{-}constraint}\\
+&| & &\hyperref[signatureconstraint]{signature\textrm{-}constraint}\\
+&| & &\hyperref[embeddedconstraint]{embedded\textrm{-}constraint}\\
+&| & &\hyperref[axiom]{axiom}\\
+&)^*
+\end{align*}
 
-<refinement> ::= ":" <concept-name> "<" <identifer> ("," <identifier>)* ">"
+\subsection{Typename Constraint}\label{typenameconstraint}
 
-\label{concept-name}<concept-name> ::= <qualified-id>\ref{qualified-id}
+A typename constraint sets a requirement that an associated type with the specified name exists.
 
-<concept-body> ::= (<typename-constraint>\ref{typename-constraint}
-\alt <signature-constraint>\ref{signature-constraint}
-\alt <embedded-constraint>\ref{embedded-constraint}
-\alt <axiom>\ref{axiom})*
-\end{grammar}
+\begin{align*}
+typename\textrm{-}constraint \rightarrow \textbf{typename} \> \hyperref[typeexpr]{type\textrm{-}expression} \> \texttt{;}
+\end{align*}
 
-\subsection{Typename Constraint}
+Typically type expression is of the form\\
+\emph{$<$concept type parameter$>$} \bf{.} \emph{$<$associated type name$>$}.
 
-A typename constraint sets a requirement that an associated type with the specified name is found.
+The typename constraint can be satisfied by providing a \hyperref[typedefdeclaration]{typedef declaration} or inner class definition inside a
+class type.
 
-\begin{grammar}
-\label{typename-constraint}<typename-constraint> ::= \lit*{typename} <type-expression>\ref{type-expression} ";"
-\end{grammar}
-
-Typically type expression is of the form \emph{$<$concept type parameter$>$} \bf{.} \emph{$<$associated type name$>$}.
-
-\subsection{Signature Constraint}
+\subsection{Signature Constraint}\label{signatureconstraint}
 
 A signature constraint sets a requirement that either the first concept type parameter contains a member function with the specified signature or there exists a nonmember function with the specified signature.
 The signature of the function does not have to match exactly.
 
-\begin{grammar}
-\label{signature-constraint}<signature-constraint> ::= <constructor-constraint>
-\alt <destructor-constraint>
-\alt <member-function-constraint>
-\alt <function-constraint>
+\begin{align*}
+signature\textrm{-}constraint &\rightarrow & &constructor\textrm{-}constraint\\
+&| & &destructor\textrm{-}constraint\\
+&| & &member\textrm{-}function\textrm{-}constraint\\
+&| & &function\textrm{-}constraint\\
+constructor\textrm{-}constraint &\rightarrow & &\hyperref[identifier]{identifier} \> \hyperref[parameters]{parameters} \> \texttt{;}\\
+destructor\textrm{-}constraint &\rightarrow & &\sim \hyperref[identifier]{identifier} \> \texttt{(} \> \texttt{)} \> \texttt{;}\\
+member\textrm{-}function\textrm{-}constraint &\rightarrow & &\hyperref[typeexpr]{type\textrm{-}expression} \>
+\hyperref[identifier]{identifier} \texttt{.} \hyperref[functionname]{function\textrm{-}name} \> \hyperref[parameters]{parameters} \> \texttt{;}\\
+function\textrm{-}constraint &\rightarrow & &\hyperref[typeexpr]{type\textrm{-}expression} \> \hyperref[functionname]{function\textrm{-}name} \>
+\hyperref[parameters]{parameters} \>\texttt{;}
+\end{align*}
 
-<constructor-constraint> ::= <identifier>\ref{identifier} <parameters>\ref{parameters} ";"
-
-<destructor-constraint> ::= "~" <identifier> '(' ')' ";"
-
-<member-function-constraint> ::= <type-expression>\ref{type-expression}\\
-<identifier> "." <function-name>\ref{function-name} <parameters> ";"
-
-<function-constraint> ::= <type-expression>\ref{type-expression} <function-name>\ref{function-name} <parameters> ";"
-\end{grammar}
-
-\subsection{Embedded Constraint}
+\subsection{Embedded Constraint}\label{embeddedconstraint}
 
 An embedded constraint sets additional requirements for concept parameter types.
 
-\begin{grammar}
-\label{embedded-constraint}<embedded-constraint> ::= <where-constraint>\ref{where-constraint} ";"
-\end{grammar}
+\begin{align*}
+embedded\textrm{-}constraint \rightarrow \hyperref[whereconstraint]{where\textrm{-}constraint} \> \texttt{;}
+\end{align*}
 
-\subsection{Axioms}
+\subsection{Axioms}\label{axiom}
 
 A concept can contain \emph{axioms} that represent semantic requirements for constrained template type arguments.
 The axioms are not processed in any way by the compiler (except parsing their syntax).
 They are only documentation for the programmer.
 
-\begin{grammar}
-\label{axiom}<axiom> ::= \lit*{axiom} <identifier>?\ref{identifier} <parameters>?\ref{parameters} "{" <axiom-body> "}"
+\begin{align*}
+axiom &\rightarrow \textbf{axiom} \> \hyperref[identifier]{identifier} \> \hyperref[parameters]{parameters} \> \texttt{\{} \> axiom\textrm{-}body \> \texttt{\}}\\
+axiom\textrm{-}body &\rightarrow axiom\textrm{-}statement^*\\
+axiom\textrm{-}statement &\rightarrow \hyperref[expression]{expression} \> \texttt{;}
+\end{align*}
 
-<axiom-body> ::= <axiom-statement>*
-
-<axiom-statement> ::= <expression>\ref{expression} ";"
-\end{grammar}
-
-\subsection{Where Constraint}\label{sec:where-constraint}
+\subsection{Where Constraint}\label{sec:where-constraint}\label{whereconstraint}\label{constraintexpr}
 
 A where constraint sets requirements for template type arguments or concept parameter types.
 
-\begin{grammar}
-\label{where-constraint}<where-constraint> ::= \lit*{where} <constraint-expr>
+\begin{align*}
+where\textrm{-}constraint &\rightarrow \> \textbf{where} \> constraint\textrm{-}expr\\
+constraint\textrm{-}expr  &\rightarrow \> \hyperref[disjunctiveconstraint]{disjunctive\textrm{-}constraint\textrm{-}expr}
+\end{align*}
 
-\label{constraint-expr}<constraint-expr> ::= <disjunctive-constraint-expr>\ref{disjunctive-constraint-expr}
-\end{grammar}
-
-\subsubsection{Disjunctive Constraint Expressions}
+\subsubsection{Disjunctive Constraint Expressions}\label{disjunctiveconstraint}
 
 A disjunctive constraint expression states that the template type arguments and concept parameters must satisfy
 the requirements of one of the conjunctive constraint expressions separated by \bf{or} connectives.
 
-\begin{grammar}
-\label{disjunctive-constraint-expr}<disjunctive-constraint-expr> ::= <conjunctive-constraint-expr>\ref{conjunctive-constraint-expr} (\lit*{or} <conjunctive-constraint-expr>)*
-\end{grammar}
+\begin{align*}
+disjunctive\textrm{-}constraint\textrm{-}expr \rightarrow \> &\hyperref[conjunctiveconstraint]{conjunctive\textrm{-}constraint\textrm{-}expr}\\
+&(\textbf{or} \> \hyperref[conjunctiveconstraint]{conjunctive\textrm{-}constraint\textrm{-}expr})^*
+\end{align*}
 
-\subsubsection{Conjunctive Constraint Expressions}
+\subsubsection{Conjunctive Constraint Expressions}\label{conjunctiveconstraint}
 
 A conjunctive constraint expression states that the template type arguments and concept parameters must satisfy
 the requirements of all primary constraint expressions separated by \bf{and} connectives.
 
-\begin{grammar}
-\label{conjunctive-constraint-expr}<conjunctive-constraint-expr> ::= <primary-constraint-expr>\ref{primary-constraint-expr} (\lit*{and} <primary-constraint-expr>)*
-\end{grammar}
+\begin{align*}
+conjunctive\textrm{-}constraint\textrm{-}expr \rightarrow \> &\hyperref[primaryconstraint]{primary\textrm{-}constraint\textrm{-}expr}\\
+&(\textbf{and} \> \hyperref[primaryconstraint]{primary\textrm{-}constraint\textrm{-}expr})^*
+\end{align*}
 
-\subsubsection{Primary Constraint Expressions}
+\subsubsection{Primary Constraint Expressions}\label{primaryconstraint}
 
 A primary constraint can be either an atomic constraint or a constraint expression enclosed in parenthesis.
 
-\begin{grammar}
-\label{primary-constraint-expr}<primary-constraint-expr> ::= <atomic-constraint>\ref{atomic-constraint} | '(' <constraint-expr>\ref{constraint-expr} ')'
-\end{grammar}
+\begin{align*}
+primary\textrm{-}constraint\textrm{-}expr \rightarrow \> \hyperref[atomicconstraint]{atomic\textrm{-}constraint} \> |
+\> \texttt{(} \> \hyperref[constraintexpr]{constraint\textrm{-}expr} \> \texttt{)}
+\end{align*}
 
-\subsubsection{Atomic Constraints}
+\subsubsection{Atomic Constraints}\label{atomicconstraint}
 
 An atomic constraint can be either an is-constraint or a multiparameter constraint.
 
-\begin{grammar}
-\label{atomic-constraint}<atomic-constraint> ::= <is-constraint>\ref{is-constraint} | <multiparam-constraint>\ref{multiparam-constraint}
-\end{grammar}
+\begin{align*}
+atomic\textrm{-}constraint \rightarrow \> \hyperref[isconstraint]{is\textrm{-}constraint} \> | \>
+\hyperref[multiparamconstraint]{multiparam\textrm{-}constraint}
+\end{align*}
 
-\subsubsection{Is-Constraint}
+\subsubsection{Is-Constraint}\label{isconstraint}
 
 An is-constraint sets a requirement that a either (1) the specified type satisfies the requirements of the specified concept, or (2) the specified type is trivially convertible to another type. For example, type \bf{const T\&} is trivially convertible to type \bf{T}.
 When specifying the is-constraint in case (2), the so far less constrained type should be put to the left and the more constrained type to the right.
 
-\begin{grammar}
-\label{is-constraint}<is-constraint> ::= <type-expression>\ref{type-expression} \lit*{is} <concept-or-typename>
+\begin{align*}
+is\textrm{-}constraint &\rightarrow \> \hyperref[typeexpr]{type\textrm{-}expression} \> \textbf{is} \> concept\textrm{-}or\textrm{-}typename\\
+concept\textrm{-}or\textrm{-}typename &\rightarrow \> \hyperref[typeexpr]{type\textrm{-}expression}
+\end{align*}
 
-<concept-or-typename> ::= <type-expression>
-\end{grammar}
-
-\subsubsection{Multiparameter Constraint}
+\subsubsection{Multiparameter Constraint}\label{multiparamconstraint}
 
 A multiparameter constraint sets a requirement that the specified types satisfy the requirements of the specified concept.
 
-\begin{grammar}
-\label{multiparam-constraint}<multiparam-constraint> ::= <concept-name>\ref{concept-name} "<" <type-expression>\ref{type-expression} ("," <type-expression>)* ">"
-\end{grammar}
+\begin{align*}
+multiparam\textrm{-}constraint \rightarrow \> \hyperref[conceptname]{concept\textrm{-}name} \> \texttt{<} \hyperref[typeexpr]{type\textrm{-}expression} \>
+(\texttt{,} \> \hyperref[typeexpr]{type\textrm{-}expression})^* \> \texttt{>}
+\end{align*}
 
 \subsection{Built-in Concepts}
 
@@ -1929,44 +1886,41 @@ from type T to type U. Type T is trivially convertible to type T.
 The \bf{Common$<$T, U$>$} concept sets a requirement that types T and U have a common type to which they both are convertible to. The common type is inserted as a typedef \emph{CommonType} to the scope of concept \bf{Common$<$T, U$>$}. The common type of T and T is trivially T.
 The so far less constrained type should be put to the left and the more constrained type to the right.
 
-\section{Namespaces}
+\section{Namespaces}\label{namespacedefinition}\label{namespacecontent}
 
 Namespaces are used to disambiguate equal names belonging to different libraries.
 A namespace consists of optional using directives followed by optional definitions.
 
-\begin{grammar}
-\label{namespace-definition}<namespace-definition> ::= \lit*{namespace} <qualified-id>\ref{qualified-id} '\{' <namespace-content> '\}'
-
-\label{namespace-content}<namespace-content> ::= <using-directive>* <definition>*
-
-<using-directive> ::= <using-alias-directive> | <using-namespace-directive>
-
-<using-alias-directive> ::= \lit*{using} <identifier>\ref{identifier} "=" <qualified-id> ";"
-
-<using-namespace-directive> ::= \lit*{using} <qualified-id> ";"
-
-<definition> ::= <enumerated-type-definition>\ref{enumerated-type-definition}
-\alt <constant-declaration>\ref{constant-declaration}
-\alt <function-definition>\ref{function-definition}
-\alt <class-definition>\ref{class-definition}
-\alt <delegate-definition>\ref{delegate-definition}
-\alt <class-delegate-definition>\ref{class-delegate-definition}
-\alt <typedef-declaration>\ref{typedef-declaration}
-\alt <concept-definition>\ref{concept-definition}
-\alt <namespace-definition>
-\end{grammar}
+\begin{align*}
+namespace\textrm{-}definition &\rightarrow & &\textbf{namespace} \> \hyperref[qualifiedid]{qualified\textrm{-}id} \>
+\texttt{\{} namespace\textrm{-}content \texttt{\}}\\
+namespace\textrm{-}content &\rightarrow & &using\textrm{-}directive^* \> definition^*\\
+using\textrm{-}directive &\rightarrow & &using\textrm{-}alias\textrm{-}directive \> | \> using\textrm{-}namespace\textrm{-}directive\\
+using\textrm{-}alias\textrm{-}directive &\rightarrow & &\textbf{using} \> \hyperref[identifier]{identifier} \> \texttt{=} \>
+\hyperref[qualifiedid]{qualified\textrm{-}id} \> \texttt{;}\\
+using\textrm{-}namespace\textrm{-}directive &\rightarrow & &\textbf{using} \> \hyperref[qualifiedid]{qualified\textrm{-}id} \> \texttt{;}\\
+definition &\rightarrow & &\hyperref[enumeratedtypedefinition]{enumerated\textrm{-}type\textrm{-}definition}\\
+&| & &\hyperref[constantdeclaration]{constant\textrm{-}declaration}\\
+&| & &\hyperref[functiondefinition]{function\textrm{-}definition}\\
+&| & &\hyperref[classdefinition]{class\textrm{-}definition}\\
+&| & &\hyperref[delegatedefinition]{delegate\textrm{-}definition}\\
+&| & &\hyperref[classdelegatedefinition]{class\textrm{-}delegate\textrm{-}definition}\\
+&| & &\hyperref[typedefdeclaration]{typedef\textrm{-}declaration}\\
+&| & &\hyperref[conceptdefinition]{concept\textrm{-}definition}\\
+&| & &namespace\textrm{-}definition
+\end{align*}
 
 A using alias directive brings a single alias name to the current file scope.
 
 A using namespace directive brings contents of given namespace to the current file scope.
 
-\section{Source Files}
+\section{Source Files}\label{sourcefile}
 
 A source file consists of namespace content.
 
-\begin{grammar}
-<source-file> ::= <namespace-content>\ref{namespace-content}
-\end{grammar}
+\begin{align*}
+source\textrm{-}file \rightarrow \hyperref[namespacecontent]{namespace\textrm{-}content}
+\end{align*}
 
 \section{Programs}
 
@@ -1995,92 +1949,59 @@ If the main function is declared void, it returns exit code 0 to the environment
 
 \subsection{Solution File Format}
 
-\begin{grammar}
-<solution-file> ::= <solution-declaration> <project-file-declarations> <project-dependencies>
-
-<solution-declaration> ::= \lit*{solution} <solution-name> ';'
-
-<solution-name> ::= <qualified-id>\ref{qualified-id}
-
-<project-file-declarations> ::= <project-file-declaration>*
-
-<project-file-declaration> ::= \lit*{project} <project-file-path> ';'
-
-<project-file-path> ::= "'<'" "[^>]+" "'\>'"
-
-<project-dependencies> ::= <project-dependency>*
-
-<project-dependency> ::= \lit*{dependency} <project-name> <dependent-project-list> ';'
-
-<dependent-project-list> ::= '(' <dependent-project-name> (',' <dependent-project-name>)* ')'
-
-<dependent-project-name> ::= <qualified-id>
-
-\end{grammar}
+\begin{align*}
+solution\textrm{-}file &\rightarrow solution\textrm{-}declaration \> project\textrm{-}file\textrm{-}declarations \> project\textrm{-}dependencies\\
+solution\textrm{-}declaration &\rightarrow \textbf{solution} \> solution\textrm{-}name \> \texttt{;}\\
+solution\textrm{-}name &\rightarrow \hyperref[qualifiedid]{qualified\textrm{-}id}\\
+project\textrm{-}file\textrm{-}declarations &\rightarrow project\textrm{-}file\textrm{-}declaration^*\\
+project\textrm{-}file\textrm{-}declaration &\rightarrow \textbf{project} \> project\textrm{-}file\textrm{-}path \> \texttt{;}\\
+project\textrm{-}file\textrm{-}path &\rightarrow \texttt{<} \> [\> \hat{}\,\texttt{>}\>]^+ \> \texttt{>}\\
+project\textrm{-}dependencies &\rightarrow project\textrm{-}dependency^*\\
+project\textrm{-}dependency &\rightarrow \textbf{dependency} \> project\textrm{-}name \> dependent\textrm{-}project\textrm{-}list \> \texttt{;}\\
+dependent\textrm{-}project\textrm{-}list &\rightarrow \texttt{(} \> dependent\textrm{-}project\textrm{-}name \> (\texttt{,} \>
+dependent\textrm{-}project\textrm{-}name)^* \> \texttt{)}\\
+dependent\textrm{-}project\textrm{-}name &\rightarrow \hyperref[qualifiedid]{qualified\textrm{-}id}
+\end{align*}
 
 \subsection{Project File Format}
 
-\begin{grammar}
-<project-file> ::= <project-declaration> <project-file-declarations>
-
-<project-declaration> ::= \lit*{project} <project-name> ';'
-
-<project-name> ::= <qualified-id>\ref{qualified-id}
-
-<project-file-declarations> ::= <project-file-declaration>*
-
-<project-file-declaration> ::= <target-declaration>
-\alt <stack-size-declaration>
-\alt <assembly-declaration>
-\alt <library-reference>
-\alt <executable-declaration>
-\alt <c-library-declaration>
-\alt <add-library-path-declaration>
-\alt <source-file>
-\alt <asm-source-file>
-\alt <c-source-file>
-\alt <cpp-source-file>
-\alt <text-file>
-
-<target-declaration> ::= \lit*{target} '=' (\lit*{program} | \lit*{library}) ';'
-
-<stack-size-declaration> ::= \lit*{stack} '=' <ulong> (',' <ulong>)? ';'
-
-<assembly-declaration> ::= \lit*{assembly} <file-path> <properties>? ';'
-
-<library-reference> ::= \lit*{reference} <file-path> <properties>? ';'
-
-<executable-declaration> ::= \lit*{executable} <file-path> ';'
-
-<c-library-declaration> ::= \lit*{clib} <file-path> <properties>? ';'
-
-<add-library-path-declaration> ::= \lit*{addlibrarypath} <file-path> <properties>? ';'
-
-<source-file> ::= \lit*{source} <file-path> <properties>? ';'
-
-<asm-source-file> ::= \lit*{asmsource} <file-path> <properties>? ';'
-
-<c-source-file> ::= \lit*{csource} <file-path> <properties>? ';'
-
-<cpp-source-file> ::= \lit*{cppsource} <file-path> <properties>? ';'
-
-<text-file> ::= \lit*{text} <file-path> <properties>? ';'
-
-<properties> ::= '[' <property> (',' <property>)* ']'
-
-<property> ::= <property-name> <rel-op> <propterty-value>
-
-<property-name> ::= <identifier>
-
-<rel-op> ::= "=" | "!=" | ">=" | "<=" | "<" | ">"
-
-<property-value> ::= <version-number> | <identifier> | <long>
-
-<version-number> ::= <int> '.' <int> ('.' <int> ('.' <int>)?)?
-
-<file-path> ::= "'<'" "[^>]+" "'\>'"
-
-\end{grammar}
+\begin{align*}
+project\textrm{-}file &\rightarrow & &project\textrm{-}declaration \> project\textrm{-}file\textrm{-}declarations\\
+project\textrm{-}declaration &\rightarrow & &\textbf{project} \> project\textrm{-}name \> \texttt{;}\\
+project\textrm{-}name &\rightarrow & &\hyperref[qualifiedid]{qualified\textrm{-}id}\\
+project\textrm{-}file\textrm{-}declarations &\rightarrow & &project\textrm{-}file\textrm{-}declaration^*\\
+project\textrm{-}file\textrm{-}declaration &\rightarrow & &target\textrm{-}declaration\\
+&| & &stack\textrm{-}size\textrm{-}declaration\\
+&| & &assembly\textrm{-}declaration\\
+&| & &library\textrm{-}reference\\
+&| & &executable\textrm{-}declaration\\
+&| & &c\textrm{-}library\textrm{-}declaration\\
+&| & &add\textrm{-}library\textrm{-}path\textrm{-}declaration\\
+&| & &source\textrm{-}file\\
+&| & &asm\textrm{-}source\textrm{-}file\\
+&| & &c\textrm{-}source\textrm{-}file\\
+&| & &cpp\textrm{-}source\textrm{-}file\\
+&| & &text\textrm{-}file\\
+target\textrm{-}declaration &\rightarrow & &\textbf{target} \> \texttt{=} \> (\textbf{program} | \textbf{library}) \> \texttt{;}\\
+stack\textrm{-}size\textrm{-}declaration &\rightarrow & &\textbf{stack} \> \texttt{=} \> ulong \> (\texttt{,} \> ulong)? \> \texttt{;}\\
+assembly\textrm{-}declaration &\rightarrow & &\textbf{assembly} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+library\textrm{-}reference &\rightarrow & &\textbf{reference} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+executable\textrm{-}declaration &\rightarrow & &\textbf{executable} \> file\textrm{-}path \> \texttt{;}\\
+c\textrm{-}library\textrm{-}declaration &\rightarrow & &\textbf{clib} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+add\textrm{-}library\textrm{-}path\textrm{-}declaration &\rightarrow & &\textbf{addlibrarypath} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+source\textrm{-}file &\rightarrow & &\textbf{source} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+asm\textrm{-}source\textrm{-}file &\rightarrow & &\textbf{asmsource} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+c\textrm{-}source\textrm{-}file &\rightarrow & &\textbf{csource} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+cpp\textrm{-}source\textrm{-}file &\rightarrow & &\textbf{cppsource} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+text\textrm{-}file &\rightarrow & &\textbf{text} \> file\textrm{-}path \> properties? \> \texttt{;}\\
+properties &\rightarrow & &[ \> property \> (\texttt{,} \> property)^* \> ]\\
+property &\rightarrow & &property\textrm{-}name \> rel\textrm{-}op \> property\textrm{-}value\\
+property\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier}\\
+rel\textrm{-}op &\rightarrow & &\texttt{=} \> | \> \texttt{!=} \> | \> \texttt{>=} \> | \> \texttt{<=} \> | \> \texttt{<} \> | \> \texttt{>}\\
+property\textrm{-}value &\rightarrow & &version\textrm{-}number \> | \> \hyperref[identifier]{identifier} \> | \> long\\
+version\textrm{-}number &\rightarrow & &int \texttt{.} int (\texttt{.} int (\texttt{.} int)?)?\\
+file\textrm{-}path &\rightarrow & &\texttt{<} \> [\> \hat{}\,\texttt{>}\>]^+ \> \texttt{>}
+\end{align*}
 
 Target declaration \emph{$<$target-declaration$>$} sets whether we are building a program or a library.
 
