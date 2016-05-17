@@ -365,7 +365,6 @@ That is, $L(\textbf{a}) = \{a\}$.
 A variable $L$ represents any language.
 \end{enumerate}
 
-\clearpage
 \textbf{INDUCTION}: There are four parts:
 \begin{enumerate}
 \item
@@ -430,11 +429,12 @@ Finite automata can be constructed by hand, but there are also tools that take r
 lexical analyzer that recognize those patterns. Such a tool is called a \emph{lexical-analyzer generator}.
 Most famous is the Unix tool \verb|lex| and its GNU version \verb|flex|.
 
+\clearpage
+\section{Lexical Analysis in Cmajor}
+
 The Cmajor compiler includes a tool called Cmajor Parser Generator, \verb|cmpg|, that combines the role of a parser generator and
 a lexical-analyzer generator, or more truly, it is a parser generator that can be used without the need to have a separate
 lexical-analyzer generator.
-
-\section{Lexical Analysis in Cmajor}
 
 \subsection{Introduction to Cmajor Parser Generator}
 
@@ -478,6 +478,7 @@ generates a C++ source and header files that contain C++ classes for each define
 When the resulting C++ source files are compiled and linked with \emph{Cm.Parsing} library,
 the result is a top-down backtracking parser.
 
+\clearpage
 \subsection{Tokens in Cmajor}
 
 We are now going to take a look of some classes of tokens in Cmajor programming language,
@@ -764,8 +765,8 @@ P &\rightarrow 1P1
 \end{align}
 \end{grmr}
 
-The first three rules for the basis. They tell us that a class of palindromes includes the strings $\epsilon$, $0$, and $1$.
-None of the right sides of these rules contains a variable, which is why they for a basis for the definition.
+The first three rules form the basis. They tell us that a class of palindromes includes the strings $\epsilon$, $0$, and $1$.
+None of the right sides of these rules contains a variable, which is why they form a basis for the definition.
 
 The last two rules form the inductive part of the definition. For instance, rule 3.4 says that if we take any string $\omega$ from the class $P$,
 then $0\omega0$ is also in class $P$. Rule 3.5 likewise tells us that $1\omega1$ is also in class $P$.
@@ -864,7 +865,6 @@ grammar \ref{pgram}.
 \end{center}
 \end{figure}
 
-\clearpage
 \subsection{Compact Notation for Grammars}
 
 Let $\omega_1, \omega_2, \ldots, \omega_k$ be strings of grammar symbols (i.e. strings of terminals and nonterminals).
@@ -1035,7 +1035,7 @@ no change to the input took place between recursive calls of \emph{expr}. As a r
 exactly what the first call did, which means a third call, and so on.
 
 A left-recursive production can be eliminated by rewriting the offending production.
-Conside a nonterminal $A$ with two productions $$A \rightarrow A\alpha \,|\, \beta$$
+Consider a nonterminal $A$ with two productions $$A \rightarrow A\alpha \,|\, \beta$$
 where $\alpha$ and $\beta$ are sequences of terminals and nonterminals that do not start with $A$.
 For example, in $$expr \rightarrow expr + term \, | \, term$$ nonterminal $A = expr$, string $\alpha = + term$, and string $\beta = term$.
 
@@ -1101,9 +1101,9 @@ We can rewrite the grammar \ref{g:infix} without left recursion using the extend
 
 \begin{grmr}\label{g:expr}
 \begin{align*}
-expr &\rightarrow term \,(\,('+'|'-')\, term \,)^*\\
-term &\rightarrow factor \,(\,('*'|'/')\, factor \,)^*\\
-factor &\rightarrow [0-9] \,|\,'('\, expr \,')'
+expr &\rightarrow term \>(\>('+'|'-')\> term \>)^*\\
+term &\rightarrow factor \>(\>('*'|'/')\> factor \>)^*\\
+factor &\rightarrow [0-9] \> |\> '('\> expr \> ')'
 \end{align*}
 \end{grmr}
 
@@ -1146,7 +1146,7 @@ The grammar has a list of \emph{rules}. In this case \emph{expr}, \emph{term} an
 If the start rule is not explicitly defined by the \textbf{start} clause, the first rule of the grammar
 is taken as the start rule.
 
-A rule may have one synthesized attribute whose type is denoned by a colon and a name of a C++ type after
+A rule may have one synthesized attribute whose type is denoted by a colon and a name of a C++ type after
 the head of the rule, \verb|std::string| in this case. In this example each of the rules of the grammar have a
 synthesized attribute of type \verb|std::string|.
 If multiple synthesized attributes are needed, one can specify a structure of values,
@@ -1178,7 +1178,7 @@ Example of this appears in the line 19, where the synthesized attribute of \emph
 
 \subsection{Internal Representation of \texttt{cmpg} Grammar Definitions}
 
-The \verb|cmpg| reads grammar definitions and constructs an internal representation for them.
+The \verb|cmpg| program reads grammar definitions and constructs an internal representation for them.
 The internal representation of a grammar is a list of rules, one of which is set as a start rule.
 Each rule has a \emph{name} and a \emph{definition}.
 The definition of a rule is represented as a \emph{tree of parsing nodes}.
@@ -1336,21 +1336,21 @@ $\eta^*$:
 If the input consists of a possibly empty sequence of strings $s_i$ of terminal symbols where each string $s_i$ mathes expression $\eta$,
 the input matches expression $\eta^*$. For example, strings $\{\epsilon, \verb|a|, \verb|aa|, \verb|aaa|\}$ match expression $\textbf{a}^*$.
 
-A \emph{closure} node is a unary parsing node whose subtree represents expression $\eta$.
+A \emph{closure} node is a unary parsing node whose child subtree represents expression $\eta$.
 
 \item
 $\eta^+$:
 If the input consists of a nonempty sequence of strings $s_i$ of terminal symbols where each string $s_i$ mathes expression $\eta$,
 the input matches expression $\eta^+$. For example, strings $\{\verb|a|, \verb|aa|, \verb|aaa|\}$ match expression $\textbf{a}^+$.
 
-A \emph{positive} node is a unary parsing node whose subtree represents expression $\eta$.
+A \emph{positive} node is a unary parsing node whose child subtree represents expression $\eta$.
 
 \item
 $\eta?$:
 If the input consists either an empty string $\epsilon$, or a string $s$ of terminal symbols where $s$ matches expression $\eta$,
 the input matches expression $\eta?$. For example, strings $\{\epsilon, \verb|a|\}$ match expression $\textbf{a}?$.
 
-An \emph{optional} node is a unary parsing node whose subtree represents expression $\eta$.
+An \emph{optional} node is a unary parsing node whose child subtree represents expression $\eta$.
 
 \end{enumerate}
 
@@ -1389,8 +1389,9 @@ Previous expressions can be optionally followed by an
 \emph{expectation} expression that prevents backtracking,
 and an \emph{action} expression that associates a semantic action to a primary expression.
 
+\clearpage
 \item
-The primitive expressions defined using the extended context-free notation are:
+The primitive expression is defined using the extended context-free notation as:
 
 \begin{align*}
 primitive &\rightarrow \> char |\> string |\> charset |\> keyword |\> keyword\_list \> |\\
@@ -1441,7 +1442,6 @@ The node for the nonterminal is represented as $$\framebox[2cm][c]{\emph{nt}(\em
 
 where \emph{foo} is the name of the rule matched recursively.
 
-\clearpage
 \item
 A \emph{grouping} expression is a parenthesized sequence of alternative expressions.
 
@@ -1490,7 +1490,7 @@ Figure \ref{fig:token} shows the token, expectation and action unary parsing nod
 \clearpage
 \begin{exmp} Example of Internal Representation.
 \begin{flushleft}
-Let us recall the Postfix Translation Grammar of Example \ref{ex:postfix}. For ease of reference it is repeated here:
+Let us recall the Postfix Translation Grammar of example \ref{ex:postfix}. For ease of reference it is repeated here:
 
 \lstset{language=cmpg}
 \begin{lstlisting}
@@ -1763,6 +1763,7 @@ so let the result of parsing this node be $\textbf{match}(\textbf{false})$.
 \item
 String node (Fig. \ref{fig:primitives}). Let $m$ be $\textbf{match}(\textbf{true}, 0)$.
 Let $i$ be 0. Let $n$ be the length of the string contained in this string node.
+
 While $i < n$ and the current input position is not at the end of the input and
 the character at the current input position is equal to the i'th character of the string contained in this string node,
 do the following:
@@ -1934,7 +1935,696 @@ In any case, let the result of parsing this node be $m$.
 \end{algo}
 
 \clearpage
-\begin{thebibliography}{3}
+\subsection{Grammars for Cmajor Language Elements}
+
+Let us take a look at some language elements of Cmajor programming language and
+how they are represented using \verb|cmpg| grammars.
+
+\subsubsection{Basic Types}
+
+The grammar for parsing names of basic types is one of the simplest.
+It consists of an alternative for each keyword of a basic type.
+The semantic action associated with a keyword of the type creates an abstract syntax tree node for it and assigns
+it to the synthesized attribute of the rule, that is exposed to semantic actions as an identifier \emph{value}:
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar BasicTypeGrammar
+{
+    BasicType: Cm::Ast::Node*
+        ::=  keyword("bool"){ value = new Cm::Ast::BoolNode(span); }
+        |    keyword("sbyte"){ value = new Cm::Ast::SByteNode(span); }
+        |    keyword("byte"){ value = new Cm::Ast::ByteNode(span); }
+        |    keyword("short"){ value = new Cm::Ast::ShortNode(span); }
+        |    keyword("ushort"){ value = new Cm::Ast::UShortNode(span); }
+        |    keyword("int"){ value = new Cm::Ast::IntNode(span); }
+        |    keyword("uint"){ value = new Cm::Ast::UIntNode(span); }
+        |    keyword("long"){ value = new Cm::Ast::LongNode(span); }
+        |    keyword("ulong"){ value = new Cm::Ast::ULongNode(span); }
+        |    keyword("float"){ value = new Cm::Ast::FloatNode(span); }
+        |    keyword("double"){ value = new Cm::Ast::DoubleNode(span); }
+        |    keyword("char"){ value = new Cm::Ast::CharNode(span); }
+        |    keyword("wchar"){ value = new Cm::Ast::WCharNode(span); }
+        |    keyword("uchar"){ value = new Cm::Ast::UCharNode(span); }
+        |    keyword("void"){ value = new Cm::Ast::VoidNode(span); }
+        ;
+}
+\end{lstlisting}
+
+\begin{flushleft}
+\emph{span} is a name for a structure exposed to semantic actions that represents a range of input positions.
+It contains four integer attributes:
+\begin{enumerate}
+\item
+\emph{fileIndex} is an opaque integer given by user in the main parsing function that identifies the file being parsed.
+\item
+\emph{lineNumber} is the line number of the matched lexeme counted from the start of the file being parsed.
+\item
+\emph{start} is the starting position of the matched lexeme.
+\item
+\emph{end} is the ending position of the matched lexeme.
+\end{enumerate}
+
+The start and end positions are measured from the beginning of the whole input string given in the main parsing function.
+\end{flushleft}
+
+\subsubsection{Type Expressions}
+
+Next we go through the composition of type expressions.
+In the beginning of type expression grammar there are declarations that begin with the keyword \textbf{using}.
+They are \emph{rule link}s. A rule link refers to a rule defined in another grammar.
+It brings the name of a rule to the scope of the grammar being defined.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar TypeExprGrammar
+{
+    using BasicTypeGrammar.BasicType;
+    using IdentifierGrammar.Identifier;
+    using IdentifierGrammar.QualifiedId;
+    using TemplateGrammar.TemplateId;
+    using ExpressionGrammar.Expression;
+    ...
+\end{lstlisting}
+
+\begin{flushleft}
+The \emph{TypeExpr} rule is the start rule of the \emph{TypeExprGrammar} grammar:
+\end{flushleft}
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    TypeExpr(
+        ParsingContext* ctx,
+        var std::unique_ptr<Cm::Ast::DerivedTypeExprNode> node
+        ): Cm::Ast::Node*
+        ::= empty
+        {
+            ctx->BeginParsingTypeExpr();
+            node.reset(new Cm::Ast::DerivedTypeExprNode(span));
+        }
+            PrefixTypeExpr(ctx, node.get())
+        {
+            node->GetSpan().SetEnd(span.End());
+            value = Cm::Ast::MakeTypeExprNode(node.release());
+            ctx->EndParsingTypeExpr();
+        }
+        /
+        {
+            ctx->EndParsingTypeExpr();
+        }
+    ;
+    ...
+\end{lstlisting}
+
+\begin{flushleft}
+The \emph{TypeExpr} rule has one inherited attribute, \verb|ctx|, of type \verb|ParsingContext*|, and
+one local variable, \verb|node|, of type \verb|std::unique_ptr<DerivedTypeExprNode>|.
+\end{flushleft}
+
+The body of the rule begins with keyword \textbf{empty} that matches anything without consuming any input.
+The semantic action associated with it constructs an abstract syntax tree node \emph{DerivedTypeExprNode},
+that eventually becomes the synthesized attribute of this rule, if the rule happens to match.
+The reason that the type of \verb|node| is a unique pointer and not an ordinary one is that we don't
+want to leak memory in the case that the rule does not match.
+
+The type of the inherited attribute \verb|ctx*|, \emph{ParsingContext}, is a class that is used throughout parsing.
+It contains Boolean flags that guide the parsing, stacks of Boolean flags that hold the previous values of those flags,
+and member functions for manipulating those flags.
+
+For example, member function \emph{BeginParsingTypeExpr()} pushes the old value of \emph{parsingTypeExpr} flag to the
+stack and sets the \emph{parsingTypeExpr} flag to \textbf{true}.
+Correspondingly the \emph{EndParsingTypeExpr()} member function pops the previous value of the \emph{parsingTypeExpr} flag off from the
+stack and assign it to \emph{parsingTypeExpr}.
+The reason that the flags are manipulated using stacks is that parsing is a highly recursive process, and
+we may have several instances of the same rule active at one time.
+Therefore we must push the old value to the stack when we start parsing a rule, and pop it off when we end parsing that rule.
+
+In line 11 we match the \emph{PrefixTypeExpr} rule recursively.
+We pass \verb|ctx| and pointer to \verb|node| as arguments to the \emph{PrefixTypeExpr} rule.
+They become inherited attributes of that rule.
+
+The semantic action associated with the \emph{PrefixTypeExpr} nonterminal sets the value of the synthesized attribute of the rule.
+If the type expression is a simple one, \emph{value} actually receives the simple type expression node contained by \emph{DerivedTypeExprNode},
+otherwise value receives the full \emph{DerivedTypeExprNode}.
+
+The semantic action after the \verb|/| symbol starting line 18 is a \emph{failure action}.
+It is executed if matching the rule fails. Thus we call \emph{BeginParsingTypeExpr()} function at the start of the rule,
+and \emph{EndParsingTypeExpr()} function at the end of the rule regardless whether matching the rule succeeds or fails.
+
+\begin{flushleft}
+The next rule of the \emph{TypeExprGrammar} grammar is the \emph{PrefixTypeExpr} rule:
+\end{flushleft}
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    PrefixTypeExpr(
+        ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
+        ::= keyword("const"){ node->AddConst(); }
+            PostfixTypeExpr(ctx, node):c
+        |   PostfixTypeExpr(ctx, node)
+        ;
+    ...
+\end{lstlisting}
+
+\begin{flushleft}
+A \emph{prefix} type expression is a \emph{postfix} type expression optionally prefixed by the keyword \textbf{const}.
+It has two inherited attributes, a \emph{parsing context} and a pointer to the abstract syntax tree node we are constructing.
+\end{flushleft}
+
+\begin{flushleft}
+A \emph{postfix} type expression is a \emph{primary} type expression followed by zero or more
+\emph{postfix type operators} $., \&\&, \&, *, \textrm{and} [\,]$:
+\end{flushleft}
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    PostfixTypeExpr(
+        ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node,
+        var Span s)
+        ::= PrimaryTypeExpr(ctx, node){ s = span; }
+        (   '.' Identifier!{ ... }
+        |   "&&"{ node->AddRvalueRef(); }
+        |    '&'{ node->AddReference(); }
+        |    '*'{ node->AddPointer(); }
+        |   '['{ node->AddArray(); }
+            Expression(ctx):dim{ node->AddArrayDimensionNode(dim); }
+            ']'
+        )*
+        ;
+    ...
+\end{lstlisting}
+
+\begin{flushleft}
+A \emph{primary} type expression is either a name of a basic type, i.e. \textbf{bool}, \textbf{sbyte}, etc.,
+a template identifier such as \emph{foo}$<$\textbf{int}$>$, a name of a type, $Symbol$ for instance,
+or a parenthesized \emph{prefix} type expression.
+\end{flushleft}
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    PrimaryTypeExpr(
+        ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node)
+        ::= BasicType{ node->SetBaseTypeExpr(BasicType); }
+        |   TemplateId(ctx){ node->SetBaseTypeExpr(TemplateId); }
+        |   Identifier{ node->SetBaseTypeExpr(Identifier); }
+        |   '('{ node->AddLeftParen(); } PrefixTypeExpr(ctx, node)! ')'{ node->AddRightParen(); }
+        ;
+}
+\end{lstlisting}
+
+\subsubsection{Template Identifiers}
+
+The \emph{template identifier} has one inherited attribute:
+\verb|ctx| of type \verb|ParsingContext*|,
+and one local variable \verb|templateId| of type
+\verb|std::unique_ptr<TemplateIdNode>| that
+becomes the value of the inherited attribute of the rule.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar TemplateGrammar
+{
+    using IdentifierGrammar.Identifier;
+    using IdentifierGrammar.QualifiedId;
+    using TypeExprGrammar.TypeExpr;
+
+    TemplateId(ParsingContext* ctx,
+        var std::unique_ptr<TemplateIdNode> templateId): Cm::Ast::Node*
+        ::= empty{ ctx->BeginParsingTemplateId(); }
+        (
+            QualifiedId:subject
+            {
+                templateId.reset(new TemplateIdNode(span, subject));
+            }
+            '<'
+            (   TypeExpr(ctx):templateArg
+                {
+                    templateId->AddTemplateArgument(templateArg);
+                }
+                %
+                ','
+            )
+            '>'
+        )
+        {
+            ctx->EndParsingTemplateId();
+            value = templateId.release();
+            value->GetSpan().SetEnd(span.End());
+        }
+        ...
+\end{lstlisting}
+
+At the beginning of the rule \emph{BeginParsingTemplateId()}
+member function of the \emph{ParsingContext} is called.
+Correspondingly at the end of the rule
+\emph{EndParsingTemplateId()} member function of the \emph{ParsingContext}
+is called regardless whether the parsing succeeds or fails.
+\emph{BeginParsingTemplateId()} function pushes the value of member variable
+\emph{parsingTemplateId} to the stack and sets \emph{parsingTemplateId} to \textbf{true}.
+\emph{EndParsingTemplateId()} function pops the previous value of member variable
+\emph{parsingTemplateId} off from the stack and assigns it to
+\emph{parsingTemplateId}.
+
+Template identifier consists of a qualified identifier, $foo$, $bar.bazz$, etc.,
+followed a list of one or more \emph{type expressions} between
+angle brackets. Thus the \emph{TypeExpr} rule
+is called recursively by this rule.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+        ...
+        /
+        {
+            ctx->EndParsingTemplateId();
+        }
+    ;
+    ...
+\end{lstlisting}
+
+\subsubsection{Expressions}
+
+In the beginning of \emph{Expression} grammar there are some rule link declarations.
+These are the external rules that this grammar uses:
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar ExpressionGrammar
+{
+    using LiteralGrammar.Literal;
+    using BasicTypeGrammar.BasicType;
+    using IdentifierGrammar.Identifier;
+    using IdentifierGrammar.QualifiedId;
+    using TemplateGrammar.TemplateId;
+    using TypeExprGrammar.TypeExpr;
+    ...
+\end{lstlisting}
+
+The start rule of the grammar is the \emph{Expression} rule.
+It has one inherited attribute \verb|ctx| of type \verb|ParsingContext|.
+
+An \emph{expression} consists of an \emph{equivalence expression}.
+The value of \verb|ctx| is passed as an argument to the \emph{Equivalence} rule.
+After matching \emph{Equivalence}, the synthesized attribute of the \emph{Expression}
+rule is set to the value of the synthesized attribute of the \emph{Equivalence} rule.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    Expression(ParsingContext* ctx): Cm::Ast::Node*
+        ::= Equivalence(ctx){ value = Equivalence; }
+        ;
+    ...
+\end{lstlisting}
+
+An \emph{equivalence} expression consists of a nonempty sequence of \emph{implication}
+expressions separated by $<=>$ symbols:
+$\alpha_1 <=> \alpha_2 <=> \cdots <=> \alpha_k$.
+If $k > 1$ and we are not parsing a concept definition, or we are parsing a template identifier,
+we reject the input by setting $pass$ to \textbf{false}.
+This is the way to make semantic decisions during parsing.
+An expression of the form $\alpha_1 <=> \alpha_2$ is accepted only in a concept definition.
+Sole \emph{implication} expression $\alpha_1$ is accepted always.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    Equivalence(ParsingContext* ctx,
+        var std::unique_ptr<Node> expr,
+        var Span s): Cm::Ast::Node*
+        ::=
+        (   Implication(ctx):left{ expr.reset(left); s = span; }
+            (   "<=>"
+                {
+                    if (!ctx->ParsingConcept()
+                    || ctx->ParsingTemplateId())
+                        pass = false;
+                }
+                Implication(ctx):right!
+                {
+                    s.SetEnd(span.End());
+                    expr.reset(new EquivalenceNode(s, expr.release(), right));
+                }
+            )*
+        )
+        {
+            value = expr.release();
+        }
+        ;
+    ...
+\end{lstlisting}
+
+An \emph{implication} expression is of the form $\beta_1 (=> \beta_2 (=> \cdots (=> \beta_k)))$
+The parentheses show that operands of an implication associate to the right.
+We can express such right associative expressions by using \emph{right recursion},
+as in the following \emph{Implication} rule:
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    Implication(ParsingContext* ctx, var std::unique_ptr<Node> expr,
+        var Span s): Cm::Ast::Node*
+        ::=
+        (   Disjunction(ctx):left{ expr.reset(left); s = span; }
+            (   "=>"
+                {
+                    if (!ctx->ParsingConcept()
+                    || ctx->ParsingTemplateId())
+                    pass = false;
+                }
+                Implication(ctx):right!
+                {
+                    s.SetEnd(span.End());
+                    expr.reset(new ImplicationNode(s, expr.release(), right));
+                }
+            )?
+        )
+        {
+            value = expr.release();
+        }
+        ;
+    ...
+\end{lstlisting}
+
+A right recursive rule is of the form $$p \rightarrow q \> ( \> op \> p \>)?$$ where $op$ is an operator that associates to the right.
+Like in \emph{equivalence} expression, the implication expression of the form $\beta_1 => \beta_2$ is also accepted only in concept definitions.
+Sole \emph{disjunction} expression $\beta_1$ is accepted always.
+
+The \emph{disjunction } rule rejects meaningless statements like $a || b = c;$, where $a || b$ is an \emph{lvalue}.
+That is, when we are parsing the left part of an assignment statement, we set $parsingLvalue$ flag is \textbf{true},
+so in that case we reject expression of the form $a || b$.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    Disjunction(ParsingContext* ctx, var std::unique_ptr<Node> expr,
+        var Span s): Cm::Ast::Node*
+        ::=
+        (   Conjunction(ctx):left{ expr.reset(left); s = span; }
+            (   "||"
+                {
+                    if (ctx->ParsingLvalue()
+                    || ctx->ParsingSimpleStatement()
+                        && !ctx->ParsingArguments())
+                        pass = false;
+                }
+                Conjunction(ctx):right!
+                {
+                    s.SetEnd(span.End());
+                    expr.reset(new DisjunctionNode(s, expr.release(), right));
+                }
+            )*
+        )
+        {
+            value = expr.release();
+        }
+    ;
+    ...
+\end{lstlisting}
+
+Rules for other expressions are not shown, because there is nothing new in them.
+However, we show the syntax of \emph{primary} expression.
+A \emph{primary} expression consists one of
+\begin{enumerate}
+\item
+a parenthesized \emph{expression},
+\item
+a \emph{literal},
+\item
+a name of a basic type,
+\item
+a \textbf{sizeof} expression,
+\item
+a \textbf{cast} expression,
+\item
+a \textbf{construct} expression,
+\item
+a \textbf{new} expression,
+\item
+a \emph{template identifier},
+\item
+an \emph{identifier},
+\item
+keyword \textbf{this},
+\item
+keyword \textbf{base} or a
+\item
+\textbf{typename} expression.
+\end{enumerate}
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    Primary(ParsingContext* ctx): Cm::Ast::Node*
+        ::= ('(' Expression(ctx) ')'){ value = Expression; }
+        |   Literal{ value = Literal; }
+        |   BasicType{ value = BasicType; }
+        |   SizeOfExpr(ctx){ value = SizeOfExpr; }
+        |   CastExpr(ctx){ value = CastExpr; }
+        |   ConstructExpr(ctx){ value = ConstructExpr; }
+        |   NewExpr(ctx){ value = NewExpr; }
+        |   TemplateId(ctx){ value = TemplateId; }
+        |   Identifier{ value = Identifier; }
+        |   keyword("this"){ value = new ThisNode(span); }
+        |   keyword("base"){ value = new BaseNode(span); }
+        |   (keyword("typename") '(' Expression(ctx):subject ')')
+        {
+            value = new TypeNameNode(span, subject);
+        }
+        ;
+\end{lstlisting}
+
+\clearpage
+\subsubsection{Statements}
+
+The grammar for statements begins with rule link declarations:
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+grammar StatementGrammar
+{
+    using stdlib.identifier;
+    using KeywordGrammar.Keyword;
+    using ExpressionGrammar.Expression;
+    using TypeExprGrammar.TypeExpr;
+    using IdentifierGrammar.Identifier;
+    using ExpressionGrammar.ArgumentList;
+    ...
+\end{lstlisting}
+
+Here is the definition of the \emph{Statement} rule.
+There are brances for each kind of statement that
+Cmajor language contains.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    Statement(ParsingContext* ctx): Cm::Ast::StatementNode*
+        ::= LabeledStatement(ctx){ value = LabeledStatement; }
+        |   ControlStatement(ctx){ value = ControlStatement; }
+        |   TypedefStatement(ctx){ value = TypedefStatement; }
+        |   SimpleStatement(ctx){ value = SimpleStatement; }
+        |   AssignmentStatement(ctx){ value = AssignmentStatement; }
+        |   ConstructionStatement(ctx){ value = ConstructionStatement; }
+        |   DeleteStatement(ctx){ value = DeleteStatement; }
+        |   DestroyStatement(ctx){ value = DestroyStatement; }
+        |   ThrowStatement(ctx){ value = ThrowStatement; }
+        |   TryStatement(ctx){ value = TryStatement; }
+        |   AssertStatement(ctx){ value = AssertStatement; }
+        |   ConditionalCompilationStatement(ctx)
+            {
+                value = ConditionalCompilationStatement;
+            }
+        ;
+    ...
+\end{lstlisting}
+
+The \emph{SimpleStatement} rule consists of an optional expression.
+Thus it is the rule that matches also an empty statement
+consisting a sole semicolon.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    SimpleStatement(ParsingContext* ctx,
+        var std::unique_ptr<Node> expr): Cm::Ast::StatementNode*
+        ::= (empty{ ctx->PushParsingSimpleStatement(true); }
+            (Expression(ctx){ expr.reset(Expression); })? ';')
+        {
+            ctx->PopParsingSimpleStatement();
+            value = new SimpleStatementNode(span, expr.release());
+        }
+        /
+        {
+            ctx->PopParsingSimpleStatement();
+        }
+        ;
+    ...
+\end{lstlisting}
+
+The \emph{ControlStatement} rule consists of cases for
+each kind of control statement.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    ControlStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+        ::= ReturnStatement(ctx){ value = ReturnStatement; }
+        |   ConditionalStatement(ctx){ value = ConditionalStatement; }
+        |   SwitchStatement(ctx){ value = SwitchStatement; }
+        |   WhileStatement(ctx){ value = WhileStatement; }
+        |   DoStatement(ctx){ value = DoStatement; }
+        |   RangeForStatement(ctx){ value = RangeForStatement; }
+        |   ForStatement(ctx){ value = ForStatement; }
+        |   CompoundStatement(ctx){ value = CompoundStatement; }
+        |   BreakStatement(ctx){ value = BreakStatement; }
+        |   ContinueStatement(ctx){ value = ContinueStatement; }
+        |   GotoCaseStatement(ctx){ value = GotoCaseStatement; }
+        |   GotoDefaultStatement(ctx){ value = GotoDefaultStatement; }
+        |   GotoStatement(ctx){ value = GotoStatement; }
+        ;
+    ...
+\end{lstlisting}
+
+We are showing just the definition of the return statement and
+while statement rules.
+
+A return statement consists of keyword \textbf{return} followed by
+an optional expression and a semicolon.
+The \emph{ReturnStatement} rule constructs an abstract syntax tree node
+called \emph{ReturnStatementNode}, that takes the input position and
+synhesized attribute of the \emph{Expression} rule as arguments,
+and assigns it to the synthesized attribute of the rule.
+The exclamation mark after the semicolon disables backtracking.
+If the semicolon is missing in input, an \emph{ExpectationFailure} exception
+containing exact input position is thrown.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    ReturnStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+        ::= (keyword("return") Expression(ctx)? ';'!)
+        {
+            value = new ReturnStatementNode(span, Expression);
+        }
+        ;
+    ...
+\end{lstlisting}
+
+A while statement consists of keyword \textbf{while},
+a Boolean expression and a statement.
+The exclamation marks after the parentheses, and the calls of the expression rule and
+statement rule disable backtracking and force matching those constructs.
+The \emph{WhileStatement} rule constructs an abstract syntax tree node called
+\emph{WhileStatementNode} that takes the synthesized attributes of the
+\emph{Expression} and \emph{Statement} rules as arguments, and
+assigns it to the synthesized attribute of the rule.
+
+\lstset{language=cmpg}
+\begin{lstlisting}
+    ...
+    WhileStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
+        ::= (keyword("while") '('! Expression(ctx)! ')'! Statement(ctx)!)
+        {
+            value = new WhileStatementNode(span, Expression, Statement);
+        }
+        ;
+    ...
+\end{lstlisting}
+
+\subsection{Example}
+
+The following example shows the result of parsing a function and constructing an abstract syntax tree for it.
+
+\begin{exmp}
+The following Cmajor function is used as example input to the parser:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}
+public nothrow int StrLen(const char* s)
+{
+    int len = 0;
+    if (s != null)
+    {
+        while (*s != '\0')
+        {
+            ++len;
+            ++s;
+        }
+    }
+    return len;
+}
+\end{lstlisting}
+
+The following listing shows the resulting abstract syntax tree for parsing the \emph{StrLen} function:
+
+\clearpage
+\begin{verbatim}
+FunctionNode
+    FunctionGroupIdNode(StrLen)
+    ParameterNodeList
+        ParameterNode
+            DerivedTypeExprNode
+                DerivationList
+                    Derivation.const
+                    Derivation.pointer
+                CharNode
+            IdentifierNode(s)
+    CompoundStatementNode
+        ConstructionStatementNode
+            IntNode
+            IdentifierNode(len)
+            SByteLiteralNode(0)
+        ConditionalStatementNode
+            NotEqualNode
+                IdentifierNode(s)
+                NullLiteralNode
+            CompoundStatementNode
+                WhileStatementNode
+                    NotEqualNode
+                        DerefNode
+                            IdentifierNode(s)
+                        CharLiteralNode('\0')
+                    CompoundStatementNode
+                        SimpleStatementNode
+                            PrefixIncNode
+                                IdentifierNode(len)
+                        SimpleStatementNode
+                            PrefixIncNode
+                                IdentifierNode(s)
+        ReturnStatementNode
+            IdentifierNode(len)
+\end{verbatim}
+
+The parser constructs an abstract syntax tree node called \emph{FunctionNode} for the function.
+The FunctionNode contains:
+\begin{enumerate}
+\item
+the name of the function group that the function belongs to: \emph{FunctionGroupIdNode}(StrLen).
+\item
+nodes for each parameter that the function takes.
+Each \emph{ParameterNode} consists of nodes for the type and the name of the parameter.
+\item
+node for the body of the function: \emph{CompoundStatementNode}.
+\end{enumerate}
+
+The body consists of an construction statement, an \textbf{if} statement
+and a return statement. The \textbf{if} statement consists of a
+\textbf{while} statement that has two simple statements in it.
+Each simple statement contains a prefix increment expression.
+\end{exmp}
+
+\chapter{Semantic Analysis}
+
+Semantic analysis in Cmajor is done by traversing the abstract syntax tree.
+The travelsar algorithms are implemented using variation of the \emph{Visitor} design pattern.
+Visitor enables implementation of many algorithms over a class hierarchy
+without touching the classes that are part of the class hierarchy.
+
+\clearpage
+\begin{thebibliography}{4}
 
 \bibitem{COMPILERS} \textsc{Aho, A. V., M. S. Lam, R. Sethi, and J. D. Ullman}:
 Compilers: Principles, Techniques, \& Tools. Second Edition. Addison-Wesley, 2007.
