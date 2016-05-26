@@ -2570,6 +2570,252 @@ assigns it to the synthesized attribute of the rule.
     ...
 \end{lstlisting}
 
+\subsection{Abstract Syntax Tree Class Hierarchy}
+
+There are three abstract node classes in the abstract syntax tree node class hierarchy:
+\emph{Node}, \emph{UnaryNode} and \emph{BinaryNode}.
+
+The \emph{Node} class is the root of the abstract syntax tree node class hierarchy.
+The \emph{UnaryNode} class is an abstract syntax tree node that has one child node.
+The \emph{BinaryNode} class is an abstract syntax tree node that has two child nodes.
+
+\begin{verbatim}
+Node
+    UnaryNode
+    BinaryNode
+\end{verbatim}
+
+\subsubsection{Node Classes for Basic Types}
+
+There is a node class for each basic type:
+
+\begin{verbatim}
+Node
+    BoolNode
+    SByteNode
+    ByteNode
+    ShortNode
+    UShortNode
+    IntNode
+    UIntNode
+    LongNode
+    ULongNode
+    FloatNode
+    DoubleNode
+    CharNode
+    WCharNode
+    UCharNode
+    VoidNode
+\end{verbatim}
+
+\subsubsection{Literal Node Classes}
+
+There is a node class for each kind of literal:
+
+\begin{verbatim}
+Node
+    BooleanLiteralNode
+    SByteLiteralNode
+    ByteLiteralNode
+    ShortLiteralNode
+    UShortLiteralNode
+    IntLiteralNode
+    UIntLitralNode
+    LongLitralNode
+    ULongLiteralNode
+    FloatLiteralNode
+    DoubleLiterallNode
+    CharLiteralNode
+    StringLiteralNode
+    WStringLiteralNode
+    UStringLiteralNode
+    NullLiteralNode
+\end{verbatim}
+
+\subsubsection{Expression Node Classes}
+
+There is a node class for each kind of Cmajor expression:
+
+\begin{verbatim}
+Node
+    CastNode
+    IsNode
+    AsNode
+    NewNode
+    ConstructNode
+    ThisNode
+    BaseNode
+    UnaryNode
+        InvokeNode
+        IndexNode
+        DotNode
+        ArrowNode
+        PostfixIncNode
+        PostfixDecNode
+        DerefNode
+        AddOfNode
+        NotNode
+        UnaryPlusNode
+        UnaryMinusNode
+        ComplementNode
+        PrefixIncNode
+        PrefixDecNode
+        SizeOfNode
+        TypeNameNode
+    BinaryNode
+        EquivalenceNode
+        ImplicationNode
+        DisjunctionNode
+        ConjunctionNode
+        BitOrNode
+        BitXorNode
+        BitAndNode
+        EqualNode
+        NotEqualNode
+        LessNode
+        GreaterNode
+        LessOrEqualNode
+        GreaterOrEqualNode
+        ShiftLeftNode
+        ShirtRightNode
+        AddNode
+        SubNode
+        MulNode
+        DivNode
+        RemNode
+\end{verbatim}
+
+\subsubsection{Statement Node Classes}
+
+There is a node class for each kind of Cmajor statement:
+
+\begin{verbatim}
+Node
+    LabelNode
+    CatchNode
+    CondCompSymbolNode
+    CondCompilationPartNode
+    CondCompExprNode
+        CondCompNotNode
+        CondCompPrimaryNode
+        CondCompBinExprNode
+            CondCompDisjunctionNode
+            CondCompConjunctionNode
+    StatementNode
+        SimpleStatementNode
+        ReturnStatementNode
+        ConditionalStatementNode
+        SwitchStatementNode
+        CaseStatementNode
+        DefaultStatementNode
+        GotoCaseStatementNode
+        GotoDefaultStatementNode
+        WhileStatementNode
+        DoStatementNode
+        ForStatementNode
+        RangeForStatementNode
+        CompoundStatementNode
+        BreakStatementNode
+        ContinueStatementNode
+        GotoStatementNode
+        TypedefStatementNode
+        AssignmentStatementNode
+        ConstructionStatementNode
+        DeleteStatementNode
+        DestroyStatementNode
+        ThrowStatementNode
+        TryStatementNode
+        ExitTryStatementNode
+        BeginCatchStatementNode
+        AssertStatementNode
+        CondCompStatementNode
+\end{verbatim}
+
+\subsubsection{Concept Node Classes}
+
+Node classes relating to concepts:
+
+\begin{verbatim}
+Node
+    AxiomStatementNode
+    AxiomNode
+    ConceptIdNode
+    ConceptNode
+        SameConceptNode
+        DerivedConceptNode
+        ConvertibleConceptNode
+        ExplicitlyConvertibleConceptNode
+        CommonConceptNode
+        NonReferenceTypeConceptNode
+    ConstraintNode
+        WhereConstraintNode
+        IsConstraintNode
+        MultiParamConstraintNode
+        TypeNameConstraintNode
+        IntrinsicConstraintNode
+            SameConstraintNode
+            DerivedConstaraintNode
+            ConvertibleConstraintNode
+            ExplicitlyConvertibleConstraintNode
+            CommonConstraintNode
+            NonReferenceTypeConstraintNode
+        SignatureConstraintNode
+            ConstructorConstraintNode
+            DestructorConstraintNode
+            MemberFunctionConstraintNode
+            FunctionConstraintNode
+        BinaryConstraintNode
+            DisjunctiveConstraintNode
+            ConjunctiveConstraintNode
+\end{verbatim}
+
+\clearpage
+\subsubsection{Class and Function Node Classes}
+
+Node classes relating to classes and functions:
+
+\begin{verbatim}
+Node
+    MemberVariableNode
+    FunctionGroupIdNode
+    FunctionNode
+        StaticConstructorNode
+        ConstructorNode
+        DestructorNode
+        MemberFunctionNode
+            ConversionFunctionNode
+    ClassNode
+    InitializerNode
+        MemberInitializerNode
+        BaseInitializerNode
+        ThisInitializerNode
+\end{verbatim}
+
+\subsubsection{Other Node Classes}
+
+Other kinds of node classes:
+
+\begin{verbatim}
+Node
+    CompileUnitNode
+    ConstantNode
+    DelegateNode
+    ClassDeletateNode
+    DerivedTypeExprNode
+    EnumConstantNode
+    EnumTypeNode
+    IdentifierNode
+    InterfaceNode
+    NamespaceNode
+    AliasNode
+    NamespaceImportNode
+    ParameterNode
+    TemplateParameterNode
+    TemplateIdNode
+    TypedefNode
+\end{verbatim}
+
+\clearpage
 \subsection{Example}
 
 The following example shows the result of parsing a function and constructing an abstract syntax tree for it.
@@ -2596,7 +2842,6 @@ public nothrow int StrLen(const char* s)
 
 The following listing shows the resulting abstract syntax tree for parsing the \emph{StrLen} function:
 
-\clearpage
 \begin{verbatim}
 FunctionNode
     FunctionGroupIdNode(StrLen)
@@ -2696,7 +2941,6 @@ public:
     }
 };
 
-
 class Container : public Root
 {
 public:
@@ -2718,7 +2962,10 @@ public:
     virtual void Visit(SomeObject2& someObject2) {}
     virtual void Visit(Container& container) {}
 };
-
+\end{lstlisting}
+\clearpage
+\lstset{language=C++}
+\begin{lstlisting}
 class Algorithm1 : public Visitor
 {
 public:
@@ -2747,9 +2994,6 @@ public:
     {
         // algorithm 2 for SomeObject2
     }
-
-
-
     void Visit(Container& container)
     {
         // algorithm 2 for Container
