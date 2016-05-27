@@ -3015,16 +3015,63 @@ void DoAlgorithm2(Container& c)
 
 \chapter{Symbol Table}
 
-The next phase of compilation after parsing in Cmajor is constructing a symbol table.
-The symbol table consists of a tree of symbols.
+The next phase of compilation after parsing is constructing a symbol table.
+
+\section{Symbol Table Structure}
+
+A symbol table consists of a tree of symbols.
 There are many kinds of symbols.
 Container symbols like class and namespace symbols form the interior nodes of the symbol tree.
 Simple kind of symbols like constant and parameter symbols form the leaf nodes of the symbol tree.
 
+\subsection{Symbol Class Hierarchy}
+
+The following listing shows the most important kind of symbols:
+
+\begin{verbatim}
+Symbol
+    FunctionGroupSymbol
+    ConceptGroupSymbol
+    ConstantSymbol
+    EnumConstantSymbol
+    TypedefSymbol
+    VariableSymbol
+        LocalVariableSymbol
+        MemberVariableSymbol
+        ParameterSymbol
+    ContainerSymbol
+        FunctionSymbol
+        NamespaceSymbol
+        ConceptSymbol
+        TypeSymbol
+            BasicTypeSymbol
+                ...
+            ClassTypeSymbol
+                TemplateTypeSymbol
+            DerivedTypeSymbol
+            EnumTypeSymbol
+            InterfaceTypeSymbol
+\end{verbatim}
+
+\subsection{Properties of Symbols}
+
+We inspect properties of symbols that make possible symbol algorithms.
+
+\subsubsection{Properties Common To All Symbols}
+
 The most important attribute common to each kind of symbol is its name.
-Another property common to all symbols is a pointer to its parent symbol.
-In the root of the symbol three is the global namespace symbol. The name of the global namespace symbol is
-empty and its parent property is null. With these properties a \emph{full name} of a symbol can be computed as follows:
+The name of a symbol is either an empty string, or consists of a Latin letter or underscore followed
+by any number of Latin letters, underscores and decimal digits.
+Another property common to all symbols is a pointer to the symbol's parent symbol in the symbol table.
+The global namespace symbol is the root of the symbol tree.
+The name of the global namespace symbol is empty and its parent property is null.
+Other symbols have a nonempty name and a nonnull parent property.
+
+With the name and parent properties the \emph{full name} of a symbol can be computed.
+The algorithm returns a string that consists of nonempty names of symbols along a path from the global namespace symbol to
+the symbol separated by dot characters. Fox example, the full name of the global namespace symbol is an empty string, and
+the full name of a class symbol whose name is \texttt{gamma} that is contained by namespace symbol whose name is \texttt{beta} that is
+contained by a namespace symbol whose name is \texttt{alpha} that is contained by the global namespace symbol is \texttt{alpha.beta.gamma}.
 
 \begin{algo} Computing the Full Name of a Symbol.
 \begin{enumerate}
@@ -3039,11 +3086,176 @@ Otherwise the full name of the symbol is \emph{p} concatenated with "." and the 
 
 \end{algo}
 
-The symbol table is built in three stages:
+With the parent property also an associated namespace symbol for a symbol can be computed as follows:
+
+\begin{algo}\label{associatedns} Computing an Associated Namespace Symbol for a Symbol.
+\begin{enumerate}
+\item
+Let $s$ be the symbol for which to compute the associated namespace symbol.
+\item
+If $s$ is a namespace symbol, return $s$.
+\item
+Otherwise, if the parent symbol of $s$ is not null, compute the associated namespace symbol for the parent symbol of $s$
+and return it.
+\item
+Otherwise, throw an exception.
+\end{enumerate}
+\end{algo}
+
+\subsubsection{Properties of Container Symbols}
+
+Each container symbol, say \emph{S}, like a namespace or a class symbol, has a \emph{container scope}, say \emph{C}, that
+keeps a mapping from names of contained symbols to contained symbols themselves.
+A container scope \emph{C} also has pointers to its \emph{base scope} and its \emph{parent scope}.
+If \emph{S} is a class type symbol, the base scope of \emph{C} is the container scope of the base class symbol of \emph{S}.
+The parent scope of \emph{C} is the container scope of the parent symbol of \emph{S}.
+A container scope also contains a pointer to its owning container symbol.
+
+\subsection{Symbol Name Lookup}\label{namelookup}
+
+Symbol name lookup searches a symbol from a number of container scopes using a possibly qualified name,
+a scope kind, and kinds of a symbols to search.
+A scope kind is a combination of following values: \textbf{this}, \textbf{base} and \textbf{parent}.
+The kind of symbol to search can be one of many values.
+For example, lookup: \textbf{all} symbols, only \textbf{type} symbols, only \textbf{namespace} symbols, only \textbf{variable} and \textbf{parameter} symbols, etc.
+
+Let $c_1$, \ldots, $c_n$ be the components of a qualified name to search. The components are separated by dots.
+For example, if the name to search is \texttt{alpha}, then $n = 1$ and $c_1 = \texttt{alpha}$.
+Another example: if the name to search is \texttt{alpha.beta}, then $n = 2$, $c_1 = \texttt{alpha}$ and $c_2 = \texttt{beta}$.
+
+\subsubsection{Unqualified Name Lookup}
+
+If $n = 1$, we have a simple name and the symbol name lookup performs an \emph{unqualified name lookup}:
+
+\begin{algo}\label{unqualified} Unqualified Name Lookup.
+The algorithm returns a symbol if the search is successful, or null otherwise.
+\begin{enumerate}
+\item
+Let \emph{s} be the name to search, \emph{t} be the container scope from which the search begins,
+\emph{p} be the set of scope kinds to search, and \emph{k} be the kind of symbol to search.
+\item
+If \emph{s} is found from the mapping of \emph{t}, let \emph{m} be the mapped symbol.
+If the symbol kind of \emph{m} is equal to \emph{k}, return symbol \emph{m}.
+\item
+If \emph{p} contains the \textbf{base} scope and the base scope of \emph{t} is not null,
+perform unqualified name lookup from the base scope of \emph{t}.
+If that search is successful, return the symbol found.
+\item
+If \emph{p} contains the \textbf{parent} scope and the parent scope of \emph{t} is not null,
+perform unqualified name lookup from the parent scope of \emph{t}.
+If that search is successful, return the symbol found.
+\item
+Otherwise, return null.
+\end{enumerate}
+\end{algo}
+
+\subsubsection{Qualified Name Lookup}
+
+If $n > 1$, we have a qualified name of at least two components and the symbol name lookup performs a
+\emph{qualified name lookup}:
+
+\begin{algo} Qualified Name Lookup.
+The algorithm returns a symbol if the search is successful, or null otherwise.
+\begin{enumerate}
+\item
+Let $c_1$, \ldots, $c_n$ be the components of a qualified name to search ($n > 1$),
+\emph{t} and \emph{u} be the container scope from which the search begins,
+\emph{p} be the set of scope kinds to search, and \emph{k} be the kind of symbol to search,
+flag \emph{a} be \textbf{true},
+symbol \emph{s} be null.
+\item
+For $i$ = 1, \dots, $n$:
+\begin{enumerate}
+\item
+If $t$ is not null, perform unqualified name lookup (algorithm \ref{unqualified}) for name $c_i$, using scope $t$ and scope kind \textbf{this}.
+If $i < n$, set the kind of symbol to search to only \textbf{container} symbols, otherwise, if $i = n$, set the kind of symbol to search to $k$.
+If the search was successful, let $s$ be the returned symbol, and let $t$ be the container scope of $s$.
+Otherwise let $t$ be null and let $a$ be \textbf{false}.
+\end{enumerate}
+\item
+If $s$ is null or $a$ is \textbf{false}, and if \textbf{parent} scope is in $p$ and the parent scope of $u$ is not null,
+perform qualified name lookup (this algorithm) for the parent scope of $u$.
+If the search was successful, return the symbol found. Otherwise return null.
+\item
+Otherwise return symbol $s$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Opening and Closing Container Symbols}
+
+A symbol table also keeps track of \emph{currently open container symbol} and a \emph{stack of open container symbols}.
+Initially the currently open container symbol is the global namespace symbol (the root of the symbol tree), and the
+stack of open container symbols is empty.
+
+A nonnamespace container symbol is opened by pushing the currently open container symbol to the stack of open container symbols,
+and then setting the container symbol as the currently open container symbol.
+Any container symbol is closed by popping a container symbol from the stack of open container symbols and setting it
+as the currently open container symbol.
+
+\subsubsection{Opening a Namespace}
+
+A namespace is opened using the following algorithm:
+
+\begin{algo} Opening a Namespace. The algorithm sets the currently open container symbol.
+\begin{enumerate}
+\item
+Let $n$ be a possibly qualified namespace name.
+\item
+If $n$ is an empty string, push the currently open container symbol to the stack of open container symbols,
+and then set the global namespace symbol as the currently open container symbol.
+\item
+Otherwise lookup $n$ (see section \ref{namelookup}) from the container scope of the currently open container symbol using scope kind \textbf{this} and
+setting the kind of symbols to search as \textbf{namespace} symbols. If the search was successful, let $s$ be the symbol found,
+otherwise let $s$ be null.
+\item
+If $s$ is a namespace symbol, push the currently open container symbol to the stack of open container symbols,
+and then set $s$ as the currently open container symbol. Otherwise if $s$ is not a namespace symbol, throw an exception.
+\item
+Otherwise $s$ is null, so use algorithm \ref{createns} to create a namespace to the container scope of the currently open container symbol,
+and open it by pushing the currently open container symbol to the stack of open container symbols,
+and then set the created namespace symbol as the currently open container symbol.
+\end{enumerate}
+\end{algo}
+
+\clearpage
+\subsubsection{Creating a Namespace}
+
+A namespace is created using the following algorithm:
+
+\begin{algo}\label{createns} Creating a Namespace. The algorithm returns created namespace symbol.
+\begin{enumerate}
+\item
+Let $m$ be a possibly qualified namespace name to create and let $t$ be the container scope to which the namespace symbol is to be created.
+Let $c_1$, \ldots, $c_n$ be the $n$ components of $m$ separated by dots.
+Let $p$ be the namespace symbol associated with the owner symbol of the container scope $t$.
+It can be computed using algorithm \ref{associatedns}.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Lookup name $c_i$ (see section \ref{namelookup})
+from container scope $t$ using scope kind \textbf{this} and setting the kind of symbols to search as \textbf{namespace} symbols.
+If the search was successful let $s$ be the symbol found. Otherwise let $s$ be null.
+\item
+If $s$ is not null and $s$ is a namespace symbol, let $t$ be the container scope of $s$ and
+let $p$ be the namespace symbol associated with the owner symbol of the container scope $t$ (algorithm \ref{associatedns}).
+Otherwise if $s$ is not null and $s$ is not a namespace symbol, throw an exception.
+\item
+Otherwise $s$ is null, so create a new namespace symbol $ns$ with name $c_i$. Let $t$ be the container scope of $ns$.
+Let the parent scope of $t$ be the container scope of $p$. Add symbol $ns$ as the child symbol of $p$. Finally let $p$ be $ns$.
+\end{enumerate}
+\item
+Return $p$.
+\end{enumerate}
+\end{algo}
+
+\section{Construction of the Global Symbol Table}
+
+The global symbol table is built in three stages:
 
 \begin{enumerate}
 \item
-First basic type symbols like BoolTypeSymbol and IntTypeSymbol are inserted to the global namespace
+First basic type symbols like \emph{BoolTypeSymbol} and \emph{IntTypeSymbol} are inserted to the global namespace
 of the global symbol table.
 
 \item
@@ -3053,6 +3265,8 @@ Then the symbol tables of the referenced libraries are read and imported to the 
 Finally the abstract syntax trees of the current project being compiled are iterated
 and symbols for abstract syntax tree nodes are created and inserted to the global symbol table.
 \end{enumerate}
+
+\section{Example}
 
 \begin{exmp}
 Consider the following Cmajor source code file.
