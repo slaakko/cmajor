@@ -15,6 +15,7 @@
 \newtheorem{exmp}{Example}[section]
 \newtheorem{grmr}{Grammar}[section]
 \newtheorem{algo}{Algorithm}[section]
+\newtheorem{defn}{Definition}[section]
 \begin{document}
 
 \frontmatter
@@ -3060,8 +3061,6 @@ We inspect properties of symbols that make possible symbol algorithms.
 \subsubsection{Properties Common To All Symbols}
 
 The most important attribute common to each kind of symbol is its name.
-The name of a symbol is either an empty string, or consists of a Latin letter or underscore followed
-by any number of Latin letters, underscores and decimal digits.
 Another property common to all symbols is a pointer to the symbol's parent symbol in the symbol table.
 The global namespace symbol is the root of the symbol tree.
 The name of the global namespace symbol is empty and its parent property is null.
@@ -3196,24 +3195,24 @@ as the currently open container symbol.
 
 A namespace is opened using the following algorithm:
 
-\begin{algo} Opening a Namespace. The algorithm sets the currently open container symbol.
+\begin{algo}\label{openns} Opening a Namespace. The algorithm sets the currently open container symbol of a symbol table.
 \begin{enumerate}
 \item
-Let $n$ be a possibly qualified namespace name.
+Let $n$ be a possibly qualified namespace name to open. Let $t$ be a symbol table to which to open the namespace.
 \item
-If $n$ is an empty string, push the currently open container symbol to the stack of open container symbols,
-and then set the global namespace symbol as the currently open container symbol.
+If $n$ is an empty string, push the currently open container symbol to the stack of open container symbols of $t$,
+and then set the global namespace symbol as the currently open container symbol of $t$.
 \item
 Otherwise lookup $n$ (see section \ref{namelookup}) from the container scope of the currently open container symbol using scope kind \textbf{this} and
 setting the kind of symbols to search as \textbf{namespace} symbols. If the search was successful, let $s$ be the symbol found,
 otherwise let $s$ be null.
 \item
-If $s$ is a namespace symbol, push the currently open container symbol to the stack of open container symbols,
-and then set $s$ as the currently open container symbol. Otherwise if $s$ is not a namespace symbol, throw an exception.
+If $s$ is a namespace symbol, push the currently open container symbol to the stack of open container symbols of $t$,
+and then set $s$ as the currently open container symbol of $t$. Otherwise if $s$ is not a namespace symbol, throw an exception.
 \item
-Otherwise $s$ is null, so use algorithm \ref{createns} to create a namespace to the container scope of the currently open container symbol,
-and open it by pushing the currently open container symbol to the stack of open container symbols,
-and then set the created namespace symbol as the currently open container symbol.
+Otherwise $s$ is null, so use algorithm \ref{createns} to create a namespace to the container scope of the currently open container symbol of $t$,
+and open it by pushing the currently open container symbol to the stack of open container symbols of $t$,
+and then set the created namespace symbol as the currently open container symbol of $t$.
 \end{enumerate}
 \end{algo}
 
@@ -3249,22 +3248,518 @@ Return $p$.
 \end{enumerate}
 \end{algo}
 
+\subsection{Adding Symbols to Containers}
+
+A symbol is added as a child of a container symbol using the following algorithm:
+
+\begin{algo}\label{addsymboltocontainer} Adding a Symbol to a Container.
+\begin{enumerate}
+\item
+Let $s$ be the symbol to add to a container symbol $c$.
+\item
+If the name of $s$ is not empty and $s$ is not a function symbol and $s$ is not a concept symblol and $s$ is not a declaration block symbol and
+$s$ is not a namespace type symbol, install the symbol to the container scope of $c$ using following steps:
+\begin{enumerate}
+\item
+If the name of $s$ is found from symbol name mappings of the container scope of $c$, throw an exception,
+because the name of a symbol must be unique in its immediate container.
+\item
+Add a mapping from name of $s$ to $s$ to the $name \rightarrow symbol$ mapping of the container scope of $c$.
+\item
+If symbol is a container symbol, set the parent scope of the container scope of $s$ to the container scope of $c$.
+\end{enumerate}
+\item
+If $s$ if a function symbol, open a function group using the group name of $s$ and add $s$ to the opened function group using algorithm
+\ref{addtofunctiongroup}.
+\item
+Otherwise, if $s$ is a concept symbol, open a concept group using the group name of $s$ and add $s$ to the opened concept group using algorithm
+\ref{addtoconceptgroup}.
+\item
+Othwerwise, add $s$ as a child symbol of $c$ and set the parent property of $s$ to $c$.
+\end{enumerate}
+\end{algo}
+
+\subsubsection{Function Groups}
+
+Function symbols are not added directly to containers, but there is an extra layer called a \emph{function group}
+in between the container symbol and the function symbol. To describe function groups we need two definitions:
+
+\begin{defn} The \emph{group name} of a nonmember function is the name of the function without its parameters.
+The group name of a constructor is "@constructor" and the group name a destructor is "@destructor".
+The group name of other member function is the name of the member function without its parameters.
+For example, the group name of function
+\begin{verbatim}
+void foo(int x, double y)
+\end{verbatim}
+is \verb|foo| and the group name of member function
+\begin{verbatim}
+void C.operator=(const C& x)
+\end{verbatim}
+is \verb|operator=|.
+\end{defn}
+
+\begin{defn} The \emph{arity} of a function is the number of its parameters.
+For example, the arity of function
+\begin{verbatim}
+void foo(int x, double y)
+\end{verbatim}
+is 2.
+\end{defn}
+
+A function group collects functions that have equal group name under a name.
+A function group has a mapping from arities of functions to lists of function symbols.
+
+\begin{exmp}
+For example, if we have three functions:
+\begin{verbatim}
+void foo(int a);
+void foo(double b);
+void foo(int a, double b);
+\end{verbatim}
+
+they all belong to a function group named \emph{foo}.
+The function group \emph{foo} contains a mapping from arity 1 to a list containing two functions:
+\verb|void foo(int a)| and \verb|void foo(double b)|.
+It also contains a mapping from arity 2 to a list containing one function:
+\verb|void foo(int a, double b)|.
+\end{exmp}
+
+Opening a function group and adding a function to it is performed using the following algorithm:
+
+\begin{algo}\label{addtofunctiongroup} Opening a Function Group, and Adding a Function to it.
+\begin{enumerate}
+\item
+Let $s$ be a function symbol to add to a function group under container $c$.
+\item
+Lookup the group name of $s$ from the container scope of $c$ using scope kind \textbf{this} (algorithm \ref{unqualified}).
+If the search was successful, let $g$ be symbol found. Otherwise let $g$ be null.
+\item
+If $g$ is null, create a new function group symbol using group name of $s$, and add it to $c$ using
+algorithm \ref{addsymboltocontainer}. Let $g$ be the created function group.
+\item
+Otherwise, if $g$ is not a function group symbol, throw an exception, because name of a function group
+conflicts with name of another symbol.
+\item
+Let $a$ be the arity of $s$. Add the $s$ to a list of functions of arity $a$ in the $arity \rightarrow list$ mappings of $g$.
+\item
+Add $s$ as a child symbol of $g$.
+\end{enumerate}
+\end{algo}
+
+\subsubsection{Concept Groups}
+
+What is said about functions and function groups applies analogically to concepts and concept groups.
+Concept group acts as a layer between a container and a concept symbol.
+Also analogically to a group name and arity of a function, we can define the group name and arity of
+a concept as follows:
+
+\begin{defn} The \emph{group name} of a concept is the name of a concept without its type parameters.
+For example, the group name of concept
+\begin{verbatim}
+EqualityComparable<T, U>
+\end{verbatim}
+is \verb|EqualityComparable|.
+\end{defn}
+
+\begin{defn} The \emph{arity} of a concept is the number of its type parameters.
+For example, the arity of concept
+\begin{verbatim}
+EqualityComparable<T, U>
+\end{verbatim}
+is 2.
+\end{defn}
+
+A concept group collects concepts that have equal group name under a name.
+A concept group has a mapping from arities of concepts to concept symbols.
+
+\begin{exmp}
+For example, if we have these two concepts:
+\begin{verbatim}
+EqualityComparable<T>
+EqualityComparable<T, U>
+\end{verbatim}
+
+they both belong to a concept group named \emph{EqualityComparable}.
+The concept group \emph{EqualityComparable} contains a mapping from arity 1 to a concept symbol
+\verb|EqualityComparable<T>| and from arity 2 to a concept symbol \verb|EqualityComparable<T, U>|.
+\end{exmp}
+
+Opening a concept group and adding a concept to it is performed using the following algorithm:
+
+\begin{algo}\label{addtoconceptgroup} Opening a Concept Group, and Adding a Concept to it.
+\begin{enumerate}
+\item
+Let $s$ be a concept symbol to add to a concept group under container $c$.
+\item
+Lookup the group name of $s$ from the container scope of $c$ using scope kind \textbf{this} (algorithm \ref{unqualified}).
+If the search was successful, let $g$ be symbol found. Otherwise let $g$ be null.
+\item
+If $g$ is null, create a new concept group symbol using group name of $s$, and add it to $c$ using
+algorithm \ref{addsymboltocontainer}. Let $g$ be the created concept group.
+\item
+Otherwise, if $g$ is not a concept group symbol, throw an exception, because name of a concept group
+conflicts with name of another symbol.
+\item
+Let $a$ be the arity of $s$. Set $s$ as a concept for arity $a$ in the $arity \rightarrow concept$ mappings of $g$.
+\item
+Add $s$ as a child symbol of $g$.
+\end{enumerate}
+\end{algo}
+
 \section{Construction of the Global Symbol Table}
 
 The global symbol table is built in three stages:
 
 \begin{enumerate}
 \item
-First basic type symbols like \emph{BoolTypeSymbol} and \emph{IntTypeSymbol} are inserted to the global namespace
-of the global symbol table.
+First basic type symbols like \emph{BoolTypeSymbol} and \emph{IntTypeSymbol}, and functions that operate on them,
+are inserted to the global namespace of the global symbol table.
 
 \item
 Then the symbol tables of the referenced libraries are read and imported to the global symbol table.
 
 \item
-Finally the abstract syntax trees of the current project being compiled are iterated
-and symbols for abstract syntax tree nodes are created and inserted to the global symbol table.
+Finally the abstract syntax trees of the project being compiled are iterated
+and symbols that correspond abstract syntax tree nodes are created and inserted to the global symbol table.
 \end{enumerate}
+
+\subsection{Insertion of Basic Types and Their Operations}
+
+The following listing shows the basic type symbols that are inserted to the global namespace of the global symbol table:
+
+\begin{verbatim}
+BasicTypeSymbol
+    BoolTypeSymbol
+    CharTypeSymbol
+    WCharTypeSymbol
+    UCharTypeSymbol
+    VoidTypeSymbol
+    SByteTypeSymbol
+    ByteTypeSymbol
+    ShortTypeSymbol
+    UShortTypeSymbol
+    IntTypeSymbol
+    UIntTypeSymbol
+    LongTypeSymbol
+    ULongTypeSymbol
+    FloatTypeSymbol
+    DoubleTypeSymbol
+    NullPtrTypeSymbol
+\end{verbatim}
+
+The following listing shows operations for basic types that are inserted to the global namespace of the global symbol table:
+\footnote{The group name of the function symbol is shown in brackets after the operation.}
+
+\begin{verbatim}
+Symbol
+    ContainerSymbol
+        FunctionSymbol
+            BasicTypeOp
+                DefaultCtor[@constructor]
+                CopyCtor[@constructor]
+                CopyAssignment[operator=]
+                MoveCtor[@constructor]
+                MoveAssignment[operator=]
+                OpEqual[operator==]
+                OpLess[operator<]
+                BinOp
+                    OpAdd[operator+]
+                    OpSub[operator-]
+                    OpMul[operator*]
+                    OpDiv[operator/]
+                    OpRem[operator%]
+                    OpShl[operator<<]
+                    OpShr[operator>>]
+                    OpBitAnd[operator&]
+                    OpBitOr[operator|]
+                    OpBitXor[operator^]
+                OpNot[operator!]
+                OpUnaryPlus[operator+]
+                OpUnaryMinus[operator-]
+                OpComplement[operator~]
+                OpIncrement[operator++]
+                OpDecrement[operator--]
+                ConvertingCtor[@constructor]
+\end{verbatim}
+
+\subsubsection{Operations for \textbf{bool}}
+
+Operations for \emph{BoolTypeSymbol} are: \emph{DefaultCtor}, \emph{CopyCtor}, \emph{CopyAssignment}, \emph{MoveCtor}, \emph{MoveAssignment},
+\emph{OpEqual}, \emph{OpLess}, \emph{OpNot}.
+
+\subsubsection{Operations for Integer Types}
+
+Operations for integer types (\emph{SByteTypeSymbol}, \emph{ByteTypeSymbol}, \emph{ShortTypeSymbol}, \emph{UShortTypeSymbol}, \emph{IntTypeSymbol},
+\emph{UIntTypeSymbol}, \emph{LongTypeSymbol}, \emph{ULongTypeSymbol}) are:
+\emph{DefaultCtor}, \emph{CopyCtor}, \emph{CopyAssignment}, \emph{MoveCtor}, \emph{MoveAssignment}, \emph{OpEqual}, \emph{OpLess},
+\emph{OpAdd}, \emph{OpSub}, \emph{OpMul}, \emph{OpDiv}, \emph{OpRem}, \emph{OpShl}, \emph{OpShr}, \emph{OpBitAnd}, \emph{OpBitOr}, \emph{OpBitXor},
+\emph{OpUnaryPlus}, \emph{OpUnaryMinus}, \emph{OpComplement}, \emph{OpIncrement}, \emph{OpDecrement}.
+
+\subsubsection{Operations for Floating Point Types}
+
+Operations for floating point types (\emph{FloatTypeSymbol} and \emph{DoubleTypeSymbol}) are:
+\emph{DefaultCtor}, \emph{CopyCtor}, \emph{CopyAssignment}, \emph{MoveCtor}, \emph{MoveAssignment}, \emph{OpEqual}, \emph{OpLess},
+\emph{OpAdd}, \emph{OpSub}, \emph{OpMul}, \emph{OpDiv}, \emph{OpUnaryPlus}, \emph{OpUnaryMinus}.
+
+\subsubsection{Operations for Character Types}
+
+Operations for character types (\emph{CharTypeSymbol}, \emph{WCharTypeSymbol} and \emph{UCharTypeSymbol}) are:
+\emph{DefaultCtor}, \emph{CopyCtor}, \emph{CopyAssignment}, \emph{MoveCtor}, \emph{MoveAssignment}, \emph{OpEqual}, \emph{OpLess}.
+
+\subsubsection{Standard Conversions}
+
+The following table shows standard conversion operations (\emph{ConvertingCtor})
+that are inserted to the global namespace of the global symbol table.
+
+\begin{flushleft}
+Abbreviations are:\\
+I - implicit conversion,\\
+E - explicit conversion,\\
+C - conversion,\\
+P - promotion
+\end{flushleft}
+
+Implicit conversions are performed without an explicit cast.
+Explicit conversions require a cast.
+Promotions are preferred over conversions.
+Shorter conversion distances are preferred over longer conversions distances.
+Empty distance column means infinite conversion distance.
+
+\begin{flushleft}
+\begin{supertabular}{lllll}
+\textbf{Target Type}& \textbf{Source Type}& \textbf{Explicit/Implicit}& \textbf{Rank}& \textbf{Distance}\\
+\hline
+\textbf{sbyte}& \textbf{byte}& E& C&\\
+\textbf{sbyte}& \textbf{short}& E& C&\\
+\textbf{sbyte}& \textbf{ushort}& E& C&\\
+\textbf{sbyte}& \textbf{int}& E& C&\\
+\textbf{sbyte}& \textbf{uint}& E& C&\\
+\textbf{sbyte}& \textbf{long}& E& C&\\
+\textbf{sbyte}& \textbf{ulong}& E& C&\\
+\textbf{sbyte}& \textbf{float}& E& C&\\
+\textbf{sbyte}& \textbf{double}& E& C&\\
+\textbf{sbyte}& \textbf{char}& E& C&\\
+\textbf{sbyte}& \textbf{wchar}& E& C&\\
+\textbf{sbyte}& \textbf{uchar}& E& C&\\
+\textbf{sbyte}& \textbf{bool}& E& C&\\
+\hline
+\textbf{byte}& \textbf{sbyte}& E& C&\\
+\textbf{byte}& \textbf{short}& E& C&\\
+\textbf{byte}& \textbf{ushort}& E& C&\\
+\textbf{byte}& \textbf{int}& E& C&\\
+\textbf{byte}& \textbf{uint}& E& C&\\
+\textbf{byte}& \textbf{long}& E& C&\\
+\textbf{byte}& \textbf{ulong}& E& C&\\
+\textbf{byte}& \textbf{float}& E& C&\\
+\textbf{byte}& \textbf{double}& E& C&\\
+\textbf{byte}& \textbf{char}& E& C&\\
+\textbf{byte}& \textbf{wchar}& E& C&\\
+\textbf{byte}& \textbf{uchar}& E& C&\\
+\textbf{byte}& \textbf{bool}& E& C&\\
+\hline
+\textbf{short}& \textbf{sbyte}& I& P&1\\
+\textbf{short}& \textbf{byte}& I& P&2\\
+\textbf{short}& \textbf{ushort}& E& C&\\
+\textbf{short}& \textbf{int}& E& C&\\
+\textbf{short}& \textbf{uint}& E& C&\\
+\textbf{short}& \textbf{long}& E& C&\\
+\textbf{short}& \textbf{ulong}& E& C&\\
+\textbf{short}& \textbf{float}& E& C&\\
+\textbf{short}& \textbf{double}& E& C&\\
+\textbf{short}& \textbf{char}& E& C&\\
+\textbf{short}& \textbf{wchar}& E& C&\\
+\textbf{short}& \textbf{uchar}& E& C&\\
+\textbf{short}& \textbf{bool}& E& C&\\
+\hline
+\textbf{ushort}& \textbf{sbyte}& E& C&\\
+\textbf{ushort}& \textbf{byte}& I& P&1\\
+\textbf{ushort}& \textbf{short}& E& C&\\
+\textbf{ushort}& \textbf{int}& E& C&\\
+\textbf{ushort}& \textbf{uint}& E& C&\\
+\textbf{ushort}& \textbf{long}& E& C&\\
+\textbf{ushort}& \textbf{ulong}& E& C&\\
+\textbf{ushort}& \textbf{float}& E& C&\\
+\textbf{ushort}& \textbf{double}& E& C&\\
+\textbf{ushort}& \textbf{char}& E& C&\\
+\textbf{ushort}& \textbf{wchar}& E& C&\\
+\textbf{ushort}& \textbf{uchar}& E& C&\\
+\textbf{ushort}& \textbf{bool}& E& C&\\
+\hline
+\textbf{int}& \textbf{sbyte}& I& P&3\\
+\textbf{int}& \textbf{byte}& I& P&4\\
+\textbf{int}& \textbf{short}& I& P&1\\
+\textbf{int}& \textbf{ushort}& I& P&2\\
+\textbf{int}& \textbf{uint}& E& C&\\
+\textbf{int}& \textbf{long}& E& C&\\
+\textbf{int}& \textbf{ulong}& E& C&\\
+\textbf{int}& \textbf{float}& E& C&\\
+\textbf{int}& \textbf{double}& E& C&\\
+\textbf{int}& \textbf{char}& E& C&\\
+\textbf{int}& \textbf{wchar}& E& C&\\
+\textbf{int}& \textbf{uchar}& E& C&\\
+\textbf{int}& \textbf{bool}& E& C&\\
+\hline
+\textbf{uint}& \textbf{sbyte}& E& C&\\
+\textbf{uint}& \textbf{byte}& I& P&2\\
+\textbf{uint}& \textbf{short}& E& C&\\
+\textbf{uint}& \textbf{ushort}& I& P&1\\
+\textbf{uint}& \textbf{int}& E& C&\\
+\textbf{uint}& \textbf{long}& E& C&\\
+\textbf{uint}& \textbf{ulong}& E& C&\\
+\textbf{uint}& \textbf{float}& E& C&\\
+\textbf{uint}& \textbf{double}& E& C&\\
+\textbf{uint}& \textbf{char}& E& C&\\
+\textbf{uint}& \textbf{wchar}& E& C&\\
+\textbf{uint}& \textbf{uchar}& E& C&\\
+\textbf{uint}& \textbf{bool}& E& C&\\
+\hline
+\textbf{long}& \textbf{sbyte}& I& P&5\\
+\textbf{long}& \textbf{byte}& I& P&6\\
+\textbf{long}& \textbf{short}& I& P&3\\
+\textbf{long}& \textbf{ushort}& I& P&4\\
+\textbf{long}& \textbf{int}& I& P&1\\
+\textbf{long}& \textbf{uint}& I& P&2\\
+\textbf{long}& \textbf{ulong}& E& C&\\
+\textbf{long}& \textbf{float}& E& C&\\
+\textbf{long}& \textbf{double}& E& C&\\
+\textbf{long}& \textbf{char}& E& C&\\
+\textbf{long}& \textbf{wchar}& E& C&\\
+\textbf{long}& \textbf{uchar}& E& C&\\
+\textbf{long}& \textbf{bool}& E& C&\\
+\hline
+\textbf{ulong}& \textbf{sbyte}& E& C&\\
+\textbf{ulong}& \textbf{byte}& I& P&3\\
+\textbf{ulong}& \textbf{short}& E& C&\\
+\textbf{ulong}& \textbf{ushort}& I& P&2\\
+\textbf{ulong}& \textbf{int}& E& C&\\
+\textbf{ulong}& \textbf{uint}& I& P&1\\
+\textbf{ulong}& \textbf{long}& E& C&\\
+\textbf{ulong}& \textbf{float}& E& C&\\
+\textbf{ulong}& \textbf{double}& E& C&\\
+\textbf{ulong}& \textbf{char}& E& C&\\
+\textbf{ulong}& \textbf{wchar}& E& C&\\
+\textbf{ulong}& \textbf{uchar}& E& C&\\
+\textbf{ulong}& \textbf{bool}& E& C&\\
+\hline
+\textbf{float}& \textbf{sbyte}& I& C&5\\
+\textbf{float}& \textbf{byte}& I& C&6\\
+\textbf{float}& \textbf{short}& I& C&3\\
+\textbf{float}& \textbf{ushort}& I& C&4\\
+\textbf{float}& \textbf{int}& I& C&1\\
+\textbf{float}& \textbf{uint}& I& C&2\\
+\textbf{float}& \textbf{long}& E& C&\\
+\textbf{float}& \textbf{ulong}& E& C&\\
+\textbf{float}& \textbf{double}& E& C&\\
+\textbf{float}& \textbf{char}& E& C&\\
+\textbf{float}& \textbf{wchar}& E& C&\\
+\textbf{float}& \textbf{uchar}& E& C&\\
+\textbf{float}& \textbf{bool}& E& C&\\
+\hline
+\textbf{double}& \textbf{sbyte}& I& C&8\\
+\textbf{double}& \textbf{byte}& I& C&9\\
+\textbf{double}& \textbf{short}& I& C&6\\
+\textbf{double}& \textbf{ushort}& I& C&7\\
+\textbf{double}& \textbf{int}& I& C&4\\
+\textbf{double}& \textbf{uint}& I& C&5\\
+\textbf{double}& \textbf{long}& I& C&2\\
+\textbf{double}& \textbf{ulong}& I& C&3\\
+\textbf{double}& \textbf{float}& I& P&1\\
+\textbf{double}& \textbf{char}& E& C&\\
+\textbf{double}& \textbf{wchar}& E& C&\\
+\textbf{double}& \textbf{uchar}& E& C&\\
+\textbf{double}& \textbf{bool}& E& C&\\
+\hline
+\textbf{char}& \textbf{sbyte}& E& C&\\
+\textbf{char}& \textbf{byte}& E& C&\\
+\textbf{char}& \textbf{short}& E& C&\\
+\textbf{char}& \textbf{ushort}& E& C&\\
+\textbf{char}& \textbf{int}& E& C&\\
+\textbf{char}& \textbf{uint}& E& C&\\
+\textbf{char}& \textbf{long}& E& C&\\
+\textbf{char}& \textbf{ulong}& E& C&\\
+\textbf{char}& \textbf{float}& E& C&\\
+\textbf{char}& \textbf{double}& E& C&\\
+\textbf{char}& \textbf{wchar}& E& C&\\
+\textbf{char}& \textbf{uchar}& E& C&\\
+\textbf{char}& \textbf{bool}& E& C&\\
+\hline
+\textbf{wchar}& \textbf{sbyte}& E& C&\\
+\textbf{wchar}& \textbf{byte}& E& C&\\
+\textbf{wchar}& \textbf{short}& E& C&\\
+\textbf{wchar}& \textbf{ushort}& E& C&\\
+\textbf{wchar}& \textbf{int}& E& C&\\
+\textbf{wchar}& \textbf{uint}& E& C&\\
+\textbf{wchar}& \textbf{long}& E& C&\\
+\textbf{wchar}& \textbf{ulong}& E& C&\\
+\textbf{wchar}& \textbf{float}& E& C&\\
+\textbf{wchar}& \textbf{double}& E& C&\\
+\textbf{wchar}& \textbf{char}& I& P&1\\
+\textbf{wchar}& \textbf{uchar}& E& C&\\
+\textbf{wchar}& \textbf{bool}& E& C&\\
+\hline
+\textbf{uchar}& \textbf{sbyte}& E& C&\\
+\textbf{uchar}& \textbf{byte}& E& C&\\
+\textbf{uchar}& \textbf{short}& E& C&\\
+\textbf{uchar}& \textbf{ushort}& E& C&\\
+\textbf{uchar}& \textbf{int}& E& C&\\
+\textbf{uchar}& \textbf{uint}& E& C&\\
+\textbf{uchar}& \textbf{long}& E& C&\\
+\textbf{uchar}& \textbf{ulong}& E& C&\\
+\textbf{uchar}& \textbf{float}& E& C&\\
+\textbf{uchar}& \textbf{double}& E& C&\\
+\textbf{uchar}& \textbf{char}& I& P&2\\
+\textbf{uchar}& \textbf{wchar}& I& P&1\\
+\textbf{uchar}& \textbf{bool}& E& C&\\
+\hline
+\textbf{bool}& \textbf{sbyte}& E& C&\\
+\textbf{bool}& \textbf{byte}& E& C&\\
+\textbf{bool}& \textbf{short}& E& C&\\
+\textbf{bool}& \textbf{ushort}& E& C&\\
+\textbf{bool}& \textbf{int}& E& C&\\
+\textbf{bool}& \textbf{uint}& E& C&\\
+\textbf{bool}& \textbf{long}& E& C&\\
+\textbf{bool}& \textbf{ulong}& E& C&\\
+\textbf{bool}& \textbf{float}& E& C&\\
+\textbf{bool}& \textbf{double}& E& C&\\
+\textbf{bool}& \textbf{char}& E& C&\\
+\textbf{bool}& \textbf{wchar}& E& C&\\
+\textbf{bool}& \textbf{uchar}& E& C&\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\subsection{Importing Symbol Tables of Referenced Libraries}
+
+For each library L that the project being compiled references,
+
+\begin{itemize}
+\item
+the symbol table $u$ of L is read from the library file of L and then
+\item
+the symbols from the global namespace of symbol table $u$ are imported into the global symbol table using algorithm \ref{importns}.
+\end{itemize}
+
+\begin{algo}\label{importns} Importing Symbols from a Namespace into a Symbol Table.
+\begin{enumerate}
+\item
+Let $t$ be the symbol table to which the the symbols are to be imported.
+Let $n$ be the source namespace, i.e. the namespace from which the symbols are to be imported.
+\item
+Open a namespace of name of $n$ to the symbol table $t$ using algorithm \ref{openns}.
+\item
+For each child symbol $c$ of $n$:
+\begin{enumerate}
+\item
+If $c$ is a namespace symbol, import $c$ to $t$ by calling this algorithm recursively.
+\item
+Otherwise, add $c$ to the currently open container symbol of $t$ using algorithm \ref{addsymboltocontainer}.
+\end{enumerate}
+\item
+Close the currently open namespace of $t$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Creating Symbols for the Project Being Compiled}
 
 \section{Example}
 
@@ -3281,7 +3776,13 @@ namespace Alpha.Beta
 {
     public class Gamma
     {
-        public void Foo(int bar)
+        public void Foo(int x)
+        {
+        }
+        public void Foo(double y)
+        {
+        }
+        public void Bar(bool b)
         {
         }
     }
@@ -3305,7 +3806,11 @@ CompileUnitNode
     NamespaceNode(Alpha.Beta)
         ClassNode(Gamma)
             FunctionNode(Foo)
-                ParameterNode(bar)
+                ParameterNode(x)
+            FunctionNode(Foo)
+                ParameterNode(y)
+            FunctionNode(Bar)
+                ParameterNode(b)
         FunctionNode(Delta)
             ParameterNode(epsilon)
 \end{verbatim}
@@ -3323,7 +3828,11 @@ NamespaceSymbol()
             ClassTypeSymbol(Gamma)
                 FunctionGroupSymbol(Foo)
                     FunctionSymbol(Foo)
-                        ParameterSymbol(bar)
+                        ParameterSymbol(x)
+                    FunctionSymbol(Foo)
+                        ParameterSymbol(y)
+                FunctionGroupSymbol(Bar)
+                    ParameterSymbol(b)
             FunctionGroupSymbol(Delta)
                 FunctionSymbol(Delta)
                     ParameterSymbol(epsilon)
