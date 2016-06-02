@@ -4089,7 +4089,7 @@ NamespaceSymbol()
 
 A type identifier is a sixteen byte positive integer that uniquely identifies a type symbol.
 
-\section{Type Identifiers for Basic Types}
+\section{Type Identifiers for Basic Type Symbols}
 
 \begin{supertabular}{ll}
 \textbf{Basic Type Symbol}& \textbf{Type Identifier}\\
@@ -4112,6 +4112,15 @@ DoubleTypeSymbol& \verb|0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
 NullPtrTypeSymbol& \verb|10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
 \hline
 \end{supertabular}
+
+\section{Type Identifiers for Class and Interface Type Symbols}
+
+A type identifier for a class or interface type symbol consists of two parts.
+The first eight bytes is formed by two pseudorandom numbers generated using Mersenne Twister pseudorandom number generator
+(\url{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html}).
+The rest eight bytes is formed by a serial number of the class or interface.
+
+
 
 \chapter{Binder}
 
