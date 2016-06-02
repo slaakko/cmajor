@@ -4088,9 +4088,13 @@ NamespaceSymbol()
 \chapter{Type Repository}
 
 The type repository keeps a mapping from \emph{type identifiers} to type symbols.
-A type identifier is a sixteen-byte positive integer that uniquely identifies a type symbol.
+A type identifier is a sixteen-byte integer that uniquely identifies a type symbol.
 
-\section{Type Identifiers for Basic Type Symbols}
+\section{Computing the Type Identifier for a Type Symbol}
+
+In the following sections we show how to compute a type identifier for each kind of type symbol.
+
+\subsection{Type Identifiers for Basic Type Symbols}
 
 The following table shows the type identifiers for basic type symbols:
 
@@ -4118,31 +4122,37 @@ NullPtrTypeSymbol& \verb|10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
 \end{supertabular}
 \end{flushleft}
 
-\section{Type Identifiers for Class and Interface Type Symbols}
+\clearpage
+\subsection{Type Identifiers for Class and Interface Type Symbols}
 
 A type identifier for a class or interface type symbol consists of two parts.
 The first eight bytes is formed by two four-byte pseudorandom numbers generated using Mersenne Twister pseudorandom number generator
 (\url{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html}).
 The rest eight bytes is formed by a serial number of the class or interface.
 
-\section{Type Identifiers for Class Template Specialization Symbols}
+\subsection{Type Identifiers for Class Template Specialization Symbols}
+
+\begin{defn} Let $C<A_1$,\ldots, $A_n>$ be a class template specialization.
+In that expression, $C$ is called the \emph{primary class type} of that class template specialization,
+and $A_1$, \ldots, $A_n$ are called the \emph{type arguments} of that class template specialization.
+\end{defn}
 
 The type identifier for a class template specialization symbol is computed using the following algorithm:
 
-\begin{algo} Computing the Type Identifier for a Class Template Specialization Symbol.
+\begin{algo}\label{templatetypeid} Computing the Type Identifier for a Class Template Specialization Symbol.
 \begin{enumerate}
 \item
 Let $id$ be the type identifier of the primary class type of the class template specialization.
-Let $n$ be the number of type argument symbols of the class template specialization.
+Let $n$ be the number of type argument type symbols of the class template specialization.
 \item
 For $i$ = 0, \ldots, $n - 1$:
 \begin{enumerate}
 \item
-Let $a$ be the type identifier of type argument $i$ of the class template specialization.
+Let $a$ be the type identifier of the type argument $i$ of the class template specialization.
 \item
 Let $p$ be $(i + 8) \% 16$.
 \item
-Let $r$ be $a$ rotated $p$ byte positions right.
+Let $r$ be $a$ rotated by $p$ byte positions right.
 \item
 Assign $id$ \textbf{xor} $r$ to $id$.
 \end{enumerate}
@@ -4151,17 +4161,18 @@ The type identifier of the class template specialization is $id$.
 \end{enumerate}
 \end{algo}
 
-\section{Type Identifiers for Delegate, Class Delegate and Enumerated Type Symbols}
+\subsection{Type Identifiers for Delegate, Class Delegate and Enumerated Type Symbols}
 
 A type identifier for delegate, class delegate and enumerated type symbols is formed by four
 four-byte pseudorandom numbers generated using Mersenne Twister pseudorandom number generator.
 
-\section{Type Identifiers for Derived Type Symbols}
+\subsection{Type Identifiers for Derived Type Symbols}
 
 A derived type information consists of a \emph{base type}, \emph{derivations} and \emph{array dimensions}.
 We need to encode each derivation of a derived type in order to compuer a type identifier for a derived type.
-The following table shows derivation code encodings for derivations:
 
+The following table shows derivation code encodings for derivations:
+\clearpage
 \begin{flushleft}
 \begin{supertabular}{lll}
 \textbf{Derivation Symbol}& \textbf{Derivation}& \textbf{Derivation Code}\\
@@ -4177,10 +4188,9 @@ The following table shows derivation code encodings for derivations:
 \end{supertabular}
 \end{flushleft}
 
-\clearpage
 The type identifiers for a derived type symbol is computed using the following algorithm:
 
-\begin{algo} Computing the Type Identifier for a Derived Type Symbol.
+\begin{algo}\label{derivedtypeid} Computing the Type Identifier for a Derived Type Symbol.
 \begin{enumerate}
 \item
 Let $id$ be the type identifier for the base type of the derived type.
@@ -4214,6 +4224,90 @@ Set $id[8 + j]$ to $id[8 + j]$ \textbf{xor} $d3$.
 \end{enumerate}
 \item
 The type identifier of the derived type is $id$.
+\end{enumerate}
+\end{algo}
+
+\section{Making Derived Type Symbols}
+
+The following algorithms are used to make derived type symbols.
+
+\begin{algo}\label{makederivedtype} Making a Derived Type Symbol.
+The algorithm returns either an existing derived type symbol, if it is found,
+or creates a new derived type symbol and returns it, if it does not exist.
+\begin{enumerate}
+\item
+Let $b$ be a base type, $d$ be list of derivations and $a$ be a list of array dimensions.
+\item
+Let $id$ be a type identifier computed using algorithm \ref{derivedtypeid} for $b$, $d$ and $a$.
+\item
+If $id$ is found in $type id \rightarrow symbol$ mappings of the type repository, return the type symbol found.
+\item
+Otherwise create a new derived type symbol with type identifier $id$, base type $b$, list of derivations $d$, list of array dimensions $a$.
+Insert it in the $type id \rightarrow symbol$ mappings of the type repository, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makepointertype} Making a Pointer Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be a base type symbol.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a pointer derivation,
+and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makereferencetype} Making a Reference Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be a base type symbol.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a reference derivation,
+and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makervaluereftype} Making an RValue Reference Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be a base type symbol.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting an rvalue reference derivation,
+and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeconstreftype} Making a Const Reference Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be a base type symbol.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a const derivation and a reference derivation,
+and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeconstpointertype} Making a Const Pointer Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be a base type symbol.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a const derivation and a pointer derivation,
+and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{maketemplatetype} Making a Class Template Specialization Type Symbol.
+\begin{enumerate}
+\item
+Let $C$ be a primary type of the class template specialization and $A_1$, \ldots, $A_n$ be the type arguments of the class template specialization.
+\item
+Let $id$ be a type identifier computed using algorithm \ref{templatetypeid} for $C$ and $A_1$, \ldots, $A_n$.
+\item
+If $id$ is found in $type id \rightarrow symbol$ mappings of the type repository, return the type symbol found.
+\item
+Otherwise create a new class template specialization type symbol with type identifier $id$, primary type $C$ and type arguments $A_1$, \ldots, $A_n$.
+Insert it in the $type id \rightarrow symbol$ mappings of the type repository, and return it.
 \end{enumerate}
 \end{algo}
 
