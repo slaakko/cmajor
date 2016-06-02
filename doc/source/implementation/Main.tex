@@ -4087,10 +4087,14 @@ NamespaceSymbol()
 
 \chapter{Type Repository}
 
-A type identifier is a sixteen byte positive integer that uniquely identifies a type symbol.
+The type repository keeps a mapping from \emph{type identifiers} to type symbols.
+A type identifier is a sixteen-byte positive integer that uniquely identifies a type symbol.
 
 \section{Type Identifiers for Basic Type Symbols}
 
+The following table shows the type identifiers for basic type symbols:
+
+\begin{flushleft}
 \begin{supertabular}{ll}
 \textbf{Basic Type Symbol}& \textbf{Type Identifier}\\
 \hline
@@ -4112,15 +4116,106 @@ DoubleTypeSymbol& \verb|0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
 NullPtrTypeSymbol& \verb|10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
 \hline
 \end{supertabular}
+\end{flushleft}
 
 \section{Type Identifiers for Class and Interface Type Symbols}
 
 A type identifier for a class or interface type symbol consists of two parts.
-The first eight bytes is formed by two pseudorandom numbers generated using Mersenne Twister pseudorandom number generator
+The first eight bytes is formed by two four-byte pseudorandom numbers generated using Mersenne Twister pseudorandom number generator
 (\url{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html}).
 The rest eight bytes is formed by a serial number of the class or interface.
 
+\section{Type Identifiers for Class Template Specialization Symbols}
 
+The type identifier for a class template specialization symbol is computed using the following algorithm:
+
+\begin{algo} Computing the Type Identifier for a Class Template Specialization Symbol.
+\begin{enumerate}
+\item
+Let $id$ be the type identifier of the primary class type of the class template specialization.
+Let $n$ be the number of type argument symbols of the class template specialization.
+\item
+For $i$ = 0, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $a$ be the type identifier of type argument $i$ of the class template specialization.
+\item
+Let $p$ be $(i + 8) \% 16$.
+\item
+Let $r$ be $a$ rotated $p$ byte positions right.
+\item
+Assign $id$ \textbf{xor} $r$ to $id$.
+\end{enumerate}
+\item
+The type identifier of the class template specialization is $id$.
+\end{enumerate}
+\end{algo}
+
+\section{Type Identifiers for Delegate, Class Delegate and Enumerated Type Symbols}
+
+A type identifier for delegate, class delegate and enumerated type symbols is formed by four
+four-byte pseudorandom numbers generated using Mersenne Twister pseudorandom number generator.
+
+\section{Type Identifiers for Derived Type Symbols}
+
+A derived type information consists of a \emph{base type}, \emph{derivations} and \emph{array dimensions}.
+We need to encode each derivation of a derived type in order to compuer a type identifier for a derived type.
+The following table shows derivation code encodings for derivations:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Derivation Symbol}& \textbf{Derivation}& \textbf{Derivation Code}\\
+\hline
+\verb|const|& const& 1\\
+\verb|&|& reference& 2\\
+\verb|&&|& rvalue reference& 3\\
+\verb|*|& pointer& 4\\
+\verb|(|& left parenthesis& 5\\
+\verb|)|& right parenthesis& 6\\
+\verb|[]|& array& 7\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\clearpage
+The type identifiers for a derived type symbol is computed using the following algorithm:
+
+\begin{algo} Computing the Type Identifier for a Derived Type Symbol.
+\begin{enumerate}
+\item
+Let $id$ be the type identifier for the base type of the derived type.
+Let $m$ be the number of derivations of the derived type.
+Let $n$ be the number of array dimensions of the derived type.
+\item
+For $i$ = 0, \ldots, $m-1$:
+\begin{enumerate}
+\item
+Let $c$ the derivation code of $i$'th derivation of the derived type.
+\item
+Let $d$ be 1 shifted left by $c$ bit positions.
+\item
+Set the $id[i + 1]$ to $id[i + 1]$ \textbf{xor} $d$.
+\end{enumerate}
+\item
+For $j$ = 0, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $a$ be the $j$'th array dimension of the derived type.
+\item
+Let $d0$ be $a$ shifted right by 24 bit positions and ANDed by $255$.
+Let $d1$ be $a$ shifted right by 16 bit positions and ANDed by $255$.
+Let $d2$ be $a$ shifted right by 8 bit positions and ANDed by $255$.
+Let $d3$ be $a$ ANDed by $255$.
+\item
+Set $id[5 + j]$ to $id[5 + j]$ \textbf{xor} $d0$.
+Set $id[6 + j]$ to $id[6 + j]$ \textbf{xor} $d1$.
+Set $id[7 + j]$ to $id[7 + j]$ \textbf{xor} $d2$.
+Set $id[8 + j]$ to $id[8 + j]$ \textbf{xor} $d3$.
+\end{enumerate}
+\item
+The type identifier of the derived type is $id$.
+\end{enumerate}
+\end{algo}
 
 \chapter{Binder}
 
