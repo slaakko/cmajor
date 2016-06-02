@@ -4085,7 +4085,37 @@ NamespaceSymbol()
                         LocalVariableSymbol(v)
 \end{verbatim}
 
+\chapter{Type Repository}
+
+A type identifier is a sixteen byte positive integer that uniquely identifies a type symbol.
+
+\section{Type Identifiers for Basic Types}
+
+\begin{supertabular}{ll}
+\textbf{Basic Type Symbol}& \textbf{Type Identifier}\\
+\hline
+BoolTypeSymbol& \verb|01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+CharTypeSymbol& \verb|02 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+WCharTypeSymbol& \verb|03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+UCharTypeSymbol& \verb|04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+VoidTypeSymbol& \verb|05 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+SByteTypeSymbol& \verb|06 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+TypeSymbol& \verb|07 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+ShortTypeSymbo& \verb|08 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+UShortTypeSymbol& \verb|09 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+IntTypeSymbol& \verb|0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+UIntTypeSymbol& \verb|0B 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+LongTypeSymbol& \verb|0C 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+ULongTypeSymbol& \verb|0D 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+FloatTypeSymbol& \verb|0E 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+DoubleTypeSymbol& \verb|0F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+NullPtrTypeSymbol& \verb|10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00|\\
+\hline
+\end{supertabular}
+
 \chapter{Binder}
+
+\chapter{Emitter}
 
 \clearpage
 \begin{thebibliography}{4}
