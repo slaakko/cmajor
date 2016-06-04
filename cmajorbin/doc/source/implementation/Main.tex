@@ -4227,9 +4227,20 @@ The type identifier of the derived type is $id$.
 \end{enumerate}
 \end{algo}
 
-\section{Making Derived Type Symbols}
+\section{Adding Type Symbols to the Type Repository}
 
-The following algorithms are used to make derived type symbols.
+Each type symbol contains a type identifier.
+Adding a type to the type repository is done simply by adding a mapping from the type identifier of the type symbol to the type symbol itself to the
+$typeid \rightarrow symbol$ mappings of the type repository.
+
+\section{Getting a Type Symbol from the Type Repository}
+
+Getting a type symbol from the type repository by a type identifier is done by searching the $typeid \rightarrow symbol$ mappings using the type identifier.
+If the type identifier is found from the mappings, the corresponding type symbol is returned. Otherwise null is returned.
+
+\section{Making Type Symbols}
+
+The following algorithms are used to make type symbols.
 
 \begin{algo}\label{makederivedtype} Making a Derived Type Symbol.
 The algorithm returns either an existing derived type symbol, if it is found,
@@ -4312,6 +4323,662 @@ Insert it in the $type id \rightarrow symbol$ mappings of the type repository, a
 \end{algo}
 
 \chapter{Binder}
+
+\section{Static Evaluator}
+
+The static evaluator evaluates constant expressions such as constant expressions as values of constants,
+constant expressions in case statements and constant expressions as values of enumeration constants.
+In other words it evaluates anything that must be evaluated statically at compile time.
+
+\subsection{Evaluation Stack and Value Classes}
+
+The static evaluator has a stack of values called the \emph{evaluation stack} that holds intermediate and final results of evaluation.
+The values are instances of classes derived from an abstract base class named \verb|Value|.
+Here's the value class hierarchy:
+
+\begin{verbatim}
+Value
+    BoolValue
+    CharValue
+    WCharValue
+    UCharValue
+    SByteValue
+    ByteValue
+    ShortValue
+    UShortValue
+    IntValue
+    UIntValue
+    LongValue
+    ULongValue
+    FloatValue
+    DoubleValue
+    NullValue
+    StringValue
+\end{verbatim}
+
+\subsection{Operand Types and Value Types}
+
+Associated with \verb|Value| classes there is a C++ type called \verb|OperandType| and a Cmajor type called \verb|ValueType|.
+The following table shows the operand types and value types for \verb|Value| classes:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Value Class}& \textbf{OperandType}& \textbf{ValueType}\\
+\hline
+BoolValue& \textbf{bool}& \textbf{bool}\\
+CharValue& \textbf{char}& \textbf{char}\\
+WCharValue& \textbf{uint16_t}& \textbf{wchar}\\
+UCharValue& \textbf{uint32_t}& \textbf{uchar}\\
+SByteValue& \textbf{int8_t}& \textbf{sbyte}\\
+ByteValue& \textbf{uint8_t}& \textbf{byte}\\
+ShortValue& \textbf{int16_t}& \textbf{short}\\
+UShortValue& \textbf{uint16_t}& \textbf{ushort}\\
+IntValue& \textbf{int32_t}& \textbf{int}\\
+UIntValue& \textbf{uint32_t}& \textbf{uint}\\
+LongValue& \textbf{int64_t}& \textbf{long}\\
+ULongValue& \textbf{uint64_t}& \textbf{ulong}\\
+FloatValue& \textbf{float}& \textbf{float}\\
+DoubleValue& \textbf{double}& \textbf{double}\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+Each \verb|Value| class contains a value whose type is its associated \verb|OperandType|.
+
+\subsection{Evaluating Unary Expressions}
+
+First we go through how the static evaluator evaluates unary expressions.
+
+\subsubsection{Unary Operator Functions}
+
+The static evaluator has a \emph{unary operator function} for each supported unary operator.
+The unary operator function is a function template that delegates the evaluation to a C++ function function object.
+The following table shows supported unary operators, their corresponding unary operator functions, and
+C++ function objects that are used in evaluating unary expressions:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Uanry Operator}& \textbf{Unary Operator Function}& \textbf{C++ Function Object}\\
+\hline
+\verb|~|& \verb|Complement<ValueT>|& \verb|bit_not<ValueT::OperandType>|\\
+\verb|+|& \verb|UnaryPlus<ValueT>|& \verb|identity<ValueT::OperandType>|\\
+\verb|-|& \verb|UnaryMinus<ValueT>|& \verb|std::negate<ValueT::OperandType>|\\
+\verb|!|& \verb|Not<ValueT>|& \verb|std::logical_not<ValueT::OperandType>|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\subsubsection{Unary Expression Evaluation Algorithm}
+
+Here's the unary expression evaluation algorithm:
+
+\begin{algo}\label{unaryexpreval} Evaluation a Unary Expression.
+Inputs to this algorithm are:
+\begin{itemize}
+\item
+the target value type,
+\item
+evaluation stack,
+\item
+unary operator function \verb|f|,
+\item
+whether to perform cast.
+\end{itemize}
+
+\begin{enumerate}
+\item
+Pop the operand from the evaluation stack.
+\item
+Let $subjectType$ be the value type of the operand.
+\item
+If the target value type is wider than $subjectType$, let $operationType$ be target value type.
+Otherwise let $operationType$ be $subjectType$.
+\item
+Convert the operand to $operationType$ type possibly performing a cast if requested.
+As usual in Cmajor, conversions that promote a value to a value of wider type are performed implicitly,
+whereas conversions to a narrower type require a cast.
+\item
+Call the unary operator function \verb|f<operationType>| using the converted operand as an argument.
+\item
+Push the result to the evaluation stack.
+\end{enumerate}
+\end{algo}
+
+\subsection{Evaluating Binary Expressions}
+
+Next we go through how the static evaluator evaluates binary expressions.
+
+\subsubsection{Common Type}
+
+In order to evaluate a binary expression, one needs to have a \emph{common type} to which both operands of the binary operator are converted
+before evaluation. Given two value types, one can compute their common type as follows:
+
+\begin{algo}\label{commontype} Computing the Common Type of Two Value Types.
+Common type is a mapping from two value types to a value type.
+It gives the smallest value type for the left and the right value type that is large enough to hold a value of the left type and a value of the right type.
+Given the left and the right type, common type returns a type according to the following table:
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Left Type}& \textbf{Right Type}& \textbf{Common Type}\\
+\hline
+\textbf{bool}& \textbf{bool}& \textbf{bool}\\
+\textbf{bool}& \textbf{char}& \\
+\textbf{bool}& \textbf{wchar}& \\
+\textbf{bool}& \textbf{uchar}& \\
+\textbf{bool}& \textbf{sbyte}& \\
+\textbf{bool}& \textbf{byte}& \\
+\textbf{bool}& \textbf{short}& \\
+\textbf{bool}& \textbf{ushort}& \\
+\textbf{bool}& \textbf{int}& \\
+\textbf{bool}& \textbf{uint}& \\
+\textbf{bool}& \textbf{long}& \\
+\textbf{bool}& \textbf{ulong}& \\
+\textbf{bool}& \textbf{float}& \\
+\textbf{bool}& \textbf{double}& \\
+\textbf{bool}& \textbf{nullPtrType}& \\
+\textbf{bool}& \textbf{string}& \\
+\hline
+\textbf{char}& \textbf{bool}& \\
+\textbf{char}& \textbf{char}& \textbf{char}\\
+\textbf{char}& \textbf{wchar}& \textbf{wchar}\\
+\textbf{char}& \textbf{uchar}& \textbf{uchar}\\
+\textbf{char}& \textbf{sbyte}& \\
+\textbf{char}& \textbf{byte}& \\
+\textbf{char}& \textbf{short}& \\
+\textbf{char}& \textbf{ushort}& \\
+\textbf{char}& \textbf{int}& \\
+\textbf{char}& \textbf{uint}& \\
+\textbf{char}& \textbf{long}& \\
+\textbf{char}& \textbf{ulong}& \\
+\textbf{char}& \textbf{float}& \\
+\textbf{char}& \textbf{double}& \\
+\textbf{char}& \textbf{nullPtrType}& \\
+\textbf{char}& \textbf{string}& \\
+\hline
+\textbf{wchar}& \textbf{bool}& \\
+\textbf{wchar}& \textbf{char}& \textbf{wchar}\\
+\textbf{wchar}& \textbf{wchar}& \textbf{wchar}\\
+\textbf{wchar}& \textbf{uchar}& \textbf{uchar}\\
+\textbf{wchar}& \textbf{sbyte}& \\
+\textbf{wchar}& \textbf{byte}& \\
+\textbf{wchar}& \textbf{short}& \\
+\textbf{wchar}& \textbf{ushort}& \\
+\textbf{wchar}& \textbf{int}& \\
+\textbf{wchar}& \textbf{uint}& \\
+\textbf{wchar}& \textbf{long}& \\
+\textbf{wchar}& \textbf{ulong}& \\
+\textbf{wchar}& \textbf{float}& \\
+\textbf{wchar}& \textbf{double}& \\
+\textbf{wchar}& \textbf{nullPtrType}& \\
+\textbf{wchar}& \textbf{string}& \\
+\hline
+\textbf{uchar}& \textbf{bool}&\\
+\textbf{uchar}& \textbf{char}& \textbf{uchar}\\
+\textbf{uchar}& \textbf{wchar}& \textbf{uchar}\\
+\textbf{uchar}& \textbf{uchar}& \textbf{uchar}\\
+\textbf{uchar}& \textbf{sbyte}& \\
+\textbf{uchar}& \textbf{byte}& \\
+\textbf{uchar}& \textbf{short}& \\
+\textbf{uchar}& \textbf{ushort}& \\
+\textbf{uchar}& \textbf{int}& \\
+\textbf{uchar}& \textbf{uint}& \\
+\textbf{uchar}& \textbf{long}& \\
+\textbf{uchar}& \textbf{ulong}& \\
+\textbf{uchar}& \textbf{float}& \\
+\textbf{uchar}& \textbf{double}& \\
+\textbf{uchar}& \textbf{nullPtrType}& \\
+\textbf{uchar}& \textbf{string}& \\
+\hline
+\textbf{sbyte}& \textbf{bool}&\\
+\textbf{sbyte}& \textbf{char}& \\
+\textbf{sbyte}& \textbf{wchar}& \\
+\textbf{sbyte}& \textbf{uchar}& \\
+\textbf{sbyte}& \textbf{sbyte}& \textbf{sbyte}\\
+\textbf{sbyte}& \textbf{byte}& \textbf{short}\\
+\textbf{sbyte}& \textbf{short}& \textbf{short}\\
+\textbf{sbyte}& \textbf{ushort}& \textbf{int}\\
+\textbf{sbyte}& \textbf{int}& \textbf{int}\\
+\textbf{sbyte}& \textbf{uint}& \textbf{long}\\
+\textbf{sbyte}& \textbf{long}& \textbf{long}\\
+\textbf{sbyte}& \textbf{ulong}& \\
+\textbf{sbyte}& \textbf{float}& \textbf{float}\\
+\textbf{sbyte}& \textbf{double}& \textbf{double}\\
+\textbf{sbyte}& \textbf{nullPtrType}& \\
+\textbf{sbyte}& \textbf{string}& \\
+\hline
+\textbf{byte}& \textbf{bool}& \\
+\textbf{byte}& \textbf{char}& \\
+\textbf{byte}& \textbf{wchar}& \\
+\textbf{byte}& \textbf{uchar}& \\
+\textbf{byte}& \textbf{sbyte}& \textbf{short}\\
+\textbf{byte}& \textbf{byte}& \textbf{byte}\\
+\textbf{byte}& \textbf{short}& \textbf{short}\\
+\textbf{byte}& \textbf{ushort}& \textbf{ushort}\\
+\textbf{byte}& \textbf{int}& \textbf{int}\\
+\textbf{byte}& \textbf{uint}& \textbf{uint}\\
+\textbf{byte}& \textbf{long}& \textbf{long}\\
+\textbf{byte}& \textbf{ulong}& \textbf{ulong}\\
+\textbf{byte}& \textbf{float}& \textbf{float}\\
+\textbf{byte}& \textbf{double}& \textbf{double}\\
+\textbf{byte}& \textbf{nullPtrType}& \\
+\textbf{byte}& \textbf{string}& \\
+\hline
+\textbf{short}& \textbf{bool}& \\
+\textbf{short}& \textbf{char}& \\
+\textbf{short}& \textbf{wchar}& \\
+\textbf{short}& \textbf{uchar}& \\
+\textbf{short}& \textbf{sbyte}& \textbf{short}\\
+\textbf{short}& \textbf{byte}& \textbf{short}\\
+\textbf{short}& \textbf{short}& \textbf{short}\\
+\textbf{short}& \textbf{ushort}& \textbf{int}\\
+\textbf{short}& \textbf{int}& \textbf{int}\\
+\textbf{short}& \textbf{uint}& \textbf{long}\\
+\textbf{short}& \textbf{long}& \textbf{long}\\
+\textbf{short}& \textbf{ulong}& \\
+\textbf{short}& \textbf{float}& \textbf{float}\\
+\textbf{short}& \textbf{double}& \textbf{double}\\
+\textbf{short}& \textbf{nullPtrType}& \\
+\textbf{short}& \textbf{string}& \\
+\hline
+\textbf{ushort}& \textbf{bool}& \\
+\textbf{ushort}& \textbf{char}& \\
+\textbf{ushort}& \textbf{wchar}& \\
+\textbf{ushort}& \textbf{uchar}& \\
+\textbf{ushort}& \textbf{sbyte}& \textbf{int}\\
+\textbf{ushort}& \textbf{byte}& \textbf{ushort}\\
+\textbf{ushort}& \textbf{short}& \textbf{int}\\
+\textbf{ushort}& \textbf{ushort}& \textbf{ushort}\\
+\textbf{ushort}& \textbf{int}& \textbf{int}\\
+\textbf{ushort}& \textbf{uint}& \textbf{uint}\\
+\textbf{ushort}& \textbf{long}& \textbf{long}\\
+\textbf{ushort}& \textbf{ulong}& \textbf{ulong}\\
+\textbf{ushort}& \textbf{float}& \textbf{float}\\
+\textbf{ushort}& \textbf{double}& \textbf{double}\\
+\textbf{ushort}& \textbf{nullPtrType}& \\
+\textbf{ushort}& \textbf{string}& \\
+\hline
+\textbf{int}& \textbf{bool}& \\
+\textbf{int}& \textbf{char}& \\
+\textbf{int}& \textbf{wchar}& \\
+\textbf{int}& \textbf{uchar}& \\
+\textbf{int}& \textbf{sbyte}& \textbf{int}\\
+\textbf{int}& \textbf{byte}& \textbf{int}\\
+\textbf{int}& \textbf{short}& \textbf{int}\\
+\textbf{int}& \textbf{ushort}& \textbf{int}\\
+\textbf{int}& \textbf{int}& \textbf{int}\\
+\textbf{int}& \textbf{uint}& \textbf{long}\\
+\textbf{int}& \textbf{long}& \textbf{long}\\
+\textbf{int}& \textbf{ulong}& \\
+\textbf{int}& \textbf{float}& \textbf{float}\\
+\textbf{int}& \textbf{double}& \textbf{double}\\
+\textbf{int}& \textbf{nullPtrType}& \\
+\textbf{int}& \textbf{string}& \\
+\hline
+\textbf{uint}& \textbf{bool}& \\
+\textbf{uint}& \textbf{char}& \\
+\textbf{uint}& \textbf{wchar}& \\
+\textbf{uint}& \textbf{uchar}& \\
+\textbf{uint}& \textbf{sbyte}& \textbf{long}\\
+\textbf{uint}& \textbf{byte}& \textbf{uint}\\
+\textbf{uint}& \textbf{short}& \textbf{long}\\
+\textbf{uint}& \textbf{ushort}& \textbf{uint}\\
+\textbf{uint}& \textbf{int}& \textbf{long}\\
+\textbf{uint}& \textbf{uint}& \textbf{uint}\\
+\textbf{uint}& \textbf{long}& \textbf{long}\\
+\textbf{uint}& \textbf{ulong}& \textbf{ulong}\\
+\textbf{uint}& \textbf{float}& \textbf{float}\\
+\textbf{uint}& \textbf{double}& \textbf{double}\\
+\textbf{uint}& \textbf{nullPtrType}& \\
+\textbf{uint}& \textbf{string}& \\
+\hline
+\textbf{long}& \textbf{bool}& \\
+\textbf{long}& \textbf{char}& \\
+\textbf{long}& \textbf{wchar}& \\
+\textbf{long}& \textbf{uchar}& \\
+\textbf{long}& \textbf{sbyte}& \textbf{long} \\
+\textbf{long}& \textbf{byte}& \textbf{long} \\
+\textbf{long}& \textbf{short}& \textbf{long} \\
+\textbf{long}& \textbf{ushort}& \textbf{long}\\
+\textbf{long}& \textbf{int}& \textbf{long}\\
+\textbf{long}& \textbf{uint}& \textbf{long}\\
+\textbf{long}& \textbf{long}& \textbf{long}\\
+\textbf{long}& \textbf{ulong}& \\
+\textbf{long}& \textbf{float}& \textbf{float}\\
+\textbf{long}& \textbf{double}& \textbf{double}\\
+\textbf{long}& \textbf{nullPtrType}& \\
+\textbf{long}& \textbf{string}& \\
+\hline
+\textbf{ulong}& \textbf{bool}& \\
+\textbf{ulong}& \textbf{char}& \\
+\textbf{ulong}& \textbf{wchar}& \\
+\textbf{ulong}& \textbf{uchar}& \\
+\textbf{ulong}& \textbf{sbyte}& \\
+\textbf{ulong}& \textbf{byte}& \textbf{ulong}\\
+\textbf{ulong}& \textbf{short}& \\
+\textbf{ulong}& \textbf{ushort}& \textbf{ulong}\\
+\textbf{ulong}& \textbf{int}& \\
+\textbf{ulong}& \textbf{uint}& \textbf{ulong}\\
+\textbf{ulong}& \textbf{long}& \\
+\textbf{ulong}& \textbf{ulong}& \textbf{ulong}\\
+\textbf{ulong}& \textbf{float}& \textbf{float}\\
+\textbf{ulong}& \textbf{double}& \textbf{double}\\
+\textbf{ulong}& \textbf{nullPtrType}& \\
+\textbf{ulong}& \textbf{string}& \\
+\hline
+\textbf{float}& \textbf{bool}& \\
+\textbf{float}& \textbf{char}& \\
+\textbf{float}& \textbf{wchar}& \\
+\textbf{float}& \textbf{uchar}& \\
+\textbf{float}& \textbf{sbyte}& \textbf{float}\\
+\textbf{float}& \textbf{byte}& \textbf{float}\\
+\textbf{float}& \textbf{short}& \textbf{float}\\
+\textbf{float}& \textbf{ushort}& \textbf{float}\\
+\textbf{float}& \textbf{int}& \textbf{float}\\
+\textbf{float}& \textbf{uint}& \textbf{float}\\
+\textbf{float}& \textbf{long}& \textbf{float}\\
+\textbf{float}& \textbf{ulong}& \textbf{float}\\
+\textbf{float}& \textbf{float}& \textbf{float}\\
+\textbf{float}& \textbf{double}& \textbf{double}\\
+\textbf{float}& \textbf{nullPtrType}& \\
+\textbf{float}& \textbf{string}& \\
+\hline
+\textbf{double}& \textbf{bool}& \\
+\textbf{double}& \textbf{char}& \\
+\textbf{double}& \textbf{wchar}& \\
+\textbf{double}& \textbf{uchar}& \\
+\textbf{double}& \textbf{sbyte}& \textbf{double}\\
+\textbf{double}& \textbf{byte}& \textbf{double}\\
+\textbf{double}& \textbf{short}& \textbf{double}\\
+\textbf{double}& \textbf{ushort}& \textbf{double}\\
+\textbf{double}& \textbf{int}& \textbf{double}\\
+\textbf{double}& \textbf{uint}& \textbf{double}\\
+\textbf{double}& \textbf{long}& \textbf{double}\\
+\textbf{double}& \textbf{ulong}& \textbf{double}\\
+\textbf{double}& \textbf{float}& \textbf{double}\\
+\textbf{double}& \textbf{double}& \textbf{double}\\
+\textbf{double}& \textbf{nullPtrType}& \\
+\textbf{double}& \textbf{string}& \\
+\hline
+\textbf{nullPtrType}& \textbf{bool}&\\
+\textbf{nullPtrType}& \textbf{char}& \\
+\textbf{nullPtrType}& \textbf{wchar}& \\
+\textbf{nullPtrType}& \textbf{uchar}& \\
+\textbf{nullPtrType}& \textbf{sbyte}& \\
+\textbf{nullPtrType}& \textbf{byte}& \\
+\textbf{nullPtrType}& \textbf{short}& \\
+\textbf{nullPtrType}& \textbf{ushort}& \\
+\textbf{nullPtrType}& \textbf{int}& \\
+\textbf{nullPtrType}& \textbf{uint}& \\
+\textbf{nullPtrType}& \textbf{long}& \\
+\textbf{nullPtrType}& \textbf{ulong}& \\
+\textbf{nullPtrType}& \textbf{float}& \\
+\textbf{nullPtrType}& \textbf{double}& \\
+\textbf{nullPtrType}& \textbf{nullPtrType}& \textbf{nullPtrType}\\
+\textbf{nullPtrType}& \textbf{string}& \\
+\hline
+\textbf{string}& \textbf{bool}& \\
+\textbf{string}& \textbf{char}& \\
+\textbf{string}& \textbf{wchar}& \\
+\textbf{string}& \textbf{uchar}& \\
+\textbf{string}& \textbf{sbyte}& \\
+\textbf{string}& \textbf{byte}& \\
+\textbf{string}& \textbf{short}& \\
+\textbf{string}& \textbf{ushort}& \\
+\textbf{string}& \textbf{int}& \\
+\textbf{string}& \textbf{uint}& \\
+\textbf{string}& \textbf{long}& \\
+\textbf{string}& \textbf{ulong}& \\
+\textbf{string}& \textbf{float}& \\
+\textbf{string}& \textbf{double}& \\
+\textbf{string}& \textbf{nullPtrType}& \\
+\textbf{string}& \textbf{string}& \textbf{string}\\
+\hline
+\end{supertabular}
+\end{flushleft}
+\end{algo}
+
+\clearpage
+\subsubsection{Binary Operator Functions}
+
+The static evaluator has a \emph{binary operator function} for each supported binary operator.
+The binary operator function is a function template that delegates the evaluation to a C++ function function object.
+The following table shows supported binary operators, their corresponding binary operator functions, and
+C++ function objects that are used in evaluating binary expressions:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Binary Operator}& \textbf{Binary Operator Function}& \textbf{C++ Function Object}\\
+\hline
+\verb|&&|& \verb|Conjunction<ValueT>|& \verb|std::logical_and<ValueT::OperandType>|\\
+\verb+||+& \verb|Disjunction<ValueT>|& \verb|std::logical_or<ValueT::OperandType>|\\
+\verb|^|& \verb|BitXor<ValueT>|& \verb|std::bit_xor<ValueT::OperandType>|\\
+\verb+|+& \verb|BitOr<ValueT>|& \verb|std::bit_or<ValueT::OperandType>|\\
+\verb|&|& \verb|BitAnd<ValueT>|& \verb|std::bit_and<ValueT::OperandType>|\\
+\verb|%|& \verb|Rem<ValueT>|& \verb|std::modulus<ValueT::OperandType>|\\
+\verb|/|& \verb|Div<ValueT>|& \verb|std::divides<ValueT::OperandType>|\\
+\verb|*|& \verb|Mul<ValueT>|& \verb|std::multiplies<ValueT::OperandType>|\\
+\verb|-|& \verb|Sub<ValueT>|& \verb|std::minus<ValueT::OperandType>|\\
+\verb|+|& \verb|Add<ValueT>|& \verb|std::plus<ValueT::OperandType>|\\
+\verb|>>|& \verb|ShiftRight<ValueT>|& \verb|shiftRightFun<ValueT::OperandType>|\\
+\verb|<<|& \verb|ShiftLeft<ValueT>|& \verb|shiftLeftFun<ValueT::OperandType>|\\
+\verb|==|& \verb|Equal<ValueT>|& \verb|std::equal_to<ValueT::OperandType>|\\
+\verb|!=|& \verb|NotEqual<ValueT>|& \verb|std::not_equal_to<ValueT::OperandType>|\\
+\verb|<|& \verb|Less<ValueT>|& \verb|std::less<ValueT::OperandType>|\\
+\verb|>|& \verb|Greater<ValueT>|& \verb|std::greater<ValueT::OperandType>|\\
+\verb|<=|& \verb|LessOrEqual<ValueT>|& \verb|std::less_equal<ValueT::OperandType>|\\
+\verb|>=|& \verb|GreaterOrEqual<ValueT>|& \verb|std::greater_equal<ValueT::OperandType>|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\subsubsection{Binary Expression Evaluation Algorithm}
+
+Finally here's the binary expression evaluation algorithm:
+
+\begin{algo}\label{binaryexpreval} Evaluating a Binary Expression.
+Inputs to this algorithm are:
+\begin{itemize}
+\item
+the target value type
+\item
+evaluation stack
+\item
+a binary operator function \verb|f|,
+\item
+whether to perform cast.
+\end{itemize}
+
+\begin{enumerate}
+\item
+Pop the right operand from the evaluation stack.
+\item
+Pop the left operand from the evaluation stack.
+\item
+Let $leftType$ be the value type of the left operand.
+Let $rightType$ be the value type of the right operand.
+Let $commonType$ be the common value type computed using algorithm \ref{commontype} for $leftType$ and $rightType$.
+\item
+If the target value type is wider than $commonType$, let $operationType$ be target value type.
+Otherwise let $operationType$ be $commonType$.
+\item
+Convert the left and right operands to $operationType$ type possibly performing a cast if requested.
+\item
+Call the binary operator function \verb|f<operationType>| using converted left and right operands as arguments.
+\item
+Push the result to the evaluation stack.
+\end{enumerate}
+\end{algo}
+
+\subsection{Evaluation of a Constant Expression}
+
+The main algorithm of this component is the evaluation of a constant expression:
+
+\begin{algo} Evaluating a Constant Expression.
+The inputs to this algorithm are:
+\begin{itemize}
+\item
+the constant expression is represented as an abstract syntax tree node.
+\item
+the target value type, i.e. the type to which the evaluated result is finally converted,
+\item
+whether a cast is performed,
+\item
+a container scope and file scopes for symbol lookup.
+\end{itemize}
+
+The algorithm returns an instance of a class derived from \verb|Value| class that contains the evaluated result.
+
+The algorithm creates an instance of a static evaluator that is an abstract syntax tree visitor, and calls the \verb|Accept| member function
+of the given abstract syntax tree node by giving the static evaluator instance as an argument.
+As a result of the visitation, the evaluated value will be in the top of the evaluation stack.
+Finally the evaluated value is popped off from the evaluation stack, converted to the required target type, and returned.
+
+The static evaluator overrides the following visiting points:
+
+\begin{itemize}
+\item
+\verb|Visit(BooleanLiteralNode& booleanLiteralNode)|:
+Create an instance of a \verb|BoolValue| containing the value from the \verb|booleanLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(SByteLiteralNode& sbyteLiteralNode)|:
+Create an instance of a \verb|SByteValue| containing the value from the \verb|sbyteLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(ByteLiteralNode& byteLiteralNode)|:
+Create an instance of a \verb|ByteValue| containing the value from the \verb|byteLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(ShortLiteralNode& shortLiteralNode)|:
+Create an instance of a \verb|ShortValue| containing the value from the \verb|shortLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(UShortLiteralNode& ushortLiteralNode)|:
+Create an instance of a \verb|UShortValue| containing the value from the \verb|ushortLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(IntLiteralNode& intLiteralNode)|:
+Create an instance of a \verb|IntValue| containing the value from the \verb|intLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(UIntLiteralNode& uintLiteralNode)|:
+Create an instance of a \verb|UIntValue| containing the value from the \verb|uintLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(LongLiteralNode& longLiteralNode)|:
+Create an instance of a \verb|LongValue| containing the value from the \verb|longLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(ULongLiteralNode& ulongLiteralNode)|:
+Create an instance of a \verb|ULongValue| containing the value from the \verb|ulongLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(FloatLiteralNode& floatLiteralNode)|:
+Create an instance of a \verb|FloatValue| containing the value from the \verb|floatLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(DoubleLiteralNode& doubleLiteralNode)|:
+Create an instance of a \verb|DoubleValue| containing the value from the \verb|doubleLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|Visit(CharLiteralNode& charLiteralNode)|:
+Create an instance of a \verb|CharValue| containing the value from the \verb|charLiteralNode|, and push it to the evaluation stack.
+\item
+\verb|EndVisit(DisjunctionNode& disjunctionNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Disjunction| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(ConjunctionNode& conjunctionNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Conjunction| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(BitOrNode& bitOrNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|BitOr| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(BitXorNode& bitXorNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|BitXor| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(BitAndNode& bitAndNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|BitAnd| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(EqualNode& equalNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Equal| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(NotEqualNode& notEqualNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|NotEqual| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(LessNode& lessNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Less| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(GreaterNode& greaterNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Greater| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(LessOrEqualNode& lessOrEqualNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|LessOrEqual| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(GreaterOrEqualNode& greaterOrEqualNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|GreaterOrEqual| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(ShiftLeftNode& shiftLeftNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|ShiftLeft| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(ShiftRightNode& shiftRightNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|ShiftRight| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(AddNode& addNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Add| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(SubNode& subNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Sub| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(MulNode& mulNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Mul| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(DivNode& divNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Div| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(RemNode& remNode)|:
+Evaluate a binary expression by calling algorithm \ref{binaryexpreval}
+and giving the target value type, evaluation stack, \verb|Rem| binary operator function, and cast as arguments.
+\item
+\verb|EndVisit(UnaryPlusNode& unaryPlusNode)|:
+Evaluate a unary expression by calling algorithm \ref{unaryexpreval}
+and giving the target value type, evaluation stack, \verb|UnaryPlus| unary operator function, and cast as arguments.
+\item
+\verb|EndVisit(UnaryMinusNode& unaryMinusNode)|:
+Evaluate a unary expression by calling algorithm \ref{unaryexpreval}
+and giving the target value type, evaluation stack, \verb|UnaryMinus| unary operator function, and cast as arguments.
+\item
+\verb|EndVisit(NotNode& notNode)|:
+Evaluate a unary expression by calling algorithm \ref{unaryexpreval}
+and giving the target value type, evaluation stack, \verb|Not| unary operator function, and cast as arguments.
+\item
+\verb|EndVisit(ComplementNode& complementNode)|:
+Evaluate a unary expression by calling algorithm \ref{unaryexpreval}
+and giving the target value type, evaluation stack, \verb|Complement| unary operator function, and cast as arguments.
+\item
+\verb|BeginVisit(ClassNode& classNode)|:
+\item
+\verb|BeginVisit(NamespaceNode& namespaceNode)|:
+\item
+\verb|BeginVisit(EnumTypeNode& enumTypeNode)|:
+\item
+\verb|BeginVisit(DotNode& dotNode)|:
+\item
+\verb|EndVisit(DotNode& dotNode)|:
+\item
+\verb|Visit(CastNode& castNode)|:
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:
+\end{itemize}
+
+\end{algo}
+
+\section{Type Resolver}
 
 \chapter{Emitter}
 
