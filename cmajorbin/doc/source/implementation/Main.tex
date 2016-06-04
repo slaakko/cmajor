@@ -4354,6 +4354,7 @@ Value
     DoubleValue
     NullValue
     StringValue
+    ScopedValue
 \end{verbatim}
 
 \subsection{Operand Types and Value Types}
@@ -4809,17 +4810,43 @@ Push the result to the evaluation stack.
 \end{enumerate}
 \end{algo}
 
+\subsection{Evaluating the Value Associated with a Symbol}
+
+Evaluation of the value associated with a symbol is done using the following algorithm:
+
+\begin{algo}\label{evalconstantsymbol} Evaluating the Value Associated with a Symbol.
+Inputs to this algorithm are:
+\begin{itemize}
+\item
+a symbol and
+\item
+an evaluation stack.
+\end{itemize}
+\begin{enumerate}
+\item
+If the symbol is a container symbol, create a new \verb|ScopedValue| containing the container symbol, and push it to the evaluation stack.
+\item
+Otherwise, if the symbol is a constant symbol, evaluate the expression of the constant symbol using algorithm \ref{evalconstantexpr},
+and push it to the evaluation stack.
+\item
+Otherwise, if the symbol is an enumerated constant symbol, evaluate the expression of the enumeration constant symbol using algorithm \ref{evalconstantexpr},
+and push it to the evaluation stack.
+\item
+Otherwise, throw an exception.
+\end{enumerate}
+\end{algo}
+
 \subsection{Evaluation of a Constant Expression}
 
 The main algorithm of this component is the evaluation of a constant expression:
 
-\begin{algo} Evaluating a Constant Expression.
+\begin{algo}\label{evalconstantexpr} Evaluating a Constant Expression.
 The inputs to this algorithm are:
 \begin{itemize}
 \item
-the constant expression is represented as an abstract syntax tree node.
+a constant expression represented as an abstract syntax tree node,
 \item
-the target value type, i.e. the type to which the evaluated result is finally converted,
+a target value type, i.e. the type to which the evaluated result is finally converted,
 \item
 whether a cast is performed,
 \item
@@ -4961,22 +4988,158 @@ and giving the target value type, evaluation stack, \verb|Not| unary operator fu
 Evaluate a unary expression by calling algorithm \ref{unaryexpreval}
 and giving the target value type, evaluation stack, \verb|Complement| unary operator function, and cast as arguments.
 \item
-\verb|BeginVisit(ClassNode& classNode)|:
-\item
-\verb|BeginVisit(NamespaceNode& namespaceNode)|:
-\item
-\verb|BeginVisit(EnumTypeNode& enumTypeNode)|:
-\item
-\verb|BeginVisit(DotNode& dotNode)|:
-\item
 \verb|EndVisit(DotNode& dotNode)|:
+Pop a value from the evaluation stack.
+If the value is of \verb|ScopedValue| type, lookup an identifier defined in the \verb|dotNode| from the container scope of the container symbol defined in the
+\verb|ScopedValue| using lookup algorithms in section \ref{namelookup}.
+If a symbol is found, use algorithm \ref{evalconstantsymbol} to evaluate the value associated with the symbol.
+Otherwise throw an exception.
 \item
 \verb|Visit(CastNode& castNode)|:
+Let $e$ be the target type expression represented as an abstract syntax tree node that is contained by the \verb|castNode|.
+Use the type resolver to resolve the type from $e$ by using algorithm \ref{resolvetype}. Let $t$ be the resolved type symbol.
+Let $v$ be the value type for $t$.
+Evaluate the constant expression defined in the \verb|castNode| by calling this algorithm recursively with $v$ as the target type and cast to be \textbf{true}.
+Push the evaluated value to the evaluation stack.
 \item
 \verb|Visit(IdentifierNode& identifierNode)|:
+Lookup the identifier defined in the \verb|identifierNode| from the container scope and file scopes using lookup algorithms in section \ref{namelookup}.
+If a symbol is found, use algorithm \ref{evalconstantsymbol} to evaluate the value associated with the symbol.
+Otherwise throw an exception.
 \end{itemize}
-
 \end{algo}
+
+\clearpage
+\subsection{Example}
+
+Let's go through evaluation the value of two constants defined in the following listing:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}
+public const int a = 2;
+public const int b = 2 * (a + 3);
+\end{lstlisting}
+
+\begin{flushleft}
+When the previous file is parsed, the following abstract syntax tree is generated:
+
+\begin{verbatim}
+CompileUnitNode
+    ConstantNode
+        IntNode
+        IdentifierNode(a)
+        SByteLiteralNode(2)
+    ConstantNode
+        IntNode
+        IdentifierNode(b)
+        MulNode
+            SByteLiteralNode(2)
+            AddNode
+                IdentifierNode(a)
+                SByteLiteralNode(3)
+\end{verbatim}
+\end{flushleft}
+
+\subsubsection{Evaluation of Constant $a$}
+
+For the constant $a$, the inputs for algorithm \ref{evalconstantexpr} are:
+\begin{itemize}
+\item
+constant expression node: \verb|SByteLiteraNode(2)|
+\item
+target value type: \textbf{int}
+\item
+container scope: the global scope.
+\end{itemize}
+The following steps are executed:
+\begin{enumerate}
+\item
+\verb|Visit(SByteLiteralNode& sbyteLiteralNode)| is called.
+This causes an \verb|SByteValue| with value 2 to be created and pushed to the evaluation stack.
+\item
+The \verb|SByteValue| with value 2 is popped from the evaluation stack, converted to \verb|IntValue| and returned.
+\end{enumerate}
+
+\subsubsection{Evaluation of Constant $b$}
+For the constant $b$, the inputs for algorithm \ref{evalconstantexpr} are:
+\begin{itemize}
+\item
+constant expression nodes:
+\begin{verbatim}
+MulNode
+    SByteLiteralNode(2)
+    AddNode
+        IdentifierNode(a)
+        SByteLiteralNode(3)
+\end{verbatim}
+\item
+target value type: \textbf{int}
+\item
+container scope: the global scope.
+\end{itemize}
+The following steps are executed:
+\begin{enumerate}
+\item
+\verb|Visit(SByteLiteralNode& sbyteLiteralNode)| is called.
+This causes an \verb|SByteValue| with value 2 to be created and pushed to the evaluation stack.
+Now the contents of the evaluation stack is: \verb|SByteValue(2)|.
+\item
+\verb|Visit(IdentifierNode& identifierNode)| is called.
+\begin{enumerate}
+\item
+Identifier $a$ is looked up from the global scope.
+\item
+Constant symbol $a$ is found from the global scope.
+\item
+Algorithm \ref{evalconstantsymbol} is executed with symbol $a$:
+\begin{enumerate}
+\item
+Symbol $a$ is a constant symbol, so its value is evaluated and pushed to the evaluation stack.
+\end{enumerate}
+Now the contents of the evaluation stack is: \verb|SByteValue(2),IntValue(2)|.
+\end{enumerate}
+\item
+\verb|Visit(SByteLiteralNode& sbyteLiteralNode)| is called.
+This causes an \verb|SByteValue| with value 3 to be created and pushed to the evaluation stack.
+Now the contents of the evaluation stack is: \verb|SByteValue(2),IntValue(2),SByteValue(3)|.
+\item
+\verb|EndVisit(AddNode& addNode)| is called:
+Algorithm \ref{binaryexpreval} is executed with \verb|Add| binary operator function:
+\begin{enumerate}
+\item
+Right operand \verb|SByteValue(3)| is popped from the evaluation stack.
+\item
+Left operand \verb|IntValue(2)| is popped from the evaluation stack.
+\item
+The $leftType$ is \textbf{int}, $rightType$ is \textbf{sbyte}, $commonType$ is \textbf{int} and $operationType$ is \textbf{int}.
+\item
+The right \verb|SByteValue| operand is converted to \verb|IntValue|.
+\item
+\verb|Add(IntValue(2), IntValue(3))| is called and \verb|std::plus<int>(2, 3)| is evaluated.
+\item
+Result \verb|IntValue(5)| is pushed to the evaluation stack.
+\end{enumerate}
+Now the contents of the evaluation stack is: \verb|SByteValue(2),IntValue(5)|.
+\item
+\verb|EndVisit(MulNode& mulNode)| is called:
+Algorithm \ref{binaryexpreval} is executed with \verb|Mul| binary operator function:
+\begin{enumerate}
+\item
+Right operand \verb|IntValue(5)| is popped from the evaluation stack.
+\item
+Left operand \verb|SByteValue(2)| is popped from the evaluation stack.
+\item
+The $leftType$ is \textbf{sbyte}, $rightType$ is \textbf{int}, $commonType$ is \textbf{int} and $operationType$ is \textbf{int}.
+\item
+The left \verb|SByteValue| operand is converted to \verb|IntValue|.
+\item
+\verb|Mul(IntValue(2), IntValue(5))| is called and \verb|std::multiplies<int>(2, 5)| is evaluated.
+\item
+Result \verb|IntValue(10)| is pushed to the evaluation stack.
+\end{enumerate}
+\item
+The \verb|IntValue| with value 10 is popped from the evaluation stack and returned.
+\end{enumerate}
 
 \section{Type Resolver}
 
