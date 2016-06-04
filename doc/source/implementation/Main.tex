@@ -4322,15 +4322,13 @@ Insert it in the $type id \rightarrow symbol$ mappings of the type repository, a
 \end{enumerate}
 \end{algo}
 
-\chapter{Binder}
-
-\section{Static Evaluator}
+\chapter{Static Evaluator}
 
 The static evaluator evaluates constant expressions such as constant expressions as values of constants,
 constant expressions in case statements and constant expressions as values of enumeration constants.
 In other words it evaluates anything that must be evaluated statically at compile time.
 
-\subsection{Evaluation Stack and Value Classes}
+\section{Evaluation Stack and Value Classes}
 
 The static evaluator has a stack of values called the \emph{evaluation stack} that holds intermediate and final results of evaluation.
 The values are instances of classes derived from an abstract base class named \verb|Value|.
@@ -4357,7 +4355,7 @@ Value
     ScopedValue
 \end{verbatim}
 
-\subsection{Operand Types and Value Types}
+\section{Operand Types and Value Types}
 
 Associated with \verb|Value| classes there is a C++ type called \verb|OperandType| and a Cmajor type called \verb|ValueType|.
 The following table shows the operand types and value types for \verb|Value| classes:
@@ -4386,11 +4384,11 @@ DoubleValue& \textbf{double}& \textbf{double}\\
 
 Each \verb|Value| class contains a value whose type is its associated \verb|OperandType|.
 
-\subsection{Evaluating Unary Expressions}
+\section{Evaluating Unary Expressions}
 
 First we go through how the static evaluator evaluates unary expressions.
 
-\subsubsection{Unary Operator Functions}
+\subsection{Unary Operator Functions}
 
 The static evaluator has a \emph{unary operator function} for each supported unary operator.
 The unary operator function is a function template that delegates the evaluation to a C++ function function object.
@@ -4399,7 +4397,7 @@ C++ function objects that are used in evaluating unary expressions:
 
 \begin{flushleft}
 \begin{supertabular}{lll}
-\textbf{Uanry Operator}& \textbf{Unary Operator Function}& \textbf{C++ Function Object}\\
+\textbf{Unary Operator}& \textbf{Unary Operator Function}& \textbf{C++ Function Object}\\
 \hline
 \verb|~|& \verb|Complement<ValueT>|& \verb|bit_not<ValueT::OperandType>|\\
 \verb|+|& \verb|UnaryPlus<ValueT>|& \verb|identity<ValueT::OperandType>|\\
@@ -4409,7 +4407,8 @@ C++ function objects that are used in evaluating unary expressions:
 \end{supertabular}
 \end{flushleft}
 
-\subsubsection{Unary Expression Evaluation Algorithm}
+\clearpage
+\subsection{Unary Expression Evaluation Algorithm}
 
 Here's the unary expression evaluation algorithm:
 
@@ -4445,11 +4444,11 @@ Push the result to the evaluation stack.
 \end{enumerate}
 \end{algo}
 
-\subsection{Evaluating Binary Expressions}
+\section{Evaluating Binary Expressions}
 
 Next we go through how the static evaluator evaluates binary expressions.
 
-\subsubsection{Common Type}
+\subsection{Common Type}
 
 In order to evaluate a binary expression, one needs to have a \emph{common type} to which both operands of the binary operator are converted
 before evaluation. Given two value types, one can compute their common type as follows:
@@ -4738,8 +4737,7 @@ Given the left and the right type, common type returns a type according to the f
 \end{flushleft}
 \end{algo}
 
-\clearpage
-\subsubsection{Binary Operator Functions}
+\subsection{Binary Operator Functions}
 
 The static evaluator has a \emph{binary operator function} for each supported binary operator.
 The binary operator function is a function template that delegates the evaluation to a C++ function function object.
@@ -4772,7 +4770,7 @@ C++ function objects that are used in evaluating binary expressions:
 \end{supertabular}
 \end{flushleft}
 
-\subsubsection{Binary Expression Evaluation Algorithm}
+\subsection{Binary Expression Evaluation Algorithm}
 
 Finally here's the binary expression evaluation algorithm:
 
@@ -4810,7 +4808,7 @@ Push the result to the evaluation stack.
 \end{enumerate}
 \end{algo}
 
-\subsection{Evaluating the Value Associated with a Symbol}
+\section{Evaluating the Value Associated with a Symbol}
 
 Evaluation of the value associated with a symbol is done using the following algorithm:
 
@@ -4836,7 +4834,7 @@ Otherwise, throw an exception.
 \end{enumerate}
 \end{algo}
 
-\subsection{Evaluation of a Constant Expression}
+\section{Evaluation of a Constant Expression}
 
 The main algorithm of this component is the evaluation of a constant expression:
 
@@ -5010,7 +5008,7 @@ Otherwise throw an exception.
 \end{algo}
 
 \clearpage
-\subsection{Example}
+\section{Example}
 
 Let's go through evaluation the value of two constants defined in the following listing:
 
@@ -5040,7 +5038,7 @@ CompileUnitNode
 \end{verbatim}
 \end{flushleft}
 
-\subsubsection{Evaluation of Constant $a$}
+\subsection{Evaluation of Constant $a$}
 
 For the constant $a$, the inputs for algorithm \ref{evalconstantexpr} are:
 \begin{itemize}
@@ -5060,7 +5058,7 @@ This causes an \verb|SByteValue| with value 2 to be created and pushed to the ev
 The \verb|SByteValue| with value 2 is popped from the evaluation stack, converted to \verb|IntValue| and returned.
 \end{enumerate}
 
-\subsubsection{Evaluation of Constant $b$}
+\subsection{Evaluation of Constant $b$}
 For the constant $b$, the inputs for algorithm \ref{evalconstantexpr} are:
 \begin{itemize}
 \item
@@ -5094,7 +5092,7 @@ Constant symbol $a$ is found from the global scope.
 Algorithm \ref{evalconstantsymbol} is executed with symbol $a$:
 \begin{enumerate}
 \item
-Symbol $a$ is a constant symbol, so its value is evaluated and pushed to the evaluation stack.
+Symbol $a$ is a constant symbol, so its value \verb|IntValue(2)| is pushed to the evaluation stack.
 \end{enumerate}
 Now the contents of the evaluation stack is: \verb|SByteValue(2),IntValue(2)|.
 \end{enumerate}
@@ -5141,7 +5139,7 @@ Result \verb|IntValue(10)| is pushed to the evaluation stack.
 The \verb|IntValue| with value 10 is popped from the evaluation stack and returned.
 \end{enumerate}
 
-\section{Type Resolver}
+\chapter{Type Resolver}
 
 \chapter{Emitter}
 
