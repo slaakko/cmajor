@@ -4132,7 +4132,7 @@ The rest eight bytes is formed by a serial number of the class or interface.
 
 \subsection{Type Identifiers for Class Template Specialization Symbols}
 
-\begin{defn} Let $C<A_1$,\ldots, $A_n>$ be a class template specialization.
+\begin{defn}\label{primaryclasstype} Let $C<A_1$,\ldots, $A_n>$ be a class template specialization.
 In that expression, $C$ is called the \emph{primary class type} of that class template specialization,
 and $A_1$, \ldots, $A_n$ are called the \emph{type arguments} of that class template specialization.
 \end{defn}
@@ -4391,7 +4391,7 @@ First we go through how the static evaluator evaluates unary expressions.
 \subsection{Unary Operator Functions}
 
 The static evaluator has a \emph{unary operator function} for each supported unary operator.
-The unary operator function is a function template that delegates the evaluation to a C++ function function object.
+The unary operator function is a function template that delegates the evaluation to a C++ function object.
 The following table shows supported unary operators, their corresponding unary operator functions, and
 C++ function objects that are used in evaluating unary expressions:
 
@@ -4454,8 +4454,8 @@ In order to evaluate a binary expression, one needs to have a \emph{common type}
 before evaluation. Given two value types, one can compute their common type as follows:
 
 \begin{algo}\label{commontype} Computing the Common Type of Two Value Types.
-Common type is a mapping from two value types to a value type.
-It gives the smallest value type for the left and the right value type that is large enough to hold a value of the left type and a value of the right type.
+Common type gives the smallest value type for the left and the right value type
+that is large enough to hold a value of the left type and a value of the right type.
 Given the left and the right type, common type returns a type according to the following table:
 \begin{flushleft}
 \begin{supertabular}{lll}
@@ -5019,7 +5019,7 @@ public const int b = 2 * (a + 3);
 \end{lstlisting}
 
 \begin{flushleft}
-When the previous file is parsed, the following abstract syntax tree is generated:
+When the source file containing previous definitions is parsed, the following abstract syntax tree is generated:
 
 \begin{verbatim}
 CompileUnitNode
@@ -5111,9 +5111,9 @@ Left operand \verb|IntValue(2)| is popped from the evaluation stack.
 \item
 The $leftType$ is \textbf{int}, $rightType$ is \textbf{sbyte}, $commonType$ is \textbf{int} and $operationType$ is \textbf{int}.
 \item
-The right \verb|SByteValue| operand is converted to \verb|IntValue|.
+The right \verb|SByteValue(3)| operand is converted to \verb|IntValue(3)|.
 \item
-\verb|Add(IntValue(2), IntValue(3))| is called and \verb|std::plus<int>(2, 3)| is evaluated.
+\verb|Add<IntValue>(IntValue(2), IntValue(3))| is called and \verb|std::plus<int>()(2, 3)| is evaluated.
 \item
 Result \verb|IntValue(5)| is pushed to the evaluation stack.
 \end{enumerate}
@@ -5129,9 +5129,9 @@ Left operand \verb|SByteValue(2)| is popped from the evaluation stack.
 \item
 The $leftType$ is \textbf{sbyte}, $rightType$ is \textbf{int}, $commonType$ is \textbf{int} and $operationType$ is \textbf{int}.
 \item
-The left \verb|SByteValue| operand is converted to \verb|IntValue|.
+The left \verb|SByteValue(2)| operand is converted to \verb|IntValue(2)|.
 \item
-\verb|Mul(IntValue(2), IntValue(5))| is called and \verb|std::multiplies<int>(2, 5)| is evaluated.
+\verb|Mul<IntValue>(IntValue(2), IntValue(5))| is called and \verb|std::multiplies<int>()(2, 5)| is evaluated.
 \item
 Result \verb|IntValue(10)| is pushed to the evaluation stack.
 \end{enumerate}
@@ -5140,6 +5140,218 @@ The \verb|IntValue| with value 10 is popped from the evaluation stack and return
 \end{enumerate}
 
 \chapter{Type Resolver}
+
+The type resolver resolves a type symbol for given type expression represented as an abstract syntax tree node.
+Here's the type symbol hierarchy for reference:
+\begin{verbatim}
+TypeSymbol
+    BasicTypeSymbol
+        BoolTypeSymbol
+        CharTypeSymbol
+        WCharTypeSymbol
+        UCharTypeSymbol
+        VoidTypeSymbol
+        SByteTypeSymbol
+        ByteTypeSymbol
+        ShortTypeSymbol
+        UShortTypeSymbol
+        IntTypeSymbol
+        UIntTypeSymbol
+        LongTypeSymbol
+        ULongTypeSymbol
+        FloatTypeSymbol
+        DoubleTypeSymbol
+        NullPtrTypeSymbol
+    DerivedTypeSymbol
+    EnumTypeSymbol
+    ClassTypeSymbol
+        TemplateTypeSymbol
+    InterfaceTypeSymbol
+    TypeParameterSymbol
+    NamespaceTypeSymbol
+\end{verbatim}
+
+\clearpage
+Resolving a type is done using the following algorithm:
+
+\begin{algo} Resolving a Type. Inputs to this algorithm are:
+\begin{itemize}
+\item
+a type expression represented as an abstract syntax tree node
+\item
+a container scope and list of file scopes for symbol lookup,
+\item
+class template repository (see section \ref{classtemplaterepository}).
+\item
+options: \verb|none| or \verb|dontThrow|.
+\end{itemize}
+The algorithm returns the resolved type symbol if successful. Otherwise either an exception will be thrown or null is returned depending on the options.
+The type resolver is implemented as an abstract syntax tree visitor.
+\begin{enumerate}
+\item
+The \verb|Accept| member function of the type expression syntax tree node is called by giving the type resolver as the visitor argument.
+\item
+As a result of visitation, the \verb|typeSymbol| member variable holds the resolved type symbol that is returned to the caller.
+\end{enumerate}
+The type resolver visitor overrides the following visitation points:
+\begin{itemize}
+\item
+\verb|Visit(BoolNode& boolNode)|:
+Set \verb|typeSymbol| to \verb|BoolTypeSymbol|.
+\item
+\verb|Visit(SByteNode& sbyteNode)|:
+Set \verb|typeSymbol| to \verb|SByteTypeSymbol|.
+\item
+\verb|Visit(ByteNode& byteNode)|:
+Set \verb|typeSymbol| to \verb|ByteTypeSymbol|.
+\item
+\verb|Visit(ShortNode& shortNode)|:
+Set \verb|typeSymbol| to \verb|ShortTypeSymbol|.
+\item
+\verb|Visit(UShortNode& ushortNode)|:
+Set \verb|typeSymbol| to \verb|UShortTypeSymbol|.
+\item
+\verb|Visit(IntNode& intNode)|:
+Set \verb|typeSymbol| to \verb|IntTypeSymbol|.
+\item
+\verb|Visit(UIntNode& uintNode)|:
+Set \verb|typeSymbol| to \verb|UIntTypeSymbol|.
+\item
+\verb|Visit(LongNode& longNode)|:
+Set \verb|typeSymbol| to \verb|LongTypeSymbol|.
+\item
+\verb|Visit(ULongNode& ulongNode)|:
+Set \verb|typeSymbol| to \verb|ULongTypeSymbol|.
+\item
+\verb|Visit(FloatNode& floatNode)|:
+Set \verb|typeSymbol| to \verb|FloatTypeSymbol|.
+\item
+\verb|Visit(DoubleNode& doubleNode)|:
+Set \verb|typeSymbol| to \verb|DoubleTypeSymbol|.
+\item
+\verb|Visit(CharNode& charNode)|:
+Set \verb|typeSymbol| to \verb|CharTypeSymbol|.
+\item
+\verb|Visit(WCharNode& wcharNode)|:
+Set \verb|typeSymbol| to \verb|WCharTypeSymbol|.
+\item
+\verb|Visit(UCharNode& ucharNode)|:
+Set \verb|typeSymbol| to \verb|UCharTypeSymbol|.
+\item
+\verb|Visit(VoidNode& voidNode)|:
+Set \verb|typeSymbol| to \verb|VoidTypeSymbol|.
+\item
+\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:
+The \verb|DerivedTypeExprNode| contains:
+\begin{itemize}
+\item
+base type expression represented as an abstract syntax tree node
+\item
+a list of array dimensions represented as abstract syntax tree nodes
+\item
+a list of derivations where derivation is either
+\begin{enumerate}
+\item
+\verb|const|,
+\item
+\verb|reference|,
+\item
+\verb|rvalue reference|, or
+\item
+\verb|pointer|
+\end{enumerate}
+\end{itemize}
+Steps for resolving a type symbol from \verb|DerivedTypeExprNode| are:
+\begin{enumerate}
+\item
+Resolve the base type from the base type expression by calling this algorithm recursively.
+\item
+Evaluate the array dimensions from the list of array dimension syntax tree nodes using static evaluator (algorithm \ref{evalconstantexpr}).
+\item
+Make derived type symbol using type repository algorithm \ref{makederivedtype} with list of derivations, base type symbol, and array dimensions as arguments.
+\item
+Set \verb|typeSymbol| to returned derived type symbol.
+\end{enumerate}
+\item
+\verb|Visit(TemplateIdNode& templateIdNode)|:
+The \verb|TemplateIdNode| contains:
+\begin{itemize}
+\item
+an abstract syntax tree node that represents the primary class type of a class template specialization (definition \ref{primaryclasstype}).
+\item
+a list of abstract syntax tree nodes that represent the type arguments of a class template specialization.
+\end{itemize}
+Steps for resolving a type symbol from \verb|TemplateIdNode| are:
+\begin{enumerate}
+\item
+Resolve the primary class type symbol by calling this algorithm recursively. Let $p$ be the resolved primary class type symbol.
+Let $n$ be the number of type parameters of the primary class type symbol.
+\item
+Resolve the type arguments by calling this algorithm recursively. Let $a$ be the list of type arguments resolved. Let $m$ be the length of list $a$.
+\item
+If $m < n$ use algorithm \ref{resolvedefaulttypearguments} of class template repository to resolve default type arguments and append them to list $a$.
+\item
+Make a class template specialization symbol using algorithm \ref{maketemplatetype} of type repository with arguments $p$ and $a$.
+\item
+Set \verb|typeSymbol| to returned class template specialization type symbol.
+\end{enumerate}
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:
+Steps for resolving a type symbol from \verb|IdentifierNode| are:
+\begin{enumerate}
+\item
+Lookup a symbol for identifier contained by the \verb|identifierNode| from the container scope and file scopes using algorithms in section \ref{namelookup}.
+\item
+If successful, use algorithm \ref{resolvesymboltype} to resolve the type associated with the symbol found and set it to \verb|typeSymbol|.
+\item
+Otherwise either throw an exception, or set \verb|typeSymbol| to null depending on options.
+\end{enumerate}
+\item
+\verb|EndVisit(DotNode& dotNode)|:
+Steps for resolving a type symbol from \verb|DotNode| are:
+\begin{enumerate}
+\item
+At this point \verb|typeSymbol| should contain a type symbol that represents the left part before the dot.
+\item
+If \verb|typeSymbol| is \verb|ClassTypeSymbol|, let $c$ be the container scope of the\\
+\verb|ClassTypeSymbol|.
+\item
+Otherwise if \verb|typeSymbol| is \verb|NamespaceTypeSymbol|, let $c$ be the container scope of the namespace symbol contained by the \verb|NamespaceTypeSymbol|.\item
+Lookup a symbol for identifier contained by the \verb|dotNode| from the container scope $c$.
+\item
+If successful, use algorithm \ref{resolvesymboltype} to resolve the type associated with the symbol found and set it to \verb|typeSymbol|.
+\item
+Otherwise either throw an exception, or set \verb|typeSymbol| to null depending on options.
+\end{enumerate}
+\end{itemize}
+\end{algo}
+
+The algorithm used to resolve a type symbol associated with a symbol follows:
+
+\begin{algo}\label{resolvesymboltype} Resolving a Type Symbol Associated with a Symbol.
+Inputs to this algorithm are:
+\begin{itemize}
+\item
+a symbol
+\item
+options: \verb|none| or \verb|dontThrow|
+\end{itemize}
+The algorithm returns a type symbol if successful, or either throws an exception or returns null depending on options otherwise.
+If the symbol is:
+\begin{enumerate}
+\item
+a \verb|TypedefSymbol| return the type symbol associated with the \verb|TypedefSymbol|.
+\item
+a \verb|BoundTypeParameterSymbol| return the type symbol associated with the\\
+\verb|BoundTypeParameterSymbol|.
+\item
+\verb|NamespaceSymbol| create a \verb|NamespaceTypeSymbol| that contains the namespace symbol and return it.
+\item
+Otherwise either throw an exception or return null depending on options.
+\end{enumerate}
+\end{algo}
+
+
 
 \chapter{Emitter}
 
