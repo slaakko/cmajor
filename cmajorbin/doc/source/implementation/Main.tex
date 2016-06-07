@@ -2844,40 +2844,42 @@ public nothrow int StrLen(const char* s)
 The following listing shows the resulting abstract syntax tree for parsing the \emph{StrLen} function:
 
 \begin{verbatim}
-FunctionNode
-    FunctionGroupIdNode(StrLen)
-    ParameterNodeList
-        ParameterNode
-            DerivedTypeExprNode
-                DerivationList
-                    Derivation.const
-                    Derivation.pointer
-                CharNode
-            IdentifierNode(s)
-    CompoundStatementNode
-        ConstructionStatementNode
-            IntNode
-            IdentifierNode(len)
-            SByteLiteralNode(0)
-        ConditionalStatementNode
-            NotEqualNode
-                IdentifierNode(s)
-                NullLiteralNode
+CompileUnitNode
+    NamespaceNode()
+        FunctionNode
+            FunctionGroupIdNode(StrLen)
+            ParameterNodeList
+                ParameterNode
+                    DerivedTypeExprNode
+                        DerivationList
+                            Derivation.const
+                            Derivation.pointer
+                        CharNode
+                    IdentifierNode(s)
             CompoundStatementNode
-                WhileStatementNode
+                ConstructionStatementNode
+                    IntNode
+                    IdentifierNode(len)
+                    SByteLiteralNode(0)
+                ConditionalStatementNode
                     NotEqualNode
-                        DerefNode
-                            IdentifierNode(s)
-                        CharLiteralNode('\0')
+                        IdentifierNode(s)
+                        NullLiteralNode
                     CompoundStatementNode
-                        SimpleStatementNode
-                            PrefixIncNode
-                                IdentifierNode(len)
-                        SimpleStatementNode
-                            PrefixIncNode
-                                IdentifierNode(s)
-        ReturnStatementNode
-            IdentifierNode(len)
+                        WhileStatementNode
+                            NotEqualNode
+                                DerefNode
+                                    IdentifierNode(s)
+                                CharLiteralNode('\0')
+                            CompoundStatementNode
+                                SimpleStatementNode
+                                    PrefixIncNode
+                                        IdentifierNode(len)
+                                SimpleStatementNode
+                                    PrefixIncNode
+                                        IdentifierNode(s)
+                ReturnStatementNode
+                    IdentifierNode(len)
 \end{verbatim}
 
 The parser constructs an abstract syntax tree node called \emph{FunctionNode} for the function.
@@ -4023,29 +4025,30 @@ The following abstract syntax tree is generated while parsing the previous sourc
 
 \begin{verbatim}
 CompileUnitNode
-    EnumTypeNode(TrafficLight)
-        EnumConstantNode(green)
-        EnumConstantNode(yellow)
-        EnumConstantNode(red)
-    NamespaceNode(Alpha.Beta)
-        ClassNode(Gamma)
-            FunctionNode(Foo)
-                ParameterNode(x)
+    NamespaceNode()
+        EnumTypeNode(TrafficLight)
+            EnumConstantNode(green)
+            EnumConstantNode(yellow)
+            EnumConstantNode(red)
+        NamespaceNode(Alpha.Beta)
+            ClassNode(Gamma)
+                FunctionNode(Foo)
+                    ParameterNode(x)
+                    CompoundStatementNode
+                        ConstructionStatementNode(v)
+                FunctionNode(Foo)
+                    ParameterNode(y)
+                    CompoundStatementNode
+                        ConstructionStatementNode(v)
+                FunctionNode(Bar)
+                    ParameterNode(b)
+                    CompoundStatementNode
+                        ConstructionStatementNode(v)
+                MemberVariableNode(m)
+            FunctionNode(Delta)
+                ParameterNode(epsilon)
                 CompoundStatementNode
                     ConstructionStatementNode(v)
-            FunctionNode(Foo)
-                ParameterNode(y)
-                CompoundStatementNode
-                    ConstructionStatementNode(v)
-            FunctionNode(Bar)
-                ParameterNode(b)
-                CompoundStatementNode
-                    ConstructionStatementNode(v)
-            MemberVariableNode(m)
-        FunctionNode(Delta)
-            ParameterNode(epsilon)
-            CompoundStatementNode
-                ConstructionStatementNode(v)
 \end{verbatim}
 
 \clearpage
@@ -4317,12 +4320,13 @@ Let $id$ be a type identifier computed using algorithm \ref{templatetypeid} for 
 \item
 If $id$ is found in $type id \rightarrow symbol$ mappings of the type repository, return the type symbol found.
 \item
-Otherwise create a new class template specialization type symbol with type identifier $id$, primary type $C$ and type arguments $A_1$, \ldots, $A_n$.
+Otherwise create a new class template specialization type symbol (called \verb|TemplateTypeSymbol| in code)
+with type identifier $id$, primary type $C$ and type arguments $A_1$, \ldots, $A_n$.
 Insert it in the $type id \rightarrow symbol$ mappings of the type repository, and return it.
 \end{enumerate}
 \end{algo}
 
-\chapter{Static Evaluator}
+\chapter{Static Evaluator}\label{evaluator}
 
 The static evaluator evaluates constant expressions such as constant expressions as values of constants,
 constant expressions in case statements and constant expressions as values of enumeration constants.
@@ -4848,7 +4852,7 @@ a target value type, i.e. the type to which the evaluated result is finally conv
 \item
 whether a cast is performed,
 \item
-a container scope and file scopes for symbol lookup.
+a container scope and file scopes (see section \ref{filescope}) for symbol lookup.
 \end{itemize}
 
 The algorithm returns an instance of a class derived from \verb|Value| class that contains the evaluated result.
@@ -5001,7 +5005,8 @@ Evaluate the constant expression defined in the \verb|castNode| by calling this 
 Push the evaluated value to the evaluation stack.
 \item
 \verb|Visit(IdentifierNode& identifierNode)|:
-Lookup the identifier defined in the \verb|identifierNode| from the container scope and file scopes using lookup algorithms in section \ref{namelookup}.
+Lookup the identifier defined in the \verb|identifierNode| from the container scope and file scopes (see section \ref{filescope})
+using lookup algorithms in section \ref{namelookup}.
 If a symbol is found, use algorithm \ref{evalconstantsymbol} to evaluate the value associated with the symbol.
 Otherwise throw an exception.
 \end{itemize}
@@ -5023,18 +5028,19 @@ When the source file containing previous definitions is parsed, the following ab
 
 \begin{verbatim}
 CompileUnitNode
-    ConstantNode
-        IntNode
-        IdentifierNode(a)
-        SByteLiteralNode(2)
-    ConstantNode
-        IntNode
-        IdentifierNode(b)
-        MulNode
+    NamespaceNode()
+        ConstantNode
+            IntNode
+            IdentifierNode(a)
             SByteLiteralNode(2)
-            AddNode
-                IdentifierNode(a)
-                SByteLiteralNode(3)
+        ConstantNode
+            IntNode
+            IdentifierNode(b)
+            MulNode
+                SByteLiteralNode(2)
+                AddNode
+                    IdentifierNode(a)
+                    SByteLiteralNode(3)
 \end{verbatim}
 \end{flushleft}
 
@@ -5139,10 +5145,10 @@ Result \verb|IntValue(10)| is pushed to the evaluation stack.
 The \verb|IntValue| with value 10 is popped from the evaluation stack and returned.
 \end{enumerate}
 
-\chapter{Type Resolver}
+\chapter{Type Resolver}\label{typeresolver}
 
 The type resolver resolves a type symbol for given type expression represented as an abstract syntax tree node.
-Here's the type symbol hierarchy for reference:
+The type symbol returned is one of the following:
 \begin{verbatim}
 TypeSymbol
     BasicTypeSymbol
@@ -5172,14 +5178,15 @@ TypeSymbol
 \end{verbatim}
 
 \clearpage
+\section{Type Resolving Algorithms}
 Resolving a type is done using the following algorithm:
 
-\begin{algo} Resolving a Type. Inputs to this algorithm are:
+\begin{algo}\label{resolvingtype} Resolving a Type. Inputs to this algorithm are:
 \begin{itemize}
 \item
 a type expression represented as an abstract syntax tree node
 \item
-a container scope and list of file scopes for symbol lookup,
+a container scope and list of file scopes (see section \ref{filescope}) for symbol lookup,
 \item
 class template repository (see section \ref{classtemplaterepository}).
 \item
@@ -5340,16 +5347,331 @@ The algorithm returns a type symbol if successful, or either throws an exception
 If the symbol is:
 \begin{enumerate}
 \item
+a \verb|TypeSymbol| return the type symbol itself.
+\item
 a \verb|TypedefSymbol| return the type symbol associated with the \verb|TypedefSymbol|.
 \item
 a \verb|BoundTypeParameterSymbol| return the type symbol associated with the\\
 \verb|BoundTypeParameterSymbol|.
 \item
-\verb|NamespaceSymbol| create a \verb|NamespaceTypeSymbol| that contains the namespace symbol and return it.
+a \verb|NamespaceSymbol| create a \verb|NamespaceTypeSymbol| that contains the namespace symbol and return it.
 \item
 Otherwise either throw an exception or return null depending on options.
 \end{enumerate}
 \end{algo}
+
+\clearpage
+\section{Example}
+
+Consider the following code:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}
+public class Set<T, C = System.Less<T>>
+{
+    // ...
+}
+
+public void foo(const Set<int>& x)
+{
+    // ...
+}
+\end{lstlisting}
+
+\begin{flushleft}
+The following abstract syntax tree is generated from the code above:
+\begin{verbatim}
+CompileUnitNode
+    NamespaceNode()
+        ClassNode(Set)
+            TemplateParameterNode
+                IdentifierNode(T)
+            TemplateParameterNode
+                IdentifierNode(C)
+                TemplateIdNode
+                    IdentifierNode(System.Less)
+                    IdentifierNode(T)
+        FunctionNode
+            FunctionGroupIdNode(foo)
+            ParameterNode
+                DerivedTypeExprNode
+                    Derivation.const
+                    Derivation.reference
+                    TemplateIdNode
+                        IdentifierNode(Set)
+                        IntNode
+                IdentifierNode(x)
+            CompoundStatementNode
+\end{verbatim}
+
+The following symbol table is generated from the abstract syntax tree above:
+\begin{verbatim}
+NamespaceSymbol()
+    ClassTypeSymbol(Set)
+        TypeParameterSymbol(T)
+        TypeParameterSymbol(C)
+    FunctionSymbol(foo)
+        ParameterSymbol(x)
+        DeclarationBlock
+\end{verbatim}
+
+Here we go through the steps for resolving a type for the parameter \verb|x| of the function \verb|foo|.
+The type resolver is given the following parameters as input:
+\begin{itemize}
+\item
+type expression:
+\begin{verbatim}
+DerivedTypeExprNode
+    Derivation.const
+    Derivation.reference
+    TemplateIdNode
+        IdentifierNode(Set)
+        IntNode
+\end{verbatim}
+\item\
+scopes:
+\begin{itemize}
+\item
+container scope: the global scope
+\item
+file scopes: -
+\end{itemize}
+\item
+class template repository
+\item
+options: \verb|none|
+\end{itemize}
+
+\begin{enumerate}
+\item
+\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:
+\begin{itemize}
+\item
+the base type expression is:
+\begin{verbatim}
+TemplateIdNode
+    IdentifierNode(Set)
+    IntNode
+\end{verbatim}
+\item
+no array dimensions.
+\item
+derivations are:
+\verb|Derivation.const|
+\verb|Derivation.reference|
+\end{itemize}
+\item
+Calling algorithm \ref{resolvingtype} for base type expression:
+\item
+\verb|Visit(TemplateIdNode& templateIdNode)|:
+\begin{itemize}
+\item
+abstract syntax tree node representing the primary class type is:
+\verb|IdentifierNode(Set)|
+\item
+abstract syntax tree nodes representing type arguments are:
+\verb|IntNode|
+\end{itemize}
+Calling algorithm \ref{resolvingtype} for primary class type:
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:
+Looking up identifier \verb|Set|:
+Symbol \verb|ClassTypeSymbol(Set)| found.
+\item
+Resolving the type symbol using algorithm \ref{resolvesymboltype} yields \verb|ClassTypeSymbol(Set)| itself.
+\item
+Return the type symbol \verb|ClassTypeSymbol(Set)| as the primary class type.
+\item
+Calling algorithm \ref{resolvingtype} for type argument \verb|IntNode|:
+\item
+\verb|Visit(IntNode& intNode)|:
+Return \verb|IntTypeSymbol| as a type argument.
+\item
+The primary class type has two type parameters, but the list of type arguments contain only one type symbol,
+so algorithm \ref{resolvedefaulttypearguments} of class template repository is used to resolve the second type argument to \verb|System.Less<int>|.
+\item
+Algorithm \ref{maketemplatetype} is used to make a class template specialization \verb|Set<int, System.Less<int>>|.
+\item
+Make derived type symbol using type repository algorithm \ref{makederivedtype} with list of derivations \verb|const| and \verb|reference| and
+base type \verb|Set<int, System.Less<int>>|.
+\item
+Finally a type symbol \verb|const Set<int, System.Less<int>>&| is returned.
+\end{enumerate}
+\end{flushleft}
+
+\chapter{Importing Namespaces, and Binding Types and Values}
+
+In the next phase of compilation we:
+\begin{itemize}
+\item
+import namespaces,
+\item
+define aliases for symbols,
+\item
+bind types and values to symbols,
+\item
+set access to symbols, and
+\item
+check the validity of specifiers.
+\end{itemize}
+We begin by defining file scopes.
+
+\section{File Scopes}\label{filescope}
+
+A \emph{file scope} consists of container scopes of imported namespaces and aliases for symbols in the header of a Cmajor source file.
+For example, the following Cmajor source file contains two namespace imports and two symbol aliases:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}
+using System;                           // imported namespace
+using System.Collections;               // imported namespace
+using Str = System.String;              // alias for type symbol
+using StrLen = System.Support.StrLen;   // alias for function group
+\end{lstlisting}
+
+Thus the file scope for the previous Cmajor source file contains container scopes for namespaces \verb|System| and \verb|System.Collections|, and
+alias mappings from strings \verb|Str| and \verb|StrLen| to symbols \verb|System.String| and \verb|System.Support.StrLen| respectively.
+
+Looking up a symbol for a name from a file scope is done using the following algorithm:
+
+\begin{algo}\label{lookupfilescope} Lookup a Name from a File Scope.
+\begin{enumerate}
+\item
+Search the name from the alias mappings of the file scope.
+\item
+If the name is found, return the mapped symbol.
+\item
+Otherwise, lookup the name from the container scopes of the file scope.
+\item
+If more than one symbol found, report the ambiguity by throwing an exception.
+\item
+Otherwise, if exactly one symbol is found, return the symbol found.
+\item
+Otherwise, no symbols found, so return null.
+\end{enumerate}
+\end{algo}
+
+\section{Binding Types and Values}
+
+The type resolver (see section \ref{typeresolver}) is used to resolve:
+\begin{itemize}
+\item
+types of constants,
+\item
+underlying types of enumerated types, when specified,
+\item
+types of local and member variables
+\item
+base class types and implemented interface types for class types,
+\item
+parameter and return types of functions, delegates and class delegates, and
+\item
+types of typedefs.
+\end{itemize}
+
+The static evaluator (see section \ref{evaluator}) is used to evaluate:
+\begin{itemize}
+\item
+values of constants, and
+\item
+values of enumeration constants.
+\end{itemize}
+
+\section{Setting Access to Symbols}
+
+In Cmajor one can associate one of the following access specifiers to a namespace-level or class-level object:
+\begin{itemize}
+\item
+\textbf{public}
+\item
+\textbf{protected}
+\item
+\textbf{internal}
+\item
+\textbf{private}
+\end{itemize}
+Setting access to a symbol is done using the following algorithm:
+
+\begin{algo} Setting Access to a Symbol.
+Let $s$ be one of the symbols:
+\begin{itemize}
+\item
+\verb|ClassTypeSymbol|
+\item
+\verb|ConceptSymbol|
+\item
+\verb|ConstantSymbol|
+\item
+\verb|DelegateTypeSymbol|
+\item
+\verb|ClassDelegateTypeSymbol|
+\item
+\verb|EnumTypeSymbol|
+\item
+\verb|FunctionSymbol|
+\item
+\verb|InterfaceTypeSymbol|
+\item
+\verb|MemberVariableSymbol|
+\item
+\verb|TypedefSymbol|
+\end{itemize}
+Let $n$ be the abstract syntax tree node that corresponds $s$.
+Let $a$ be the set of access specifiers defined for $n$.
+If $n$ is a member of a class, let $access$ be \textbf{private},
+otherwise let $access$ be \textbf{internal}.
+\begin{enumerate}
+\item
+If $a$ is $\{\textbf{public}\}$, set $access$ to \textbf{public}.
+\item
+Otherwise, if $a$ is $\{\textbf{protected}\}$:
+\begin{enumerate}
+\item
+If $n$ is a member of a class, set $access$ to \textbf{protected}.
+\item
+Otherwise throw exception \verb|only class members can have protected access|.
+\end{enumerate}
+\item
+Otherwise, if $a$ is $\{\textbf{internal}\}$, set $access$ to \textbf{internal}.
+\item
+Otherwise, if $a$ is $\{\textbf{private}\}$:
+\begin{enumerate}
+\item
+If $n$ is a member of a class, set $access$ to \textbf{private}.
+\item
+Otherwise throw exception \verb|only class members can have private access|.
+\end{enumerate}
+\item
+Otherwise, if $a$ is not empty, throw exception \verb|invalid combination of access specifiers|.
+\item
+Set access of $s$ to $access$.
+\end{enumerate}
+\end{algo}
+
+\section{Checking the Validity of Specifiers}
+
+The following table shows possible specifiers for each symbol:\footnote{not all combination are valid}
+
+\begin{flushleft}
+\begin{supertabular}{lp{10cm}}
+\textbf{Symbol}& \textbf{Specifiers}\\
+\hline
+\verb|ClassTypeSymbol|& \textbf{static} \textbf{abstract} \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|ConceptSymbol|& \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|ConstantSymbol|& \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|DelegateTypeSymbol|& \textbf{nothrow} \textbf{throw} \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|ClassDelegateTypeSymbol|& \textbf{nothrow} \textbf{throw} \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|EnumTypeSymbol|& \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|FunctionSymbol|&
+\textbf{static} \textbf{explicit} \textbf{extern} \textbf{suppress} \textbf{default} \textbf{inline} \textbf{cdecl} \textbf{nothrow} \textbf{throw}
+\textbf{abstract} \textbf{virtual} \textbf{override} \textbf{new}
+\textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|InterfaceTypeSymbol|& \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|MemberVariableSymbol|& \textbf{static} \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\verb|TypedefSymbol|& \textbf{public} \textbf{protected} \textbf{private} \textbf{internal}\\
+\hline
+\end{supertabular}
+\end{flushleft}
 
 
 
