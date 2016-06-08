@@ -3316,7 +3316,7 @@ Othwerwise, add $s$ as a child symbol of $c$ and set the parent property of $s$ 
 Function symbols are not added directly to containers, but there is an extra layer called a \emph{function group}
 in between the container symbol and the function symbol. To describe function groups we need two definitions:
 
-\begin{defn} The \emph{group name} of a nonmember function is the name of the function without its parameters.
+\begin{defn}\label{groupname} The \emph{group name} of a nonmember function is the name of the function without its parameters.
 The group name of a constructor is "@constructor" and the group name a destructor is "@destructor".
 The group name of other member function is the name of the member function without its parameters.
 For example, the group name of function
@@ -3330,7 +3330,7 @@ void C.operator=(const C& x)
 is \verb|operator=|.
 \end{defn}
 
-\begin{defn} The \emph{arity} of a function is the number of its parameters.
+\begin{defn}\label{arity} The \emph{arity} of a function is the number of its parameters.
 For example, the arity of function
 \begin{verbatim}
 void foo(int x, double y)
@@ -4243,6 +4243,12 @@ If the type identifier is found from the mappings, the corresponding type symbol
 
 \section{Making Type Symbols}
 
+\begin{defn} Base Type Symbol.
+Let $T$ be a type symbol.
+If $T$ is a derived type symbol (\verb|DerivedTypeSymbol|), the \emph{base type} of $T$ is type $T$ without the derivations and array dimensions.
+Otherwise the base type of $T$ is type $T$.
+\end{defn}
+
 The following algorithms are used to make type symbols.
 
 \begin{algo}\label{makederivedtype} Making a Derived Type Symbol.
@@ -4323,6 +4329,26 @@ If $id$ is found in $type id \rightarrow symbol$ mappings of the type repository
 Otherwise create a new class template specialization type symbol (called \verb|TemplateTypeSymbol| in code)
 with type identifier $id$, primary type $C$ and type arguments $A_1$, \ldots, $A_n$.
 Insert it in the $type id \rightarrow symbol$ mappings of the type repository, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeplaintype} Making a Plain Type Symbol.
+The algorithm returns a plain type for a type symbol $T$.
+Informally, the plain type is a type without any const, reference, or rvalue reference derivations.
+Pointer derivations are saved in a plain type though.
+\begin{enumerate}
+\item
+Let $T$ be a type symbol.
+\item
+If $T$ = \verb|U&| for some type $U$, return $U$.
+\item
+Otherwise, if $T$ = \verb|const U&| for some type $U$, return $U$.
+\item
+Otherwise, if $T$ = \verb|const U| for some type $U$, return $U$.
+\item
+Otherwise, if $T$ = \verb|U&&| for some type $U$, return $U$.
+\item
+Otherwise, return $T$.
 \end{enumerate}
 \end{algo}
 
@@ -5673,7 +5699,197 @@ The following table shows possible specifiers for each symbol:\footnote{not all 
 \end{supertabular}
 \end{flushleft}
 
+\chapter{Function Repositories}
 
+A \emph{function repository} is a container of certain kinds of functions.
+It is used for collecting viable functions for \emph{overload resolution} and caching them per compilation unit basis.
+Each function repository matches its \emph{function signatures} with the group name (definition \ref{groupname}),
+arity (definition \ref{arity}) and argument information of searched functions.
+The results are collected to a list of \emph{viable functions}.
+
+In the start of the compilation of a compile unit, each function repository is empty.
+When a matching function signature is found, a function with that signature is created and inserted to the function repository.
+If later in compilation of the compile unit, the same signature is found again, the cached function is returned.
+
+The function repositories are:
+
+\begin{itemize}
+\item
+derived type operation repository
+\item
+enumerated type operation repository
+\item
+array type operation repository
+\item
+interface type operation repository
+\item
+delegate type operation repository
+\item
+class delegate type operation repository
+\item
+synthesized class function repository
+\end{itemize}
+
+\section{Collecting Viable Functions from Function Repositories}
+
+When searching for matching functions, the caller provides \emph{argument information structures} for function signature matching.
+
+An argument information structure contains:
+\begin{itemize}
+\item
+argument category (\verb|rvalue| or \verb|lvalue|),
+\item
+type of argument, and
+\item
+whether to bind argument to an rvalue reference.
+\end{itemize}
+
+The following algorithm is used for collecting viable functions from function repositories:
+
+\begin{algo} Collecting Viable Functions from a Function Repository.
+Inputs to this algorithm are:
+\begin{itemize}
+\item
+a function repository,
+\item
+the group name of searched functions,
+\item
+arity of searched functions,
+\item
+argument information structures, and
+\item
+reference to a list of viable functions.
+\end{itemize}
+\begin{enumerate}
+\item
+For each signature of the function repository that matches the group name, arity and argument infomation:
+\begin{enumerate}
+\item
+If a function with that signature is found in the function repository, it is inserted to the list of viable functions.
+\item
+Otherwise, the function with the signature is created, inserted to the function repository, and inserted to the list of viable functions.
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\section{Derived Type Operation Repository}
+
+The following table shows functions contained by the derived type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(P*)|& $P$ is a pointer type& \verb|DefaultCtor(P)|\\
+\verb|@constructor(P*, P)|& $P$ is a pointer type& \verb|CopyCtor(P)|\\
+\verb|@constructor(P*, const P&)|& $P$ is a pointer type& \verb|CopyCtor(P)|\\
+\verb|@constructor(P*, P&&)|& $P$ is a pointer type & \verb|MoveCtor(P)|\\
+\verb|@constructor(P*, void*)|& $P$ is a pointer type & \verb|ConvertingCtor(P, void*, @E)|\\
+\verb|@constructor(P*, @NP)|& $P$ is a pointer type & \verb|ConvertingCtor(P, @NP)|\\
+\verb|@constructor(P*, Q)|& (1)& \verb|ConvertingCtor(P, Q, @E)|\\
+\verb|@constructor(C* D)|& (2)& \verb|CopyCtor(C)|\\
+\verb|@constructor(C* D)|& (3)& \verb|CopyCtor(C, @E)|\\
+\verb|@constructor(void**, void*)|& & \verb|CopyCtor(void*)|\\
+\verb|@constructor(void**, P)|& $P$ is a pointer type & \verb|ConvertingCtor(void*, P)|\\
+\verb|@constructor(R*, R)|& $R$ is a reference type& \verb|CopyCtor(R)|\\
+\verb|@constructor(E*, F)|& (4)& \verb|CopyCtor(E)|\\
+\verb|@constructor(E*, F)|& (5)& \verb|CopyCtor(E, @E)|\\
+\verb|@constructor(RR*, RR)|& $RR$ is an rvalue reference type& \verb|CopyCtor(RR)|\\
+\verb|operator=(P*, P)|& $P$ is a pointer type& \verb|CopyAssignment(P)|\\
+\verb|operator=(P*, const P&)|& $P$ is a pointer type& \verb|CopyAssignment(P)|\\
+\verb|operator=(P*, P&&)|& $P$ is a pointer type& \verb|MoveAssignment(P)|\\
+\verb|operator=(P*, @NP)|& $P$ is a pointer type & \verb|CopyAssignment(P, @NP)|\\
+\verb|operator=(C*, D)|& (2)& \verb|CopyAssignment(C)|\\
+\verb|operator=(C*, D)|& (3)& \verb|CopyAssignment(C, @E)|\\
+\verb|operator=(R*, R)|& $R$ is a reference type& \verb|CopyAssignment(R)|\\
+\verb|operator=(E*, F)|& (4)& \verb|CopyAssignment(E)|\\
+\verb|operator=(E*, F)|& (5)& \verb|CopyAssignment(E, @E)|\\
+\verb|operator=(RR*, RR)|& $RR$ is an rvalue reference type& \verb|CopyAssignment(RR)|\\
+\verb|operator==(P, P)|& $P$ is a pointer type& \verb|OpEqual(P)|\\
+\verb|operator==(P, @NP)|& $P$ is a pointer type& \verb|OpEqual(P)|\\
+\verb|operator==(@NP, P)|& $P$ is a pointer type& \verb|OpEqual(P)|\\
+\verb|operator==(C, D)|& (2)& \verb|OpEqual(C)|\\
+\verb|operator==(C, D)|& (3)& \verb|OpEqual(D)|\\
+\verb|operator<(P, P)|& $P$ is a pointer type& \verb|OpLess(P)|\\
+\verb|operator<(C, D)|& (2)& \verb|OpLess(C)|\\
+\verb|operator+(P, I)|& (6)& \verb|OpAddPtrInt(P)|\\
+\verb|operator+(I, P)|& (6)& \verb|OpAddIntPtr(P)|\\
+\verb|operator-(P, P)|& $P$ is a pointer type& \verb|OpSubPtrPtr(P)|\\
+\verb|operator-(P, I)|& (6)& \verb|OpSubPtrInt(P)|\\
+\verb|operator*(P)|& $P$ is a pointer type& \verb|OpDeref(P)|\\
+\verb|operator->(P)|& $P$ is a pointer type& \verb|OpArrow(P)|\\
+\verb|operator++(P)|& $P$ is a pointer type& \verb|OpIncPtr(P)|\\
+\verb|operator--(P)|& $P$ is a pointer type& \verb|OpDecPtr(P)|\\
+\verb|operator&(T)|& & \verb|OpAddrOf(@PT(T)*)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+@E = explicit conversion, i.e. requires a cast\\
+@NP = null pointer type\\
+@PT(T) = plain type of $T$\\
+(1) $P$ is a pointer type and $Q$ is a pointer type\\
+(2) $C$ is a pointer type and $D$ is a pointer type and base type of $C$ is a class type
+and base type of $D$ is a class type and $D$ is derived from $C$\\
+(3) $C$ is a pointer type and $D$ is a pointer type and base type of $C$ is a class type
+and base type of $D$ is a class type and $C$ is derived from $D$\\
+(4) $E$ is a reference type and $F$ is a reference type and base type of $E$ is a class type
+and base type of $F$ is a class type and $F$ is derived from $E$\\
+(5) $E$ is a reference type and $F$ is a reference type and base type of $E$ is a class type
+and base type of $F$ is a class type and $E$ is derived from $F$\\
+(6) $P$ is a pointer type and $I$ is an integer type
+\end{flushleft}
+
+\section{Enumerated Type Operation Repository}
+
+The following table shows functions contained by the enumerated type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(E*)|& $E$ is an enumerated type& \verb|DefaultCtor(E)|\\
+\verb|@constructor(E*, E)|& $E$ is an enumerated type& \verb|CopyCtor(E)|\\
+\verb|@constructor(E*, const E&)|& $E$ is an enumerated type& \verb|CopyCtor(E)|\\
+\verb|@constructor(E*, E&&)|& $E$ is an enumerated type& \verb|MoveCtor(E)|\\
+\verb|@constructor(E*, I)|& (1)& \verb|ConvertingCtor(E, @U(E), @E)|\\
+\verb|operator=(E*, E)|& $E$ is an enumerated type& \verb|CopyAssignment(E)|\\
+\verb|operator=(E*, const E&)|& $E$ is an enumerated type& \verb|CopyAssignment(E)|\\
+\verb|operator=(E*, E&&)|& $E$ is an enumerated type& \verb|MoveAssignment(E)|\\
+\verb|operator==(E, E)|& $E$ is an enumerated type& \verb|OpEqual(E)|\\
+\verb|operator<(E, E)|& $E$ is an enumerated type& \verb|OpLess(E)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+@E = explicit conversion, i.e. requires a cast\\
+@U(E) underlying type of $E$\\
+(1) $E$ is an enumerated type and $I$ is an integer type
+\end{flushleft}
+
+\section{Array Type Operation Repository}
+
+The following table shows functions contained by the array type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(A*)|& $A$ is an array type& \verb|DefaultCtor(A)|\\
+\verb|@constructor(A*, A)|& $A$ is an array type& \verb|CopyCtor(A)|\\
+\verb|@constructor(A*, const A&)|& $A$ is an array type& \verb|CopyCtor(A)|\\
+\verb|operator=(A*, A)|& $A$ is an array type& \verb|CopyAssignment(A)|\\
+\verb|operator=(A*, const A&)|& $A$ is an array type& \verb|CopyAssignment(A)|\\
+\verb|operator[](A*, I)|& (1)& \verb|ArrayIndexing(A)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+(1) $A$ is an array type and $I$ is an integer type
+\end{flushleft}
 
 \chapter{Emitter}
 
