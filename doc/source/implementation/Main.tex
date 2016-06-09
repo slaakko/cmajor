@@ -5703,13 +5703,13 @@ The following table shows possible specifiers for each symbol:\footnote{not all 
 
 A \emph{function repository} is a container of certain kinds of functions.
 It is used for collecting viable functions for \emph{overload resolution} and caching them per compilation unit basis.
-Each function repository matches its \emph{function signatures} with the group name (definition \ref{groupname}),
-arity (definition \ref{arity}) and argument information of searched functions.
+Each function repository matches its \emph{function signatures} with the group name (see definition \ref{groupname}),
+arity (see definition \ref{arity}) and arguments of searched functions.
 The results are collected to a list of \emph{viable functions}.
 
 In the start of the compilation of a compile unit, each function repository is empty.
 When a matching function signature is found, a function with that signature is created and inserted to the function repository.
-If later in compilation of the compile unit, the same signature is found again, the cached function is returned.
+If later in compilation of the compile unit, the same signature is found again, the cached function is inserted to viable functions.
 
 The function repositories are:
 
@@ -5737,7 +5737,7 @@ When searching for matching functions, the caller provides \emph{argument inform
 An argument information structure contains:
 \begin{itemize}
 \item
-argument category (\verb|rvalue| or \verb|lvalue|),
+category of argument (\verb|rvalue| or \verb|lvalue|),
 \item
 type of argument, and
 \item
@@ -5865,7 +5865,7 @@ The following table shows functions contained by the enumerated type operation r
 
 \begin{flushleft}
 @E = explicit conversion, i.e. requires a cast\\
-@U(E) underlying type of $E$\\
+@U(E) = underlying type of $E$\\
 (1) $E$ is an enumerated type and $I$ is an integer type
 \end{flushleft}
 
@@ -5877,11 +5877,11 @@ The following table shows functions contained by the array type operation reposi
 \begin{supertabular}{lll}
 \textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
 \hline
-\verb|@constructor(A*)|& $A$ is an array type& \verb|DefaultCtor(A)|\\
-\verb|@constructor(A*, A)|& $A$ is an array type& \verb|CopyCtor(A)|\\
-\verb|@constructor(A*, const A&)|& $A$ is an array type& \verb|CopyCtor(A)|\\
-\verb|operator=(A*, A)|& $A$ is an array type& \verb|CopyAssignment(A)|\\
-\verb|operator=(A*, const A&)|& $A$ is an array type& \verb|CopyAssignment(A)|\\
+\verb|@constructor(A*)|& $A$ is an array type& \verb|ArrayTypeDefaultConstructor(A)|\\
+\verb|@constructor(A*, A)|& $A$ is an array type& \verb|ArrayTypeCopyConstructor(A)|\\
+\verb|@constructor(A*, const A&)|& $A$ is an array type& \verb|ArrayTypeCopyConstructor(A)|\\
+\verb|operator=(A*, A)|& $A$ is an array type& \verb|ArrayTypeCopyAssignment(A)|\\
+\verb|operator=(A*, const A&)|& $A$ is an array type& \verb|ArrayTypeCopyAssignment(A)|\\
 \verb|operator[](A*, I)|& (1)& \verb|ArrayIndexing(A)|\\
 \hline
 \end{supertabular}
@@ -5890,6 +5890,105 @@ The following table shows functions contained by the array type operation reposi
 \begin{flushleft}
 (1) $A$ is an array type and $I$ is an integer type
 \end{flushleft}
+
+\section{Interface Type Operation Repository}
+
+The following table shows functions contained by the interface type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(I*)|& $I$ is an interface type& \verb|InterfaceObjectDefaultCtor(I)|\\
+\verb|@constructor(I*, I)|& $I$ is an interface type& \verb|InterfaceObjectCopyCtor(I)|\\
+\verb|@constructor(I*, const I&)|& $I$ is an interface type& \verb|InterfaceObjectCopyCtor(I)|\\
+\verb|@constructor(I*, C*)|& (1)& \verb|InterfaceObjectFromClassPtrCtor(I, C*)|\\
+\verb|operator=(I*, I)|& $I$ is an interface type& \verb|InterfaceObjectCopAssignment(I)|\\
+\verb|operator=(I*, const I&)|& $I$ is an interface type& \verb|InterfaceObjectCopAssignment(I)|\\
+\verb|operator==(I, I)|& $I$ is an interface type& \verb|InterfaceObjectOpEqual(I)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+(1) $I$ is an interface type and $C$ is a class type
+\end{flushleft}
+
+\section{Delegate Type Operation Repository}
+
+The following table shows functions contained by the delegate type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(D*)|& $D$ is a delegate type& \verb|DefaultCtor(D)|\\
+\verb|@constructor(D*, D)|& $D$ is a delegate type& \verb|CopyCtor(D)|\\
+\verb|@constructor(D*, const D&)|& $D$ is a delegate type& \verb|CopyCtor(D)|\\
+\verb|@constructor(D*, D&&)|& $D$ is a delegate type& \verb|MoveCtor(D)|\\
+\verb|@constructor(D*, G)|& (1)& \verb|DelegateFromFunCtor(D, @F(D, G))|\\
+\verb|operator=(D*, D)|& $D$ is a delegate type& \verb|CopyAssignment(D)|\\
+\verb|operator=(D*, const D&)|& $D$ is a delegate type& \verb|CopyAssignment(D)|\\
+\verb|operator=(D*, D&&)|& $D$ is a delegate type& \verb|MoveAssignment(D)|\\
+\verb|operator=(D*, G|& (1)& \verb|DelegateFromFunAssignment(D, @F(D, G))|\\
+\verb|operator==(D, D)|& $D$ is a delegate type& \verb|OpEqual(D)|\\
+\verb|operator<(D, D)|& $D$ is a delegate type& \verb|OpLess(D)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+@F(D, G) = function symbol resolved from delegate type $D$ and function group $G$\\
+(1) $D$ is a delegate type and $G$ is a function group type
+\end{flushleft}
+
+\section{Class Delegate Type Operation Repository}
+
+The following table shows functions contained by the class delegate type operation repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(CD*)|& (1)& \verb|ClassDelegateDefaultCtor(CD)|\\
+\verb|@constructor(CD*, const CD&)|& (1)& \verb|ClassDelegateCopyCtor(CD)|\\
+\verb|@constructor(CD*, CD&&)|& (1)& \verb|ClassDelegateMoveCtor(CD)|\\
+\verb|@constructor(CD*, C, G)|& (2)& \verb|ClassDelegateFromFunCtor(CD, @F(CD, C, G))|\\
+\verb|operator=(CD*, const CD&)|& (1)& \verb|ClassDelegateCopyAssignment(CD)|\\
+\verb|operator=(CD*, CD&&)|& (1)& \verb|ClassDelegateMoveAssignment(CD)|\\
+\verb|operator=(CD*, C, G)|& (2)& \verb|ClassDelegateFromFunAssignment(CD, @F(CD, C, G))|\\
+\verb|operator==(CD, CD)|& (1)& \verb|ClassDelegateEqualOp(CD)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\begin{flushleft}
+@F(CD, C, G) = function symbol resolved from class delegate type $CD$, class type $C$ and function group $G$\\
+(1) $CD$ is a class delegate type\\
+(2) $CD$ is a class delegate type, C is a class type and $G$ is a function group type\\
+\end{flushleft}
+
+\section{Synthesized Class Function Repository}
+
+The following table shows functions contained by the synthesized class function repository:
+
+\begin{flushleft}
+\begin{supertabular}{lll}
+\textbf{Signature}& \textbf{Condition}& \textbf{Function Symbol}\\
+\hline
+\verb|@constructor(C*)|& $C$ is a class type& \verb|ClassDefaultCtor(C)|\\
+\verb|@constructor(C*, const C&)|& $C$ is a class type& \verb|ClassCopyCtor(C)|\\
+\verb|@constructor(C*, C&&)|& $C$ is a class type& \verb|ClassMoveCtor(C)|\\
+\verb|operator=(C*, const C&)|& $C$ is a class type& \verb|ClassCopyAssignment(C)|\\
+\verb|operator=(C*, C&&)|& $C$ is a class type& \verb|ClassMoveAssignment(C)|\\
+\verb|operator==(C, C)|& $C$ is a class type& \verb|ClassOpEqual(C)|\\
+\hline
+\end{supertabular}
+\end{flushleft}
+
+\chapter{Overload Resolution}
+
+
 
 \chapter{Emitter}
 
