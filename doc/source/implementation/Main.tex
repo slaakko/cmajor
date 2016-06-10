@@ -2825,7 +2825,7 @@ The following example shows the result of parsing a function and constructing an
 The following Cmajor function is used as example input to the parser:
 
 \lstset{language=Cmajor}
-\begin{lstlisting}
+\begin{lstlisting}[frame=trBL]
 public nothrow int StrLen(const char* s)
 {
     int len = 0;
@@ -3539,7 +3539,7 @@ Operations for floating point types (\emph{FloatTypeSymbol} and \emph{DoubleType
 Operations for character types (\emph{CharTypeSymbol}, \emph{WCharTypeSymbol} and \emph{UCharTypeSymbol}) are:
 \emph{DefaultCtor}, \emph{CopyCtor}, \emph{CopyAssignment}, \emph{MoveCtor}, \emph{MoveAssignment}, \emph{OpEqual}, \emph{OpLess}.
 
-\subsubsection{Standard Conversions}
+\subsubsection{Standard Conversions}\label{standardconversions}
 
 The following table shows standard conversion operations (\emph{ConvertingCtor})
 that are inserted to the global namespace of the global symbol table.
@@ -5044,7 +5044,7 @@ Otherwise throw an exception.
 Let's go through evaluation the value of two constants defined in the following listing:
 
 \lstset{language=Cmajor}
-\begin{lstlisting}
+\begin{lstlisting}[frame=trBL]
 public const int a = 2;
 public const int b = 2 * (a + 3);
 \end{lstlisting}
@@ -5392,7 +5392,7 @@ Otherwise either throw an exception or return null depending on options.
 Consider the following code:
 
 \lstset{language=Cmajor}
-\begin{lstlisting}
+\begin{lstlisting}[frame=trBL]
 public class Set<T, C = System.Less<T>>
 {
     // ...
@@ -5548,7 +5548,7 @@ A \emph{file scope} consists of container scopes of imported namespaces and alia
 For example, the following Cmajor source file contains two namespace imports and two symbol aliases:
 
 \lstset{language=Cmajor}
-\begin{lstlisting}
+\begin{lstlisting}[frame=trBL]
 using System;                           // imported namespace
 using System.Collections;               // imported namespace
 using Str = System.String;              // alias for type symbol
@@ -5699,7 +5699,7 @@ The following table shows possible specifiers for each symbol:\footnote{not all 
 \end{supertabular}
 \end{flushleft}
 
-\chapter{Function Repositories}
+\chapter{Function Repositories}\label{functionrepositories}
 
 A \emph{function repository} is a container of certain kinds of functions.
 It is used for collecting viable functions for \emph{overload resolution} and caching them per compilation unit basis.
@@ -5730,7 +5730,7 @@ class delegate type operation repository
 synthesized class function repository
 \end{itemize}
 
-\section{Collecting Viable Functions from Function Repositories}
+\section{Collecting Viable Functions from Function Repositories}\label{arginfo}
 
 When searching for matching functions, the caller provides \emph{argument information structures} for function signature matching.
 
@@ -5988,7 +5988,271 @@ The following table shows functions contained by the synthesized class function 
 
 \chapter{Overload Resolution}
 
+The task of overload resolution is to select a single best matching function overload from a set of viable function overloads for a function call.
+Overload resolution proceeds as follows:
 
+\begin{algo} Overload Resolution. Inputs: the group name and arity of searched functions, and container and file scopes to search.
+\begin{enumerate}
+\item
+A \emph{set of viable functions} is collected from the function repositories (chapter \ref{functionrepositories}) and from the symbol table.
+Each viable function has the same group name (see definition \ref{groupname}) and arity (see definition \ref{arity}).
+\item
+For each viable function:
+\begin{enumerate}
+\item
+If the viable function is an ordinary function, that is: not a function template,
+and the types of the arguments of the function call can be converted to the types of the viable function's parameters using algorithm \ref{findconversions},
+insert the viable function to a list of \emph{matching functions}.
+\item
+Otherwise, if the viable function is a function template:
+If the types of the arguments of the function call can be bound to the type parameters of the viable function template, and
+the constraints of the function template are satisfied for the bound template argument types,
+insert the viable function template to a list of \emph{matching functions}.
+\end{enumerate}
+\item
+\begin{enumerate}
+\item
+If there are no matching functions, report error\\
+\begin{verbatim}
+no matching functions found,
+or there are no acceptable conversion for all argument types
+\end{verbatim}
+\item
+Otherwise, if there is exactly one matching function, the overload resolution succeeds and the matching function is returned.
+\item
+Otherwise:
+\begin{enumerate}
+\item
+Sort the list of matching functions according to the function ordering rules (see section \ref{overloadordering}).
+\item
+If a single best matching function is found, the overload resolution succeeds and the best matching function is returned.
+\item
+Otherwise, report ambiguous overload resolution error with references to ambiguous functions.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\section{Simple Examples}
+
+Consider the following example:
+
+\begin{exmp} Successful Overload Resolution.
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+public void foo(int x)
+{
+    // ...
+}
+
+public void foo(long x)
+{
+    // ...
+}
+
+void main()
+{
+    foo(1);
+}
+\end{lstlisting}
+
+There is two matching viable functions, \verb|foo(int)| and \verb|foo(long))|, for a function call \verb|foo(1)| at line 13.
+Neither of them matches exactly, because \verb|foo(sbyte)| would be an exact match.
+However, \verb|foo(int)| is a better match than \verb|foo(long)|, because the \emph{conversion distance} of \textbf{sbyte} to \textbf{int}, i.e. 3, is less than
+the conversion distance of \textbf{sbyte} to \textbf{long}, i.e. 5.
+In this case the overload resolution is successful, and function \verb|foo(int)| will be called.
+\end{exmp}
+
+Now, consider the following code:
+
+\begin{exmp} Unsuccessful Overload Resolution.
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+public void foo(int x, long y)
+{
+    // ...
+}
+
+public void foo(long x, int y)
+{
+    // ...
+}
+
+void main()
+{
+    foo(1, 1);
+}
+\end{lstlisting}
+
+In this case, the first overload, \verb|foo(int, long)| is a better match for the first \textbf{sbyte} argument,
+but the second overload \verb|foo(long, int)| is a better match for the second \textbf{sbyte} argument.
+However neither of them is bettter than the other according to the function ordering rules,
+so the overload resolution fails with an error:
+\begin{verbatim}
+Error: overload resolution for overload name 'foo(sbyte, sbyte)' failed:
+call is ambiguous:
+foo(int, long) or foo(long, int) (file 'C:/Temp/bind/bind.cm', line 13):
+    foo(1, 1);
+    ^^^^^^^^^
+see reference to file 'C:/Temp/bind/bind.cm', line 1:
+public void foo(int x, long y)
+            ^^^^^^^^^^^^^^^^^^
+see reference to file 'C:/Temp/bind/bind.cm', line 6:
+public void foo(long x, int y)
+            ^^^^^^^^^^^^^^^^^^
+\end{verbatim}
+\end{exmp}
+
+\section{Finding Conversions}\label{findconversions}
+
+The following algorithm is used for finding conversions from argument types to parameter types:
+
+\begin{algo} Find Conversions.
+Input to this algorithm are:
+\begin{itemize}
+\item
+List of parameters of a viable function.
+\item
+List of argument information structures (see section \ref{arginfo}) for the function call to resolve.
+\item
+Conversion type \verb|implicit| (default) or \verb|explicit|.
+\item
+Let $m$ be a reference to an initially empty list of argument matches associated with the viable function.
+\end{itemize}
+The algorithm returns \textbf{true} if conversions of argument types to parameter types exist, and \textbf{false} otherwise.
+
+\begin{enumerate}
+\item
+Let $n$ be the number of parameters of the viable function and the number of argument information structures.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $a$ be $i$'th argument information structure. Let $p$ the type of $i$'th parameter.
+\item
+If the type of argument in the argument information structure $a$ is equal to the type of parameter $p$,
+append an \verb|exactMatch| to the list of argument matches $m$.
+\item
+Otherwise:
+\begin{enumerate}
+\item
+If the parameter type $p$ is a \verb|nonconst| lvalue reference type and the category of argument in the argument information structore $a$ is not \verb|lvalue|,
+or the type of argument in the argument information structure $a$ is \verb|const| type, return \textbf{false}.
+\item
+Otherwise, if the parameter type $p$ is an rvalue reference type,
+and the type of argument in the argument information structure $a$ is not rvalue reference type and
+cannot bind to rvalue reference type according to the argument information structure $a$, return \textbf{false}.
+\end{enumerate}
+\item
+Otherwise, if the plain type of type of argument in the argument information structure $a$ is equal to the plain type of $p$,
+append an \verb|exactMatch| to the list of argument matches $m$ with derivation counts of the argument type and the parameter type.
+\item
+Otherwise, if the plain type of the type of argument in the argument information structure $a$ is an array type and plain type of $p$ is pointer type,
+append a \verb|conversion| match with distance 1 to the list of argument matches $m$ with derivation counts of the argument type and the parameter type.
+\item
+Otherwise, if the base type of the type of argument in the argument information structure $a$ is a class type and is derived from the base type of $p$,
+append a \verb|conversion| match with the distance of argument class type to the parameter class type to the list of argument matches $m$
+with derivation counts of the argument type and the parameter type.
+\item
+Otherwise, if the conversion type is \verb|explicit| and the base type of $p$ is a class type and the
+the base type of the type of argument in the argument information structure $a$ is a class type derived from $p$,
+append a \verb|conversion| match with the distance of argument class type to the parameter class type to the list of argument matches $m$
+with derivation counts of the argument type and the parameter type.
+\item
+Otherwise, if there exists converting constructor or conversion function from plain parameter type to the plain argument type, or vice versa,
+let $c$ be the converting constructor or conversion function, append a conversion argument match with the conversion distance of $c$
+to the list of argument matches $m$ with derivation counts of the argument type and the parameter type.
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\item
+Return \textbf{true}.
+\end{enumerate}
+\end{algo}
+
+\section{Ordering of Matching Functions}\label{overloadordering}
+
+The ordering of matching functions is based on lists of argument match structures associated with the matching functions and the properties of the matching
+functions themselves.
+
+An argument match structure contains:
+\begin{itemize}
+\item
+Conversion rank: \verb|exactMatch|, \verb|promotion|, \verb|conversion|.
+When comparing these \verb|exactMatch| is better than \verb|promotion| and \verb|promotion| is better than \verb|conversion|.
+See section \ref{standardconversions}.
+\item
+Conversion distance. Shorter conversion distance is preferred over longer conversion distance.
+\item
+Parameter derivation counts.
+These are compared lexicographically: first the number of \textbf{const}s, then lvalue references, then rvalue references and finally pointers.
+The less derivations, the better.
+\item
+Argument derivation counts. Same comparison as above.
+\end{itemize}
+
+Argument match structures are compared lexicographically: first conversion ranks, then conversion distances, then parameter derivation counts and finally
+argument derivation counts.
+
+Ordering of matching functions is defined by comparing matching functions and their associated argument match structure lists pairwise:
+
+\begin{algo} Comparing Two Matching Functions.
+Returns \textbf{true} if the first matching function is a better match than the second matching function, and \textbf{false} otherwise.
+\begin{enumerate}
+\item
+Let $left$ be the first matching function and $right$ the second matching function.
+\item
+Let $la$ be the list of argument match structures for the parameters of $left$, and $ra$ be the list of argument match structures for the parameters of $right$.
+\item
+Let $lb$ be the number of left better matching arguments and $rb$ be the number right better matching arguments. Initially set $lb$ and $rb$ to zero.
+\item
+For each argument match structure of $la$, say $la_i$ and each corresponding argument match structure of $ra$, say $ra_i$:
+\begin{enumerate}
+\item
+If $la_i$ is better argument match than $ra_i$, increment $lb$, else if $ra_i$ is better argument match than $la_i$ increment $rb$.
+\end{enumerate}
+\item
+If $lb > rb$ return \textbf{true}, else if $rb > lb$ return \textbf{false}.
+\item
+Otherwise, if the total number of conversions for $left$ is less than the total number of conversions for $right$, return \textbf{true}.
+\item
+Otherwise, if the total number of conversions for $right$ is less than the total number of conversions for $left$, return \textbf{false}.
+\item
+Otherwise, if $left$ is not a function template and $right$ is a function template, return \textbf{true}.
+\item
+Otherwise, if $right$ is not a function template and $left$ is a function template, return \textbf{false}.
+\item
+Otherwise, if $left$ is not a function template specialization and $right$ is a function template specialization, return \textbf{true}.
+\item
+Otherwise, if $right$ is not a function template specialization and $left$ is a function template specialization, return \textbf{false}.
+\item
+Otherwise, if $left$ is an array constructor and $right$ is not an array constructor, return \textbf{true}.
+\item
+Otherwise, if $right$ is an array constructor and $left$ is not an array constructor, return \textbf{false}.
+\item
+Otherwise, if $left$ is an array assignment and $right$ is not an array assignment, return \textbf{true}.
+\item
+Otherwise, if $right$ is an array assignment and $left$ is not an array assignment, return \textbf{false}.
+\item
+Otherwise, if $left$ has a constraint and $right$ does not have a constraint, return \textbf{true}.
+\item
+Otherwise, if $right$ has a constraint and $left$ does not have a constraint, return \textbf{false}.
+\item
+Otherwise, if both $left$ and $right$ have a constraint:
+\begin{enumerate}
+\item
+Let $lc$ be the constraint of the $left$ and $rc$ be the constraint of the $right$.
+\item
+If $lc$ imply $rc$, and not $rc$ imply $lc$, return \textbf{true}.
+\item
+Otherwise, if $rc$ imply $lc$ and not $lc$ imply $rc$, return \textbf{false}.
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\end{algo}
 
 \chapter{Emitter}
 
