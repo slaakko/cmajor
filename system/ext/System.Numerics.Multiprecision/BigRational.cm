@@ -17,6 +17,18 @@ namespace System.Numerics.Multiprecision
         public nothrow BigRational(): mpq(create_mpq())
         {
         }
+        public nothrow BigRational(int that) : mpq(create_mpq())
+        {
+            set_mpq_si(mpq, that, 1);
+        }
+        public nothrow BigRational(uint that) : mpq(create_mpq())
+        {
+            set_mpq_ui(mpq, that, 1u);
+        }
+        public nothrow BigRational(const BigInt& that) : mpq(create_mpq())
+        {
+            set_mpq_z(mpq, that.Handle());
+        }
         public BigRational(const string& str) : this(str, 10)
         {
         }

@@ -1,0 +1,499 @@
+﻿using System;
+using System.Collections;
+using System.Numerics.Multiprecision;
+
+namespace BigNumCalc
+{
+    public enum BigNumKind
+    {
+        bigInt, bigRational, bigFloat
+    }
+    
+    public nothrow BigNumKind CommonType(BigNumKind left, BigNumKind right)
+    {
+        switch (left)
+        {
+            case BigNumKind.bigInt:
+            {
+                switch (right)
+                {
+                    case BigNumKind.bigInt:
+                    {
+                        return BigNumKind.bigInt;
+                    }
+                    case BigNumKind.bigRational:
+                    {
+                        return BigNumKind.bigRational;
+                    }
+                    case BigNumKind.bigFloat:
+                    {
+                        return BigNumKind.bigFloat;
+                    }
+                }
+                break;
+            }
+            case BigNumKind.bigRational:
+            {
+                switch (right)
+                {
+                    case BigNumKind.bigInt:
+                    {
+                        return BigNumKind.bigRational;
+                    }
+                    case BigNumKind.bigRational:
+                    {
+                        return BigNumKind.bigRational;
+                    }
+                    case BigNumKind.bigFloat:
+                    {
+                        return BigNumKind.bigFloat;
+                    }
+                }
+                break;
+            }
+            case BigNumKind.bigFloat:
+            {
+                switch (right)
+                {
+                    case BigNumKind.bigInt:
+                    {
+                        return BigNumKind.bigFloat;
+                    }
+                    case BigNumKind.bigRational:
+                    {
+                        return BigNumKind.bigFloat;
+                    }
+                    case BigNumKind.bigFloat:
+                    {
+                        return BigNumKind.bigFloat;
+                    }
+                }
+                break;
+            }
+        }
+        return BigNumKind.bigInt;
+    }
+    
+    public abstract class Value
+    {
+        public virtual nothrow ~Value()
+        {
+        }
+        public nothrow abstract BigNumKind GetKind() const;
+        public abstract Value* As(BigNumKind kind, bool cast_) const;
+        public abstract string ToString() const;
+    }
+    
+    public class BigIntValue : Value
+    {
+        public typedef BigInt OperandType;
+        public nothrow BigIntValue() : value()
+        {
+        }
+        public explicit nothrow BigIntValue(const BigInt& value_) : value(value_)
+        {
+        }
+        public nothrow override BigNumKind GetKind() const
+        {
+            return BigNumKind.bigInt;
+        }
+        public nothrow const BigInt& Value() const
+        {
+            return value;
+        }
+        public override Value* As(BigNumKind kind, bool cast_) const
+        {
+            switch (kind)
+            {
+                case BigNumKind.bigInt: return new BigIntValue(value);
+                case BigNumKind.bigRational: return new BigRationalValue(BigRational(value));
+                case BigNumKind.bigFloat: return new BigFloatValue(BigFloat(value));
+            }
+            return null;
+        }
+        public override string ToString() const
+        {
+            return value.ToString();
+        }
+        private BigInt value;
+    }
+    
+    public class BigRationalValue : Value
+    {
+        public typedef BigRational OperandType;
+        public nothrow BigRationalValue() : value()
+        {
+        }
+        public explicit nothrow BigRationalValue(const BigRational& value_) : value(value_)
+        {
+        }
+        public nothrow override BigNumKind GetKind() const
+        {
+            return BigNumKind.bigRational;
+        }
+        public nothrow const BigRational& Value() const
+        {
+            return value;
+        }
+        public override Value* As(BigNumKind kind, bool cast_) const
+        {
+            switch (kind)
+            {
+                case BigNumKind.bigInt: 
+                {
+                    if (cast_) 
+                    {
+                        return new BigIntValue(BigInt(value.Numerator() / value.Denominator())); 
+                    }
+                    else 
+                    {
+                        throw Exception("cannot convert bigRational to bigInt without a cast");
+                    }
+                }
+                case BigNumKind.bigRational: return new BigRationalValue(value); 
+                case BigNumKind.bigFloat: return new BigFloatValue(value); 
+            }
+            return null;
+        }
+        public override string ToString() const
+        {
+            return "[" + value.ToString() + "]";
+        }
+        private BigRational value;
+    }
+    
+    public class BigFloatValue : Value
+    {
+        public typedef BigFloat OperandType;
+        public nothrow BigFloatValue() : value()
+        {
+        }
+        public explicit nothrow BigFloatValue(const BigFloat& value_) : value(value_)
+        {
+        }
+        public nothrow override BigNumKind GetKind() const
+        {
+            return BigNumKind.bigFloat;
+        }
+        public nothrow const BigFloat& Value() const
+        {
+            return value;
+        }
+        public override Value* As(BigNumKind kind, bool cast_) const
+        {
+            switch (kind)
+            {
+                case BigNumKind.bigInt:
+                {   
+                    if (cast_) 
+                    {
+                        int v = cast<int>(value.ToDouble());
+                        BigInt i(v);
+                        return new BigIntValue(i); 
+                    }
+                    else 
+                    {
+                         throw Exception("cannot convert bigFloat to bigInt without a cast");
+                    }                     
+                }                
+                case BigNumKind.bigRational:
+                {
+                    if (cast_) 
+                    {
+                        int v = cast<int>(value.ToDouble());
+                        BigRational r(v);
+                        return new BigRationalValue(r); 
+                    }
+                    else
+                    {
+                        throw Exception("cannot convert bigFloat to bigRational without a cast");
+                    }
+                }
+                case BigNumKind.bigFloat: return new BigFloatValue(value); 
+            }
+            return null;
+        }
+        public override string ToString() const
+        {
+            return value.ToString();
+        }
+        private BigFloat value;
+    }
+    
+    public class EvaluationStack
+    {
+        public void Push(Value* v)
+        {
+            stack.Push(UniquePtr<Value>(v));
+        }
+        public Value* Pop() 
+        {
+            UniquePtr<Value> value = stack.Pop();
+            return value.Release();
+        }
+        private Stack<UniquePtr<Value>> stack;
+    }
+    
+    public concept ValueType<T>
+    {
+        where Derived<T, Value>;
+    }
+    
+    public Value* UnaryEval<ValueT, Op>(Value* operand, Op op) where ValueT is ValueType and Op is UnaryFunction<ValueT.OperandType>
+    {
+        ValueT* v = cast<ValueT*>(operand);
+        return new ValueT(op(v->Value()));
+    }
+    
+    public Value* UnaryPlus<ValueT>(Value* operand) where ValueT is ValueType
+    {
+        return UnaryEval<ValueT>(operand, Identity<ValueT.OperandType>());
+    }
+    
+    public Value* UnaryMinus<ValueT>(Value* operand) where ValueT is ValueType
+    {
+        return UnaryEval<ValueT>(operand, Negate<ValueT.OperandType>());
+    }
+
+    public delegate Value* UnaryOperatorDelegate(Value* left);
+    
+    public class DefaultUnaryDelegates
+    {
+        static DefaultUnaryDelegates() : instance(new DefaultUnaryDelegates())
+        {
+        }
+        public static DefaultUnaryDelegates& Instance()
+        {
+            return *instance;
+        }
+        public const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<DefaultUnaryDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+
+    public class UnaryPlusDelegates
+    {
+        static UnaryPlusDelegates() : instance(new UnaryPlusDelegates())
+        {
+        }
+        private UnaryPlusDelegates()
+        {
+            delegates.Add(UnaryOperatorDelegate(UnaryPlus<BigIntValue>));
+            delegates.Add(UnaryOperatorDelegate(UnaryPlus<BigRationalValue>));
+            delegates.Add(UnaryOperatorDelegate(UnaryPlus<BigFloatValue>));
+        }
+        public static UnaryPlusDelegates& Instance()
+        {
+            return *instance;
+        }
+        public const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<UnaryPlusDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+
+    public class UnaryMinusDelegates
+    {
+        static UnaryMinusDelegates() : instance(new UnaryMinusDelegates())
+        {
+        }
+        private UnaryMinusDelegates()
+        {
+            delegates.Add(UnaryOperatorDelegate(UnaryMinus<BigIntValue>));
+            delegates.Add(UnaryOperatorDelegate(UnaryMinus<BigRationalValue>));
+            delegates.Add(UnaryOperatorDelegate(UnaryMinus<BigFloatValue>));
+        }
+        public static UnaryMinusDelegates& Instance()
+        {
+            return *instance;
+        }
+        public const List<UnaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<UnaryMinusDelegates> instance;
+        private List<UnaryOperatorDelegate> delegates;
+    }
+        
+    public const List<UnaryOperatorDelegate>& GetUnaryDelegates(char op)
+    {
+        switch (op)
+        {
+            case '+': return UnaryPlusDelegates.Instance().Get();
+            case '-': return UnaryMinusDelegates.Instance().Get();
+        }
+        return DefaultUnaryDelegates.Instance().Get();
+    }
+    
+    public Value* BinaryEval<ValueT, Op>(Value* left, Value* right, Op op) where ValueT is ValueType and Op is BinaryFunction<ValueT.OperandType>
+    {
+        ValueT* l = cast<ValueT*>(left);
+        ValueT* r = cast<ValueT*>(right);
+        return new ValueT(op(l->Value(), r->Value()));
+    }
+    
+    public Value* Add<ValueT>(Value* left, Value* right) where ValueT is ValueType
+    {
+        return BinaryEval<ValueT>(left, right, Plus<ValueT.OperandType>());
+    }
+
+    public Value* Sub<ValueT>(Value* left, Value* right) where ValueT is ValueType
+    {
+        return BinaryEval<ValueT>(left, right, Minus<ValueT.OperandType>());
+    }
+
+    public Value* Mul<ValueT>(Value* left, Value* right) where ValueT is ValueType
+    {
+        return BinaryEval<ValueT>(left, right, Multiplies<ValueT.OperandType>());
+    }
+
+    public Value* Div<ValueT>(Value* left, Value* right) where ValueT is ValueType
+    {
+        return BinaryEval<ValueT>(left, right, Divides<ValueT.OperandType>());
+    }
+    
+    public delegate Value* BinaryOperatorDelegate(Value* left, Value* right);
+    
+    public class DefaultBinaryDelegates
+    {
+        static DefaultBinaryDelegates() : instance(new DefaultBinaryDelegates())
+        {
+        }
+        public static DefaultBinaryDelegates& Instance()
+        {
+            return *instance;
+        }
+        public const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<DefaultBinaryDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+    
+    public class AddDelegates
+    {
+        static AddDelegates() : instance(new AddDelegates())
+        {
+        }
+        public static AddDelegates& Instance() 
+        {
+            return *instance;
+        }
+        private AddDelegates()
+        {
+            delegates.Add(BinaryOperatorDelegate(Add<BigIntValue>));
+            delegates.Add(BinaryOperatorDelegate(Add<BigRationalValue>));
+            delegates.Add(BinaryOperatorDelegate(Add<BigFloatValue>));
+        }
+        public const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<AddDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+    
+    public class SubDelegates
+    {
+        static SubDelegates() : instance(new SubDelegates())
+        {
+        }
+        public static SubDelegates& Instance() 
+        {
+            return *instance;
+        }
+        private SubDelegates()
+        {
+            delegates.Add(BinaryOperatorDelegate(Sub<BigIntValue>));
+            delegates.Add(BinaryOperatorDelegate(Sub<BigRationalValue>));
+            delegates.Add(BinaryOperatorDelegate(Sub<BigFloatValue>));
+        }
+        public const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<SubDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    public class MulDelegates
+    {
+        static MulDelegates() : instance(new MulDelegates())
+        {
+        }
+        public static MulDelegates& Instance() 
+        {
+            return *instance;
+        }
+        private MulDelegates()
+        {
+            delegates.Add(BinaryOperatorDelegate(Mul<BigIntValue>));
+            delegates.Add(BinaryOperatorDelegate(Mul<BigRationalValue>));
+            delegates.Add(BinaryOperatorDelegate(Mul<BigFloatValue>));
+        }
+        public const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<MulDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+
+    public class DivDelegates
+    {
+        static DivDelegates() : instance(new DivDelegates())
+        {
+        }
+        public static DivDelegates& Instance() 
+        {
+            return *instance;
+        }
+        private DivDelegates()
+        {
+            delegates.Add(BinaryOperatorDelegate(Div<BigIntValue>));
+            delegates.Add(BinaryOperatorDelegate(Div<BigRationalValue>));
+            delegates.Add(BinaryOperatorDelegate(Div<BigFloatValue>));
+        }
+        public const List<BinaryOperatorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private static UniquePtr<DivDelegates> instance;
+        private List<BinaryOperatorDelegate> delegates;
+    }
+    
+    public const List<BinaryOperatorDelegate>& GetBinaryDelegates(char op)
+    {
+        switch (op)
+        {
+            case '+': return AddDelegates.Instance().Get();
+            case '-': return SubDelegates.Instance().Get();
+            case '*': return MulDelegates.Instance().Get();
+            case '/': return DivDelegates.Instance().Get();
+        }
+        return DefaultBinaryDelegates.Instance().Get();
+    }
+                                
+    public Value* Evaluate(Value* left, Value* right, char op)
+    {
+        BigNumKind commonType = CommonType(left->GetKind(), right->GetKind());
+        UniquePtr<Value> left_(left->As(commonType, false));
+        UniquePtr<Value> right_(right->As(commonType, false));
+        const List<BinaryOperatorDelegate>& delegates = GetBinaryDelegates(op);
+        BinaryOperatorDelegate dlg = delegates[cast<int>(commonType)];
+        return dlg(left_.GetPtr(), right_.GetPtr());
+    }
+    
+    public Value* Evaluate(Value* subject, char op)
+    {
+        const List<UnaryOperatorDelegate>& delegates = GetUnaryDelegates(op);
+        UnaryOperatorDelegate dlg = delegates[cast<int>(subject->GetKind())];
+        return dlg(subject);
+    }
+}

@@ -168,7 +168,18 @@ namespace System.Numerics.Multiprecision
             char* str = get_mpf_str(mpf, base_, numDigits, &exponent);
             string s(str);
             free(str);
-            return s.Substring(0, exponent) + "." + s.Substring(exponent);
+            string t;
+            if (!s.IsEmpty() && s[0] == '-')
+            {
+                t.Append('-');
+                s = s.Substring(1);
+            }
+            t.Append("0.").Append(s).Append("e").Append(System.ToString(exponent));
+            return t;
+        }
+        public nothrow double ToDouble() const
+        {
+            return get_d_mpf(mpf);
         }
         public nothrow inline void* Handle() const
         {

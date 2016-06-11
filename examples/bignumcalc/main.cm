@@ -1,0 +1,33 @@
+﻿using System;
+using BigNumCalc;
+
+int main()
+{
+    try
+    {
+        BigNumExprGrammar* grammar = BigNumExprGrammar.Create();
+        EvaluationStack stack;
+        Console.WriteLine("enter expression:");
+        string line = Console.ReadLine();
+        while (line != "exit")
+        {
+            try
+            {
+                grammar->Parse(line.Chars(), line.Chars() + line.Length(), 0, "", &stack);
+                UniquePtr<Value> value(stack.Pop());
+                Console.Out() << "= " << value->ToString() << endl();
+            }
+            catch (const Exception& ex)
+            {
+                Console.Out() << ex.Message() << endl();
+            }
+            Console.WriteLine("enter expression:");
+            line = Console.ReadLine();
+        }
+    }
+    catch (const Exception& ex)
+    {
+        Console.Error() << ex.Message() << endl();
+    }
+    return 0;
+}

@@ -225,10 +225,29 @@ int assign_mpq_str(void* mpq_handle, const char* str, int base)
     return result;
 }
 
+void set_mpq_si(void* mpq_handle, int n, int d)
+{
+    mpq_t* mpq = (mpq_t*)mpq_handle;
+    mpq_set_si(*mpq, n, d);
+}
+
+void set_mpq_ui(void* mpq_handle, unsigned int n, unsigned int d)
+{
+    mpq_t* mpq = (mpq_t*)mpq_handle;
+    mpq_set_ui(*mpq, n, d);
+}
+
 char* get_mpq_str(void* mpq_handle, int base)
 {
     mpq_t* mpq = (mpq_t*)mpq_handle;
     return mpq_get_str(NULL, base, *mpq);
+}
+
+void set_mpq_z(void* mpq_left, void* mpz_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpq_set_z(*left, *right);
 }
 
 void add_mpq(void* mpq_target, void* mpq_left, void* mpq_right)
@@ -486,4 +505,10 @@ void trunc_mpf(void* mpf_target, void* mpf_subject)
     mpf_t* target = (mpf_t*)mpf_target;
     mpf_t* subject = (mpf_t*)mpf_subject;
     mpf_trunc(*target, *subject);
+}
+
+double get_d_mpf(void* mpf)
+{
+    mpf_t* m = (mpf_t*)mpf;
+    return mpf_get_d(*m);
 }
