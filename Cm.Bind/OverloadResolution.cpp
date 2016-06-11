@@ -909,7 +909,7 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                 for (int i = 1; i < n; ++i)
                 {
                     FunctionMatch match = std::move(functionMatches[i]);
-                    if (!betterFunctionMatch(equalMatch, match))
+                    if (!betterFunctionMatch(equalMatches[0], match))
                     {
                         equalMatches.push_back(std::move(match));
                     }
