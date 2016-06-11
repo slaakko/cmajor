@@ -217,7 +217,8 @@ namespace System.IO
 #if (WINDOWS)            
             while (!endOfStream)
             {
-                if (handle == 0 && !CmUnicodeStdInEnvVarIs0())
+/*                
+                if (handle == 0 && !CmUnicodeStdInEnvVarIs0()) // disabled, does not work
                 {
                     ws = read_unicode_line();
                     if (ws != null)
@@ -232,6 +233,7 @@ namespace System.IO
                     }
                 }
                 else
+*/                
                 {
                     if (pos == end)
                     {

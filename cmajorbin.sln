@@ -302,6 +302,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "system", "system", "{AAF2D7
 		system\time.cm = system\time.cm
 		system\tracer.cm = system\tracer.cm
 		system\uhuge.cm = system\uhuge.cm
+		system\unicodeio.cpp = system\unicodeio.cpp
 		system\utility.cm = system\utility.cm
 	EndProjectSection
 EndProject
