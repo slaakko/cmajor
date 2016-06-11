@@ -6006,7 +6006,7 @@ insert the viable function to a list of \emph{matching functions}.
 \item
 Otherwise, if the viable function is a function template:
 If the types of the arguments of the function call can be bound to the type parameters of the viable function template, and
-the constraints of the function template are satisfied for the bound template argument types,
+the constraint of the function template is satisfied for the bound template argument types,
 insert the viable function template to a list of \emph{matching functions}.
 \end{enumerate}
 \item
@@ -6241,7 +6241,7 @@ Otherwise, if $right$ has a constraint and $left$ does not have a constraint, re
 Otherwise, if both $left$ and $right$ have a constraint:
 \begin{enumerate}
 \item
-Let $lc$ be the constraint of the $left$ and $rc$ be the constraint of the $right$.
+Let $lc$ be the bound constraint of the $left$ and $rc$ be the bound constraint of the $right$.
 \item
 If $lc$ imply $rc$, and not $rc$ imply $lc$, return \textbf{true}.
 \item
@@ -6253,6 +6253,8 @@ Otherwise, return \textbf{false}.
 Otherwise, return \textbf{false}.
 \end{enumerate}
 \end{algo}
+
+\section{Binding
 
 \chapter{Emitter}
 
