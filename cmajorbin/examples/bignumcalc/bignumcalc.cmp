@@ -1,0 +1,9 @@
+project BigNumCalc;
+target=program;
+assembly <bignumcalc.cma>;
+reference <ext/System.Numerics.Multiprecision/System.Numerics.Multiprecision.cml>;
+reference <ext/System.Text.Parsing/System.Text.Parsing.cml>;
+source <data.cm>;
+source <expr.cm>;
+text <expr.parser>;
+source <main.cm>;

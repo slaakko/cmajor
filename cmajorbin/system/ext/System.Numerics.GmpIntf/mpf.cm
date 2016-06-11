@@ -24,3 +24,4 @@ public extern cdecl int cmp_mpf(void* mpf_left, void* mpf_right);
 public extern cdecl void ceil_mpf(void* mpf_target, void* mpf_subject);
 public extern cdecl void floor_mpf(void* mpf_target, void* mpf_subject);
 public extern cdecl void trunc_mpf(void* mpf_target, void* mpf_subject);
+public extern cdecl double get_d_mpf(void* mpf);

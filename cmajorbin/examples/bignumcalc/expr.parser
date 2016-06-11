@@ -1,0 +1,68 @@
+﻿using System;
+using System.Numerics.Multiprecision;
+
+namespace BigNumCalc
+{
+    grammar BigNumExprGrammar
+    {
+        skip Spaces;
+        
+        Expr(EvaluationStack* s, var char op)
+            ::= Term(s):l
+            (
+                ('+' | '-'){ op = *matchBegin; } 
+                Term(s):r
+                { 
+                    Value* right = s->Pop(); 
+                    Value* left = s->Pop();
+                    s->Push(Evaluate(left, right, op));
+                }
+            )*
+            ;
+        
+        Term(EvaluationStack* s, var char op)
+            ::= Factor(s):l
+            (
+                ('*' | '/'){ op = *matchBegin; }
+                Factor(s):r
+                {
+                    Value* right = s->Pop();
+                    Value* left = s->Pop();
+                    s->Push(Evaluate(left, right, op));
+                }
+            )*
+            ;
+            
+        Factor(EvaluationStack* s, var char op)
+            ::= ('-' Factor(s):f1){ Value* f = s->Pop(); s->Push(Evaluate(f, '-')); } 
+            |   ('+' Factor(s):f2){ Value* f = s->Pop(); s->Push(Evaluate(f, '+')); }
+            |   Number(s)
+            |   '(' Expr(s) ')'
+            ;
+            
+        Number(EvaluationStack* s)
+            ::= BigFloatLiteral:f{ s->Push(f); }
+            |   BigRationalLiteral:r{ s->Push(r); }
+            |   BigIntLiteral:i{ s->Push(i); }
+            ;
+            
+        BigFloatLiteral : Value*
+            ::= token(digit+ '.' digit+ ExponentPart? | digit+ ExponentPart){ value = new BigFloatValue(BigFloat(string(matchBegin, matchEnd))); }
+            ;
+            
+        ExponentPart
+            ::= token([eE]('+' | '-')? digit+)
+            ;
+            
+        BigRationalLiteral : Value*
+            ::= token('[' (digit+ ('/' digit+)?){ value = new BigRationalValue(BigRational(string(matchBegin, matchEnd))); } ']')
+            ;
+            
+        BigIntLiteral : Value*
+            ::= token(digit+){ value = new BigIntValue(BigInt(string(matchBegin, matchEnd))); }
+            ;
+
+        Spaces
+            ::= space+;
+    }
+}
