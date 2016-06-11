@@ -2,6 +2,8 @@ project System.Numerics.GmpIntf;
 target=library;
 assembly <System.Numerics.GmpIntf.cma>;
 csource <gmpintf.c>;
+source <mpf.cm>;
+source <mpq.cm>;
 source <mpz.cm>;
 clib <gmp>;
 addlibrarypath <gmp/windows/x86>[os=windows,bits=32];

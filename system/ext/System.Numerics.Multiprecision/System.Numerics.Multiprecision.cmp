@@ -2,4 +2,6 @@ project System.Numerics.Multiprecision;
 target=library;
 assembly <System.Numerics.Multiprecision.cma>;
 reference <../System.Numerics.GmpIntf/System.Numerics.GmpIntf.cml>;
+source <BigFloat.cm>;
 source <BigInt.cm>;
+source <BigRational.cm>;

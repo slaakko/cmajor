@@ -1,4 +1,4 @@
-#ifdef _WIN32
+﻿#ifdef _WIN32
     #if defined(__MINGW64__)
         #include "gmp/windows/x64/gmp.h"
     #else
@@ -14,6 +14,8 @@
     #error unknown platform
 #endif
 #include <stdlib.h>
+
+// integer functions:
 
 void* create_mpz()
 {
@@ -181,4 +183,307 @@ int tstbit_mpz(void* mpz_handle, unsigned long bit_index)
 {
     mpz_t* mpz = (mpz_t*)mpz_handle;
     return mpz_tstbit(*mpz, (mp_bitcnt_t)bit_index);
+}
+
+// rational functions:
+
+void* create_mpq()
+{
+    mpq_t* mpq = (mpq_t*)malloc(sizeof(mpq_t));
+    mpq_init(*mpq);
+    return mpq;
+}
+
+void destroy_mpq(void* mpq)
+{
+    mpq_t* m = (mpq_t*)mpq;
+    mpq_clear(*m);
+    free(mpq);
+}
+
+void canonicalize_mpq(void* mpq)
+{
+    mpq_t* subject = (mpq_t*)mpq;
+    mpq_canonicalize(*subject);
+}
+
+void assign_mpq(void* mpq_left, void* mpq_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_set(*left, *right);
+}
+
+int assign_mpq_str(void* mpq_handle, const char* str, int base)
+{
+    mpq_t* mpq = (mpq_t*)mpq_handle;
+    int result = mpq_set_str(*mpq, str, base);
+    if (result == 0)
+    {
+        canonicalize_mpq(mpq);
+    }
+    return result;
+}
+
+char* get_mpq_str(void* mpq_handle, int base)
+{
+    mpq_t* mpq = (mpq_t*)mpq_handle;
+    return mpq_get_str(NULL, base, *mpq);
+}
+
+void add_mpq(void* mpq_target, void* mpq_left, void* mpq_right)
+{
+    mpq_t* target = (mpq_t*)mpq_target;
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_add(*target, *left, *right);
+    canonicalize_mpq(target);
+}
+
+void sub_mpq(void* mpq_target, void* mpq_left, void* mpq_right)
+{
+    mpq_t* target = (mpq_t*)mpq_target;
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_sub(*target, *left, *right);
+    canonicalize_mpq(target);
+}
+
+void mul_mpq(void* mpq_target, void* mpq_left, void* mpq_right)
+{
+    mpq_t* target = (mpq_t*)mpq_target;
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_mul(*target, *left, *right);
+    canonicalize_mpq(target);
+}
+
+void div_mpq(void* mpq_target, void* mpq_left, void* mpq_right)
+{
+    mpq_t* target = (mpq_t*)mpq_target;
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_div(*target, *left, *right);
+    canonicalize_mpq(target);
+}
+
+void neg_mpq(void* mpq_left, void* mpq_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_neg(*left, *right);
+    canonicalize_mpq(left);
+}
+
+void abs_mpq(void* mpq_left, void* mpq_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpq_abs(*left, *right);
+    canonicalize_mpq(left);
+}
+
+int cmp_mpq(void* mpq_left, void* mpq_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    return mpq_cmp(*left, *right);
+}
+
+int equal_mpq(void* mpq_left, void* mpq_right)
+{
+    mpq_t* left = (mpq_t*)mpq_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    return mpq_equal(*left, *right);
+}
+
+void get_numerator_mpq(void* mpz_numerator, void* mpq_rational)
+{
+    mpz_t* numerator = (mpz_t*)mpz_numerator;
+    mpq_t* rational = (mpq_t*)mpq_rational;
+    mpq_get_num(*numerator, *rational);
+}
+
+void get_denominator_mpq(void* mpz_denominator, void* mpq_rational)
+{
+    mpz_t* denominator = (mpz_t*)mpz_denominator;
+    mpq_t* rational = (mpq_t*)mpq_rational;
+    mpq_get_den(*denominator, *rational);
+}
+
+// float functions:
+
+void set_default_prec_mpf(unsigned int prec)
+{
+    mpf_set_default_prec(prec);
+}
+
+unsigned int get_default_prec_mpf()
+{
+    return mpf_get_default_prec();
+}
+
+void* create_mpf()
+{
+    mpf_t* mpf = (mpf_t*)malloc(sizeof(mpf_t));
+    mpf_init(*mpf);
+    return mpf;
+}
+
+void create_mpf_prec(unsigned int prec)
+{    
+    mpf_t* mpf = (mpf_t*)malloc(sizeof(mpf_t));
+    mpf_init2(*mpf, prec);
+    return mpf;
+}
+
+void destroy_mpf(void* mpf)
+{
+    mpf_t* m = (mpf_t*)mpf;
+    mpf_clear(*m);
+    free(mpf);
+}
+
+unsigned int get_prec_mpf(void* mpf)
+{
+    mpf_t* m = (mpf_t*)mpf;
+    return mpf_get_prec(*m);
+}
+
+void set_prec_mpf(void* mpf, unsigned int prec)
+{    
+    mpf_t* m = (mpf_t*)mpf;
+    mpf_set_prec(*m, prec);
+}
+
+void set_mpf(void* mpf_left, void* mpf_right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    mpf_set(*left, *right);
+}
+
+void set_mpf_ui(void* mpf_left, unsigned long int right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_set_ui(*left, right);
+}
+
+void set_mpf_si(void* mpf_left, signed long int right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_set_si(*left, right);
+}
+
+void set_mpf_d(void* mpf_left, double right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_set_d(*left, right);
+}
+
+void set_mpf_z(void* mpf_left, void* mpz_right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpz_t* right = (mpz_t*)mpz_right;
+    mpf_set_z(*left, *right);
+}
+
+void set_mpf_q(void* mpf_left, void* mpq_right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpq_t* right = (mpq_t*)mpq_right;
+    mpf_set_q(*left, *right);
+}
+
+int set_mpf_str(void* mpf_left, const char* str, int base_)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    return mpf_set_str(*left, str, base_);
+}
+
+char* get_mpf_str(void* mpf_handle, int base_, unsigned int numDigits, int* exponent)
+{
+    mpf_t* subject = (mpf_t*)mpf_handle;
+    return mpf_get_str(NULL, exponent, base_, numDigits, *subject);
+}
+
+void add_mpf(void* mpf_target, void* mpf_left, void* mpf_right)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    mpf_add(*target, *left, *right);
+}
+
+void sub_mpf(void* mpf_target, void* mpf_left, void* mpf_right)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    mpf_sub(*target, *left, *right);
+}
+
+void mul_mpf(void* mpf_target, void* mpf_left, void* mpf_right)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    mpf_mul(*target, *left, *right);
+}
+
+void div_mpf(void* mpf_target, void* mpf_left, void* mpf_right)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    mpf_div(*target, *left, *right);
+}
+
+void sqrt_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_sqrt(*target, *subject);
+}
+
+void neg_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_neg(*target, *subject);
+}
+
+void abs_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_abs(*target, *subject);
+}
+
+int cmp_mpf(void* mpf_left, void* mpf_right)
+{
+    mpf_t* left = (mpf_t*)mpf_left;
+    mpf_t* right = (mpf_t*)mpf_right;
+    return mpf_cmp(*left, *right);
+}
+
+void ceil_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_ceil(*target, *subject);
+}
+
+void floor_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_floor(*target, *subject);
+}
+
+void trunc_mpf(void* mpf_target, void* mpf_subject)
+{
+    mpf_t* target = (mpf_t*)mpf_target;
+    mpf_t* subject = (mpf_t*)mpf_subject;
+    mpf_trunc(*target, *subject);
 }

@@ -1,0 +1,143 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+ 
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+ ========================================================================*/
+
+using System;
+using System.IO;
+
+namespace System.Numerics.Multiprecision
+{
+    public class BigRational
+    {
+        public nothrow BigRational(): mpq(create_mpq())
+        {
+        }
+        public BigRational(const string& str) : this(str, 10)
+        {
+        }
+        public BigRational(const string& str, int base_) : mpq(create_mpq())
+        {
+            int result = assign_mpq_str(mpq, str.Chars(), base_);
+            if (result != 0)
+            {
+                ThrowConversionException("invalid digit string for initializing BigRational");
+            }
+        }
+        public nothrow ~BigRational()
+        {
+            if (mpq != null)
+            {
+                destroy_mpq(mpq);
+            }
+        }
+        public nothrow BigRational(const BigRational& that) : mpq(create_mpq())
+        {
+            assign_mpq(mpq, that.mpq);
+        }
+        public nothrow BigRational(BigRational&& that) : mpq(that.mpq)
+        {
+            that.mpq = null;
+        }
+        public nothrow void operator=(const BigRational& that)
+        {
+            if (mpq != null)
+            {
+                destroy_mpq(mpq);
+            }
+            mpq = create_mpq();
+            assign_mpq(mpq, that.mpq);
+        }
+        public default nothrow void operator=(BigRational&& that);
+        public nothrow BigInt Numerator() const 
+        {
+            BigInt numerator;
+            get_numerator_mpq(numerator.Handle(), mpq);
+            return numerator;
+        }
+        public nothrow BigInt Denominator() const 
+        {
+            BigInt denominator;
+            get_denominator_mpq(denominator.Handle(), mpq);
+            return denominator;
+        }
+        public nothrow string ToString() const
+        {
+            return this->ToString(10);
+        }
+        public nothrow string ToString(int base_) const
+        {
+            char* str = get_mpq_str(mpq, base_);
+            string s(str);
+            free(str);
+            return s;
+        }
+        public nothrow inline void* Handle() const
+        {
+            return mpq;
+        }    
+        private void* mpq;
+    }
+    
+    public nothrow BigRational operator-(const BigRational& x)
+    {
+        BigRational result;
+        neg_mpq(result.Handle(), x.Handle());
+        return result;
+    }    
+    
+    public nothrow BigRational Abs(const BigRational& x)
+    {
+        BigRational result;
+        abs_mpq(result.Handle(), x.Handle());
+        return result;
+    }
+
+    public nothrow BigRational operator+(const BigRational& left, const BigRational& right)
+    {
+        BigRational result;
+        add_mpq(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigRational operator-(const BigRational& left, const BigRational& right)
+    {
+        BigRational result;
+        sub_mpq(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigRational operator*(const BigRational& left, const BigRational& right)
+    {
+        BigRational result;
+        mul_mpq(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow BigRational operator/(const BigRational& left, const BigRational& right)
+    {
+        BigRational result;
+        div_mpq(result.Handle(), left.Handle(), right.Handle());
+        return result;
+    }
+    
+    public nothrow bool operator==(const BigRational& left, const BigRational& right)
+    {
+        return equal_mpq(left.Handle(), right.Handle()) != 0;
+    }
+
+    public nothrow bool operator<(const BigRational& left, const BigRational& right)
+    {
+        return cmp_mpq(left.Handle(), right.Handle()) < 0;
+    }
+    
+    public OutputStream& operator<<(OutputStream& s, const BigRational& x)
+    {
+        s << x.ToString();
+        return s;
+    }
+}

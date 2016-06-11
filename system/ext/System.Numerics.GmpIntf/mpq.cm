@@ -1,0 +1,16 @@
+﻿public extern cdecl void* create_mpq();
+public extern cdecl void destroy_mpq(void* mpq);
+public extern cdecl void canonicalize_mpq(void* mpq);
+public extern cdecl void assign_mpq(void* mpq_left, void* mpq_right);
+public extern cdecl int assign_mpq_str(void* mpq_handle, const char* str, int base_);
+public extern cdecl char* get_mpq_str(void* mpq_handle, int base_);
+public extern cdecl void add_mpq(void* mpq_target, void* mpq_left, void* mpq_right);
+public extern cdecl void sub_mpq(void* mpq_target, void* mpq_left, void* mpq_right);
+public extern cdecl void mul_mpq(void* mpq_target, void* mpq_left, void* mpq_right);
+public extern cdecl void div_mpq(void* mpq_target, void* mpq_left, void* mpq_right);
+public extern cdecl void neg_mpq(void* mpq_left, void* mpq_right);
+public extern cdecl void abs_mpq(void* mpq_left, void* mpq_right);
+public extern cdecl int cmp_mpq(void* mpq_left, void* mpq_right);
+public extern cdecl int equal_mpq(void* mpq_left, void* mpq_right);
+public extern cdecl void get_numerator_mpq(void* mpz_numerator, void* mpq_rational);
+public extern cdecl void get_denominator_mpq(void* mpz_denominator, void* mpq_rational);
