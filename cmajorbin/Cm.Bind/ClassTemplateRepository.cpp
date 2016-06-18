@@ -201,8 +201,9 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
         else
         {
             Cm::Core::ConceptCheckException exception;
+            std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
             bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
-                exception);
+                exception, boundConstraint);
             if (!constraintSatisfied)
             {
                 throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
@@ -315,8 +316,9 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         }
         Cm::Sym::ClassTypeSymbol* subjectClassTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(subjectTypeSymbol);
         Cm::Core::ConceptCheckException exception;
+        std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
         bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, templateTypeSymbol->GetFileScope(), templateTypeSymbol->GetConstraint(), 
-            subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(), exception);
+            subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(), exception, boundConstraint);
         if (!constraintSatisfied)
         {
             throw Cm::Core::Exception("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());

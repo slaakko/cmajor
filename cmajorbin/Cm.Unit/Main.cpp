@@ -40,7 +40,7 @@ struct InitDone
     }
 };
 
-const char* version = "1.4.0";
+const char* version = "1.5.0";
 
 const char* Name()
 {

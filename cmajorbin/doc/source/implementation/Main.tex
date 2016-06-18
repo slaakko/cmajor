@@ -5986,7 +5986,11 @@ The following table shows functions contained by the synthesized class function 
 \end{supertabular}
 \end{flushleft}
 
-\chapter{Overload Resolution}
+\chapter{Overload Resolution}\label{overloadresolution}
+
+We begin by describing the main algorithm for overload resolution, and then take a look at the details in the following sections.
+
+\section{Main Algorithm}
 
 The task of overload resolution is to select a single best matching function overload from a set of viable function overloads for a function call.
 Overload resolution proceeds as follows:
@@ -6005,8 +6009,9 @@ and the types of the arguments of the function call can be converted to the type
 insert the viable function to a list of \emph{matching functions}.
 \item
 Otherwise, if the viable function is a function template:
-If the types of the arguments of the function call can be bound to the type parameters of the viable function template, and
-the constraint of the function template is satisfied for the bound template argument types,
+If the types of the arguments of the function call can be bound to the type parameters of the viable function template using
+algorithm \ref{deducetemplatearguments}, and
+the constraint of the function template is satisfied for the bound template argument types (algorithm \ref{checkconstraints}),
 insert the viable function template to a list of \emph{matching functions}.
 \end{enumerate}
 \item
@@ -6018,14 +6023,18 @@ no matching functions found,
 or there are no acceptable conversion for all argument types
 \end{verbatim}
 \item
-Otherwise, if there is exactly one matching function, the overload resolution succeeds and the matching function is returned.
+Otherwise, if there is exactly one matching function, the overload resolution succeeds:
+If the matching function is a function template or member of a class template, it is instantiated with bound template arguments and the instance is returned;
+otherwise (the matching function is not a function template and not member of a class template) it is simply returned.
 \item
 Otherwise:
 \begin{enumerate}
 \item
 Sort the list of matching functions according to the function ordering rules (see section \ref{overloadordering}).
 \item
-If a single best matching function is found, the overload resolution succeeds and the best matching function is returned.
+If a single best matching function is found, the overload resolution succeeds:
+If the best matching function is a function template or member of a class template, it is instantiated with bound template arguments
+and the instance is returned; otherwise (the best matching function is not a function template and not member of a class template) it is simply returned.
 \item
 Otherwise, report ambiguous overload resolution error with references to ambiguous functions.
 \end{enumerate}
@@ -6033,7 +6042,7 @@ Otherwise, report ambiguous overload resolution error with references to ambiguo
 \end{enumerate}
 \end{algo}
 
-\section{Simple Examples}
+\section{Examples}
 
 Consider the following example:
 
@@ -6068,15 +6077,8 @@ Now, consider the following code:
 \begin{exmp} Unsuccessful Overload Resolution.
 \lstset{language=Cmajor}
 \begin{lstlisting}[frame=trBL]
-public void foo(int x, long y)
-{
-    // ...
-}
-
-public void foo(long x, int y)
-{
-    // ...
-}
+public void foo(int x, long y) {}
+public void foo(long x, int y) {}
 
 void main()
 {
@@ -6086,18 +6088,18 @@ void main()
 
 In this case, the first overload, \verb|foo(int, long)| is a better match for the first \textbf{sbyte} argument,
 but the second overload \verb|foo(long, int)| is a better match for the second \textbf{sbyte} argument.
-However neither of them is bettter than the other according to the function ordering rules,
+However neither of them is better than the other according to the function ordering rules (section \ref{overloadordering}),
 so the overload resolution fails with an error:
 \begin{verbatim}
 Error: overload resolution for overload name 'foo(sbyte, sbyte)' failed:
 call is ambiguous:
-foo(int, long) or foo(long, int) (file 'C:/Temp/bind/bind.cm', line 13):
+foo(int, long) or foo(long, int) (file 'C:/Temp/bind/bind.cm', line 6):
     foo(1, 1);
     ^^^^^^^^^
 see reference to file 'C:/Temp/bind/bind.cm', line 1:
 public void foo(int x, long y)
             ^^^^^^^^^^^^^^^^^^
-see reference to file 'C:/Temp/bind/bind.cm', line 6:
+see reference to file 'C:/Temp/bind/bind.cm', line 2:
 public void foo(long x, int y)
             ^^^^^^^^^^^^^^^^^^
 \end{verbatim}
@@ -6175,6 +6177,8 @@ Return \textbf{true}.
 The ordering of matching functions is based on lists of argument match structures associated with the matching functions and the properties of the matching
 functions themselves.
 
+\subsection{Argument Match Structures}
+
 An argument match structure contains:
 \begin{itemize}
 \item
@@ -6193,6 +6197,34 @@ Argument derivation counts. Same comparison as above.
 
 Argument match structures are compared lexicographically: first conversion ranks, then conversion distances, then parameter derivation counts and finally
 argument derivation counts.
+
+\subsection{Comparison Criteria Informally}
+
+When comparing two matching functions, we first compare their arguments.
+\begin{itemize}
+\item
+If the first function has more better matching arguments than the second one,
+we select the first, otherwise if the second function has more better matching arguments than the first one, we select the second.
+\item
+Then we compare total conversions made for these functions. If the first function requires fewer conversions than the second one, we select the first,
+otherwise if the second function requires fewer conversions than the first one, we select the second.
+\item
+Now the functions to compare have equal number of equally good (or equally bad) conversions,
+we prefer a function than is not a template and not instantiated from a template over
+a function template or a function that is instantiated from a function template.
+\item
+Now if they are both function templates or neither one is a function template, we have some special rules regarding array constructors and assignments.
+\item
+Now if they are both function templates:
+\begin{itemize}
+\item
+We prefer a function template that has a constraint over a nonconstrained function template.
+\item
+If both are constrained function templates, we use the $imply$ relation to select the function template that has more strict constraint.
+\end{itemize}
+\end{itemize}
+
+\subsection{Comparison Algorithm}
 
 Ordering of matching functions is defined by comparing matching functions and their associated argument match structure lists pairwise:
 
@@ -6254,7 +6286,1325 @@ Otherwise, return \textbf{false}.
 \end{enumerate}
 \end{algo}
 
-\section{Binding
+\section{Binding Types to Type Parameters}
+
+The next algorithms are used for deducing template arguments and binding them to template parameters.
+They are quite complicated as descibed using semiformal (bad) english. They can be used only directionally.
+
+\begin{algo}\label{deducetemplatearguments} Deduce Template Arguments.
+Inputs: a container scope, list of template parameters, list of parameters, list of bound template arguments,
+reference to a list of template arguments $a$.
+The algorithm returns \textbf{true} if template arguments could be deduced, \textbf{false} otherwise.
+\begin{enumerate}
+\item
+Let $n$ be the number of type parameters.
+\item
+Resize the list of template arguments $a$ be a list of $n$ nulls.
+\item
+Let $m$ be the number of bound template arguments.
+\item
+For $i$ = 1, \ldots, $m$
+\begin{enumerate}
+\item
+Set template argument $a_i$ to be bound template argument $i$.
+\end{enumerate}
+\item
+Create a deduction scope, set its parent scope to container scope, and install template parameters to the deduction scope.
+\item
+For each parameter $p$:
+\begin{enumerate}
+\item
+Let $t$ be type expression for parameter $p$.
+\item
+Resolve the type for $t$ using the type resolver with deduction scope being the container scope. Let $u$ be the type resolved.
+\item
+If $u$ is null, return \textbf{false}.
+\item
+Use algorithm \ref{deducetemplatearg} to deduce a template argument and the type parameter for type $u$. Let $b$ be the result of deduction.
+\item
+If $b$ is \textbf{false}, return \textbf{false}.
+\end{enumerate}
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+If template argument $i$ is not bound (i.e. is null), return \textbf{false}.
+\end{enumerate}
+\item
+Return \textbf{true}.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{deducetemplatearg} Deduce a Template Argument. Inputs: parameter type, argument type, list of template arguments.
+This algorithm returns \textbf{true} if template argument could be deduced, \textbf{false} otherwise.
+\begin{enumerate}
+\item
+If parameter type is equal to argument type, return \textbf{true}.
+\item
+Let $b$ be the result of binding of the argument type to the parameter type using algorithm \ref{bindtype} with template arguments.
+\item
+If $b$ = \textbf{true}, return \textbf{true}.
+\item
+Otherwise, if an implicit conversion for argument type to parameter type exists, return \textbf{true}.
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{bindtype} Binding Argument Type to Parameter Type. Inputs: parameter type, argument type, list of template arguments, reference to a bound type.
+This algorithm returns \textbf{true} if argument type could be bound to parameter type, \textbf{false} otherwise.
+\begin{enumerate}
+\item
+If the parameter type is a type parameter $t$:
+\begin{enumerate}
+\item
+Let $i$ be the index of type parameter $t$.
+\item
+If $i$'th template argument is null, set $i$'th template argument to argument type. Set bound type to argument type. Return \textbf{true}.
+\item
+Otherwise, if $i$'th template argument is equal to the argument type. Set bound type to argument type. Return \textbf{true}.
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\item
+Otherwise, if the base type of parameter type is class template specialization,
+\begin{enumerate}
+\item
+Let $p$ be the base type of the argument type.
+\item
+Let $d$ be the derivation list of removed derivations (algorithm \ref{removederivations})
+for derivations of the argument type and derivations of the parameter type.
+\item
+If the number of derivations in $d$ is positive, set $p$ to a derived type with derivations $d$ and base type of the argument type.
+\item
+If $p$ is a class template specialization:
+\begin{enumerate}
+\item
+if the primary class type of the base type of the parameter type is equal to the primary class type of $p$:
+\begin{enumerate}
+\item
+Let $n$ be the number of the type arguments of $p$.
+\item
+For $i$ = 1, \ldots, $n$
+\begin{itemize}
+\item
+If the $i$'th type argument of the base type of the parameter type is a type parameter:
+\begin{itemize}
+\item
+Let $k$ be the index of the $i$'th type argument of the base type of parameter type.
+\item
+If $k$'th template argument is null, set $k$'th template argument to $i$'th type argument of $p$.
+\item
+Otherwise, if $k$'th template argument is not equal to the $i$'th type argument of $p$, return \textbf{false}.
+\end{itemize}
+\end{itemize}
+\item
+Return \textbf{true}.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\item
+If the parameter type is a derived type symbol:
+\begin{enumerate}
+\item
+Let $d$ be the derivation list of removed derivations (algorithm \ref{removederivations})
+for derivations of the argument type and derivations of the parameter type.
+\item
+Let $b$ be the base type of the argument type.
+\item
+If the number of derivations in $d$ is positive:
+\begin{enumerate}
+\item
+Set $b$ to a derived type with derivations $d$ and base type of the argument type.
+\end{enumerate}
+\item
+Let $c$ be the result of binding of $b$ to the base type of the parameter type using this algorithm.
+\item
+If $c$ is \textbf{true}, return \textbf{true}.
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{removederivations} Remove Derivations. Inputs: list of target derivations, list of source derivations.
+This algorithm returns a list of derivations that survive when source derivations are removed from target derivations.
+\begin{enumerate}
+\item
+Let a derivation list $r$ be empty.
+\item
+Let a derivation list $s$ be the list of source derivations.
+\item
+Let $n$ be the number of derivations in the list of target derivations.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $t$ be the $i$'th target derivation.
+\item
+Let $m$ be the number of derivations in the source derivations.
+\item
+Let $found$ be \textbf{false}.
+\item
+For $j$ = 1, \ldots, $m$:
+\begin{enumerate}
+\item
+Let $u$ be the $j$'th source derivation in $s$.
+\item
+If $t = u$, set $found$ to \textbf{true}, and set the $j$'th source derivation in $s$ to empty.
+\item
+Otherwise, if $t$ is \verb|reference| and $u$ is \verb|rvalueref|, set $found$ to \textbf{true}, and set the $j$'th source derivation in $s$ to empty.
+\end{enumerate}
+\item
+If $found$ if \textbf{false}, add $t$ to the derivation list $r$.
+\end{enumerate}
+\item
+Return $r$.
+\end{enumerate}
+\end{algo}
+
+\section{Template Argument Deduction Example}
+
+Consider the following code:
+
+\begin{exmp} Template Argument Deduction Example.
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+using System;
+using System.Collections;
+
+void foo<T>(const T& x)
+{
+    // ...
+}
+
+void bar(const List<int>& x)
+{
+    foo(x);
+}
+\end{lstlisting}
+\end{exmp}
+
+We are now going to go through how type parameter $T$ gets bound to type \verb|List<int>| for the function call \verb|foo(x)|
+using the previous algorithms.
+
+\begin{enumerate}
+\item
+\ref{deducetemplatearguments} : 1.\\
+Let $n$ be 1.
+\item
+\ref{deducetemplatearguments} : 2.\\
+$a = \{null\}$
+\item
+\ref{deducetemplatearguments} : 3.\\
+$m = 0$
+\item
+\ref{deducetemplatearguments} : 5.\\
+Create deduction scope: $\{T\} \rightarrow bar \rightarrow \ldots$
+\item
+\ref{deducetemplatearguments} : 6.\\
+For each parameter $p$:
+\item
+\ref{deducetemplatearguments} : 6. (a)\\
+$p$ is parameter $x$.
+Let $t$ be type expression node \verb|const T&|
+\item
+\ref{deducetemplatearguments} : 6. (b)\\
+Resolve $t$.
+Let $u$ be type symbol \verb|const T&|
+\item
+\ref{deducetemplatearguments} : 6. (d)\\
+Use algorithm \ref{deducetemplatearg} to deduce template argument for type $u$:
+\item
+\ref{deducetemplatearg}:
+Parameter type = \verb|const T&|.
+Argument type = \verb|const List<int>&|.
+List of template arguments = $\{null\}$
+\item
+\ref{deducetemplatearg} 2.\\
+Use algorithm \ref{bindtype} to bind argument type to parameter type.
+\item
+\ref{bindtype}:
+Parameter type = \verb|const T&|.
+Argument type = \verb|const List<int>&|.
+List of template arguments = $\{null\}$
+\item
+\ref{bindtype} 3.\\
+Parameter type is a derived type symbol \verb|const T&|.
+\item
+\ref{bindtype} 3. (a)\\
+Use algorithm \ref{removederivations} to remove derivations.
+\item
+\ref{removederivations}:\\
+Target derivations = \verb|const reference|.
+Source derivations = \verb|const reference|.
+\item
+\ref{removederivations} 1.\\
+Let derivation list $r$ be $\{\}$.
+\item
+\ref{removederivations} 2.\\
+List derivation list $s$ be \verb|const reference|.
+\item
+\ref{removederivations} 3.\\
+Let $n$ be 2.
+\item
+\ref{removederivations} 4.\\
+For $i$ = 1, \ldots, 2
+\item
+\ref{removederivations} 4. (a)\\
+Let $t$ be \verb|const|
+\item
+\ref{removederivations} 4. (b)\\
+Let $m$ be 2.
+\item
+\ref{removederivations} 4. (c)\\
+Let $found$ be \textbf{false}
+\item
+\ref{removederivations} 4. (d)\\
+For $j$ = 1, \ldots, 2
+\item
+\ref{removederivations} 4. (d) i. $j$ = 1\\
+Let $u$ be \verb|const|.
+\item
+\ref{removederivations} 4. (d) ii.\\
+$t = u$ so set $found$ = \textbf{true}. Set \verb|s[1]| = empty.
+\item
+\ref{removederivations} 4. (e)\\
+\item
+\ref{removederivations} 4. (a) $i$ = 2\\
+Let $t$ be \verb|reference|
+\item
+\ref{removederivations} 4. (b)\\
+Let $m$ be 2.
+\item
+\ref{removederivations} 4. (c)\\
+Let $found$ be \textbf{false}
+\item
+\ref{removederivations} 4. (d)\\
+For $j$ = 1, \ldots, 2
+\item
+\ref{removederivations} 4. (d) i. $j$ = 1\\
+Let $u$ be empty.
+\item
+\ref{removederivations} 4. (d) i. $j$ = 2\\
+Let $u$ be \verb|reference|.
+\item
+\ref{removederivations} 4. (d) ii.\\
+$t = u$ so set $found$ = \textbf{true}. Set \verb|s[2]| = empty.
+\item
+\ref{removederivations} 4. (e)\\
+\item
+\ref{removederivations} 5. return $r$ = $\{\}$
+\item
+\ref{bindtype} 3. (a)\\
+Let $d$ be $\{\}$.
+\item
+\ref{bindtype} 3. (b)\\
+Let $b$ be the base type of \verb|const List<int>&| i.e. $b$ = \verb|List<int>|.
+\item
+\ref{bindtype} 3. (d)\\
+Call this algorithm \ref{bindtype} with parameter type $T$ and argument type \verb|List<int>|.
+\item
+\ref{bindtype}:\\
+Parameter type = \verb|T|.
+Argument type = \verb|List<int>|.
+List of template arguments = $\{null\}$
+\item
+\ref{bindtype} 1.\\
+Parameter type is type parameter $T$:
+\item
+\ref{bindtype} 1. (a)\\
+Let $i$ = 1.
+\item
+\ref{bindtype} 1. (b)\\
+the first template argument is null so set  the first the first template argument to \verb|List<int>| and return \textbf{true}.
+\item
+\ref{bindtype} 3. (e)\\
+return \textbf{true}.
+\item
+\ref{deducetemplatearguments} : 6. (d)\\
+List of template arguments is now $a$ = \verb|List<int>|.
+\item
+\ref{deducetemplatearguments} : 8.\\
+Return \textbf{true}.
+\end{enumerate}
+
+\chapter{Concepts}
+
+In this chapter we will discuss the role of concepts in the overload resolution process,
+and then go though the algorithms for checking, binding and comparing constraints.
+
+\section{Concepts in Overload Resolution}
+
+Concepts are used in the overload resolution process (chapter \ref{overloadresolution}) in three stages:
+
+\begin{enumerate}
+\item
+First concepts are used to \emph{include} a constrained function template in the list of matching functions, provided
+that the deduced template arguments \emph{satisfy} the constraint of the function template.
+We may also say that concepts are used to \emph{exclude} an unwanted constrained function template from the list of matching functions,
+if the constraint of the function template is \emph{not} satisfied. This is just the other side of the coin.
+After this stage we may have several function templates in the list of matching functions that have different constraints that are all satisfied.
+
+\item
+The next stage is to \emph{bind} the constraints that are satisfied so that they form \emph{bound constraints}.
+
+\item
+The third stage is to \emph{compare} the bound constraints using the \emph{imply} relation.
+This is done for selecting the best, i.e. the most strictly satisfying, constraint from the bound constraints.
+When comparing two constraints $A$ and $B$: if $imply(A, B)$ is \textbf{true} and $imply(B, A)$ is \textbf{false},
+then the function containing constraint $A$ is a better match than the function containing $B$.
+Otherwise, if $imply(B, A)$ is \textbf{true} and $imply(A, B)$ is \textbf{false},
+then the function containing $B$ is a better match than the function containing $A$.
+\end{enumerate}
+
+\begin{exmp} Overload Resolution Using Concepts.
+The following listing shows some concepts that form iterator concept hierarchy in the System library:
+\begin{flushleft}
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+public concept ForwardIterator<T> : InputIterator<T>
+{ /* ... */ }
+
+public concept BidirectionalIterator<T> : ForwardIterator<T>
+{ /* ... */ }
+
+public concept RandomAccessIterator<T> : BidirectionalIterator<T>
+{ /* ... */ }
+\end{lstlisting}
+\end{flushleft}
+
+We say that the \verb|ForwardIterator| concept \emph{refines} the \verb|InputIterator| concept,\\
+the \verb|BidirectionalIterator| concept refines the \verb|ForwardIterator| concept, and the\\
+\verb|RandomAccessIterator| concept refines the \verb|BidirectionalIterator| concept.
+The refine relation is transitive, so that if a concept $A$ refines a concept $B$ and
+the concept $B$ refines a concept $C$, then $A$ refines $C$.
+When a concept $A$ refines a concept $B$, the $imply(A, B)$ relation is \textbf{true} and
+$imply(B, A)$ relation is \textbf{false}.
+
+Now consider following code:
+\begin{flushleft}
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+public nothrow int Distance<I>(I first, I last) where I is ForwardIterator // [1]
+{
+    int distance = 0;
+    while (first != last)
+    {
+        ++first;
+        ++distance;
+    }
+    return distance;
+}
+
+public nothrow inline int Distance<I>(I first, I last) where I is RandomAccessIterator // [2]
+{
+    return last - first;
+}
+
+void main()
+{
+    List<int> list;
+    int d1 = Distance(list.CBegin(), list.CEnd());
+    ForwardList<int> fwdList;
+    int d2 = Distance(fwdList.CBegin(), fwdList.CEnd());
+}
+\end{lstlisting}
+\end{flushleft}
+The code example contains two implementations of \verb|Distance| function, one for forward iterators, [1], and
+the other for random access iterators, [2].
+
+The \verb|List<int>.ConstIterator|, the iterator type that the \verb|list.CBegin()| and \verb|list.CEnd()| calls return,
+conforms to both RandomAccessIterator and ForwardIterator concepts,
+so for the \verb|Distance| function call at line 20, both functions [1] and [2] are included in the list of matching functions.
+When comparing the constraints for functions [1] and [2], constraint for [2] wins because constraint of [2] imply constraint of [1], but not vice versa.
+Function [2], the random access iterator version, is called in this case.
+
+The \verb|ForwardList<int>.ConstIterator|, the iterator type that the \verb|fwdList.CBegin()| and \verb|fwdList.CEnd()| calls return, conforms only to ForwardIterator concept,
+so for the \verb|Distance| function call at line 22, only function [1] is included in the list of matching functions.
+Function [1], the forward iterator version, is called in this case.
+\end{exmp}
+
+\clearpage
+\section{Checking Constraints}
+
+The following algorithm is used for checking constraints:
+
+\begin{algo} Check Constraint. Inputs: a container scope, a constraint represented as an abstract syntax tree node,
+list of template parameters, list of template argument types.
+The algorithm returns \textbf{true} if the constraint is satisfied, and \textbf{false} otherwise.
+\begin{enumerate}
+\item
+Create a scope for constraint checking and set its parent scope to the given container scope.
+\item
+Let $n$ be the number of template parameters. $n$ is also the number of template argument types.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+If $i = 1$, let $firstTypeArgument$ be $i$'th template argument type.
+\item
+If $i = 2$, let $secondTypeArgument$ be $i$'th template argument type.
+\item
+Let $t$ be $i$'th template parameter. Let $u$ be $i$'th template argument type.
+\item
+Create a bound type parameter symbol $b$ with name of $t$ that maps name of $t$ to $u$. Install $b$ to the constraint checking scope.
+\end{enumerate}
+\item
+Create an instance of constraint checker class that is an abstract syntax tree visitor.
+\item
+Arguments to constraint checker constructor are: $firstTypeArgument$, $secondTypeArgument$, and a pointer to constraint checking scope.
+\item
+Constraint checker has a stack of Boolean flags, a \emph{constraintCheckStack}.
+It has also a type, \emph{resolvedType}, and a concept group symbol, \emph{resolvedConceptGroup}.
+\item
+Call the \verb|Accept| member function of the constraint with constraint checker.
+\item
+The constraint checker overrides the following abstract syntax tree visitation points:
+\begin{itemize}
+\item
+\verb|Visit(ConceptNode&)|:
+A \verb|ConceptNode| contains:
+\begin{itemize}
+\item
+refinement (optional): an abstract syntax tree node of type \verb|ConceptId|.
+\item
+constraints: a list of abstract syntax tree nodes derived from \verb|ConstraintNode|.
+\end{itemize}
+\begin{enumerate}
+\item
+If the \verb|ConceptNode| has a refinement, do:
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the \verb|ConceptNode| with this constraint checker visitor.
+\item
+Pop the result of visiting the refinement, \textbf{true} or \textbf{false}, from the constraint check stack. Let $r$ be the result.
+\item
+If $r$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+\end{enumerate}
+\item
+For each constraint in constraints contained by the \verb|ConceptNode|:
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the constraint with this constraint checker visitor.
+\item
+Pop the result of visiting the constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
+\item
+If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+\end{enumerate}
+\item
+Push \textbf{true} to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(ConceptIdNode& conceptIdNode)|:
+A \verb|ConceptIdNode| contains:
+\begin{itemize}
+\item
+a concept identifier.
+\item
+list of type parameters.
+\end{itemize}
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the identifier contained by the \verb|ConceptIdNode| with this constraint checker visitor.
+If the \emph{resolvedConceptGroup} is not null:
+\begin{enumerate}
+\item
+Let $n$ be the number of number of type parameters containerd by the \verb|ConceptIdNode|.
+\item
+Get the concept symbol $s$ with $n$ type parameters from the \emph{resolvedConceptGroup}.
+\item
+List $a$ be an empty list of type arguments.
+\item
+For $i$ = 1, \ldots, $n$
+\begin{enumerate}
+\item
+Let $t$ be the $i$'th type parameter contained by the \verb|ConceptIdNode|.
+\item
+Call the \verb|Accept| member function of $t$ with this constraint checker visitor.
+\item
+If the \emph{resolvedType} is not null:
+\begin{itemize}
+\item
+Add \emph{resolvedType} to the list of type arguments $a$.
+\end{itemize}
+\end{enumerate}
+\item
+Compute a 16-byte $conceptId$ using algorithm \ref{computeconceptid} for the concept symbol $s$ and list of type arguments $a$.
+\item
+Lookup $conceptId$ from the concept repository (section \ref{conceptrepository}).
+\item
+If found, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, instantiate concept $s$ with type arguments $a$ using algorithm \ref{instantiateconcept}.
+Let $c$ be the instantiated concept.
+\item
+If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\end{enumerate}
+\item
+\verb|Visit(DisjunctiveConstraintNode& disjunctiveConstraintNode)|:\\
+\verb|DisjunctiveConstraintNode| contains two constraint nodes, $left$ and $right$.
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of $left$ with this constraint checking visitor.
+\item
+Pop the result of visiting the $left$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
+\item
+If $c$ is \textbf{true}, push \textbf{true} to the constraint check stack and return.
+\item
+Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor. The result of visitation is left to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(ConjunctiveConstraintNode& constructiveConstraintNode)|:\\
+\verb|ConjunctiveConstraintNode| contains two constraint nodes, $left$ and $right$.
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of $left$ with this constraint checking visitor.
+\item
+Pop the result of visiting the $left$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
+\item
+If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+\item
+Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor. The result of visitation is left to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:\\
+\begin{enumerate}
+\item
+Set \emph{resolvedType} to null and \emph{resolvedConceptGroup} to null.
+\item
+Lookup a string contained by the identifierNode from the container scope. Let $s$ be the symbol found.
+\item
+If $s$ is not null:
+\begin{enumerate}
+\item
+If $s$ is a type symbol, set \emph{resolvedType} to $s$ and return.
+\item
+Otherwise, if $s$ is a bound type parameter symbol, set \emph{resolvedType} to a mapped type symbol of the bound type parameter symbol and return.
+\item
+Otherwise, if $s$ is a typedef symbol, set \emph{resolvedType} to the type contained by the typedef symbol and return.
+\item
+Otherwise, if $s$ is a concept group symbol, set \emph{resolvedConceptGroup} to $s$ and return.
+\item
+Otherwise, if $s$ is a namespace symbol, create a namespace type symbol containing namespace $s$ and set $resolvedType$ to that namespace type symbol and return.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+\verb|EndVisit(DotNode& dotNode)|:\\
+\begin{enumerate}
+\item
+If \emph{resolvedType} is null, report error and return.
+\item
+Let $typeContainerScope$ be the container scope of $resolvedType$.
+\item
+if $resolvedType$ is a namespace type symbol, set $typeContainerScope$ to the container scope of the namespace contained by $resolvedType$.
+\item
+Lookup a symbol with name contained by the dotNode from the $typeContainerScope$. Let $s$ be the symbol found.
+\item
+If $s$ is not null:
+\begin{enumerate}
+\item
+If $s$ is a bound type parameter symbol, set \emph{resolvedType} to a mapped type symbol of the bound type parameter symbol and return.
+\item
+Otherwise, if $s$ is a typedef symbol, set \emph{resolvedType} to the type contained by the typedef symbol and return.
+\item
+Otherwise, if $s$ is a concept group symbol, set \emph{resolvedConceptGroup} to $s$ and return.
+\item
+Otherwise, if $s$ is a namespace symbol, create a namespace type symbol containing namespace $s$ and set $resolvedType$ to that namespace type symbol and return.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+\verb|Visit(BoolNode& boolNode)|:\\
+Set \emph{resolvedType} to \verb|BoolTypeSymbol|.
+\item
+\verb|Visit(SByteNode& sbyteNode)|:\\
+Set \emph{resolvedType} to \verb|SByteTypeSymbol|.
+\item
+\verb|Visit(ByteNode& byteNode)|:\\
+Set \emph{resolvedType} to \verb|ByteTypeSymbol|.
+\item
+\verb|Visit(ShortNode& shortNode)|:\\
+Set \emph{resolvedType} to \verb|ShortTypeSymbol|.
+\item
+\verb|Visit(UShortNode& ushortNode)|:\\
+Set \emph{resolvedType} to \verb|UShortTypeSymbol|.
+\item
+\verb|Visit(IntNode& intNode)|:\\
+Set \emph{resolvedType} to \verb|IntTypeSymbol|.
+\item
+\verb|Visit(UIntNode& uintNode)|:\\
+Set \emph{resolvedType} to \verb|UIntTypeSymbol|.
+\item
+\verb|Visit(LongNode& longNode)|:\\
+Set \emph{resolvedType} to \verb|LongTypeSymbol|.
+\item
+\verb|Visit(ULongNode& ulongNode)|:\\
+Set \emph{resolvedType} to \verb|ULongTypeSymbol|.
+\item
+\verb|Visit(FloatNode& floatNode)|:\\
+Set \emph{resolvedType} to \verb|FloatTypeSymbol|.
+\item
+\verb|Visit(DoubleNode& doubleNode)|:\\
+Set \emph{resolvedType} to \verb|DoubleTypeSymbol|.
+\item
+\verb|Visit(CharNode& charNode)|:\\
+Set \emph{resolvedType} to \verb|CharTypeSymbol|.
+\item
+\verb|Visit(WCharNode& wcharNode)|:\\
+Set \emph{resolvedType} to \verb|WCharTypeSymbol|.
+\item
+\verb|Visit(UCharNode& ucharNode)|:\\
+Set \emph{resolvedType} to \verb|UCharTypeSymbol|.
+\item
+\verb|Visit(VoidNode& voidNode)|:\\
+Set \emph{resolvedType} to \verb|VoidTypeSymbol|.
+\item
+\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode|:\\
+Resolve type contained by derivedTypeExprNode using type resolver.
+Set \emph{resolvedType} to the type resolved.
+\item
+\verb|Visit(IsConstraintNode& isConstrainedNode|:\\
+\verb|IsConstraintNode| contains:
+\begin{itemize}
+\item
+type expression
+\item
+name of a concept or a type
+\end{itemize}
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the type expression of the isConstrainedNode with this constraint checking visitor.
+\item
+Let $leftType$ be the result of visitation, that is: \emph{resolvedType}.
+\item
+Call \verb|Accept| member function of the name of a concept or type with this constraint checking visitor.
+\item
+If \emph{resolvedType} is not null:
+\begin{enumerate}
+\item
+Make plain type for $leftType$ using algorithm \ref{makeplaintype}. Let $leftPlainType$ be the result.
+\item
+Make plain type for \emph{resolvedType} using algorithm \ref{makeplaintype}. Let $rightPlainType$ be the result.
+\item
+If $leftPlainType$ equals $rightPlainType$, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+Otherwise, if $resolvedConceptGroup$ is not null:
+\begin{enumerate}
+\item
+Get concept symbol $s$ with one type parameter from $resolvedConceptGroup$.
+\item
+Let $a$ be a list of type arguments.
+\item
+Add $leftType$ to $a$.
+\item
+Compute a 16-byte $conceptId$ using algorithm \ref{computeconceptid} for the concept symbol $s$ and list of type arguments $a$.
+\item
+Lookup $conceptId$ from the concept repository (section \ref{conceptrepository}).
+\item
+If found, push \textbf{true} to the constraint check stack and return.
+\item
+Otherwise, instantiate concept $s$ with type arguments $a$ using algorithm \ref{instantiateconcept}.
+Let $c$ be the instantiated concept.
+\item
+If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\end{enumerate}
+\item
+\verb|Visit(MultiParamConstraintNode& multiParamConstraintNode)|:\\
+\verb|MultiParamConstraintNode| contains:
+\begin{itemize}
+\item
+Identifier node that should contain a name of a concept group.
+\item
+List of type expressions.
+\end{itemize}
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the identifier node contained by multiParamConstraintNode.
+\item
+If $resolvedConceptGroup$ is not null:
+\begin{enumerate}
+\item
+Let $n$ be the number of type expressions contained by multiParamConstraintNode.
+\item
+Get concept symbol $s$ with $n$ type parameters from the $resolvedConceptGroup$.
+\item
+Let $a$ be a list of type arguments.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $t$ be a $i$'th type expression of the multiParamConstraintNode.
+\item
+Call the \verb|Accept| member function of $t$ with this constraint checker visitor.
+\item
+If $resolvedType$ is not null, add $resolvedType $ to $a$.
+\item
+Otherwise report error.
+\end{enumerate}
+\item
+Compute a 16-byte $conceptId$ using algorithm \ref{computeconceptid} for the concept symbol $s$ and list of type arguments $a$.
+\item
+Lookup $conceptId$ from the concept repository (section \ref{conceptrepository}).
+\item
+If found, push \textbf{true} to the constraint check stack and return.
+\item
+Otherwise, instantiate concept $s$ with type arguments $a$ using algorithm \ref{instantiateconcept}.
+Let $c$ be the instantiated concept.
+\item
+If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+Otherwise report error.
+\end{enumerate}
+\item
+\verb|Visit(TypenameConstraintNode& typenameConstraintNode)|:\\
+\verb|TypenameConstraintNode| contains an abstract syntax tree node $typeId$ that represents a type associated with another type.
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of $typeId$ with this constraint checker visitor.
+\item
+If $resolvedType$ is not null, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(ConstructorConstraintNode& constructorConstraintNode)|:\\
+\begin{enumerate}
+\item
+Resolve parameter types represented by parameter nodes in the constructorConstraintNode using type resolver.
+\item
+Then lookup a constructor within a class type represented by $firstTypeArgument$ having those parameter types using overload resolution.
+\item
+If a constructor is found, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(DestructorConstraintNode& destructorConstraintNode)|:\\
+Push \textbf{true} to the constraint check stack.
+\item
+\verb|Visit(MemberFunctionConstraintNode& memberFunctionConstraintNode)|:\\
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the type parameter identifier of the memberFunctionConstraintNode.
+\item
+Let the first parameter type be pointer to $resolvedType$.
+\item
+Let the group name of the member function be group id of the memberFunctionConstraintNode.
+\item
+Resolve other parameter types represented by parameter nodes in the memberFunctionConstraintNode using type resolver.
+\item
+Then lookup a member function having the group name and these parameter types using overload resolution.
+\item
+If a member function is found, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(FunctionConstraintNode& functionConstraintNode)|:\\
+\begin{enumerate}
+\item
+Let the group name of the function be group id of the functionConstraintNode.
+\item
+Resolve parameter types represented by parameter nodes in the functionConstraintNode using type resolver.
+\item
+Then lookup a function having the group name and these parameter types using overload resolution.
+\item
+If a function is found, push \textbf{true} to the constraint check stack.
+\item
+Otherwise, push \textbf{false} to the constraint check stack.
+\end{enumerate}
+\item
+\verb|Visit(SameConstraintNode& sameConstraintNode)|:\\
+If types $firstArgumentType$ and $secondArgumentType$ are same, push \textbf{true} to the constraint check stack.
+Otherwise push \textbf{false} to the constraint check stack.
+\item
+\verb|Visit(DerivedConstraintNode& derivedConstraintNode)|:\\
+If type $firstArgumentType$ is derived from the $secondArgumentType$, push \textbf{true} to the constraint check stack.
+Otherwise push \textbf{false} to the constraint check stack.
+\item
+\verb|Visit(ConvertibleConstraintNode& convertibleConstraintNode)|:\\
+If type $firstArgumentType$ is implicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack.
+Otherwise push \textbf{false} to the constraint check stack.
+\item
+\verb|Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)|:\\
+If type $firstArgumentType$ is explicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack.
+Otherwise push \textbf{false} to the constraint check stack.
+\item
+\verb|Visit(CommonConstraintNode& commonConstraintNode)|:\\
+If types $firstArgumentType$ and $secondArgumentType$ are same, let $commonType$ be $firstArgumentType$,
+otherwise, if $firstArgumentType$ is convertible to the $secondArgumentType$, let $commonType$ be $secondArgumentType$,
+otherwise, if $secondArgumentType$ is convertible to the $firstArgumentType$, let $commonType$ be $firstArgumentType$,
+otherwise, let $commonType$ be null.
+If $commonType$ is not null, install $commonType$ to the container scope, and push \textbf{true} to the constraint check stack,
+otherwise push \textbf{false} to the constraint check stack.
+\item
+\verb|Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)|:\\
+If $firstArgumentType$ is not lvalue reference type and not rvalue reference type, push \textbf{true} to the constraint check stack,
+otherwise push \textbf{false} to the constraint check stack.
+\end{itemize}
+\item
+Pop the result of the visitation, \textbf{true} or \textbf{false}, from the constraint check stack of the constraint checker, and return it.
+\end{enumerate}
+\end{algo}
+
+\subsection{Concept Repository}\label{conceptrepository}
+
+Each concept symbol contains a unique 16-byte type identifier computed using Mersenne Twister pseudorandom number generator
+(\url{http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html}).
+An instantiated concept has also a 16-byte identifier that is formed by the type identifier of the concept symbol \textbf{xor}ed with the
+rotated type identifiers of the types for which the concept is instantiated.
+
+The concept repository keeps mapping from identifiers computed for instantiated concepts to the instantiated concepts themselves.
+The following algorithm computes these identifiers:
+
+\begin{algo}\label{computeconceptid} Computing 16-byte Identifier for an Instantiated Concept. Inputs: A concept symbol, list of type arguments.
+The algorithm returns a 16-byte identifier for a concept instantiated with given type arguments.
+\begin{enumerate}
+\item
+Let $id$ be the type identifier of the concept symbol.
+\item
+Let $n$ be the number of type arguments.
+\item
+For $i$ = 0, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $a$ be the type identifier for $i$'th type argument.
+\item
+Let $r$ be $a$ rotated by $i$ byte positions right.
+\item
+Assign $id$ \textbf{xor} $r$ to $id$.
+\end{enumerate}
+\item
+Return $id$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Instantiating a Concept}
+
+The following algorithm is used to instantiate a concept with type arguments:
+
+\begin{algo}\label{instantiateconcept} Instantiate a Concept with Type Arguments.
+Inputs: a container scope, a concept symbol $s$, list of type arguments $a$.
+The algorithm returns an instantiated concept symbol, or null if instantiation did not succeed.
+\begin{enumerate}
+\item
+Let $n$ be the number of type parameters of concept symbol $s$.
+\item
+Create an instantiation scope and set its parent scope to container scope.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $p$ be the $i$'th type parameter of concept symbol $s$.
+\item
+Let $t$ be the $i$'th type argument of $a$.
+\item
+If $i = 1$ let $firstTypeArgument$ be $t$.
+\item
+If $i = 2$ let $secondTypeArgument$ be $t$.
+\item
+Create a bound type parameter symbol with name of $p$ mapped to type $t$ and install it to the instantiation scope.
+\end{enumerate}
+\item
+Create a constraint checker with $firstTypeArgument$, $secondTypeArgument$ and instantiation scope.
+\item
+Let $c$ be the concept node corresponding to the concept symbol.
+\item
+Call the \verb|Accept| member function of $c$ with the constraint checker visitor.
+\item
+Let $r$ be the result of visitation, \textbf{true} or \textbf{false}.
+\item
+If $r$ is \textbf{true}, create an instantiated concept symbol for $s$ with type arguments $a$, and return it.
+\item
+Otherwise, return null.
+\end{enumerate}
+\end{algo}
+
+\section{Binding Constraints}
+
+When many constraints are satisfied they must be bound before they can be compared.
+The following listing shows hierarchy of bound constraints:
+
+\begin{verbatim}
+BoundNode
+    BoundConstraint
+        BoundAtomicConstraint
+        BoundBinaryConstraint
+            BoundDisjunctiveConstraint
+            BoundConjunctiveConstraint
+        BoundTypeSatisfyConceptConstraint
+        BoundTypeIsTypeConstraint
+        BoundMultiParamConstraint
+        BoundConcept
+\end{verbatim}
+
+The following algorithm is used to create bound constraints:
+
+\begin{algo}\label{bindconstraint} Binding a Constraint. Inputs: list of template parameters, list of template arguments, a container scope,
+a constraint represented as an abstract syntax tree node.
+The algorithm returns a bound constraint.
+\begin{enumerate}
+\item
+Create a constraint binding scope and set its parent to the container scope.
+\item
+Let $n$ be the number of template parameters. $n$ is also the number of template arguments.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $p$ be $i$'th template parameter.
+\item
+Let $t$ be $i$'th template argument.
+\item
+Create a bound type parameter that maps the name of $p$ to type $t$, and install it to the constraint binding scope.
+\end{enumerate}
+\item
+Create an instance of a constraint binder that is an abstract syntax tree visitor.
+The constraint binder contains:
+\begin{itemize}
+\item
+A container scope.
+\item
+A type $resolvedType$.
+\item
+A concept group $resolvedConceptGroup$.
+\item
+A concept symbol $conceptSymbol$.
+\item
+A stack of bound constraints.
+\end{itemize}
+\item
+Pass constraint binding scope as a container scope to the constraint binder.
+\item
+Call \verb|Accept| member function of the constraint abstract syntax tree node with constraint binder.
+\item
+Return the result of visitation that is a bound constraint on top of the stack of bound constraints.
+\item
+The constraint binder overrides the following visitations points:
+\begin{itemize}
+\item
+\verb|Visit(ConceptNode& conceptNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the concept identifier contained by the concept node.
+\item
+A concept group $resolvedConceptGroup$ is the result of visitation.
+\item
+Let $n$ be the number of type parameters of concept node.
+\item
+Get a concept symbol with $n$ type parameters from the $resolvedConceptGroup$.
+\item
+Create a \verb|BoundConcept| node with the concept symbol and push it to the stack of bound constraints.
+\end{enumerate}
+\item
+\verb|Visit(DisjunctiveConstraintNode& disjunctiveConstraintNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the left constraint of the disjunctive constraint.
+\item
+Pop the bound left constraint from the stack of bound constraints.
+\item
+Call \verb|Accept| member function of the right constraint of the disjunctive constraint.
+\item
+Pop the bound right constraint from the stack of bound constraints.
+\item
+Create a |BoundDisjunctiveConstraint| with the left and right bound constraints and push it to the stack of bound constraints.
+\end{enumerate}
+\item
+\verb|Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the left constraint of the conjunctive constraint.
+\item
+Pop the bound left constraint from the stack of bound constraints.
+\item
+Call \verb|Accept| member function of the right constraint of the conjunctive constraint.
+\item
+Pop the bound right constraint from the stack of bound constraints.
+\item
+Create a |BoundConjunctiveConstraint| with the left and right bound constraints and push it to the stack of bound constraints.
+\end{enumerate}
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:\\
+\begin{enumerate}
+\item
+Set $resolvedType$ to null.
+\item
+Set $resolvedConceptGroup$ to null.
+\item
+Lookup a symbol with the name contained by the identifier node from the container scope.
+\item
+Let $s$ be the symbol found.
+\item
+If $s$ is a type symbol, set $resolvedType$ to $s$.
+\item
+Otherwise, if $s$ is a bound type parameter symbol, set $resolvedType$ to the mapped type of the bound type parameter.
+\item
+Otherwise, if $s$ is a concept group symbol, set $resolvedConceptGroup$ to $s$.
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+\verb|EndVisit(DotNode& dotNode)|:\\
+\begin{enumerate}
+\item
+Lookup a symbol with the name contained by the dot node from the container scope of $resolvedType$.
+\item
+Let $s$ be the symbol found.
+\item
+If $s$ is a type symbol, set $resolvedType$ to $s$.
+\item
+Otherwise, if $s$ is a bound type parameter symbol, set $resolvedType$ to the mapped type of the bound type parameter.
+\end{enumerate}
+\item
+\verb|Visit(BoolNode& boolNode)|:\\
+Set $resolvedType$ to \verb|BoolTypeSymbol|.
+\item
+\verb|Visit(SByteNode& sbyteNode)|:\\
+Set $resolvedType$ to \verb|SByteTypeSymbol|.
+\item
+\verb|Visit(ByteNode& byteNode)|:\\
+Set $resolvedType$ to \verb|ByteTypeSymbol|.
+\item
+\verb|Visit(ShortNode& shortNode)|:\\
+Set $resolvedType$ to \verb|ShortTypeSymbol|.
+\item
+\verb|Visit(UShortNode& ushortNode)|:\\
+Set $resolvedType$ to \verb|UShortTypeSymbol|.
+\item
+\verb|Visit(IntNode& intNode)|:\\
+Set $resolvedType$ to \verb|IntTypeSymbol|.
+\item
+\verb|Visit(UIntNode& uintNode)|:\\
+Set $resolvedType$ to \verb|UIntTypeSymbol|.
+\item
+\verb|Visit(LongNode& longNode)|:\\
+Set $resolvedType$ to \verb|LongTypeSymbol|.
+\item
+\verb|Visit(ULongNode& ulongNode)|:\\
+Set $resolvedType$ to \verb|ULongTypeSymbol|.
+\item
+\verb|Visit(FloatNode& floatNode)|:\\
+Set $resolvedType$ to \verb|FloatTypeSymbol|.
+\item
+\verb|Visit(DoubleNode& doubleNode)|:\\
+Set $resolvedType$ to \verb|DoubleTypeSymbol|.
+\item
+\verb|Visit(CharNode& charNode)|:\\
+Set $resolvedType$ to \verb|CharTypeSymbol|.
+\item
+\verb|Visit(WCharNode& wcharNode)|:\\
+Set $resolvedType$ to \verb|WCharTypeSymbol|.
+\item
+\verb|Visit(UCharNode& ucharNode)|:\\
+Set $resolvedType$ to \verb|UCharTypeSymbol|.
+\item
+\verb|Visit(VoidNode& voidNode)|:\\
+Set $resolvedType$ to \verb|VoidTypeSymbol|.
+\item
+\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:\\
+Set $resolvedType$ to a type resolved from derived type expression node using type resolver.
+\item
+\verb|Visit(IsConstraintNode& isConstraintNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the type expression contained by the isConstraintNode.
+\item
+Let $leftType$ be the $resolvedType$.
+\item
+Call \verb|Accept| member function of the concept or type name contained by the isConstraintNode.
+\item
+If $resolvedType$ is not null, create a \verb|BoundTypeIsTypeConstraint| with $leftType$ as the left type and $resolvedType$ as the right type,
+and push it to the stack of bound constraints.
+\item
+Otherwise, if $resolvedConceptGroup$ is not null:
+\begin{enumerate}
+\item
+Get concept symbol of one type parameter from the $resolvedConceptGroup$.
+\item
+Get an abstract syntax tree node $node$ that corresponds to the concept symbol from the symbol table.
+\item
+Call \verb|Accept| member function of $node$.
+\item
+Pop bound concept $b$ from the stack of bound constraints.
+\item
+Create a \verb|BoundTypeSatisfyConceptConstraint| with type $leftType$ and bound concept $b$, and push it to the stack of bound constraints.
+\end{enumerate}
+\end{enumerate}
+\item
+\verb|Visit(MultiParamConstraintNode& multiParamConstraintNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the concept identifier of the multiparameter constraint node.
+\item
+If $resolvedConceptGroup$ is not null:
+\begin{enumerate}
+\item
+Let $n$ be the number of type parameters of the multiparameter constraint node.
+\item
+Get concept symbol of $n$ type parametedes from the $resolvedConceptGroup$.
+\item
+Get an abstract syntax tree node $node$ that corresponds to the concept symbol from the symbol table.
+\item
+Call \verb|Accept| member function of $node$.
+\item
+Pop bound concept $b$ from the stack of bound constraints.
+\item
+Create a list of type arguments $a$.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the $i$'th type expression of the multiparameter constraint node.
+\item
+Add $resolvedType$ to $a$.
+\end{enumerate}
+\item
+Create a \verb|BoundMultiParamConstraint| with bound concept $b$ and type arguments $a$, and push it to the stack of bound constraints.
+\end{enumerate}
+\end{enumerate}
+\item
+\verb|Visit(TypenameConstraintNode& typenameConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(ConstructorConstraintNode& constructorConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(DestructorConstraintNode& destructorConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(MemberFunctionConstraintNode& memberFunctionConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(FunctionConstraintNode& functionConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(SameConstraintNode& sameConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(DerivedConstraintNode& derivedConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(ConvertibleConstraintNode& convertibleConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(CommonConstraintNode& commonConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\item
+\verb|Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)|:\\
+Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
+\end{itemize}
+\end{enumerate}
+\end{algo}
+
+\section{Comparing Constraints}
+
+The following algorithm is used to compare bound constraints to find out which of them is the most stricly satisfying constraint:
+
+\begin{algo}\label{imply} Imply. Inputs: two bound constraints $A$ and $B$.
+The algorithm returns \textbf{true} if $imply(A, B)$ is \textbf{true} and \textbf{false} otherwise.
+\begin{enumerate}
+\item
+If $A$ is \verb|BoundAtomicConstraint| return \textbf{true}.
+\item
+Otherwise, if $A$ is \verb|BoundDisjunctiveConstraint|,
+\begin{enumerate}
+\item
+Let $AL$ be the left constraint of $A$.
+\item
+Let $AR$ be the right constraint of $A$.
+\item
+If $B$ is \verb|BoundBinaryConstraint|,
+\begin{enumerate}
+\item
+Let $BL$ be the left constraint of $B$.
+\item
+Let $BR$ be the right constraint of $B$.
+\item
+Let $LL$ be $imply(AL, BL)$.
+\item
+Let $LR$ be $imply(AL, BR)$.
+\item
+Let $RL$ be $imply(AR, BL)$.
+\item
+Let $RR$ be $imply(AR, BR)$.
+\item
+Let $LLorLR$ be $LL$ \textbf{or} $LR$.
+\item
+Let $RLorRR$ be $RL$ \textbf{or} $RR$.
+\item
+If $B$ is \verb|BoundConjunctiveConstraint|, return $LLorLR$ \textbf{and} $RLorRR$.
+\item
+Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LLorLR$ \textbf{or} $RLorRR$.
+\end{enumerate}
+\item
+Let $LB$ be $imply(AL, B)$.
+\item
+Let $RB$ be $imply(AR, B)$.
+\item
+Return $LB$ \textbf{and} $RB$.
+\end{enumerate}
+\item
+Otherwise, if $A$ is \verb|BoundConjunctiveConstraint|,
+\begin{enumerate}
+\item
+Let $AL$ be the left constraint of $A$.
+\item
+Let $AR$ be the right constraint of $A$.
+\item
+If $B$ is \verb|BoundBinaryConstraint|,
+\begin{enumerate}
+\item
+Let $BL$ be the left constraint of $B$.
+\item
+Let $BR$ be the right constraint of $B$.
+\item
+Let $LL$ be $imply(AL, BL)$.
+\item
+Let $RL$ be $imply(AR, BL)$.
+\item
+Let $LR$ be $imply(AL, BR)$.
+\item
+Let $RR$ be $imply(AR, BR)$.
+\item
+Let $LorRL$ be $LL$ \textbf{or} $RL$.
+\item
+Let $LorRR$ be $LR$ \textbf{or} $RR$.
+\item
+If $B$ is \verb|BoundConjunctiveConstraint|, return $LorRL$ \textbf{and} $LorRR$.
+\item
+Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LorRL$ \textbf{or} $LorRR$.
+\end{enumerate}
+\item
+Let $LB$ be $imply(AL, B)$.
+\item
+Let $RB$ be $imply(AR, B)$.
+\item
+Return $LB$ \textbf{or} $RB$.
+\end{enumerate}
+\end{enumerate}
+\end{algo}
 
 \chapter{Emitter}
 

@@ -149,16 +149,6 @@ bool BetterFunctionMatch::operator()(const FunctionMatch& left, const FunctionMa
     {
         if (left.constraint && right.constraint)
         {
-            if (!left.boundConstraint)
-            {
-                left.boundConstraint.reset(BindConstraint(left.function->TypeParameters(), left.templateArguments, left.containerScope, *left.compileUnit,
-                    left.function->GetFileScope(left.containerScope), left.constraint));
-            }
-            if (!right.boundConstraint)
-            {
-                right.boundConstraint.reset(BindConstraint(right.function->TypeParameters(), right.templateArguments, right.containerScope, *right.compileUnit,
-                    right.function->GetFileScope(right.containerScope), right.constraint));
-            }
             bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
             bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
             if (leftImplyRight && !rightImplyLeft)
@@ -816,11 +806,13 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
             if (candidateFound && constraintNode)
             {
                 Cm::Core::ConceptCheckException exception;
+                std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint;
                 candidateFound = CheckConstraint(containerScope, boundCompileUnit, viableFunction->GetFileScope(containerScope), constraintNode, viableFunction->TypeParameters(), 
-                    functionMatch.templateArguments, exception);
+                    functionMatch.templateArguments, exception, boundConstraint);
                 if (candidateFound)
                 {
                     functionMatch.constraint = constraintNode;
+                    functionMatch.boundConstraint.reset(boundConstraint.release());
                 }
                 else
                 {

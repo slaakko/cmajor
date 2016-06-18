@@ -19,29 +19,35 @@ class BoundConcept;
 class BoundConstraint : public BoundNode
 {
 public:
-    BoundConstraint(Cm::Ast::Node* syntaxNode_);
+    BoundConstraint();
     virtual bool Imply(BoundConstraint* that) const = 0;
+    virtual bool IsAtomicConstraint() const { return false; }
     virtual bool IsBinaryConstraint() const { return false; }
     virtual bool IsConjunctiveConstraint() const { return false; }
     virtual bool IsDisjunctiveConstraint() const { return false; }
-    virtual bool IsBoundTypeSatisfyConceptConstraint() const { return false; }
-    virtual bool IsBoundTypeIsTypeConstraint() const { return false; }
-    virtual bool IsBoundMultiParamConstraint() const { return false; }
-    virtual bool IsBoundConcept() const { return false; }
+    virtual BoundConstraint* Clone() const = 0;
 };
 
 class BoundAtomicConstraint : public BoundConstraint
 {
 public:
-    BoundAtomicConstraint(Cm::Ast::Node* syntaxNode_);
-    bool Imply(BoundConstraint* that) const override { return true; }
+    BoundAtomicConstraint(bool satisfied_);
+    bool IsAtomicConstraint() const override { return true; }
+    bool Imply(BoundConstraint* that) const override;
     void Accept(Visitor& visitor) override;
+    bool Satisfied() const { return satisfied; }
+    BoundConstraint* Clone() const override { return new BoundAtomicConstraint(*this); }
+    void SetConcept(Cm::Sym::ConceptSymbol* concept_) { concept = concept_; }
+private:
+    bool satisfied;
+    Cm::Sym::ConceptSymbol* concept;
 };
 
 class BoundBinaryConstraint : public BoundConstraint
 {
 public:
-    BoundBinaryConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_);
+    BoundBinaryConstraint(BoundConstraint* left_, BoundConstraint* right_);
+    BoundBinaryConstraint(const BoundBinaryConstraint& that);
     BoundConstraint* Left() const { return left.get(); }
     BoundConstraint* Right() const { return right.get(); }
     bool IsBinaryConstraint() const override { return true; }
@@ -53,73 +59,23 @@ private:
 class BoundDisjunctiveConstraint : public BoundBinaryConstraint
 {
 public:
-    BoundDisjunctiveConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_);
+    BoundDisjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_);
+    BoundDisjunctiveConstraint(const BoundDisjunctiveConstraint& that);
     bool Imply(BoundConstraint* that) const override;
     bool IsDisjunctiveConstraint() const override { return true; }
     void Accept(Visitor& visitor) override;
+    BoundConstraint* Clone() const override { return new BoundDisjunctiveConstraint(*this); }
 };
 
 class BoundConjunctiveConstraint : public BoundBinaryConstraint
 {
 public:
-    BoundConjunctiveConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_);
+    BoundConjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_);
+    BoundConjunctiveConstraint(const BoundConjunctiveConstraint& that);
     bool Imply(BoundConstraint* that) const override;
     bool IsConjunctiveConstraint() const override { return true; }
     void Accept(Visitor& visitor) override;
-};
-
-class BoundTypeSatisfyConceptConstraint : public BoundConstraint
-{
-public:
-    BoundTypeSatisfyConceptConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_, BoundConcept* concept_);
-    bool Imply(BoundConstraint* that) const override;
-    bool IsBoundTypeSatisfyConceptConstraint() const override { return true; }
-    Cm::Sym::TypeSymbol* Type() const { return type; }
-    Cm::Sym::ConceptSymbol* Concept() const;
-    void Accept(Visitor& visitor) override;
-private:
-    Cm::Sym::TypeSymbol* type;
-    std::unique_ptr<BoundConcept> concept;
-};
-
-class BoundTypeIsTypeConstraint : public BoundConstraint
-{
-public:
-    BoundTypeIsTypeConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* left_, Cm::Sym::TypeSymbol* right_);
-    bool Imply(BoundConstraint* that) const override;
-    bool IsBoundTypeIsTypeConstraint() const override { return true; }
-    Cm::Sym::TypeSymbol* Left() const { return left; }
-    Cm::Sym::TypeSymbol* Right() const { return right; }
-    void Accept(Visitor& visitor) override;
-private:
-    Cm::Sym::TypeSymbol* left;
-    Cm::Sym::TypeSymbol* right;
-};
-
-class BoundMultiParamConstraint : public BoundConstraint
-{
-public:
-    BoundMultiParamConstraint(Cm::Ast::Node* syntaxNode_, const std::vector<Cm::Sym::TypeSymbol*>& types_, Cm::BoundTree::BoundConcept* concept_);
-    bool Imply(BoundConstraint* that) const override;
-    bool IsBoundMultiParamConstraint() const override { return true; }
-    const std::vector<Cm::Sym::TypeSymbol*> Types() const { return types; }
-    Cm::Sym::ConceptSymbol* Concept() const;
-    void Accept(Visitor& visitor) override;
-private:
-    std::vector<Cm::Sym::TypeSymbol*> types;
-    std::unique_ptr<BoundConcept> concept;
-};
-
-class BoundConcept : public BoundConstraint
-{
-public:
-    BoundConcept(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConceptSymbol* concept_);
-    bool Imply(BoundConstraint* that) const override;
-    bool IsBoundConcept() const override { return true; }
-    Cm::Sym::ConceptSymbol* Symbol() const { return conceptSymbol; }
-    void Accept(Visitor& visitor) override;
-private:
-    Cm::Sym::ConceptSymbol* conceptSymbol;
+    BoundConstraint* Clone() const override { return new BoundConjunctiveConstraint(*this); }
 };
 
 } } // namespace Cm::BoundTree
