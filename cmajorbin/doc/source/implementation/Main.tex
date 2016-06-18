@@ -6634,25 +6634,21 @@ Return \textbf{true}.
 \chapter{Concepts}
 
 In this chapter we will discuss the role of concepts in the overload resolution process,
-and then go though the algorithms for checking, binding and comparing constraints.
+and then go though the algorithms for checking and comparing constraints.
 
 \section{Concepts in Overload Resolution}
 
-Concepts are used in the overload resolution process (chapter \ref{overloadresolution}) in three stages:
+Concepts are used in the overload resolution process (chapter \ref{overloadresolution}) in two stages:
 
 \begin{enumerate}
 \item
 First concepts are used to \emph{include} a constrained function template in the list of matching functions, provided
 that the deduced template arguments \emph{satisfy} the constraint of the function template.
-We may also say that concepts are used to \emph{exclude} an unwanted constrained function template from the list of matching functions,
-if the constraint of the function template is \emph{not} satisfied. This is just the other side of the coin.
 After this stage we may have several function templates in the list of matching functions that have different constraints that are all satisfied.
 
 \item
-The next stage is to \emph{bind} the constraints that are satisfied so that they form \emph{bound constraints}.
-
-\item
-The third stage is to \emph{compare} the bound constraints using the \emph{imply} relation.
+The second stage is to \emph{compare} bound constraints built from original constraints during constraint checking.
+The bound constraints are compared using the \emph{imply} relation.
 This is done for selecting the best, i.e. the most strictly satisfying, constraint from the bound constraints.
 When comparing two constraints $A$ and $B$: if $imply(A, B)$ is \textbf{true} and $imply(B, A)$ is \textbf{false},
 then the function containing constraint $A$ is a better match than the function containing $B$.
@@ -6666,10 +6662,14 @@ The following listing shows some concepts that form iterator concept hierarchy i
 \lstset{language=Cmajor}
 \begin{lstlisting}[frame=trBL]
 public concept ForwardIterator<T> : InputIterator<T>
-{ /* ... */ }
+{
+    // ...
+}
 
 public concept BidirectionalIterator<T> : ForwardIterator<T>
-{ /* ... */ }
+{
+    // ...
+}
 
 public concept RandomAccessIterator<T> : BidirectionalIterator<T>
 { /* ... */ }
@@ -6728,12 +6728,12 @@ Function [1], the forward iterator version, is called in this case.
 \end{exmp}
 
 \clearpage
-\section{Checking Constraints}
+\section{Checking and Binding Constraints}
 
-The following algorithm is used for checking constraints:
+The following algorithm is used for checking and binding constraints:
 
 \begin{algo} Check Constraint. Inputs: a container scope, a constraint represented as an abstract syntax tree node,
-list of template parameters, list of template argument types.
+list of template parameters, list of template argument types, a reference to a bound constraint.
 The algorithm returns \textbf{true} if the constraint is satisfied, and \textbf{false} otherwise.
 \begin{enumerate}
 \item
@@ -6758,10 +6758,16 @@ Create an instance of constraint checker class that is an abstract syntax tree v
 Arguments to constraint checker constructor are: $firstTypeArgument$, $secondTypeArgument$, and a pointer to constraint checking scope.
 \item
 Constraint checker has a stack of Boolean flags, a \emph{constraintCheckStack}.
-It has also a type, \emph{resolvedType}, and a concept group symbol, \emph{resolvedConceptGroup}.
+It has also a stack of bound constraints.
+Finally it has a type, \emph{resolvedType}, and a concept group symbol, \emph{resolvedConceptGroup}
+that are used for resolving types and concept groups respectively.
 \item
 Call the \verb|Accept| member function of the constraint with constraint checker.
 \item
+Pop the bound constraint from the stack of bound constraints and set it as the value of the bound constraint reference parameter.
+\item
+Pop the result of the visitation, \textbf{true} or \textbf{false}, from the constraint check stack of the constraint checker, and return it.
+\end{enumerate}
 The constraint checker overrides the following abstract syntax tree visitation points:
 \begin{itemize}
 \item
@@ -6769,11 +6775,21 @@ The constraint checker overrides the following abstract syntax tree visitation p
 A \verb|ConceptNode| contains:
 \begin{itemize}
 \item
+group name of the concept.
+\item
+type parameters of the concept.
+\item
 refinement (optional): an abstract syntax tree node of type \verb|ConceptId|.
 \item
 constraints: a list of abstract syntax tree nodes derived from \verb|ConstraintNode|.
 \end{itemize}
 \begin{enumerate}
+\item
+Call the \verb|Accept| member function of the group name of the concept.
+\item
+Let $n$ be the number of type parameters of the concept.
+\item
+Get concept symbol $concept$ having $n$ type parameters from $resolvedConceptGroup$.
 \item
 If the \verb|ConceptNode| has a refinement, do:
 \begin{enumerate}
@@ -6782,7 +6798,9 @@ Call the \verb|Accept| member function of the \verb|ConceptNode| with this const
 \item
 Pop the result of visiting the refinement, \textbf{true} or \textbf{false}, from the constraint check stack. Let $r$ be the result.
 \item
-If $r$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+Pop the $constraint$ from the stack of bound constraints.
+\item
+If $r$ is \textbf{false}, push \textbf{false} to the constraint check stack, push $constraint$ to the stack of bound constraints and return.
 \end{enumerate}
 \item
 For each constraint in constraints contained by the \verb|ConceptNode|:
@@ -6792,10 +6810,14 @@ Call the \verb|Accept| member function of the constraint with this constraint ch
 \item
 Pop the result of visiting the constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
 \item
-If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+Pop the $constraint$ from the stack of bound constraints.
+\item
+If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack, push $constraint$ to the stack of bound constraints and return.
 \end{enumerate}
 \item
 Push \textbf{true} to the constraint check stack.
+\item
+Create a \verb|BoundAtomicConstraint| with satisfied set to \textbf{true} and concept symbol set to $concept$, and push it to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(ConceptIdNode& conceptIdNode)|:
@@ -6855,9 +6877,19 @@ Call \verb|Accept| member function of $left$ with this constraint checking visit
 \item
 Pop the result of visiting the $left$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
 \item
-If $c$ is \textbf{true}, push \textbf{true} to the constraint check stack and return.
+Pop bound constraint $l$ from the stack of bound constraints.
 \item
-Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor. The result of visitation is left to the constraint check stack.
+If $c$ is \textbf{true}, push \textbf{true} to the constraint check stack, push bound constraint $l$ to the stack of bound constraints and return.
+\item
+Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor.
+\item
+Pop the result of visiting the $right$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $s$ be the result.
+\item
+Pop bound constraint $r$ from the stack of bound constraints.
+\item
+Push $s$ to the constraint check stack.
+\item
+Create \verb|BoundDisjunctiveConstraint| with $l$ and $r$ bound constraints and push it to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(ConjunctiveConstraintNode& constructiveConstraintNode)|:\\
@@ -6866,11 +6898,21 @@ Otherwise, call \verb|Accept| member function of $right$ with this constraint ch
 \item
 Call \verb|Accept| member function of $left$ with this constraint checking visitor.
 \item
+Pop bound constraint $l$ from the stack of bound constraints.
+\item
 Pop the result of visiting the $left$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $c$ be the result.
 \item
-If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack and return.
+If $c$ is \textbf{false}, push \textbf{false} to the constraint check stack, push $l$ to the stack of bound constraints, and return.
 \item
-Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor. The result of visitation is left to the constraint check stack.
+Otherwise, call \verb|Accept| member function of $right$ with this constraint checking visitor.
+\item
+Pop bound constraint $r$ from the stack of bound constraints.
+\item
+Pop the result of visiting the $right$ constraint, \textbf{true} or \textbf{false}, from the constraint check stack. Let $s$ be the result.
+\item
+Push $s$ to the constraint check stack.
+\item
+Create a \verb|BoundConjunctiveConstraint| with $l$ and $r$, and push it to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(IdentifierNode& identifierNode)|:\\
@@ -6995,9 +7037,11 @@ Make plain type for $leftType$ using algorithm \ref{makeplaintype}. Let $leftPla
 \item
 Make plain type for \emph{resolvedType} using algorithm \ref{makeplaintype}. Let $rightPlainType$ be the result.
 \item
-If $leftPlainType$ equals $rightPlainType$, push \textbf{true} to the constraint check stack.
+If $leftPlainType$ equals $rightPlainType$, push \textbf{true} to the constraint check stack,
+and push a \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack,
+and push a \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 Otherwise, if $resolvedConceptGroup$ is not null:
@@ -7013,14 +7057,18 @@ Compute a 16-byte $conceptId$ using algorithm \ref{computeconceptid} for the con
 \item
 Lookup $conceptId$ from the concept repository (section \ref{conceptrepository}).
 \item
-If found, push \textbf{true} to the constraint check stack and return.
+If found, push \textbf{true} to the constraint check stack,
+and push a bound constraint cloned from the bound constraint contained by the instantiated concept to the stack of bound constraints.
+and return.
 \item
 Otherwise, instantiate concept $s$ with type arguments $a$ using algorithm \ref{instantiateconcept}.
 Let $c$ be the instantiated concept.
 \item
-If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack.
+If $c$ is not null, add $c$ to the concept repository with id $conceptId$, push \textbf{true} to the constraint check stack,
+push a bound constraint corresponding to $c$ to the stack of bound constraints, and return.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack, push \verb|BoundAtomicConstraint| with value \textbf{false}
+to the stack of bound constraints.
 \end{enumerate}
 \end{enumerate}
 \item
@@ -7061,14 +7109,17 @@ Compute a 16-byte $conceptId$ using algorithm \ref{computeconceptid} for the con
 \item
 Lookup $conceptId$ from the concept repository (section \ref{conceptrepository}).
 \item
-If found, push \textbf{true} to the constraint check stack and return.
+If found, push \textbf{true} to the constraint check stack,
+push a bound constraint cloned from the bound constraint contained by the instantiated concept, and return.
 \item
 Otherwise, instantiate concept $s$ with type arguments $a$ using algorithm \ref{instantiateconcept}.
 Let $c$ be the instantiated concept.
 \item
-If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack.
+If $c$ is not null, add $c$ to the concept repository with id $conceptId$, and push \textbf{true} to the constraint check stack,
+and push bound constraint corresponding to $c$ to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack and push \verb|BoundAtomicConstraint|
+with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 Otherwise report error.
@@ -7080,9 +7131,11 @@ Otherwise report error.
 \item
 Call the \verb|Accept| member function of $typeId$ with this constraint checker visitor.
 \item
-If $resolvedType$ is not null, push \textbf{true} to the constraint check stack.
+If $resolvedType$ is not null, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack, and push
+\verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(ConstructorConstraintNode& constructorConstraintNode)|:\\
@@ -7092,13 +7145,16 @@ Resolve parameter types represented by parameter nodes in the constructorConstra
 \item
 Then lookup a constructor within a class type represented by $firstTypeArgument$ having those parameter types using overload resolution.
 \item
-If a constructor is found, push \textbf{true} to the constraint check stack.
+If a constructor is found, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(DestructorConstraintNode& destructorConstraintNode)|:\\
-Push \textbf{true} to the constraint check stack.
+Push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
 \verb|Visit(MemberFunctionConstraintNode& memberFunctionConstraintNode)|:\\
 \begin{enumerate}
@@ -7113,9 +7169,11 @@ Resolve other parameter types represented by parameter nodes in the memberFuncti
 \item
 Then lookup a member function having the group name and these parameter types using overload resolution.
 \item
-If a member function is found, push \textbf{true} to the constraint check stack.
+If a member function is found, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(FunctionConstraintNode& functionConstraintNode)|:\\
@@ -7127,42 +7185,53 @@ Resolve parameter types represented by parameter nodes in the functionConstraint
 \item
 Then lookup a function having the group name and these parameter types using overload resolution.
 \item
-If a function is found, push \textbf{true} to the constraint check stack.
+If a function is found, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
 \item
-Otherwise, push \textbf{false} to the constraint check stack.
+Otherwise, push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{enumerate}
 \item
 \verb|Visit(SameConstraintNode& sameConstraintNode)|:\\
-If types $firstArgumentType$ and $secondArgumentType$ are same, push \textbf{true} to the constraint check stack.
-Otherwise push \textbf{false} to the constraint check stack.
+If types $firstArgumentType$ and $secondArgumentType$ are same, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \item
 \verb|Visit(DerivedConstraintNode& derivedConstraintNode)|:\\
-If type $firstArgumentType$ is derived from the $secondArgumentType$, push \textbf{true} to the constraint check stack.
-Otherwise push \textbf{false} to the constraint check stack.
+If type $firstArgumentType$ is derived from the $secondArgumentType$, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \item
 \verb|Visit(ConvertibleConstraintNode& convertibleConstraintNode)|:\\
-If type $firstArgumentType$ is implicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack.
-Otherwise push \textbf{false} to the constraint check stack.
+If type $firstArgumentType$ is implicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \item
 \verb|Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)|:\\
-If type $firstArgumentType$ is explicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack.
-Otherwise push \textbf{false} to the constraint check stack.
+If type $firstArgumentType$ is explicitly convertible to the $secondArgumentType$, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \item
 \verb|Visit(CommonConstraintNode& commonConstraintNode)|:\\
 If types $firstArgumentType$ and $secondArgumentType$ are same, let $commonType$ be $firstArgumentType$,
 otherwise, if $firstArgumentType$ is convertible to the $secondArgumentType$, let $commonType$ be $secondArgumentType$,
 otherwise, if $secondArgumentType$ is convertible to the $firstArgumentType$, let $commonType$ be $firstArgumentType$,
 otherwise, let $commonType$ be null.
-If $commonType$ is not null, install $commonType$ to the container scope, and push \textbf{true} to the constraint check stack,
-otherwise push \textbf{false} to the constraint check stack.
+If $commonType$ is not null, install $commonType$ to the container scope, and push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \item
 \verb|Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)|:\\
-If $firstArgumentType$ is not lvalue reference type and not rvalue reference type, push \textbf{true} to the constraint check stack,
-otherwise push \textbf{false} to the constraint check stack.
+If $firstArgumentType$ is not lvalue reference type and not rvalue reference type, push \textbf{true} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{true} to the stack of bound constraints.
+Otherwise push \textbf{false} to the constraint check stack, and
+push \verb|BoundAtomicConstraint| with value \textbf{false} to the stack of bound constraints.
 \end{itemize}
-\item
-Pop the result of the visitation, \textbf{true} or \textbf{false}, from the constraint check stack of the constraint checker, and return it.
-\end{enumerate}
 \end{algo}
 
 \subsection{Concept Repository}\label{conceptrepository}
@@ -7197,12 +7266,13 @@ Return $id$.
 \end{enumerate}
 \end{algo}
 
+\clearpage
 \subsection{Instantiating a Concept}
 
 The following algorithm is used to instantiate a concept with type arguments:
 
 \begin{algo}\label{instantiateconcept} Instantiate a Concept with Type Arguments.
-Inputs: a container scope, a concept symbol $s$, list of type arguments $a$.
+Inputs: a container scope, a concept symbol $s$, list of type arguments $a$, a reference to a bound constraint.
 The algorithm returns an instantiated concept symbol, or null if instantiation did not succeed.
 \begin{enumerate}
 \item
@@ -7232,15 +7302,16 @@ Call the \verb|Accept| member function of $c$ with the constraint checker visito
 \item
 Let $r$ be the result of visitation, \textbf{true} or \textbf{false}.
 \item
-If $r$ is \textbf{true}, create an instantiated concept symbol for $s$ with type arguments $a$, and return it.
+Get bound constraint $b$ from the constraint checker.
+\item
+If $r$ is \textbf{true}, create an instantiated concept symbol for $s$ with type arguments $a$ and bound constraint $b$, and return it.
 \item
 Otherwise, return null.
 \end{enumerate}
 \end{algo}
 
-\section{Binding Constraints}
+\section{Comparing Constraints}
 
-When many constraints are satisfied they must be bound before they can be compared.
 The following listing shows hierarchy of bound constraints:
 
 \begin{verbatim}
@@ -7250,275 +7321,11 @@ BoundNode
         BoundBinaryConstraint
             BoundDisjunctiveConstraint
             BoundConjunctiveConstraint
-        BoundTypeSatisfyConceptConstraint
-        BoundTypeIsTypeConstraint
-        BoundMultiParamConstraint
-        BoundConcept
 \end{verbatim}
 
-The following algorithm is used to create bound constraints:
-
-\begin{algo}\label{bindconstraint} Binding a Constraint. Inputs: list of template parameters, list of template arguments, a container scope,
-a constraint represented as an abstract syntax tree node.
-The algorithm returns a bound constraint.
-\begin{enumerate}
-\item
-Create a constraint binding scope and set its parent to the container scope.
-\item
-Let $n$ be the number of template parameters. $n$ is also the number of template arguments.
-\item
-For $i$ = 1, \ldots, $n$:
-\begin{enumerate}
-\item
-Let $p$ be $i$'th template parameter.
-\item
-Let $t$ be $i$'th template argument.
-\item
-Create a bound type parameter that maps the name of $p$ to type $t$, and install it to the constraint binding scope.
-\end{enumerate}
-\item
-Create an instance of a constraint binder that is an abstract syntax tree visitor.
-The constraint binder contains:
-\begin{itemize}
-\item
-A container scope.
-\item
-A type $resolvedType$.
-\item
-A concept group $resolvedConceptGroup$.
-\item
-A concept symbol $conceptSymbol$.
-\item
-A stack of bound constraints.
-\end{itemize}
-\item
-Pass constraint binding scope as a container scope to the constraint binder.
-\item
-Call \verb|Accept| member function of the constraint abstract syntax tree node with constraint binder.
-\item
-Return the result of visitation that is a bound constraint on top of the stack of bound constraints.
-\item
-The constraint binder overrides the following visitations points:
-\begin{itemize}
-\item
-\verb|Visit(ConceptNode& conceptNode)|:\\
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the concept identifier contained by the concept node.
-\item
-A concept group $resolvedConceptGroup$ is the result of visitation.
-\item
-Let $n$ be the number of type parameters of concept node.
-\item
-Get a concept symbol with $n$ type parameters from the $resolvedConceptGroup$.
-\item
-Create a \verb|BoundConcept| node with the concept symbol and push it to the stack of bound constraints.
-\end{enumerate}
-\item
-\verb|Visit(DisjunctiveConstraintNode& disjunctiveConstraintNode)|:\\
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the left constraint of the disjunctive constraint.
-\item
-Pop the bound left constraint from the stack of bound constraints.
-\item
-Call \verb|Accept| member function of the right constraint of the disjunctive constraint.
-\item
-Pop the bound right constraint from the stack of bound constraints.
-\item
-Create a |BoundDisjunctiveConstraint| with the left and right bound constraints and push it to the stack of bound constraints.
-\end{enumerate}
-\item
-\verb|Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode)|:\\
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the left constraint of the conjunctive constraint.
-\item
-Pop the bound left constraint from the stack of bound constraints.
-\item
-Call \verb|Accept| member function of the right constraint of the conjunctive constraint.
-\item
-Pop the bound right constraint from the stack of bound constraints.
-\item
-Create a |BoundConjunctiveConstraint| with the left and right bound constraints and push it to the stack of bound constraints.
-\end{enumerate}
-\item
-\verb|Visit(IdentifierNode& identifierNode)|:\\
-\begin{enumerate}
-\item
-Set $resolvedType$ to null.
-\item
-Set $resolvedConceptGroup$ to null.
-\item
-Lookup a symbol with the name contained by the identifier node from the container scope.
-\item
-Let $s$ be the symbol found.
-\item
-If $s$ is a type symbol, set $resolvedType$ to $s$.
-\item
-Otherwise, if $s$ is a bound type parameter symbol, set $resolvedType$ to the mapped type of the bound type parameter.
-\item
-Otherwise, if $s$ is a concept group symbol, set $resolvedConceptGroup$ to $s$.
-\item
-Otherwise, report error.
-\end{enumerate}
-\item
-\verb|EndVisit(DotNode& dotNode)|:\\
-\begin{enumerate}
-\item
-Lookup a symbol with the name contained by the dot node from the container scope of $resolvedType$.
-\item
-Let $s$ be the symbol found.
-\item
-If $s$ is a type symbol, set $resolvedType$ to $s$.
-\item
-Otherwise, if $s$ is a bound type parameter symbol, set $resolvedType$ to the mapped type of the bound type parameter.
-\end{enumerate}
-\item
-\verb|Visit(BoolNode& boolNode)|:\\
-Set $resolvedType$ to \verb|BoolTypeSymbol|.
-\item
-\verb|Visit(SByteNode& sbyteNode)|:\\
-Set $resolvedType$ to \verb|SByteTypeSymbol|.
-\item
-\verb|Visit(ByteNode& byteNode)|:\\
-Set $resolvedType$ to \verb|ByteTypeSymbol|.
-\item
-\verb|Visit(ShortNode& shortNode)|:\\
-Set $resolvedType$ to \verb|ShortTypeSymbol|.
-\item
-\verb|Visit(UShortNode& ushortNode)|:\\
-Set $resolvedType$ to \verb|UShortTypeSymbol|.
-\item
-\verb|Visit(IntNode& intNode)|:\\
-Set $resolvedType$ to \verb|IntTypeSymbol|.
-\item
-\verb|Visit(UIntNode& uintNode)|:\\
-Set $resolvedType$ to \verb|UIntTypeSymbol|.
-\item
-\verb|Visit(LongNode& longNode)|:\\
-Set $resolvedType$ to \verb|LongTypeSymbol|.
-\item
-\verb|Visit(ULongNode& ulongNode)|:\\
-Set $resolvedType$ to \verb|ULongTypeSymbol|.
-\item
-\verb|Visit(FloatNode& floatNode)|:\\
-Set $resolvedType$ to \verb|FloatTypeSymbol|.
-\item
-\verb|Visit(DoubleNode& doubleNode)|:\\
-Set $resolvedType$ to \verb|DoubleTypeSymbol|.
-\item
-\verb|Visit(CharNode& charNode)|:\\
-Set $resolvedType$ to \verb|CharTypeSymbol|.
-\item
-\verb|Visit(WCharNode& wcharNode)|:\\
-Set $resolvedType$ to \verb|WCharTypeSymbol|.
-\item
-\verb|Visit(UCharNode& ucharNode)|:\\
-Set $resolvedType$ to \verb|UCharTypeSymbol|.
-\item
-\verb|Visit(VoidNode& voidNode)|:\\
-Set $resolvedType$ to \verb|VoidTypeSymbol|.
-\item
-\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:\\
-Set $resolvedType$ to a type resolved from derived type expression node using type resolver.
-\item
-\verb|Visit(IsConstraintNode& isConstraintNode)|:\\
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the type expression contained by the isConstraintNode.
-\item
-Let $leftType$ be the $resolvedType$.
-\item
-Call \verb|Accept| member function of the concept or type name contained by the isConstraintNode.
-\item
-If $resolvedType$ is not null, create a \verb|BoundTypeIsTypeConstraint| with $leftType$ as the left type and $resolvedType$ as the right type,
-and push it to the stack of bound constraints.
-\item
-Otherwise, if $resolvedConceptGroup$ is not null:
-\begin{enumerate}
-\item
-Get concept symbol of one type parameter from the $resolvedConceptGroup$.
-\item
-Get an abstract syntax tree node $node$ that corresponds to the concept symbol from the symbol table.
-\item
-Call \verb|Accept| member function of $node$.
-\item
-Pop bound concept $b$ from the stack of bound constraints.
-\item
-Create a \verb|BoundTypeSatisfyConceptConstraint| with type $leftType$ and bound concept $b$, and push it to the stack of bound constraints.
-\end{enumerate}
-\end{enumerate}
-\item
-\verb|Visit(MultiParamConstraintNode& multiParamConstraintNode)|:\\
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the concept identifier of the multiparameter constraint node.
-\item
-If $resolvedConceptGroup$ is not null:
-\begin{enumerate}
-\item
-Let $n$ be the number of type parameters of the multiparameter constraint node.
-\item
-Get concept symbol of $n$ type parametedes from the $resolvedConceptGroup$.
-\item
-Get an abstract syntax tree node $node$ that corresponds to the concept symbol from the symbol table.
-\item
-Call \verb|Accept| member function of $node$.
-\item
-Pop bound concept $b$ from the stack of bound constraints.
-\item
-Create a list of type arguments $a$.
-\item
-For $i$ = 1, \ldots, $n$:
-\begin{enumerate}
-\item
-Call \verb|Accept| member function of the $i$'th type expression of the multiparameter constraint node.
-\item
-Add $resolvedType$ to $a$.
-\end{enumerate}
-\item
-Create a \verb|BoundMultiParamConstraint| with bound concept $b$ and type arguments $a$, and push it to the stack of bound constraints.
-\end{enumerate}
-\end{enumerate}
-\item
-\verb|Visit(TypenameConstraintNode& typenameConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(ConstructorConstraintNode& constructorConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(DestructorConstraintNode& destructorConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(MemberFunctionConstraintNode& memberFunctionConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(FunctionConstraintNode& functionConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(SameConstraintNode& sameConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(DerivedConstraintNode& derivedConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(ConvertibleConstraintNode& convertibleConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(ExplicitlyConvertibleConstraintNode& explicitlyConvertibleConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(CommonConstraintNode& commonConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\item
-\verb|Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)|:\\
-Create a \verb|BoundAtomicConstraintNode| and push it to the stack of bound constraints.
-\end{itemize}
-\end{enumerate}
-\end{algo}
-
-\section{Comparing Constraints}
+A \verb|BoundAtomicConstraint| contains a Boolean flag that is equal to the evaluated result of the corresponding unbounded constraint.
+It can also contain a concept symbol if it is result of evaluation of a concept constraint.
+A \verb|BoundBinaryConstraint| contains two child constraints, $left$ and $right$.
 
 The following algorithm is used to compare bound constraints to find out which of them is the most stricly satisfying constraint:
 
@@ -7526,7 +7333,54 @@ The following algorithm is used to compare bound constraints to find out which o
 The algorithm returns \textbf{true} if $imply(A, B)$ is \textbf{true} and \textbf{false} otherwise.
 \begin{enumerate}
 \item
-If $A$ is \verb|BoundAtomicConstraint| return \textbf{true}.
+If $A$ is \verb|BoundAtomicConstraint|:
+\begin{enumerate}
+\item
+If $B$ is \verb|BoundBinaryConstraint|:
+\begin{enumerate}
+\item
+Let $LB$ be the left constraint of $B$.
+\item
+Let $RB$ be the right constraint of $B$.
+\item
+Let $L$ be $imply(A, LB)$.
+\item
+Let $R$ be $imply(A, RB)$.
+\item
+If $B$ is \verb|BoundConjunctiveConstraint|, return $L$ \textbf{and} $R$.
+\item
+Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $L$ \textbf{or} $R$.
+\end{enumerate}
+\item
+Otherwise, $B$ is \verb|BoundAtomicConstraint|:
+\begin{enumerate}
+\item
+If $A$ is satisfied and $B$ is not satisfied, return \textbf{false}.
+\item
+Otherwise, if $A$ contains a concept symbol and $B$ does not contain a concept symbol, return \textbf{false}.
+\item
+Otherwise, if $A$ does not contain a concept symbol and $B$ contains a concept symbol, return \textbf{true}.
+\item
+Otherwise, if both $A$ and $B$ contain a concept symbol:
+\begin{enumerate}
+\item
+If concept symbol contained by $A$ is equal to the concept symbol contained by $B$, return \textbf{true}.
+\item
+Otherwise, let $refinedConcept$ be the refined concept of the concept symbol contained by $A$.
+\item
+While $refinedConcept$ is not null:
+\begin{itemize}
+\item
+If $refinedConcept$ is equal to the concept symbol contained by $B$, return \textbf{true}.
+\item
+Otherwise, set $refinedConcept$ to the refined concept of the $refinedConcept$.
+\end{itemize}
+\item
+Return \textbf{false}.
+\end{enumerate}
+Return \textbf{true}.
+\end{enumerate}
+\end{enumerate}
 \item
 Otherwise, if $A$ is \verb|BoundDisjunctiveConstraint|,
 \begin{enumerate}
