@@ -58,10 +58,13 @@ public:
     const std::vector<TypeSymbol*>& TypeArguments() const { return typeArguments; }
     void SetCommonType(TypeSymbol* commonType_);
     TypeSymbol* CommonType() const { return commonType; }
+    BcuItem* BoundConstraint() const { return boundConstraint.get(); }
+    void SetBoundConstraint(BcuItem* boundConstraint_) { boundConstraint.reset(boundConstraint_); }
 private:
     ConceptSymbol* conceptSymbol;
     std::vector<TypeSymbol*> typeArguments;
     TypeSymbol* commonType;
+    std::unique_ptr<BcuItem> boundConstraint;
 };
 
 } } // namespace Cm::Sym

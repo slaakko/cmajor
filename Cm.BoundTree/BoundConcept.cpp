@@ -13,12 +13,80 @@
 
 namespace Cm { namespace BoundTree {
 
-BoundConstraint::BoundConstraint(Cm::Ast::Node* syntaxNode_) : BoundNode(syntaxNode_)
+BoundConstraint::BoundConstraint() : BoundNode(nullptr)
 {
 }
 
-BoundAtomicConstraint::BoundAtomicConstraint(Cm::Ast::Node* syntaxNode_) : BoundConstraint(syntaxNode_)
+BoundAtomicConstraint::BoundAtomicConstraint(bool satisfied_) : BoundConstraint(), satisfied(satisfied_), concept(nullptr)
 {
+}
+
+bool BoundAtomicConstraint::Imply(BoundConstraint* that) const
+{
+    if (that->IsBinaryConstraint())
+    {
+        BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
+        BoundConstraint* thatLeft = thatBinaryConstraint->Left();
+        BoundConstraint* thatRight = thatBinaryConstraint->Right();
+        bool implyLeft = Imply(thatLeft);
+        bool implyRight = Imply(thatRight);
+        if (that->IsConjunctiveConstraint())
+        {
+            return implyLeft && implyRight;
+        }
+        else if (that->IsDisjunctiveConstraint())
+        {
+            return implyLeft || implyRight;
+        }
+        else // assert(false)
+        {
+            return false;
+        }
+    }
+    else if (that->IsAtomicConstraint())
+    {
+        BoundAtomicConstraint* thatAtomic = static_cast<BoundAtomicConstraint*>(that);
+        if (satisfied && !thatAtomic->Satisfied())
+        {
+            return false;
+        }
+        else
+        {
+            if (concept && !thatAtomic->concept)
+            {
+                return false;
+            }
+            else if (!concept && thatAtomic->concept)
+            {
+                return true;
+            }
+            else if (concept && thatAtomic->concept)
+            {
+                if (concept == thatAtomic->concept)
+                {
+                    return true;
+                }
+                Cm::Sym::ConceptSymbol* refinedConcept = concept->RefinedConcept();
+                while (refinedConcept)
+                {
+                    if (refinedConcept == thatAtomic->concept)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        refinedConcept = refinedConcept->RefinedConcept();
+                    }
+                }
+                return false;
+            }
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
 }
 
 void BoundAtomicConstraint::Accept(Visitor& visitor)
@@ -26,11 +94,19 @@ void BoundAtomicConstraint::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundBinaryConstraint::BoundBinaryConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : BoundConstraint(syntaxNode_), left(left_), right(right_)
+BoundBinaryConstraint::BoundBinaryConstraint(BoundConstraint* left_, BoundConstraint* right_) : BoundConstraint(), left(left_), right(right_)
 {
 }
 
-BoundDisjunctiveConstraint::BoundDisjunctiveConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : BoundBinaryConstraint(syntaxNode_, left_, right_)
+BoundBinaryConstraint::BoundBinaryConstraint(const BoundBinaryConstraint& that): BoundConstraint(that), left(that.left->Clone()), right(that.right->Clone())
+{
+}
+
+BoundDisjunctiveConstraint::BoundDisjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_) : BoundBinaryConstraint(left_, right_)
+{
+}
+
+BoundDisjunctiveConstraint::BoundDisjunctiveConstraint(const BoundDisjunctiveConstraint& that) : BoundBinaryConstraint(that)
 {
 }
 
@@ -77,7 +153,11 @@ void BoundDisjunctiveConstraint::Accept(Visitor& visitor)
     visitor.Visit(*this);
 }
 
-BoundConjunctiveConstraint::BoundConjunctiveConstraint(Cm::Ast::Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : BoundBinaryConstraint(syntaxNode_, left_, right_)
+BoundConjunctiveConstraint::BoundConjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_) : BoundBinaryConstraint(left_, right_)
+{
+}
+
+BoundConjunctiveConstraint::BoundConjunctiveConstraint(const BoundConjunctiveConstraint& that) : BoundBinaryConstraint(that)
 {
 }
 
@@ -121,191 +201,6 @@ void BoundConjunctiveConstraint::Accept(Visitor& visitor)
 {
     Left()->Accept(visitor);
     Right()->Accept(visitor);
-    visitor.Visit(*this);
-}
-
-BoundTypeSatisfyConceptConstraint::BoundTypeSatisfyConceptConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* type_, BoundConcept* concept_) :
-    BoundConstraint(syntaxNode_), type(type_), concept(concept_)
-{
-}
-
-bool BoundTypeSatisfyConceptConstraint::Imply(BoundConstraint* that) const
-{
-    if (that->IsBinaryConstraint())
-    {
-        BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
-        BoundConstraint* thatLeft = thatBinaryConstraint->Left();
-        BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool implyLeft = Imply(thatLeft);
-        bool implyRight = Imply(thatRight);
-        if (that->IsConjunctiveConstraint())
-        {
-            return implyLeft && implyRight;
-        }
-        else if (that->IsDisjunctiveConstraint())
-        {
-            return implyLeft || implyRight;
-        }
-        else // assert(false)
-        {
-            return false;
-        }
-    }
-    else if (!that->IsBoundTypeSatisfyConceptConstraint())
-    {
-        return false;
-    }
-    else
-    {
-        BoundTypeSatisfyConceptConstraint* thatTypeSatisfyConceptConstraint = static_cast<BoundTypeSatisfyConceptConstraint*>(that);
-        if (!Cm::Sym::TypesEqual(type, thatTypeSatisfyConceptConstraint->type))
-        {
-            return false;
-        }
-        return concept->Imply(thatTypeSatisfyConceptConstraint->concept.get());
-    }
-}
-
-Cm::Sym::ConceptSymbol* BoundTypeSatisfyConceptConstraint::Concept() const 
-{ 
-    return concept->Symbol(); 
-}
-
-void BoundTypeSatisfyConceptConstraint::Accept(Visitor& visitor)
-{
-    visitor.Visit(*this);
-}
-
-BoundTypeIsTypeConstraint::BoundTypeIsTypeConstraint(Cm::Ast::Node* syntaxNode_, Cm::Sym::TypeSymbol* left_, Cm::Sym::TypeSymbol* right_) : BoundConstraint(syntaxNode_), left(left_), right(right_)
-{
-}
-
-bool BoundTypeIsTypeConstraint::Imply(BoundConstraint* that) const
-{
-    if (that->IsBinaryConstraint())
-    {
-        BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
-        BoundConstraint* thatLeft = thatBinaryConstraint->Left();
-        BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool implyLeft = Imply(thatLeft);
-        bool implyRight = Imply(thatRight);
-        if (that->IsConjunctiveConstraint())
-        {
-            return implyLeft && implyRight;
-        }
-        else if (that->IsDisjunctiveConstraint())
-        {
-            return implyLeft || implyRight;
-        }
-        else // assert(false)
-        {
-            return false;
-        }
-    }
-    else if (!that->IsBoundTypeIsTypeConstraint())
-    {
-        return false;
-    }
-    else
-    {
-        BoundTypeIsTypeConstraint* thatTypeIsTypeConstraint = static_cast<BoundTypeIsTypeConstraint*>(that);
-        if (!Cm::Sym::TypesEqual(left, thatTypeIsTypeConstraint->left))
-        {
-            return false;
-        }
-        if (!Cm::Sym::TypesEqual(right, thatTypeIsTypeConstraint->right))
-        {
-            return false;
-        }
-        return true;
-    }
-}
-
-void BoundTypeIsTypeConstraint::Accept(Visitor& visitor)
-{
-    visitor.Visit(*this);
-}
-
-BoundMultiParamConstraint::BoundMultiParamConstraint(Cm::Ast::Node* syntaxNode_, const std::vector<Cm::Sym::TypeSymbol*>& types_, Cm::BoundTree::BoundConcept* concept_) :
-    BoundConstraint(syntaxNode_), types(types_), concept(concept_)
-{
-}
-
-bool BoundMultiParamConstraint::Imply(BoundConstraint* that) const
-{
-    if (that->IsBinaryConstraint())
-    {
-        BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
-        BoundConstraint* thatLeft = thatBinaryConstraint->Left();
-        BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool implyLeft = Imply(thatLeft);
-        bool implyRight = Imply(thatRight);
-        if (that->IsConjunctiveConstraint())
-        {
-            return implyLeft && implyRight;
-        }
-        else if (that->IsDisjunctiveConstraint())
-        {
-            return implyLeft || implyRight;
-        }
-        else // assert(false)
-        {
-            return false;
-        }
-    }
-    else if (!that->IsBoundMultiParamConstraint())
-    {
-        return false;
-    }
-    else
-    {
-        BoundMultiParamConstraint* thatMultiParamConstraint = static_cast<BoundMultiParamConstraint*>(that);
-        int n = int(types.size());
-        if (n != int(thatMultiParamConstraint->types.size())) return false;
-        for (int i = 0; i < n; ++i)
-        {
-            Cm::Sym::TypeSymbol* left = types[i];
-            Cm::Sym::TypeSymbol* right = thatMultiParamConstraint->types[i];
-            if (!Cm::Sym::TypesEqual(left, right)) return false;
-        }
-        return (concept->Imply(thatMultiParamConstraint->concept.get()));
-    }
-}
-
-Cm::Sym::ConceptSymbol* BoundMultiParamConstraint::Concept() const
-{ 
-    return concept->Symbol(); 
-}
-
-void BoundMultiParamConstraint::Accept(Visitor& visitor)
-{
-    visitor.Visit(*this);
-}
-
-BoundConcept::BoundConcept(Cm::Ast::Node* syntaxNode_, Cm::Sym::ConceptSymbol* concept_) :
-    BoundConstraint(syntaxNode_), conceptSymbol(concept_)
-{
-}
-
-bool BoundConcept::Imply(BoundConstraint* that) const
-{
-    if (!that->IsBoundConcept()) return false;
-    BoundConcept* thatConcept = static_cast<BoundConcept*>(that);
-    if (conceptSymbol == thatConcept->conceptSymbol) return true;
-    Cm::Sym::ConceptSymbol* refined = conceptSymbol->RefinedConcept();
-    while (refined)
-    {
-        if (refined == thatConcept->conceptSymbol)
-        {
-            return true;
-        }
-        refined = refined->RefinedConcept();
-    }
-    return false;
-}
-
-void BoundConcept::Accept(Visitor& visitor)
-{
     visitor.Visit(*this);
 }
 

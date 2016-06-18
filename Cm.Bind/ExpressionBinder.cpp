@@ -1503,10 +1503,6 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         Cm::BoundTree::BoundFunctionGroup* functionGroup = static_cast<Cm::BoundTree::BoundFunctionGroup*>(subject.get());
         functionGroupSymbol = functionGroup->GetFunctionGroupSymbol();
         functionGroupName = functionGroupSymbol->Name();
-        if (functionGroupName == "foo")
-        {
-            int x = 0;
-        }
         std::unique_ptr<Cm::BoundTree::BoundExpression> firstArg;
         Cm::Sym::ContainerScope* qualifiedScope = nullptr;
         bool scopeQualified = subject->GetFlag(Cm::BoundTree::BoundNodeFlags::scopeQualified);
