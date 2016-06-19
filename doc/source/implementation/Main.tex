@@ -237,6 +237,8 @@ movzbl	7(%rsp), %ecx
 leal	-48(%rcx,%rax,2), %eax
 movl	%eax, 8(%rsp)
 \end{verbatim}
+\end{enumerate}
+\end{exmp}
 
 \section{Front-end and Back-end of a Compiler}
 
@@ -249,19 +251,63 @@ it is possible to create $N$ times $M$ compilers by writing only $N$ plus $M$ pr
 
 Intermediate code is the glue between the front and back ends of a compiler.
 
-\section{Structure of This Document}
+\section{Representations of Cmajor Programs}
 
-We begin by exploring the theory behind lexical analysis and continue with the practise of it in Cmajor compiler.
-Next we go through some parsing theory to enlighten the syntax analysis phase and inspect the implementation of
-Cmajor Parser Generator that is the parsing tool used in Cmajor compiler.
-Finally we take some examples of implementation of the Cmajor language parser.
+The Cmajor compiler front-end has many intermediate representations for Cmajor programs:
+\begin{itemize}
+\item
+The first one is the \emph{abstract syntax tree representation} that the \emph{parser} component produces.
+It reflects faithfully the syntactic structure of the Cmajor source code.
+In  this representation identifiers do not yet refer to any symbol, they are just identifiers.
+\item
+The second one is the \emph{bound tree} representation that is a high-level intermediate representation.
+The top-level of bound node hierarchy there are bound compile units.
+The next level is formed by bound classes and bound functions. In the lowest level there are bound node types for different kinds of statements and expressions.
+In this representation all identifiers have been bound to refer to a specific symbol:
+a variable, parameter, constant, enumeration constant, type or function symbol, for example.
+The bound tree is produced from the abstract syntax tree by the \emph{binder} component.
+\item
+Finally there are two low-level intermediate representations: the LLVM and C representations that are produced from the bound tree representation by
+the \emph{emitter} component.
+\end{itemize}
 
-In the rest of this document we go through the semantic analysis and intermediate code generation that
-are intertwined in the Cmajor compiler, and also go through other components of the compiler and other phases of
-compilation that do not fit so nicely to the theory but are essential in any way.
+\section{The Structure of This Document}
 
-\end{enumerate}
-\end{exmp}
+The structure of the rest of this document is as follows:
+\begin{itemize}
+\item
+Chapters 2 and 3 are devoted to the lexical and syntactic analysis phases of compilation.
+We go through some theory and then see how they are implemented in the parser component of the Cmajor compiler.
+\item
+Chapter 4 describes the hierarchial symbol table component and presents algorithms for name lookup and construction of the symbol table.
+\item
+In chapters 5, 6 and 7 we inspect three utility components used by other components of the compiler:
+the type repository, the static evaluator and the type resolver.
+\item
+The following eight chapters descibe aspects of the binder component:
+\begin{itemize}
+\item
+We begin by binding types and values in chapter 8.
+\item
+Chapters 9, 10 and 11 describe function overload resolution:
+\begin{itemize}
+\item
+Chapter 9 presents function repositories.
+\item
+In chapter 10 we inspect the algorithms used in overload resolution.
+\item
+Chapter 11 discusses concepts and their role in the overload resolution.
+\end{itemize}
+\item
+Chapter 12 describes the operation of the expression binder and in chapter 13 we inspect various statement binders.
+\item
+In chapter 14 we concentrate on how templates are compiled.
+\item
+Chapter 15 bundles the previous pieces together by describing the binding of whole compile units.
+\end{itemize}
+\item
+Chapter 16 is devoted to the emitter component of the compiler
+\end{itemize}
 
 \chapter{Lexical Analysis}
 
@@ -5174,6 +5220,9 @@ The \verb|IntValue| with value 10 is popped from the evaluation stack and return
 \chapter{Type Resolver}\label{typeresolver}
 
 The type resolver resolves a type symbol for given type expression represented as an abstract syntax tree node.
+
+\section{Type Symbol Hierarchy}\label{typesymbolhierarchy}
+
 The type symbol returned is one of the following:
 \begin{verbatim}
 TypeSymbol
@@ -5199,6 +5248,8 @@ TypeSymbol
     ClassTypeSymbol
         TemplateTypeSymbol
     InterfaceTypeSymbol
+    DelegateTypeSymbol
+    ClassDelegateTypeSymbol
     TypeParameterSymbol
     NamespaceTypeSymbol
 \end{verbatim}
@@ -7242,6 +7293,7 @@ An instantiated concept has also a 16-byte identifier that is formed by the type
 rotated type identifiers of the types for which the concept is instantiated.
 
 The concept repository keeps mapping from identifiers computed for instantiated concepts to the instantiated concepts themselves.
+The instantiated concepts are cached per compilation unit basis.
 The following algorithm computes these identifiers:
 
 \begin{algo}\label{computeconceptid} Computing 16-byte Identifier for an Instantiated Concept. Inputs: A concept symbol, list of type arguments.
@@ -7378,7 +7430,8 @@ Otherwise, set $refinedConcept$ to the refined concept of the $refinedConcept$.
 \item
 Return \textbf{false}.
 \end{enumerate}
-Return \textbf{true}.
+\item
+Otherwise, return \textbf{true}.
 \end{enumerate}
 \end{enumerate}
 \item
@@ -7413,11 +7466,15 @@ If $B$ is \verb|BoundConjunctiveConstraint|, return $LLorLR$ \textbf{and} $RLorR
 Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LLorLR$ \textbf{or} $RLorRR$.
 \end{enumerate}
 \item
+Otherwise, $B$ is \verb|BoundAtomicConstraint|:
+\begin{enumerate}
+\item
 Let $LB$ be $imply(AL, B)$.
 \item
 Let $RB$ be $imply(AR, B)$.
 \item
 Return $LB$ \textbf{and} $RB$.
+\end{enumerate}
 \end{enumerate}
 \item
 Otherwise, if $A$ is \verb|BoundConjunctiveConstraint|,
@@ -7451,6 +7508,9 @@ If $B$ is \verb|BoundConjunctiveConstraint|, return $LorRL$ \textbf{and} $LorRR$
 Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LorRL$ \textbf{or} $LorRR$.
 \end{enumerate}
 \item
+Otherwise, $B$ is \verb|BoundAtomicConstraint|:
+\begin{enumerate}
+\item
 Let $LB$ be $imply(AL, B)$.
 \item
 Let $RB$ be $imply(AR, B)$.
@@ -7458,7 +7518,64 @@ Let $RB$ be $imply(AR, B)$.
 Return $LB$ \textbf{or} $RB$.
 \end{enumerate}
 \end{enumerate}
+\end{enumerate}
 \end{algo}
+
+\chapter{Binding Expressions}
+
+We start from the hierarchy of bound expression types.
+
+\section{Bound Expression Hierarchy}
+
+Here's the bound expression hierarchy:
+
+\begin{verbatim}
+BoundNode
+    BoundExpression
+        BoundLiteral
+        BoundStringLiteral
+        BoundConstant
+            BoundExceptionTableConstant
+            BoundClassHierarchyTableConstant
+        BoundEnumConstant
+        BoundLocalVariable
+            BoundExceptionCodeVariable
+        BoundParameter
+            BoundExceptionCodeParameter
+        BoundReturnValue
+        BoundMemberVariable
+        BoundFunctionId
+        BoundTypeExpression
+        BoundNamespaceExpression
+        BoundUnaryOp
+        BoundBinaryOp
+        BoundFunctionCall
+        BoundDelegateCall
+        BoundClassDelegateCall
+        BoundConversion
+        BoundCast
+        BoundIsExpression
+        BoundAsExpression
+        BoundSizeOfExpression
+        BoundDynamicTypeNameExpression
+        BoundBooleanBinaryExpression
+            BoundDisjunction
+            BoundConjunction
+\end{verbatim}
+
+Each kind of bound expression has a \emph{type} that is represented by a symbol class derived from the \verb|TypeSymbol| class
+(see section \ref{typesymbolhierarchy}).
+
+Many expressions are represented as instances of \verb|BoundUnaryOp| and \verb|BoundBinaryOp| classes.
+Therefore we begin by describing the algorithms that bind unary and binary operators.
+
+\section{Binding Unary and Binary Operators}
+
+\chapter{Binding Statements}
+
+\chapter{Template Repositories}
+
+\chapter{Binding Compile Units}
 
 \chapter{Emitter}
 
