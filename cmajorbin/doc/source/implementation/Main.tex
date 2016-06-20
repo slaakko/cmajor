@@ -4318,7 +4318,8 @@ Insert it in the $type id \rightarrow symbol$ mappings of the type repository, a
 \item
 Let $b$ be a base type symbol.
 \item
-Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a pointer derivation,
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$,
+$d$ being a list of derivations consisting a pointer derivation,
 and $a$ being empty list of array dimensions, and return it.
 \end{enumerate}
 \end{algo}
@@ -4328,7 +4329,8 @@ and $a$ being empty list of array dimensions, and return it.
 \item
 Let $b$ be a base type symbol.
 \item
-Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a reference derivation,
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$,
+$d$ being a list of derivations consisting a reference derivation,
 and $a$ being empty list of array dimensions, and return it.
 \end{enumerate}
 \end{algo}
@@ -4338,7 +4340,8 @@ and $a$ being empty list of array dimensions, and return it.
 \item
 Let $b$ be a base type symbol.
 \item
-Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting an rvalue reference derivation,
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$,
+$d$ being a list of derivations consisting an rvalue reference derivation,
 and $a$ being empty list of array dimensions, and return it.
 \end{enumerate}
 \end{algo}
@@ -4348,7 +4351,8 @@ and $a$ being empty list of array dimensions, and return it.
 \item
 Let $b$ be a base type symbol.
 \item
-Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a const derivation and a reference derivation,
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$,
+$d$ being a list of derivations consisting a const derivation and a reference derivation,
 and $a$ being empty list of array dimensions, and return it.
 \end{enumerate}
 \end{algo}
@@ -4358,8 +4362,34 @@ and $a$ being empty list of array dimensions, and return it.
 \item
 Let $b$ be a base type symbol.
 \item
-Make a derived type symbol using algorithm \ref{makederivedtype} with $d$ being a list of derivations consisting a const derivation and a pointer derivation,
-and $a$ being empty list of array dimensions, and return it.
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$, $d$ being a list of derivations consisting a const derivation and a pointer derivation, and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeconstcharptrtype} Making a Const Char Pointer Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be \verb|CharTypeSymbol|.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$, $d$ being a list of derivations consisting a const derivation and a pointer derivation, and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeconstwcharptrtype} Making a Const WChar Pointer Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be \verb|WCharTypeSymbol|.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$, $d$ being a list of derivations consisting a const derivation and a pointer derivation, and $a$ being empty list of array dimensions, and return it.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{makeconstucharptrtype} Making a Const UChar Pointer Type Symbol.
+\begin{enumerate}
+\item
+Let $b$ be \verb|UCharTypeSymbol|.
+\item
+Make a derived type symbol using algorithm \ref{makederivedtype} with base type being $b$, $d$ being a list of derivations consisting a const derivation and a pointer derivation, and $a$ being empty list of array dimensions, and return it.
 \end{enumerate}
 \end{algo}
 
@@ -7859,6 +7889,252 @@ Calls algorithm \ref{bindunaryop} with addrOfNode and group name \verb|"operator
 \item
 \verb|Visit(DerefNode& derefNode)|:\\
 Calls algorithm \ref{bindunaryop} with derefNode and group name \verb|"operator*"|.\\
+\item
+\verb|Visit(PostfixIncNode& postfixIncNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the subject contained by postfixIncNode.
+\item
+Pop the result of visitation, $value$, from the bound expression stack.
+\item
+Call \verb|Accept| member function of the subject contained by postfixIncNode.
+\item
+Call algorithm \ref{bindunaryop} with postfixIncNode and group name \verb|"operator++"|.\\
+\item
+Pop the result, $incExpr$, from the bound expression stack.
+\item
+Create a \verb|SimpleStatement|, $incStatement$, with $incExpr$.
+\item
+Create a \verb|BoundPostfixIncDecExpr| with $value$ and $incStatement$, and push it to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(PostfixDecNode& postfixDecNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the subject contained by postfixDecNode.
+\item
+Pop the result of visitation, $value$, from the bound expression stack.
+\item
+Call \verb|Accept| member function of the subject contained by postfixDecNode.
+\item
+Call algorithm \ref{bindunaryop} with postfixDecNode and group name \verb|"operator--"|.\\
+\item
+Pop the result, $decExpr$, from the bound expression stack.
+\item
+Create a \verb|SimpleStatement|, $decStatement$, with $decExpr$.
+\item
+Create a \verb|BoundPostfixIncDecExpr| with $value$ and $decStatement$, and push it to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(BooleanLiteralNode& booleanLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|BoolValue| $value$ with value contained by the booleanLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|BoolTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(SByteLiteralNode& sbyteLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create an \verb|SByteValue| $value$ with value contained by the sbyteLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|SByteTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ByteLiteralNode& byteLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|ByteValue| $value$ with value contained by the byteLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|ByteTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ShortLiteralNode& shortLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|ShortValue| $value$ with value contained by the shortLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|ShortTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UShortLiteralNode& ushortLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|UShortValue| $value$ with value contained by the ushortLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|UShortTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(IntLiteralNode& intLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|IntValue| $value$ with value contained by the intLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|IntTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UIntLiteralNode& uintLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|UIntValue| $value$ with value contained by the uintLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|UIntTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(LongLiteralNode& longLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|LongValue| $value$ with value contained by the longLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|LongTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ULongLiteralNode& ulongLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|ULongValue| $value$ with value contained by the ulongLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|ULongTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(FloatLiteralNode& floatLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|FloatValue| $value$ with value contained by the floatLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|FloatTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(DoubleLiteralNode& doubleLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|DoubleValue| $value$ with value contained by the doubleLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|DoubleTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(CharLiteralNode& charLiteralNode)|:
+\begin{enumerate}
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Create a \verb|CharValue| $value$ with value contained by the charLiteralNode.
+\item
+Set the value of $node$ to $value$.
+\item
+Set the type of $node$ to \verb|CharTypeSymbol|.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(StringLiteralNode& stringLiteralNode)|:
+\begin{enumerate}
+\item
+Let $type$ be a type returned by algorithm \ref{makeconstcharptrtype}.
+\item
+Install a string contained by stringLiteralNode to the string repository. Let $id$ be the identifier returned for it.
+\item
+Create a \verb|BoundStringLiteral| $node$ with $id$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(WStringLiteralNode& wstringLiteralNode)|:
+\begin{enumerate}
+\item
+Let $type$ be a type returned by algorithm \ref{makeconstwcharptrtype}.
+\item
+Install a string contained by wstringLiteralNode to the string repository. Let $id$ be the identifier returned for it.
+\item
+Create a \verb|BoundStringLiteral| $node$ with $id$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UStringLiteralNode& ustringLiteralNode)|:
+\begin{enumerate}
+\item
+Let $type$ be a type returned by algorithm \ref{makeconstucharptrtype}.
+\item
+Install a string contained by ustringLiteralNode to the string repository. Let $id$ be the identifier returned for it.
+\item
+Create a \verb|BoundStringLiteral| $node$ with $id$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
 \end{itemize}
 \end{algo}
 
