@@ -251,7 +251,7 @@ it is possible to create $N$ times $M$ compilers by writing only $N$ plus $M$ pr
 
 Intermediate code is the glue between the front and back ends of a compiler.
 
-\section{Representations of Cmajor Programs}
+\section{Representations of Cmajor Programs}\label{representations}
 
 The Cmajor compiler front-end has many intermediate representations for Cmajor programs:
 \begin{itemize}
@@ -284,7 +284,7 @@ Chapter 4 describes the hierarchial symbol table component and presents algorith
 In chapters 5, 6 and 7 we inspect three utility components used by other components of the compiler:
 the type repository, the static evaluator and the type resolver.
 \item
-The following eight chapters descibe aspects of the binder component:
+The following eight chapters descibe different aspects of the binder component:
 \begin{itemize}
 \item
 We begin by binding types and values in chapter 8.
@@ -6046,11 +6046,13 @@ We begin by describing the main algorithm for overload resolution, and then take
 The task of overload resolution is to select a single best matching function overload from a set of viable function overloads for a function call.
 Overload resolution proceeds as follows:
 
-\begin{algo} Overload Resolution. Inputs: the group name and arity of searched functions, and container and file scopes to search.
+\begin{algo} Overload Resolution\label{resolveoverload}. Inputs: The group name and arity of searched functions.
+A list of argument information structures (\ref{arginfo}). A list of $<$scope\_kinds, scope$>$ pairs,
+where scope\_kinds is a combination of \verb|this|, \verb|base|, \verb|parent| and \verb|file| scope kinds, and scope is a container or file scope.
 \begin{enumerate}
 \item
-A \emph{set of viable functions} is collected from the function repositories (chapter \ref{functionrepositories}) and from the symbol table.
-Each viable function has the same group name (see definition \ref{groupname}) and arity (see definition \ref{arity}).
+A \emph{set of viable functions} is collected from the function repositories (chapter \ref{functionrepositories}) and from the symbol table from the
+provided scopes. Each viable function has the same group name (see definition \ref{groupname}) and arity (see definition \ref{arity}).
 \item
 For each viable function:
 \begin{enumerate}
@@ -6122,7 +6124,7 @@ However, \verb|foo(int)| is a better match than \verb|foo(long)|, because the \e
 the conversion distance of \textbf{sbyte} to \textbf{long}, i.e. 5.
 In this case the overload resolution is successful, and function \verb|foo(int)| will be called.
 \end{exmp}
-
+\clearpage
 Now, consider the following code:
 
 \begin{exmp} Unsuccessful Overload Resolution.
@@ -6685,7 +6687,7 @@ Return \textbf{true}.
 \chapter{Concepts}
 
 In this chapter we will discuss the role of concepts in the overload resolution process,
-and then go though the algorithms for checking and comparing constraints.
+and then investigate the algorithms for checking and comparing constraints.
 
 \section{Concepts in Overload Resolution}
 
@@ -7523,11 +7525,14 @@ Return $LB$ \textbf{or} $RB$.
 
 \chapter{Binding Expressions}
 
-We start from the hierarchy of bound expression types.
+You may want to recall what is said about the \emph{bound tree} representation in section \ref{representations}.
+The component that creates bound expression nodes from abstract syntax tree expression nodes is called the \emph{expression binder}.
+The expression binder has a stack of bound expressions that contains the intermediate and final bound expression nodes.
+We begin by investigating the bound expression node hierarchy.
 
-\section{Bound Expression Hierarchy}
+\section{Bound Expression Node Hierarchy}
 
-Here's the bound expression hierarchy:
+Here's the bound expression node hierarchy:
 
 \begin{verbatim}
 BoundNode
@@ -7564,12 +7569,298 @@ BoundNode
 \end{verbatim}
 
 Each kind of bound expression has a \emph{type} that is represented by a symbol class derived from the \verb|TypeSymbol| class
-(see section \ref{typesymbolhierarchy}).
-
-Many expressions are represented as instances of \verb|BoundUnaryOp| and \verb|BoundBinaryOp| classes.
+(see section \ref{typesymbolhierarchy}). Many expressions are represented as instances of \verb|BoundUnaryOp| and \verb|BoundBinaryOp| classes.
 Therefore we begin by describing the algorithms that bind unary and binary operators.
 
 \section{Binding Unary and Binary Operators}
+
+When binding unary and binary operators the expression binder first visits the abstract syntax tree nodes that represents operands of the unary or binary operator,
+creates bound nodes for the operands and pushes them to the bound expression stack. Then the abstract syntax tree node for the operator is visited.
+At this point the expression binder pops the operands from the bound expression stack and resolves the operator function symbol using overload resolution.
+It then creates \verb|BoundUnaryOp| or \verb|BoundBinaryOp| node that is bound to the operator function symbol and pushes it to the bound expression stack.
+
+\begin{algo}\label{bindunaryop} Bind Unary Operator.
+Inputs: An abstract syntax tree node that represents the unary operator. The group name of the unary operator function.
+The algorithm first tries to bind the unary operator to a member function symbol.
+If that does not succeed, it binds the unary operator to a nonmember function symbol.
+The group names for the unary operator functions bound using this algorithm are:
+\begin{enumerate}
+\item
+\verb|operator!|
+\item
+\verb|operator++|
+\item
+\verb|operator--|
+\item
+\verb|operator+|
+\item
+\verb|operator-|
+\item
+\verb|operator~|
+\item
+\verb|operator&|
+\item
+\verb|operator*|
+\item
+\verb|operator->|
+\end{enumerate}
+The steps for binding a unary operator are:
+\begin{enumerate}
+\item
+Pop the $operand$ from the bound expression stack.
+\item
+Let $t$ be the plain type for the type of the $operand$ (algorithm \ref{makeplaintype}).
+\item
+Let $conversions$ be an empty list of function symbols.
+\item
+Let $memFunArgs$ be a list of argument information structures (\ref{arginfo}).
+\item
+Let $memFunLookups$ be a list of scope lookups.
+\item
+Add $<$class scope of $t$, \verb|this| $|$ \verb|base|$>$ to $memFunLookups$.
+\item
+Let $p$ be of type pointer to $t$. Add $p$ to the $memFunArgs$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the group name of the unary operator function, $memFunArgs$, $memFunLookups$ and $conversions$.
+\item
+Set $fun$ to a function symbol resolved.
+\item
+If resolution did not succeed,
+\begin{enumerate}
+\item
+Let $freeFunArgs$ be a list of argument information structures (\ref{arginfo}).
+\item
+Add $t$ and argument category of $t$ to $freeFunArgs$.
+\item
+Let $freeFunLookups$ be a list of scope lookups.
+\item
+Add $<$container scope, \verb|this| $|$ \verb|base| $|$ \verb|parent|$>$ to $freeFunLookups$.
+\item
+Add $<$namespace scope of $t$, \verb|this| $|$ \verb|base| $|$ \verb|parent|$>$ to $freeFunLookups$.
+\item
+Add $<$file scope, \verb|file|$>$ to $freeFunLookups$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the group name of the unary operator function, $freeFunArgs$, $freeFunLookups$ and $conversions$.
+\item
+Set $fun$ to a function symbol resolved.
+\end{enumerate}
+\item
+If $conversions[0]$ is not null, replace $operand$ with a \verb|BoundConversion| node containing a conversion function $conversions[0]$ and $operand$.
+\item
+Create a \verb|BoundUnaryOp| $op$ with a function symbol $fun$ and operand $operand$.
+\item
+Set the type of $op$ to the return type of $fun$.
+\item
+Push $op$ to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{bindbinaryop} Bind Binary Operator.
+Inputs: An abstract syntax tree node that represents the binary operator. The group name of the binary operator function.
+The algorithm first tries to bind the binary operator to a member function symbol.
+If that does not succeed, it binds the binary operator to a nonmember function symbol.
+The group names for the binary operator functions bound using this algorithm are:
+\begin{enumerate}
+\item
+\verb+operator|+
+\item
+\verb|operator^|
+\item
+\verb|operator&|
+\item
+\verb|operator==|
+\item
+\verb|operator<|
+\item
+\verb|operator<<|
+\item
+\verb|operator>>|
+\item
+\verb|operator+|
+\item
+\verb|operator-|
+\item
+\verb|operator*|
+\item
+\verb|operator/|
+\item
+\verb|operator%|
+\item
+\verb|operator[]|
+\end{enumerate}
+The steps for binding a binary operator are:
+\begin{enumerate}
+\item
+Pop the $rightOperand$ from the bound expression stack.
+\item
+Pop the $leftOperand$ from the bound expression stack.
+\item
+Let $t$ be the plain type for the type of the $leftOperand$ (algorithm \ref{makeplaintype}).
+\item
+Let $conversions$ be an empty list of function symbols.
+\item
+Let $memFunArgs$ be a list of argument information structures (\ref{arginfo}).
+\item
+Let $memFunLookups$ be a list of scope lookups.
+\item
+Add $<$class scope of $t$, \verb|this| $|$ \verb|base|$>$ to $memFunLookups$.
+\item
+Let $p$ be of type pointer to $t$. Add $p$ to the $memFunArgs$.
+\item
+Add the type of the $rightOperand$ and the argument category of the $rightOperand$ to $memFunArgs$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the group name of the binary operator function, $memFunArgs$, $memFunLookups$ and $conversions$.
+\item
+Set $fun$ to a function symbol resolved.
+\item
+If resolution did not succeed,
+\begin{enumerate}
+\item
+Let $freeFunArgs$ be a list of argument information structures (\ref{arginfo}).
+\item
+Add $t$ and argument category of $t$ to $freeFunArgs$.
+\item
+Add the type of the $rightOperand$ and the argument category of the $rightOperand$ to $freeFunArgs$.
+\item
+Let $freeFunLookups$ be a list of scope lookups.
+\item
+Add $<$container scope, \verb|this| $|$ \verb|base| $|$ \verb|parent|$>$ to $freeFunLookups$.
+\item
+Add $<$namespace scope of $t$, \verb|this| $|$ \verb|base| $|$ \verb|parent|$>$ to $freeFunLookups$.
+\item
+Add $<$namespace scope of type of $rightOperand$, \verb|this| $|$ \verb|base| $|$ \verb|parent|$>$ to $freeFunLookups$.
+\item
+Add $<$file scope, \verb|file|$>$ to $freeFunLookups$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the group name of the binary operator function, $freeFunArgs$, $freeFunLookups$ and $conversions$.
+\item
+Set $fun$ to a function symbol resolved.
+\end{enumerate}
+\item
+If $conversions[0]$ is not null, replace $leftOperand$ with a \verb|BoundConversion| containing a conversion function $conversions[0]$ and $leftOperand$.
+\item
+If $conversions[1]$ is not null, replace $leftOperand$ with a \verb|BoundConversion| containing a conversion function $conversions[1]$ and $rightOperand$.
+\item
+Create a \verb|BoundBinaryOp| $op$ with a function symbol $fun$ and operands $leftOperand$ and $rightOperand$.
+\item
+Set the type of $op$ to the return type of $fun$.
+\item
+Push $op$ to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\section{Expression Binder}
+
+\begin{algo} Binding an Expression.
+The expression binder is an abstract syntax tree visitor.
+It overrides the following visitation points:
+\begin{itemize}
+\item
+\verb|EndVisit(BitOrNode& bitOrNode)|:\\
+Calls algorithm \ref{bindbinaryop} with bitOrNode and group name \verb+"operator|"+.
+\item
+\verb|EndVisit(BitXorNode& bitXorNode)|:\\
+Calls algorithm \ref{bindbinaryop} with bitXorNode and group name \verb|"operator^"|.
+\item
+\verb|EndVisit(BitAndNode& bitAndNode)|:\\
+Calls algorithm \ref{bindbinaryop} with bitAndNode and group name \verb|"operator&"|.
+\item
+\verb|EndVisit(EqualNode& equalNode)|:\\
+Calls algorithm \ref{bindbinaryop} with equalNode and group name \verb|"operator=="|.
+\item
+\verb|EndVisit(NotEqualNode& notEqualNode)|:\\
+Note: \verb|a != b <=> !(a == b)|\\
+Calls algorithm \ref{bindbinaryop} with notEqualNode and group name \verb|"operator=="|.\\
+Calls algorithm \ref{bindunaryop} with notEqualNode and group name \verb|"operator!"|.\\
+\item
+\verb|EndVisit(LessNode& lessNode)|:\\
+Calls algorithm \ref{bindbinaryop} with notEqualNode and group name \verb|"operator<"|.\\
+\item
+\verb|EndVisit(GreaterNode& greaterNode)|:\\
+Note: \verb|a > b <=> b < a|\\
+Exchange the operands in the bound expression stack and then bind \verb|operator<|:
+\begin{enumerate}
+\item
+Pop $rightOperand$ from the bound expression stack.
+\item
+Pop $leftOperand$ from the bound expression stack.
+\item
+Push $rightOperand$ to the bound expression stack.
+\item
+Push $leftOperand$ to the bound expression stack.
+\item
+Call algorithm \ref{bindbinaryop} with greaterNode and group name \verb|"operator<"|.
+\end{enumerate}
+\item
+\verb|EndVisit(LessOrEqualNode& lessOrEqualNode)|:\\
+Note: \verb|a <= b <=> !(b < a)|\\
+Exchange the operands in the bound expression stack, and then bind \verb|operator<| and \verb|operator!|:
+\begin{enumerate}
+\item
+Pop $rightOperand$ from the bound expression stack.
+\item
+Pop $leftOperand$ from the bound expression stack.
+\item
+Push $rightOperand$ to the bound expression stack.
+\item
+Push $leftOperand$ to the bound expression stack.
+\item
+Call algorithm \ref{bindbinaryop} with lessOrEqualNode and group name \verb|"operator<"|.
+\item
+Call algorithm \ref{bindunaryop} with lessOrEqualNode and group name \verb|"operator!"|.
+\end{enumerate}
+\item
+\verb|EndVisit(GreaterOrEqualNode& greaterOrEqualNode)|:\\
+Note: \verb|a >= b <=> !(a < b)|\\
+Calls algorithm \ref{bindbinaryop} with greaterOrEqualNode and group name \verb|"operator<"|.\\
+Calls algorithm \ref{bindunaryop} with greaterOrEqualNode and group name \verb|"operator!"|.\\
+\item
+\verb|EndVisit(ShiftLeftNode& shiftLeftNode)|:\\
+Calls algorithm \ref{bindbinaryop} with shiftLeftNode and group name \verb|"operator<<"|.\\
+\item
+\verb|EndVisit(ShiftRightNode& shiftRightNode)|:\\
+Calls algorithm \ref{bindbinaryop} with shiftRightNode and group name \verb|"operator>>"|.\\
+\item
+\verb|EndVisit(AddNode& addNode)|:\\
+Calls algorithm \ref{bindbinaryop} with addNode and group name \verb|"operator+"|.\\
+\item
+\verb|EndVisit(SubNode& subNode)|:\\
+Calls algorithm \ref{bindbinaryop} with subNode and group name \verb|"operator-"|.\\
+\item
+\verb|EndVisit(MulNode& mulNode)|:\\
+Calls algorithm \ref{bindbinaryop} with mulNode and group name \verb|"operator*"|.\\
+\item
+\verb|EndVisit(DivNode& divNode)|:\\
+Calls algorithm \ref{bindbinaryop} with divNode and group name \verb|"operator/"|.\\
+\item
+\verb|EndVisit(RemNode& remNode)|:\\
+Calls algorithm \ref{bindbinaryop} with remNode and group name \verb|"operator%"|.\\
+\item
+\verb|EndVisit(PrefixIncNode& prefixIncNode)|:\\
+Calls algorithm \ref{bindunaryop} with prefixIncNode and group name \verb|"operator++"|.\\
+\item
+\verb|EndVisit(PrefixDecNode& prefixDecNode)|:\\
+Calls algorithm \ref{bindunaryop} with prefixDecNode and group name \verb|"operator--"|.\\
+\item
+\verb|EndVisit(UnaryPlusNode& unaryPlusNode)|:\\
+Calls algorithm \ref{bindunaryop} with unaryPlsuNode and group name \verb|"operator+"|.\\
+\item
+\verb|EndVisit(UnaryMinusNode& unaryMinusNode)|:\\
+Calls algorithm \ref{bindunaryop} with unaryMinusNode and group name \verb|"operator-"|.\\
+\item
+\verb|EndVisit(NotNode& notNode)|:\\
+Calls algorithm \ref{bindunaryop} with notNode and group name \verb|"operator!"|.\\
+\item
+\verb|EndVisit(ComplementNode& complementNode)|:\\
+Calls algorithm \ref{bindunaryop} with complementNode and group name \verb|"operator~"|.\\
+\item
+\verb|Visit(AddrOfNode& addrOfNode)|:\\
+Calls algorithm \ref{bindunaryop} with addrOfNode and group name \verb|"operator&"|.\\
+\item
+\verb|Visit(DerefNode& derefNode)|:\\
+Calls algorithm \ref{bindunaryop} with derefNode and group name \verb|"operator*"|.\\
+\end{itemize}
+\end{algo}
 
 \chapter{Binding Statements}
 
