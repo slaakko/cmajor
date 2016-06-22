@@ -7779,6 +7779,47 @@ Push $op$ to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
+\section{Binding Invoke Expressions}
+
+An invoke expression is of the form $r(e_1, \ldots, e_n)$, where $r$ is called the \emph{receiver}, and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+Invoke expressions are used in the following contexts:
+
+\begin{itemize}
+\item
+When invoking a member function: $mf(e_1, \ldots, e_n)$, where $mf$ is a name of a member function,
+and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When invoking a nonmember function: $f(e_1, \ldots, e_n)$, where $f$ is a name of a nonmember function,
+and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When constructing a delegate: $D(f)$, where $D$ is a name of a delegate type and $f$ is a name of a nonmember function or a static member function.
+\item
+When constructing a class delegate: $CD(mf)$, where $CD$ is a name of a class delegate type and $mf$ is name of a nonstatic member function.
+\item
+When constructing an interface object: $I(x)$, where $I$ is a name of an interface type, and type of $x$ is a pointer to a class type.
+\item
+When constructing a temporary: $T(e_1, \ldots, e_n)$, where $T$ is a name of a type other than delegate, class delegate, or interface type,
+and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When invoking a delegate: $d(e_1, \ldots, e_n)$, where $d$ is a delegate, and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When invoking a class delegate: $cd(e_1, \ldots, e_n)$, where $cd$ is class delegate, and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When invoking a function object: $a(e_1, \ldots, e_n)$, where type of $a$ is a class type, and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\item
+When invoking a member function through an interface object: $i(e_1, \ldots, e_n)$, where type of $i$ is an interface type,
+and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
+\end{itemize}
+
+\begin{algo}\label{bindinvoke}
+\begin{enumerate}
+\item
+Pop $arguments$ from the bound expression stack.
+\item
+Pop $receiver$ from the bound expression stack.
+\end{enumerate}
+\end{algo}
+
 \section{Expression Binder}
 
 \begin{algo} Binding an Expression.
@@ -8134,6 +8175,332 @@ Create a \verb|BoundStringLiteral| $node$ with $id$.
 Set the type of $node$ to $type$.
 \item
 Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(NullLiteralNode& nullLiteralNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|NullPtrTypeSymbol|.
+\item
+Create a \verb|NullValue| $value$.
+\item
+Create a \verb|BoundLiteral| $node$.
+\item
+Set the value of node to $value$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(BoolNode& boolNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|BoolTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(SByteNode& sbyteNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|SByteTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ByteNode& byteNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|ByteTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ShortNode& shortNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|ShortTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UShortNode& ushortNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|UShortTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(IntNode& intNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|IntTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UIntNode& uintNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|UIntTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(LongNode& longNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|LongTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(ULongNode& ulongNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|ULongTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(FloatNode& floatNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|FloatTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(DoubleNode& doubleNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|DoubleTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(CharNode& charNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|CharTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(WCharNode& wcharNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|WCharTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(UCharNode& ucharNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|UCharTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(VoidNode& voidNode)|:
+\begin{enumerate}
+\item
+Let $type$ be \verb|VoidTypeSymbol|.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:
+\begin{enumerate}
+\item
+Use the type resolver to resolve the base type contained by the derivedTypeExprNode (algorithm \ref{resolvingtype}). Let $b$ be the base type resolved.
+\item
+Use the static evaluator to evaluate the array dimensions contained by the derivedTypeExprNode (algorithm \ref{evalconstantexpr}).
+Let $a$ be the list of evaluated array dimensions.
+\item
+Let $type$ be the derived type symbol returned by algorithm \ref{makederivedtype}) for derivations contained by the derivedTypeExprNode, base type $b$ and
+array dimensions $a$.
+\item
+Create a \verb|BoundTypeExpression| $node$.
+\item
+Set the type of $node$ to $type$.
+\item
+Push $node$ to the bound expression stack.
+\end{enumerate}
+\item
+\verb|EndVisit(DotNode& dotNode)|:\\
+\begin{enumerate}
+\item
+Pop $expr$ from the bound expression stack.
+\item
+if $expr$ is \verb|BoundNamespaceExpression| or $expr$ is \verb|BoundTypeExpression|:
+\begin{enumerate}
+\item
+Let $containerSymbol$ be null.
+\item
+If $expr$ is \verb|BoundNamespaceExpression| set $containerSymbol$ to the namespace symbol contained by $expr$.
+\item
+Otherwise, $expr$ is \verb|BoundTypeExpression|, so
+\begin{enumerate}
+\item
+Let $typeSymbol$ be the type symbol contained by $expr$.
+\item
+If $typeSymbol$ is \verb|ClassTypeSymbol| or $typeSymbol$ is \verb|EnumTypeSymbol|, set $containerSymbol$ to $typeSymbol$.
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Let $containerScope$ be the container scope of $containerSymbol$.
+\item
+Lookup identifier contained by the dotNode from $containerScope$ using \verb|this| $|$ \verb|base| scope lookup.
+\item
+Let $symbol$ be the symbol found.
+\item
+If $symbol$ is not null,
+\begin{enumerate}
+\item
+Bind $symbol$ using algorithm \ref{bindsymbol}.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise,
+\begin{enumerate}
+\item
+Let $type$ be the plain type of $expr$ (algorithm \ref{makeplaintype}).
+\item
+If $type$ is \verb|ClassTypeSymbol|:
+\begin{enumerate}
+\item
+Let $containerScope$ be the container scope of $type$.
+\item
+Lookup identifier contained by the dotNode from $containerScope$ using \verb|this| $|$ \verb|base| scope lookup.
+\item
+Let $symbol$ be the symbol found.
+\item
+If $symbol$ is not null,
+\begin{enumerate}
+\item
+Let $classObject$ be $expr$.
+\item
+Bind $symbol$ using algorithm \ref{bindsymbol}.
+\item
+Pop $symbolExpr$ from the bound expression stack.
+\item
+If $symbolExpr$ is \verb|BoundFunctionGroup|, push $symbolExpr$ to the bound expression stack and push $classObject$ to the bound expression stack.
+\item
+Otherwise, if $symbolExpr$ is \verb|BoundMemberVariable|:
+\begin{itemize}
+\item
+Set the class object of $symbolExpr$ to $classObject$.
+\item
+Push $symbolExpr$ to the bound expression stack.
+\end{itemize}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, if $type$ is \verb|InterfaceTypeSymbol|:
+\begin{enumerate}
+\item
+Let $containerScope$ be the container scope of $type$.
+\item
+Lookup identifier contained by the dotNode from $containerScope$ using \verb|this| scope lookup.
+\item
+Let $symbol$ be the symbol found.
+\item
+If $symbol$ is not null,
+\begin{enumerate}
+\item
+Bind $symbol$ using algorithm \ref{bindsymbol}.
+\item
+Pop $symbolExpr$ from the bound expression stack.
+\item
+If $symbolExpr$ is \verb|BoundFunctionGroupSymbol|:
+\begin{itemize}
+\item
+Push $symbolExpr$ to the bound expression stack.
+\item
+Push $expr$ to the bound expression stack.
+\end{itemize}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
 \end{enumerate}
 \end{itemize}
 \end{algo}
