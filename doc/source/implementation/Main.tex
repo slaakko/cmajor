@@ -7609,6 +7609,8 @@ creates bound nodes for the operands and pushes them to the bound expression sta
 At this point the expression binder pops the operands from the bound expression stack and resolves the operator function symbol using overload resolution.
 It then creates \verb|BoundUnaryOp| or \verb|BoundBinaryOp| node that is bound to the operator function symbol and pushes it to the bound expression stack.
 
+\subsection{Binding a Unary Operator}
+
 \begin{algo}\label{bindunaryop} Bind Unary Operator.
 Inputs: An abstract syntax tree node that represents the unary operator. The group name of the unary operator function.
 The algorithm first tries to bind the unary operator to a member function symbol.
@@ -7684,6 +7686,8 @@ Set the type of $op$ to the return type of $fun$.
 Push $op$ to the bound expression stack.
 \end{enumerate}
 \end{algo}
+
+\subsection{Binding a Binary Operator}
 
 \begin{algo}\label{bindbinaryop} Bind Binary Operator.
 Inputs: An abstract syntax tree node that represents the binary operator. The group name of the binary operator function.
@@ -7811,12 +7815,587 @@ When invoking a member function through an interface object: $i(e_1, \ldots, e_n
 and $e_1$, \ldots, $e_n$ are argument expressions ($n \geq 0$).
 \end{itemize}
 
-\begin{algo}\label{bindinvoke}
+\subsection{Bind Invoke Algorithm}
+
+\begin{algo}\label{bindinvoke} Bind Invoke.
 \begin{enumerate}
 \item
 Pop $arguments$ from the bound expression stack.
 \item
 Pop $receiver$ from the bound expression stack.
+\item
+Let $fun$ be null.
+\item
+Let $type$ be null.
+\item
+If $receiver$ is \verb|BoundFunctionGroup|
+\begin{enumerate}
+\item
+If the current function being compiled is a nonstatic member function:
+\begin{enumerate}
+\item
+Try to bind member function symbol to $fun1$ by calling algorithm \ref{bindinvokememfun} with $arguments$.
+\end{enumerate}
+\item
+Try to bind function symbol to $fun2$ by calling algorithm \ref{bindinvokefun} with $arguments$.
+\item
+If $fun1$ is not null and $fun2$ is not null
+\begin{enumerate}
+\item
+If $fun1$ is equal to $fun2$, set $fun2$ to null.
+\item
+Otherwise, if $fun1$ is better match than $fun2$, set $fun2$ to null.
+\item
+Otherwise, if $fun2$ is better match than $fun1$, set $fun1$ to null.
+\end{enumerate}
+\item
+If $fun1$ is not null and $fun2$ is null, set $fun$ to $fun1$, and set $type$ to type returned by $fun1$.
+\item
+Otherwise, if $fun2$ is not null and $fun1$ is null, set $fun$ to $fun2$, and set $type$ to type returned by $fun2$.
+\item
+Otherwise, if $fun1$ is not null and $fun2$ is not null, report ambiguous overload error.
+\item
+Otherwise, $fun1$ is null and $fun2$ is null, so report overload resolution failed error.
+\end{enumerate}
+\item
+Otherwise, if $receiver$ is \verb|BoundTypeExpression|,
+\begin{enumerate}
+\item
+Bind a function symbol that constructs a temporary to $fun$ using algorithm \ref{bindinvokeconstructtemporary}.
+\item
+Set $type$ to the type symbol contained by the \verb|BoundTypeExpression|.
+\end{enumerate}
+\item
+Otherwise, if type of $receiver$ is \verb|DelegateTypeSymbol|, use algorithm \ref{bindinvokedelegate}
+to generate a call to a delegate with $arguments$ and return.
+\item
+Otherwise, if type of $receiver$ is \verb|ClasDelegateTypeSymbol|, use algorithm \ref{bindinvokeclassdelegate}
+to generate a call to a class delegate with $arguments$ and return.
+\item
+Otherwise, if type of $receiver$ is \verb|ClassTypeSymbol|, use algorithm \ref{bindinvokeopapply}
+to bind application of a function object with $arguments$ to $fun$.
+\item
+Otherwise, report error.
+\item
+Create a \verb|BoundFunctionCall| with $fun$ and $arguments$, set its type to $type$, and push it to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\subsection{Invoking a Member Function}
+
+\begin{algo}\label{bindinvokememfun} Bind Invoke Member Function.
+Inputs: The group name of the function to call, list of argument expressions called $arguments$,
+reference to a list of conversion function symbols called $conversions$.
+The algorithm returns a function symbol of bound function if successful, or null, if unsuccessful.
+\begin{enumerate}
+\item
+Let $memFunArgs$ be a list of argument information structures (\ref{arginfo}).
+\item
+Let $memFunLookups$ be a list of scope lookups.
+\item
+Let $thisParam$ be the first parameter of the current function being compiled.
+\item
+Let $thisParamType$ be the type of the $thisParam$.
+\item
+Add $thisParamType$ to $memFunArgs$.
+\item
+Add a scope lookup \verb|this| $|$ \verb|base| for the class scope of the base type of $thisParamType$ to $memFunLookups$.
+\item
+For each $argument$ in $arguments$:
+\begin{enumerate}
+\item
+Add the type of $argument$ and category of $argument$ to $memFunArgs$. If the argument is a temporary, set \verb|bindToRvalueRef| to \textbf{true}.
+\end{enumerate}
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the group name of the function to call, $memFunArgs$, $memFunLookups$ and $conversions$.
+\item
+Let $fun$ be the resolved overload.
+\item
+If $fun$ is not null, create \verb|BoundParameter| with the value of $thisParam$, and insert it to the front of $arguments$.
+\item
+Return $fun$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Invoking a Function}
+
+\begin{algo}\label{bindinvokefun} Bind Invoke Function.
+Inputs: A function group symbol called $functionGroup$, list of argument expressions called $arguments$,
+reference to a list of conversion function symbols called $conversions$.
+The algorithm returns a function symbol of bound function if successful, or null, if unsuccessful.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+Let $lookups$ be a list of scope lookups.
+\item
+For each $argument$ in $arguments$
+\begin{enumerate}
+\item
+Add a scope lookup \verb|this| $|$ \verb|base| $|$ \verb|parent| with the class scope of $argument$ to $lookups$.
+\item
+Add the type and category of $argument$ to $args$. If $argument$ is a temporary set \verb|bindToRvalueRef| to \textbf{true}.
+\end{enumerate}
+\item
+Add a scope lookup \verb|this| $|$ \verb|base| $|$ \verb|parent| with the container scope of $functionGroup$ to $lookups$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with the name of $functionGroup$, $args$, $lookups$ and $conversions$.
+\item
+Let $fun$ be the resolved overload.
+\item
+Return $fun$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Invoking a Delegate}
+
+\begin{algo}\label{bindinvokedelegate} Bind Delegate Call.
+Inputs: A delegate type symbol $delegateType$, list of argument expressions called $arguments$.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+For each $argument$ in $arguments$
+\begin{enumerate}
+\item
+Add the type and category of $argument$ to $args$. If $argument$ is a temporary set \verb|bindToRvalueRef| to \textbf{true}.
+\end{enumerate}
+\item
+Call algorithm \ref{findconversions} to find conversions for parameter types of $delegateType$ and $args$.
+\item
+If find conversions succeeded, create a \verb|BoundDelegateCall| with $delegateType$ and $arguments$, set its type to the return type of $delegateType$,
+and push it to the bound expression stack.
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{algo}
+
+\subsection{Invoking a Class Delegate}
+
+\begin{algo}\label{bindinvokeclassdelegate} Bind Class Delegate Call.
+Inputs: A class delegate type symbol $classDelegateType$, list of argument expressions called $arguments$.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+For each $argument$ in $arguments$
+\begin{enumerate}
+\item
+Add the type and category of $argument$ to $args$. If $argument$ is a temporary set \verb|bindToRvalueRef| to \textbf{true}.
+\end{enumerate}
+\item
+Call algorithm \ref{findconversions} to find conversions for parameter types of $classDelegateType$ and $args$.
+\item
+If find conversions succeeded, create a \verb|BoundClassDelegateCall| with $classDelegateType$ and $arguments$,
+set its type to the return type of $classDelegateType$, and push it to the bound expression stack.
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{algo}
+
+\subsection{Invoking a Function Object}
+
+\begin{algo}\label{bindinvokeopapply} Bind Invoke a Function Object.
+Inputs: Type of receiver, list of argument expressions called $arguments$.
+The algorithm returns resolved function symbol.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+Let $lookups$ be list of scope lookups.
+\item
+Add a scope lookup \verb|this| $|$ \verb|base| with the class scope of the receiver class.
+\item
+Let $reveiverPtrType$ be the type of pointer to the receiver class.
+\item
+For each $argument$ in $arguments$
+\begin{enumerate}
+\item
+Add the type and category of $argument$ to $args$. If $argument$ is a temporary set \verb|bindToRvalueRef| to \textbf{true}.
+\end{enumerate}
+\item
+Call overload resolution algorithm \ref{resolveoverload} with function group name ``operator()'', $args$, $lookups$ and $conversions$.
+\item
+Let $fun$ be the resolved overload.
+\item
+Return $fun$.
+\end{enumerate}
+\end{algo}
+
+\subsection{Constructing a Temporary}
+
+The following algorithm constructs a temporary object of given type.
+The type can be a delegate type, a class delegate type, an interface type, a class type, or a basic type.
+
+\begin{algo}\label{bindinvokeconstructtemporary} Constructing a Temporary.
+Inputs: The type of temporary, list of argument expressions called $arguments$.
+The algorithm returns resolved function symbol.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+Add pointer to the type of temporary to $args$.
+\item
+Let $lookups$ be list of scope lookups.
+\item
+Add a scope lookup \verb|this| $|$ \verb|base| with the container scope of the type of the temporary.
+\item
+For each $argument$ in $arguments$
+\begin{enumerate}
+\item
+Add the type and category of $argument$ to $args$.
+\end{enumerate}
+\item
+Call overload resolution algorithm \ref{resolveoverload} with function group name ``@constructor'', $args$, $lookups$ and $conversions$.
+\item
+Let $fun$ be the resolved overload.
+\item
+Return $fun$.
+\end{enumerate}
+\end{algo}
+
+\section{Binding Index Expressions}
+
+Index expressions are of the form $x[i]$, where type of $x$ can be
+\begin{itemize}
+\item
+an array type,
+\item
+a pointer type,
+\item
+a class type
+\end{itemize}
+
+Then $x$ is called the \emph{subject} and $i$ is called the \emph{index}.
+
+\begin{algo}\label{bindindex} Bind Index Expression.
+Inputs: An abstract syntax tree node of type \verb|IndexNode|.
+\begin{enumerate}
+\item
+Call \verb|Accept| member function of the subject contained by the \verb|IndexNode|.
+\item
+Pop $subject$ from the bound expression stack.
+\item
+Call \verb|Accept| member function of the index contained by the \verb|IndexNode|.
+\item
+Pop $index$ from the bound expression stack.
+\item
+Let $subjectType$ be the type of $subject$.
+\item
+If $subjectType$ is an array type, call algorithm \ref{bindindexarray} with $subject$ and $index$.
+\item
+Otherwise if $subjectType$ is a pointer type, call algorithm \ref{bindindexpointer} with $subject$ and $index$.
+\item
+Otherwise if $subjectType$ is a class type, call algorithm \ref{bindindexclass} with $subject$ and $index$.
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding Array Indexing}
+
+\begin{algo}\label{bindindexarray} Bind Array Indexing.
+Inputs: $subject$ and $index$.
+\begin{enumerate}
+\item
+Push $subject$ to the bound expression stack.
+\item
+Push $index$ to the bound expression stack.
+\item
+Call algorithm \ref{bindbinaryop} with group name \verb|"operator[]"| to bind a binary operator.
+\item
+Pop $expr$ from the bound expression stack.
+\item
+Set \verb|indexArray| flag of the $expr$.
+\item
+Push $expr$ to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding Pointer Indexing}
+
+When $p$ is a pointer then expression $p[i]$ is equivalent to $*(p + i)$.
+
+\begin{algo}\label{bindindexpointer} Bind Pointer Indexing.
+Inputs: $subject$ and $index$.
+\begin{enumerate}
+\item
+Push $subject$ to the bound expression stack.
+\item
+Push $index$ to the bound expression stack.
+\item
+Call algorithm \ref{bindbinaryop} with group name \verb|"operator+"| to bind a binary operator.
+\item
+Call algorithm \ref{bindunaryop} with group name \verb|"operator*"| to bind a unary operator.
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding Class Indexing}
+
+When $c$ is of a class type, then expression $c[i]$ is bound using bind invoke expression algorithm.
+Then the class type of $c$ should implement \verb|operator[]| member function.
+
+\begin{algo}\label{bindindexclass} Bind Class Indexing.
+Inputs: $subject$ and $index$.
+\begin{enumerate}
+\item
+Create a bound function group with name \verb|"operator[]"| and push it the the bound expression stack.
+\item
+Push $subject$ to the bound expression stack.
+\item
+Push $index$ to the bound expression stack.
+\item
+Call algorithm \ref{bindinvoke} to bind an invoke expression.
+\end{enumerate}
+\end{algo}
+
+\section{Binding Arrow Expression}
+
+Arrow expressions are of the following kind:
+\begin{itemize}
+\item
+\verb|p->|$m$, where $p$ is a pointer to a class type and $m$ is a member variable of that class type.
+\item
+\verb|p->|$mf(e_1, \ldots, e_n)$, where $p$ is a pointer to a class type and $mf$ is a member function of that class type.
+\item
+\verb|c->|$m$, where $c$ is of a class type that implements \verb|operator->()| member function that returns
+\begin{itemize}
+\item
+a pointer to a class type, or
+\item
+a class type that implements \verb|operator->()| member function.
+\end{itemize}
+and $m$ is a member variable of a class type.
+\item
+\verb|c->|$mf(e_1, \ldots, e_n)$, where $c$ is of a class type that implements \verb|operator->()| member function that returns
+\begin{itemize}
+\item
+a pointer to a class type, or
+\item
+a class type that implements \verb|operator->()| member function.
+\end{itemize}
+and $mf$ is a member function of a class type.
+\end{itemize}
+
+\begin{algo}\label{bindarrow} Bind Arrow.
+Inputs: an identifier $m$ that is either a name of a member variable or a name of a function group.
+\begin{enumerate}
+\item
+Call algorithm \ref{bindunaryop} with group name \verb|"operator->"| to bind unary operator.
+\item
+Pop $arrowExpr$ from the bound expression stack.
+\item
+Let $type$ be the plain type of $arrowExpr$.
+\item
+If $type$ is a pointer to a class type, or $type$ is a class type,
+\begin{enumerate}
+\item
+If $type$ is a pointer to a class type, set $type$ to the base type of $type$.
+\item
+Set $type$ to the plain type of $type$.
+\item
+If $type$ is a class type:
+\begin{enumerate}
+\item
+Let $fun$ be the function symbol that $arrowExpr$ is bound to.
+\item
+If $fun$ is a member function,
+\begin{enumerate}
+\item
+Push $arrowExpr$ to the bound expression stack.
+\item
+Call this algorithm recursively with $m$.
+\end{enumerate}
+\item
+Otherwise,
+\begin{enumerate}
+\item
+Lookup identifier $m$ from the class scope of $type$ with scope lookup \verb|this| $|$ \verb|base|. Let $symbol$ be the symbol found.
+\item
+If $symbol$ is not null,
+\begin{itemize}
+\item
+Call algorithm \ref{bindsymbol} to bind $symbol$.
+\item
+Pop $symbolExpr$ from the bound expression stack.
+\item
+If $symbolExpr$ is \verb|BoundFunctionGroup|,
+\begin{itemize}
+\item
+Push $symbolExpr$ to the bound expression stack.
+\item
+Algorithm \ref{bindinvoke} will be called to invoke $symbolExpr$ with some arguments.
+\end{itemize}
+\item
+Otherwise, if $symbolExpr$ is a bound member variable:
+\begin{itemize}
+\item
+Push $symbolExpr$ to the bound expression stack.
+\end{itemize}
+\item
+Otherwise, report error.
+\end{itemize}
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{algo}
+
+\section{Binding a Symbol}
+
+\subsection{Bind Symbol Algorithm}
+
+\begin{algo}\label{bindsymbol} Bind a Symbol.
+Inputs: a $symbol$ to bind.
+\begin{enumerate}
+\item
+If $symbol$ is a \verb|ConstantSymbol|, call algorithm \ref{bindconstantsymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|LocalVariableSymbol|, call algorithm \ref{bindlocalvariablesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|MemberVariableSymbol|, call algorithm \ref{bindmembervariablesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|ParameterSymbol|, call algorithm \ref{bindparametersymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|ClassTypeSymbol|, call algorithm \ref{bindclasstypesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|InterfaceTypeSymbol|, call algorithm \ref{bindinterfacetypesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|DelegateTypeSymbol|, call algorithm \ref{binddelegatetypesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|ClasDelegateTypeSymbol|, call algorithm \ref{bindclassdelegatetypesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|NamespaceSymbol|, call algorithm \ref{bindnamespacesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|EnumTypeSymbol|, call algorithm \ref{bindenumtypesymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|EnumConstantSymbol|, call algorithm \ref{bindenumconstantsymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|FunctionGroupSymbol|, call algorithm \ref{bindfunctiongroupsymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|TypedefSymbol|, call algorithm \ref{bindtypedefsymbol} to bind it.
+\item
+Otherwise, if $symbol$ is a \verb|BoundTypeParameterSymbol|, call algorithm \ref{bindboundtypeparametersymbol} to bind it.
+\item
+Otherwise, report error.
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Constant}
+
+\begin{algo}\label{bindconstantsymbol} Bind a Constant Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Local Variable}
+
+\begin{algo}\label{bindlocalvariablesymbol} Bind a Local Variable Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Member Variable}
+
+\begin{algo}\label{bindmembervariablesymbol} Bind a Member Variable Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Parameter}
+
+\begin{algo}\label{bindparametersymbol} Bind a Parameter Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Class Type}
+
+\begin{algo}\label{bindclasstypesymbol} Bind a Class Type Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding an Interface Type}
+
+\begin{algo}\label{bindinterfacetypesymbol} Bind an Interface Type Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Delegate Type}
+
+\begin{algo}\label{binddelegatetypesymbol} Bind a Delegate Type Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Class Delegate Type}
+
+\begin{algo}\label{bindclassdelegatetypesymbol} Bind a Class Delegate Type Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Namespace}
+
+\begin{algo}\label{bindnamespacesymbol} Bind a Namespace Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding an Enumerated Type}
+
+\begin{algo}\label{bindenumtypesymbol} Bind an Enumerated Type Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding an Enumeration Constant}
+
+\begin{algo}\label{bindenumconstantsymbol} Bind an Enumeration Constant Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Function Group}
+
+\begin{algo}\label{bindfunctiongroupsymbol} Bind a Function Group Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Typedef}
+
+\begin{algo}\label{bindtypedefsymbol} Bind a Typedef Symbol.
+\begin{enumerate}
+\item
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding a Bound Type Parameter}
+
+\begin{algo}\label{bindboundtypeparametersymbol} Bind a Bound Type Parameter Symbol.
+\begin{enumerate}
+\item
 \end{enumerate}
 \end{algo}
 
@@ -8501,6 +9080,20 @@ Otherwise, report error.
 \end{enumerate}
 \item
 Otherwise, report error.
+\end{enumerate}
+\item
+\verb|EndVisit(InvokeNode& invokeNode)|:\\
+Call algorithm \ref{bindinvoke}.
+\item
+\verb|Visit(IndexNode& indexNode)|:\\
+Call algorithm \ref{bindindex}.
+\item
+\verb|Visit(ArrowNode& arrowNode)|:\\
+\begin{enumerate}
+\item
+Call \verb|Accept| member function for the subject of the \verb|ArrowNode|.
+\item
+Call algorithm \ref{bindarrow}.
 \end{enumerate}
 \end{itemize}
 \end{algo}
