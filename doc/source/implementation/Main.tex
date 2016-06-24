@@ -284,7 +284,7 @@ Chapter 4 describes the hierarchial symbol table component and presents algorith
 In chapters 5, 6 and 7 we inspect three utility components used by other components of the compiler:
 the type repository, the static evaluator and the type resolver.
 \item
-The following eight chapters descibe different aspects of the binder component:
+The following eight chapters describe different aspects of the binder component:
 \begin{itemize}
 \item
 We begin by binding types and values in chapter 8.
@@ -5288,7 +5288,7 @@ TypeSymbol
 \section{Type Resolving Algorithms}
 Resolving a type is done using the following algorithm:
 
-\begin{algo}\label{resolvingtype} Resolving a Type. Inputs to this algorithm are:
+\begin{algo}\label{resolvetype} Resolve a Type. Inputs to this algorithm are:
 \begin{itemize}
 \item
 a type expression represented as an abstract syntax tree node
@@ -5568,7 +5568,7 @@ derivations are:
 \verb|Derivation.reference|
 \end{itemize}
 \item
-Calling algorithm \ref{resolvingtype} for base type expression:
+Calling algorithm \ref{resolvetype} for base type expression:
 \item
 \verb|Visit(TemplateIdNode& templateIdNode)|:
 \begin{itemize}
@@ -5579,7 +5579,7 @@ abstract syntax tree node representing the primary class type is:
 abstract syntax tree nodes representing type arguments are:
 \verb|IntNode|
 \end{itemize}
-Calling algorithm \ref{resolvingtype} for primary class type:
+Calling algorithm \ref{resolvetype} for primary class type:
 \item
 \verb|Visit(IdentifierNode& identifierNode)|:
 Looking up identifier \verb|Set|:
@@ -5589,7 +5589,7 @@ Resolving the type symbol using algorithm \ref{resolvesymboltype} yields \verb|C
 \item
 Return the type symbol \verb|ClassTypeSymbol(Set)| as the primary class type.
 \item
-Calling algorithm \ref{resolvingtype} for type argument \verb|IntNode|:
+Calling algorithm \ref{resolvetype} for type argument \verb|IntNode|:
 \item
 \verb|Visit(IntNode& intNode)|:
 Return \verb|IntTypeSymbol| as a type argument.
@@ -8247,6 +8247,139 @@ Otherwise, report error.
 \end{enumerate}
 \end{algo}
 
+\section{Binding a Cast Expression}
+
+The following algorithms bind a cast expression of the form \verb|cast<T>(S)|, where $T$ is the target type and $S$ is the source expression,
+to a converting constructor that does the actual cast.
+
+\begin{algo}\label{bindcast} Bind a Cast.
+Inputs: an abstract syntax tree node that represents the target type expression, an abstract syntax tree node that represents the source expression.
+\begin{enumerate}
+\item
+Use the type resolver algorithm \ref{resolvetype} to find out the target type from the target type expression node.
+\item
+Let $targetType$ be the type resolved.
+\item
+Call the \verb|Accept| member function for the source expression.
+\item
+Pop the result of visitation, $operand$, from the bound expression stack.
+\item
+Call \ref{bindcasttype} algorithm with $targetType$ and $operand$.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{bindcasttype} Bind a Cast to a Target Type.
+Inputs: a target type symbol $targetType$, a bound source expression node $sourceExpr$.
+\begin{enumerate}
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+Add pointer to $targetType$ type to $args$.
+\item
+Add type and category of $sourceExpr$ to $args$.
+\item
+Let $lookups$ be a list of scope lookups.
+\item
+Add scope lookup \verb|this| $|$ \verb|base| $|$ \verb|parent| for the container scope of $targetType$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with function group name ``@constructor'', $args$, $lookups$,
+conversion type \verb|explicit| and $conversions$.
+\item
+Let $convertingCtor$ be the function symbol resolved.
+\item
+If conversions[1] is not null, replace $sourceExpr$ with a \verb|BoundConversion| for conversions[1].
+\item
+Create a \verb|BoundCast| with $sourceExpr$ and $convertingCtor$, set its type to $targetType$, and push it to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\section{Binding a Construct Expression}
+
+A construct expression constructs an object into raw memory.
+The following algorithm is used for binding a construct expression of the form\\\verb|construct<|T\verb|>|$(P, e_1, \ldots, e_n)$,
+where $T$ is the type to construct, P is a pointer to raw memory where to construct the object and $e_1$, \ldots, $e_n$ are
+constructor arguments.
+
+\begin{algo}\label{bindconstruct} Bind Construct Expression.
+Inputs: an abstract syntax tree node $typeExpr$, list of abstract syntax tree nodes that represent constructor arguments,
+a bound expression $allocationArg$ for new expression.
+\begin{enumerate}
+\item
+Let $type$ be a type resolved using algorithm \ref{resolvetype} for $typeExpr$.
+\item
+Let $returnType$ be 'pointer to $type$'.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $argument$ be $i$'th argument node.
+\item
+Call the \verb|Accept| member function for $argument$.
+\end{enumerate}
+\item
+Pop $arguments$ from the bound expression stack.
+\item
+If $allocationArg$ is not null, insert it in front of $arguments$.
+\item
+Let $pointerType$ be the type of the first argument.
+\item
+If $pointerType$ is \verb|void*|, cast it to 'pointer to $type$' using algorithm \ref{bindcast} and replace the first argument with the casted argument.
+\item
+Let $args$ be a list of argument information structures (\ref{arginfo}).
+\item
+Add $returnType$ to $args$.
+\item
+Let $n$ be the number of $arguments$.
+\item
+For $i$ = 2, \ldots, $n$
+\begin{enumerate}
+\item
+Let $argument$ be the $i$'th argument.
+\item
+Add type and category of $argument$ to $args$.
+\end{enumerate}
+\item
+Let $lookups$ be a list of scope lookups.
+\item
+Add scope lookup \verb|this| $|$ \verb|base| $|$ \verb|parent| for the container scope of $type$.
+\item
+Call overload resolution algorithm \ref{resolveoverload} with function group name ``@constructor'', $args$, $lookups$ and $conversions$.
+\item
+Let $ctor$ be the function symbol resolved.
+\item
+Create a \verb|BoundFunctionCall| with $ctor$ and $arguments$, set its type to $returnType$, and push it to the bound expression stack.
+\end{enumerate}
+\end{algo}
+
+\section{Binding a New Expression}
+
+A new expression allocates memory for a type $T$, and then constructs an object to that memory by calling the constructor for type $T$.
+New expression is of the form \verb|new |$T(e_1, \ldots, e_n)$, where $T$ is the type to construct, and $e_1, \ldots, e_n$ are constructor arguments.
+
+\begin{algo}\label{bindnew} Bind New Expression.
+Inputs: an abstract syntax tree node, $node$, that represents the new expression.
+\begin{enumerate}
+\item
+Let $allocFun$ be overload for \verb|"System.Support.MemAlloc"|.
+\item
+Let $type$ be the type resolved using algorithm \ref{resolvetype} for the type expression contained by $node$.
+\item
+Create a \verb|BoundSizeOfExpression| for $type$.
+\item
+Let $arguments$ be a list of argument expressions.
+\item
+Add type of \verb|BoundSizeOfExpression| to $arguments$.
+\item
+Create a \verb|BoundFunctionCall| called $memAllocCall$ with $allocFun$ and $arguments$.
+\item
+Call algorithm \ref{bindcasttype} with $type$ and $memAllocCall$.
+\item
+Pop $castedMemAlloc$ from the bound expression stack.
+\item
+Call algorithm \ref{bindconstruct} with the type expression contained by $node$, argument nodes contained by $node$, and $castedMemAllocCall$.
+\end{enumerate}
+\end{algo}
+
 \section{Binding a Symbol}
 
 \subsection{Bind Symbol Algorithm}
@@ -8292,6 +8425,9 @@ Otherwise, report error.
 \begin{algo}\label{bindconstantsymbol} Bind a Constant Symbol.
 \begin{enumerate}
 \item
+Check access from the current function being compiled to the constant symbol.
+\item
+Create a \verb|BoundConstant| with the constant symbol, set its type to the type of the constant symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8300,6 +8436,8 @@ Otherwise, report error.
 \begin{algo}\label{bindlocalvariablesymbol} Bind a Local Variable Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundLocalVariable| with the local variable symbol, set its type to the type of the local variable symbol,
+and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8308,6 +8446,10 @@ Otherwise, report error.
 \begin{algo}\label{bindmembervariablesymbol} Bind a Member Variable Symbol.
 \begin{enumerate}
 \item
+Check access from the current function being compiled to the member variable symbol.
+\item
+Create a \verb|BoundMemberVariable| with the member variable symbol, set its type to the type of the member variable,
+and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8316,6 +8458,7 @@ Otherwise, report error.
 \begin{algo}\label{bindparametersymbol} Bind a Parameter Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundParameter| with the parameter symbol, set its type to the type of the parameter, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8324,6 +8467,7 @@ Otherwise, report error.
 \begin{algo}\label{bindclasstypesymbol} Bind a Class Type Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with the class type symbol, set its type to the class type symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8332,6 +8476,7 @@ Otherwise, report error.
 \begin{algo}\label{bindinterfacetypesymbol} Bind an Interface Type Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with the interface type symbol, set its type to the interface type symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8340,6 +8485,7 @@ Otherwise, report error.
 \begin{algo}\label{binddelegatetypesymbol} Bind a Delegate Type Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with the delegate type symbol, set its type to the delegate type symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8348,6 +8494,7 @@ Otherwise, report error.
 \begin{algo}\label{bindclassdelegatetypesymbol} Bind a Class Delegate Type Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with the class delegate type symbol, set its type to the class delegate type symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8356,6 +8503,7 @@ Otherwise, report error.
 \begin{algo}\label{bindnamespacesymbol} Bind a Namespace Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundNamespaceExpression| with the namespace symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8364,6 +8512,7 @@ Otherwise, report error.
 \begin{algo}\label{bindenumtypesymbol} Bind an Enumerated Type Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with the enumerated type symbol, set its type to the enumerated type symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8372,6 +8521,7 @@ Otherwise, report error.
 \begin{algo}\label{bindenumconstantsymbol} Bind an Enumeration Constant Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundEnumConstant| with the enumeration constant symbol, set its type to the parent enumerated type, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8380,6 +8530,7 @@ Otherwise, report error.
 \begin{algo}\label{bindfunctiongroupsymbol} Bind a Function Group Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundFunctionGroup| with the function group symbol, set its type to the \verb|FunctionGroupTypeSymbol|, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8388,6 +8539,7 @@ Otherwise, report error.
 \begin{algo}\label{bindtypedefsymbol} Bind a Typedef Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with type associated with the typedef symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8396,6 +8548,7 @@ Otherwise, report error.
 \begin{algo}\label{bindboundtypeparametersymbol} Bind a Bound Type Parameter Symbol.
 \begin{enumerate}
 \item
+Create a \verb|BoundTypeExpression| with type associated with the bound type parameter symbol, and push it to the bound expression stack.
 \end{enumerate}
 \end{algo}
 
@@ -8955,7 +9108,7 @@ Push $node$ to the bound expression stack.
 \verb|Visit(DerivedTypeExprNode& derivedTypeExprNode)|:
 \begin{enumerate}
 \item
-Use the type resolver to resolve the base type contained by the derivedTypeExprNode (algorithm \ref{resolvingtype}). Let $b$ be the base type resolved.
+Use the type resolver to resolve the base type contained by the derivedTypeExprNode (algorithm \ref{resolvetype}). Let $b$ be the base type resolved.
 \item
 Use the static evaluator to evaluate the array dimensions contained by the derivedTypeExprNode (algorithm \ref{evalconstantexpr}).
 Let $a$ be the list of evaluated array dimensions.
@@ -9094,6 +9247,152 @@ Call algorithm \ref{bindindex}.
 Call \verb|Accept| member function for the subject of the \verb|ArrowNode|.
 \item
 Call algorithm \ref{bindarrow}.
+\end{enumerate}
+\item
+\verb|Visit(IsNode& isNode)|:\\
+\begin{enumerate}
+\item
+Let $expr$ be the left side of \textbf{is}-expression contained by isNode.
+\item
+Let $typeExpr$ be the right side of \textbf{is}-expression contained by isNode.
+\item
+Call the \verb|Accept| member function of $expr$.
+\item
+Pop $boundExpr$, the result of visitation, from the bound expression stack.
+\item
+Let $exprType$ be type of $boundExpr$.
+\item
+If $exprType$ is not 'pointer to class type', report error and exit.
+\item
+Otherwise, let $exprClassType$ be the base type of $exprType$.
+\item
+If $exprClassType$ is not virtual, report error and exit.
+\item
+Otherwise, resolve type of $typeExpr$ using algorithm \ref{resolvetype}. Let $type$ be the type resolved.
+\item
+If $type$ is not 'pointer to class type', report error and exit.
+\item
+Otherwise, let $rightClassType$ be the base type of $type$.
+\item
+If $rightClassType$ is not virtual, report error and exit.
+\item
+Otherwise, create a \verb|BoundIsExpression| with $boundExpr$, $exprClassType$ and $rightClassType$, set its type to \textbf{bool},
+and push it to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(AsNode& asNode)|:\\
+\begin{enumerate}
+\item
+Let $expr$ be the left side of \textbf{as}-expression contained by asNode.
+\item
+Let $typeExpr$ be the right side of \textbf{as}-expression contained by asNode.
+\item
+Call the \verb|Accept| member function of $expr$.
+\item
+Pop $boundExpr$, the result of visitation, from the bound expression stack.
+\item
+Let $exprType$ be type of $boundExpr$.
+\item
+If $exprType$ is not 'pointer to class type', report error and exit.
+\item
+Otherwise, let $exprClassType$ be the base type of $exprType$.
+\item
+If $exprClassType$ is not virtual, report error and exit.
+\item
+Otherwise, resolve type of $typeExpr$ using algorithm \ref{resolvetype}. Let $type$ be the type resolved.
+\item
+If $type$ is not 'pointer to class type', report error and exit.
+\item
+Otherwise, let $rightClassType$ be the base type of $type$.
+\item
+If $rightClassType$ is not virtual, report error and exit.
+\item
+Otherwise, create a \verb|BoundAsExpression| with $boundExpr$, $exprClassType$ and $rightClassType$, set its type to $type$,
+and push it to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(SizeOfNode& sizeOfNode)|:\\
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the subject contained by the sizeOfNode.
+\item
+Pop $subject$, the result of visitation, from the bound expression stack.
+\item
+Create a \verb|BoundSizeOfExpression| with the type of $subject$m, set its type to \textbf{ulong}, and push it to the bound expression stack.
+\end{enumerate}
+\item
+\verb|Visit(CastNode& castNode)|:\\
+Call algorithm \ref{bindcast} with the target type expression contained by the castNode, and with source expression node contained by the castnode.
+\item
+\verb|Visit(ConstructNode& constructNode)|:\\
+Call algorithm \ref{bindconstruct} with type expression and arguments contained by the constructNode.
+\item
+\verb|Visit(NewNode& newNode)|:\\
+Call algorithm \ref{bindnew} with the newNode.
+\item
+\verb|Visit(TemplateIdNode& templateIdNode)|:\\
+\begin{enumerate}
+\item
+Call the \verb|Accept| member function of the primary class type node of the templateIdnode.
+\item
+Pop $subject$, the result of visitation, from the bound expression stack.
+\item
+If $subject$ is \verb|BoundFunctionGroup|:
+\begin{enumerate}
+\item
+Let $boundTemplateArguments$ be a list of type symbols.
+\item
+For each $templateArgumentNode$ of the templateIdNode:
+\begin{enumerate}
+\item
+Resolve type of $templateArgumentNode$ using algorithm \ref{resolvetype}.
+\item
+Add the type resolved to $boundTemplateArguments$.
+\end{enumerate}
+\item
+Associate $boundTemplateArguments$ with $subject$.
+\item
+Push $subject$ to the bound expression stack.
+\end{enumerate}
+\item
+Otherwise, if $subject$ is \verb|BoundTypeExpression|,
+\begin{enumerate}
+\item
+Let $typeArguments$ be a list of type symbols.
+\item
+\item
+For each $templateArgumentNode$ of the templateIdNode:
+\begin{enumerate}
+\item
+Resolve type of $templateArgumentNode$ using algorithm \ref{resolvetype}.
+\item
+Add the type resolved to $typeArguments$.
+\end{enumerate}
+\item
+If type of $subject$ is a class type,
+\begin{enumerate}
+\item
+Call algorithm \ref{maketemplatetype} to make a class template specialization with the type of $subject$ and $typeArguments$. Let $type$ be the type returned.
+\item
+Create a \verb|BoundTypeExpression| with $type$, and push it to the bound expression stack.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+\verb|Visit(IdentifierNode& identifierNode)|:\\
+\begin{enumerate}
+\item
+Lookup a symbol with a string contained in the identifierNode from the current contained scope with scope lookup \verb|this| $|$ \verb|base| $|$ \verb|parent|.
+\item
+If not found, lookup the symbol from the file scopes.
+\item
+If symbol found, bind the symbol using algorithm \ref{bindsymbol}.
+\item
+Otherwise, report error.
 \end{enumerate}
 \end{itemize}
 \end{algo}
