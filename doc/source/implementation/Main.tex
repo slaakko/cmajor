@@ -7558,7 +7558,6 @@ Return $LB$ \textbf{or} $RB$.
 You may want to recall what is said about the \emph{bound tree} representation in section \ref{representations}.
 The component that creates bound expression nodes from abstract syntax tree expression nodes is called the \emph{expression binder}.
 The expression binder has a stack of bound expressions that contains the intermediate and final bound expression nodes.
-We begin by investigating the bound expression node hierarchy.
 
 \section{Bound Expression Node Hierarchy}
 
@@ -7570,13 +7569,9 @@ BoundNode
         BoundLiteral
         BoundStringLiteral
         BoundConstant
-            BoundExceptionTableConstant
-            BoundClassHierarchyTableConstant
         BoundEnumConstant
         BoundLocalVariable
-            BoundExceptionCodeVariable
         BoundParameter
-            BoundExceptionCodeParameter
         BoundReturnValue
         BoundMemberVariable
         BoundFunctionId
@@ -7599,8 +7594,10 @@ BoundNode
 \end{verbatim}
 
 Each kind of bound expression has a \emph{type} that is represented by a symbol class derived from the \verb|TypeSymbol| class
-(see section \ref{typesymbolhierarchy}). Many expressions are represented as instances of \verb|BoundUnaryOp| and \verb|BoundBinaryOp| classes.
+(see section \ref{typesymbolhierarchy}).
+Many expressions are represented as instances of \verb|BoundUnaryOp| and \verb|BoundBinaryOp| classes.
 Therefore we begin by describing the algorithms that bind unary and binary operators.
+All the algorithms in this chapter are members of the expression binder class, so they have access to the bound expression stack.
 
 \section{Binding Unary and Binary Operators}
 
@@ -9394,10 +9391,301 @@ If symbol found, bind the symbol using algorithm \ref{bindsymbol}.
 \item
 Otherwise, report error.
 \end{enumerate}
+\item
+\verb|Visit(ThisNode& thisNode)|:\\
+\begin{enumerate}
+\item
+If current function being compiled is a nonstatic member function:
+\begin{enumerate}
+\item
+Let $thisParam$ be the first parameter of the current function being compiled.
+\item
+Create a \verb|BoundParameter| with $thisParam$, set its type to the type of $thisParam$ and push it to the bound expression stack.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+\verb|Visit(BaseNode& baseNode)|:\\
+\begin{enumerate}
+\item
+If current function being compiled is a nonstatic member function:
+\begin{enumerate}
+\item
+Let $thisParam$ be the first parameter of the current function being compiled.
+\item
+Let $classType$ be the base type of $thisParam$.
+\item
+If $classType$ has a base class:
+\begin{enumerate}
+\item
+Let $baseClassType$ be the base class of $classType$.
+\item
+Call algorithm \ref{makepointertype} to make $baseClassPtrType$,  a pointer to $baseClassType$.
+\item
+Create a \verb|BoundParameter| $boundThisParam$, with $thisParam$ and set its type to the type of $thisParam$.
+\item
+Let $conversionFun$ be a conversion from the type of $thisParam$ to $baseClassPtrType$.
+\item
+Create a \verb|BoundConversion| with $boundThisParam$ and $conversionFun$, set its type to $baseClassPtrType$ and push it to the bound expression stack.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
+\item
+Otherwise, report error.
+\end{enumerate}
 \end{itemize}
 \end{algo}
 
 \chapter{Binding Statements}
+
+The statements are bound using statement binder classes derived from the \verb|StatementBinder|.
+The \verb|StatementBinder| class derives from the \verb|ExpressionBinder| class,
+so it also binds expressions contained by the abstract syntax tree nodes for the statements.
+The statement binders create bound nodes derived from the \verb|BoundStatement|.
+
+\section{Bound Statement Hierarchy}
+
+Many bound statement nodes have no direct counterpart in the abstract syntax tree node hierarchy.
+Such are for example \verb|BoundReceiveStatement| and \verb|BoundInitVptrStatement| that
+represent primitive operations that are combined to create larger ones.
+On the other hand many Cmajor statements have no direct counterpart in the bound statement hierarchy.
+They have been \emph{lowered} to a combination of more primitive operations.
+Such are exception handling statements \textbf{throw} and \textbf{try-catch}, and a range \textbf{for} statement.
+
+\begin{verbatim}
+BoundNode
+    BoundStatement
+        BoundReceiveStatement
+        BoundInitClassObjectStatement
+        BoundInitVptrStatement
+        BoundInitMemberVariableStatement
+        BoundFunctionCallStatement
+        BoundReturnStatement
+        BoundBeginTryStatement
+        BoundEndTryStatement
+        BoundExitBlocksStatement
+        BoundPushGenDebugInfoStatement
+        BoundPopGenDebugInfoStatement
+        BoundBeginThrowStatement
+        BoundEndThrowStatement
+        BoundBeginCatchStatement
+        BoundConstructionStatement
+        BoundDestructionStatement
+        BoundAssignmentStatement
+        BoundSimpleStatement
+        BoundBreakStatement
+        BoundContinueStatement
+        BoundGotoStatement
+        BoundGotoCaseStatement
+        BoundGotoDefaultStatement
+        BoundParentStatement
+            BoundCompoundStatement
+            BoundSwitchStatement
+            BoundCaseStatement
+            BoundDefaultStatement
+            BoundConditionalStatement
+            BoundWhileStatement
+            BoundDoStatement
+            BoundForStatement
+\end{verbatim}
+
+\section{Binding a Simple Statement}
+
+An abstract syntax tree node for a simple statement, a \verb|SimpleStatementNode|, is either empty or
+contains an abstract syntax tree node that represents an expression.
+If it is empty, the simple statement represents an empty statement,
+otherwise it represents a statement that evaluates an expression and throws the result of evaluation away.
+Typically a simple statement contains a function call expression, such as \verb|foo(x);|.
+It can also represent an output statement, for example \verb|Console.Out() << 10 << endl();| is a simple statement.
+
+If the simple statement contains an expression, the simple statement binder binds it and creates a \verb|BoundSimpleStatement| containing the
+bound expression. Otherwise the created \verb|BoundSimpleStatement| will be empty.
+
+\section{Binding a Construction Statement}
+
+A construction statement creates and initializes a local variable.
+
+\begin{exmp} Examples of construction statements are:
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+int a;
+int b = 1;
+int c(2);
+Foo x(a, b, c);
+\end{lstlisting}
+
+In line 1 the local variable $a$ is initialized with the default constructor for \textbf{int} type, so its value will be 0.
+In line 2, despite the syntactic similarity with an assignment statement using an equality sign, the statement \verb|int b = 1;|
+is a construction statement because it has a local variable that is initialized.
+In line 3, the local variable $c$ is initialized using the parenthesis syntax. An equivalent statement would have been \verb|int c = 2;|.
+Finally, in line 4, a local variable $x$ of type \verb|Foo| is initialized using three integers, $a$, $b$ and $c$.
+\end{exmp}
+
+The construction statement binder pops the arguments from the bound expression stack
+and uses the overload resolver algorithm \ref{resolveoverload} with function group name \verb|"@constructor"|
+to resolve a constructor to call with the type of the local variable and other arguments.
+If the types of the argument expressions do not match exactly with the parameters of the
+constructor, the arguments will be replaced by \verb|BoundConversion|s that do the necesssary conversions.
+The result of this binding is a \verb|BoundConstructionStatement| that contains the local variable symbol to construct,
+a constructor function symbol that does the initialization and bound argument expressions.
+
+\section{Binding an Assignment Statement}
+
+The assignment statement binder pops the bound expressions that represent the right and left side of the assignment from the bound expression stack.
+Then it uses the overload resolver algorithm \ref{resolveoverload} with function  group name \verb|operator=| to resolve
+a call to a copy assignment function.
+If the left and right type do not match exactly to the parameter types of the copy assignment function,
+the left and right arguments will be replaced by \verb|BoundConversion|s that do the necesssary conversions.
+The result of this binding is a \verb|BoundAssignmentStatement| that contains the copy assignment function symbol and left and right arguments.
+
+\section{Binding a Return Statement}
+
+The return statement binder is used to bind both a return statement that returns a value and one that doesn't.
+If the current function being compiled is not a void function and not a constructor or destructor, but the return statement contains a value to return,
+or the current function being compiled is a void function or constructor or destructor, but the return statement does not return a value, an error is reported.
+The following applies only when the return statement returns a value.
+If the value returned is a local variable, or it is a temporary, or it is a parameter of a nonreference type, the return statement tries
+to bind to a move constructor. If the type returned does not have a move constructor, or the value returned is not of previous kind, the return statement
+binds to a copy constructor.
+The result of this binding is a \verb|BoundReturnStatement|.
+
+\section{Binding a Conditional Statement}
+
+The conditional statement binder is used to bind statements of the following form:\\
+\textbf{if} $(condition)$ $statement$; and\\
+\textbf{if} $(condition)$ $statement$; \textbf{else} $statement$;
+\begin{flushleft}
+The binder pops the bound expression that represents the condition from the bound expression stack.
+If the plain type of the condition is not \verb|BoolType|, an error is reported.
+The result of this binding is a \verb|BoundConditionalStatement|.
+\end{flushleft}
+
+\section{Binding a While Statement}
+
+The while statement binder is used to bind statements of the form \textbf{while} $(condition)$ $statement$;.
+The binder pops the bound expression that represents the condition from the bound expression stack.
+If the plain type of the condition is not \verb|BoolType|, an error is reported.
+The result of this binding is a \verb|BoundWhileStatement|.
+
+\section{Binding a Do Statement}
+
+The do statement binder is used to bind statements of the form \textbf{do} $statement$; \textbf{while} $(condition)$;.
+The binder pops the bound expression that represents the condition from the bound expression stack.
+If the plain type of the condition is not \verb|BoolType|, an error is reported.
+The result of this binding is a \verb|BoundDoStatement|.
+
+\section{Binding a For Statement}
+
+The for statement binder binds statements of the form\\ \textbf{for} ( $initStatement$ ; $condition$ ; $loopExpr$ ) $statement$;.
+If the $loopExpr$ is missing the binder generates always true expression and pushes to the bound expression stack.
+The binder pops the bound loop expression from the bound expression stack.
+If the $condition$ is missing the binder generates always true expression and pushes to the bound expression stack.
+The binder pops the bound condition from the bound expression stack.
+If the plain type of the condition is not \verb|BoolType|, an error is reported.
+The result of this binding is a \verb|BoundForStatement|.
+
+\section{Binding a Range-for Statement}
+
+The range-for statement binder binds statements of the form\\ \textbf{for} ( $type$ $var$ : $container$ ) $statement$;
+The binder constructs an abstract syntax tree where the range-for statement has been lowered to an ordinary for statement.
+Then it binds the lowered for statement using the for statement binder.
+
+If the type of $container$ is a \textbf{const} type, the lowered range-for statement is as follows:
+
+\begin{flushleft}
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+for (ConstIterType i = container.CBegin(); i != container.CEnd(); ++i)
+{
+    type var = *i;
+    statement;
+}
+\end{lstlisting}
+
+Here the $ConstIterType$ is a constant iterator type of the type of $container$.
+That is: the type of $container$ must contain a \textbf{typedef} named $ConstIterator$.
+\end{flushleft}
+
+\begin{flushleft}
+If the type of $container$ is not a \textbf{const} type, the lowered range-for statement is as follows:
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+for (IteratorType i = container.Begin(); i != container.End(); ++i)
+{
+    type var = *i;
+    statement;
+}
+\end{lstlisting}
+Here the $IteratorType$ is an iterator type of the type of $container$.
+That is: the type of $container$ must contain a \textbf{typedef} named $Iterator$.
+\end{flushleft}
+
+\section{Binding a Switch Statement}
+
+The switch statement binder is used to bind a statement of the form\\ \textbf{switch} $(condition)$ \{ $caseOrDefaultStatement$* \}.
+The binder pops the bound expression that represents the condition from the bound expression stack.
+If the type of the condition is not an integer, character, Boolean or enumerated type, an error is reported.
+The result of this binding is a \verb|BoundSwitchStatement|.
+
+\section{Binding a Case Statement}
+
+The case statement binder creates a \verb|BoundCaseStatement|.
+Then it evaluates each case expression using algorithm \ref{evalconstantexpr} and add the evaluated value to the \verb|BoundCaseStatement|.
+Then it checks that the case statement terminates to one of the following statements:
+break statement, continue statement, return statement, throw statement, goto statement, goto case statement or goto default statement.
+If that is not the case an error is reported.
+The result of this binding is a \verb|BoundCaseStatement|.
+
+\section{Binding a Default Statement}
+
+The default statement binder checks that the default statement terminates to one of the following statements:
+break statement, continue statement, return statement, throw statement, goto statement, goto case statement or goto default statement.
+If that is not the case an error is reported.
+The result of this binding is a \verb|BoundDefaultStatement|.
+
+\section{Binding a Break Statement}
+
+The break statement binder checks that the break statement is enclosed in a while, do, for or switch statement.
+If that is not the case an error is reported.
+The result of this binding is a \verb|BoundBreakStatement|.
+
+\section{Binding a Continue Statement}
+
+The continue statement binder checks that the continue statement is enclosed in a while, do or for statement.
+If that is not the case an error is reported.
+The result of this binding is a \verb|BoundContinueStatement|.
+
+\section{Binding a Goto Case Statement}
+
+The goto case statement binder checks that the goto case statement is enclosed in a case or default statement.
+If that is not the case an error is reported.
+Then it evaluates the target case expression, creates a \verb|BoundGotoCaseStatement| and set the evaluated value to it.
+The result of this binding is a \verb|BoundGotoCaseStatement|.
+
+\section{Binding a Goto Default Statement}
+
+The goto default statement binder checks that the goto default statement is enclosed in a case statement.
+If that is not the case an error is reported.
+The result of this binding is a \verb|BoundGotDefaultStatement|.
+
+\section{Binding a Destroy Statement}
+
+The destroy statement binder pops an argument from the bound expression stack.
+It then checks that the argument is a pointer to a class type.
+If the class type has a destructor, the binder creates \verb|BoundFunctionCallStatement| that calls the destructor with the pointer argument.
+The result of this binding is a \verb|BoundFunctionCallStatement| if the class type has a destructor, or null otherwise.
+
+\section{Binding a Delete Statement}
+
+The delete statement binder pops an argument from the bound expression stack.
+It then checks that the argument is a pointer to a class type.
+If the class type has a destructor, the binder creates \verb|BoundFunctionCallStatement| that calls the destructor with the pointer argument.
+In any case the binder then creates a \verb|BoundFunctionCallStatement| that calls System.Support.MemFree function with the pointer argument.
+The result of this binding is two \verb|BoundFunctionCallStatement|s if the class type has a destructor, or one \verb|BoundFunctionCallStatement| otherwise.
+
+\chapter{Binding Functions}
 
 \chapter{Template Repositories}
 
