@@ -9685,6 +9685,98 @@ If the class type has a destructor, the binder creates \verb|BoundFunctionCallSt
 In any case the binder then creates a \verb|BoundFunctionCallStatement| that calls System.Support.MemFree function with the pointer argument.
 The result of this binding is two \verb|BoundFunctionCallStatement|s if the class type has a destructor, or one \verb|BoundFunctionCallStatement| otherwise.
 
+\section{Binding a Throw Statement}
+
+The throw statement binder binds throw statement of the form\\ \textbf{throw} $ExceptionType(arg_1, \ldots, arg_n)$;
+\begin{flushleft}
+The binder constructs an abstract syntax tree where the throw statement has been lowered to a sequence of ordinary statements.
+The compiler has following information available associated with each exception type:
+
+\begin{itemize}
+\item
+\verb|<exception_id>| a positive integer given to each exception class type.
+\item
+\verb|<exception_line>| the source line number of the throw clause.
+\item
+\verb|<exception_file>| the source file name of the throw clause.
+\end{itemize}
+
+When the throw statement is not enclosed inside a try-block, like in the following example,
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+    statement1;
+    throw ExceptionType(arg);
+    statement2;
+}
+\end{lstlisting}
+
+the throw statement binder constructs the following sequence of statements:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+    statement1;
+    <begin_throw_statement>;
+    ExceptionType* ex_var_name = new ExceptionType(ExceptionType(arg));
+    ex_var_name->SetExceptionType(typename(*ex));
+    ex_var_name->SetFile(<exception_file>);
+    ex_var_name->SetLine(<exception_line>);
+    begin_capture_call_stack();
+    ex_var_name->SetCallStack(capture_call_stack());
+    end_capture_call_stack();
+    System.Support.SetExceptionAddr(get_exception_table_addr(this_thread()), <exception_id>, ex_var_name);
+    $ex = <exception_id>;
+    *$ex$p = $ex;
+    return;
+    statement2;
+}
+\end{lstlisting}
+
+When the throw statement is enclosed inside a try-block, like in the following example,
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+try
+{
+    statement1;
+    throw ExceptionType(arg);
+    statement2;
+}
+catch (const SomeException& ex)
+{
+}
+\end{lstlisting}
+
+the throw statement binder constructs the following sequence of statements:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+    statement1;
+    <begin_throw_statement>;
+    ExceptionType* ex_var_name = new ExceptionType(ExceptionType(arg));
+    ex_var_name->SetExceptionType(typename(*ex));
+    ex_var_name->SetFile(<exception_file>);
+    ex_var_name->SetLine(<exception_line>);
+    begin_capture_call_stack();
+    ex_var_name->SetCallStack(capture_call_stack());
+    end_capture_call_stack();
+    System.Support.SetExceptionAddr(get_exception_table_addr(this_thread()), <exception_id>, ex_var_name);
+    $ex = <exception_id>;
+    goto exception_handlers;
+    statement2;
+    return;
+exception_handlers:
+    // exception handling code...
+}
+\end{lstlisting}
+\end{flushleft}
+
 \chapter{Binding Functions}
 
 \chapter{Template Repositories}
