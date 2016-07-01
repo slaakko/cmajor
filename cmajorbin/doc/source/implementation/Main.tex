@@ -9689,7 +9689,8 @@ The result of this binding is two \verb|BoundFunctionCallStatement|s if the clas
 
 The throw statement binder binds throw statement of the form\\ \textbf{throw} $ExceptionType(arg_1, \ldots, arg_n)$;
 \begin{flushleft}
-The binder constructs an abstract syntax tree where the throw statement has been lowered to a sequence of ordinary statements.
+The binder constructs an abstract syntax tree where the throw statement has been lowered to a sequence of ordinary statements and
+then compiles that abstract syntax tree.
 The compiler has following information available associated with each exception type:
 
 \begin{itemize}
@@ -9777,7 +9778,386 @@ exception_handlers:
 \end{lstlisting}
 \end{flushleft}
 
+\section{Binding a Try-Catch Statement}
+
+The try-catch binder binds a try-catch-statement of the form\\
+\begin{flushleft}
+\textbf{try} \{ $try\textrm{-}block$ \} \textbf{catch} ($ex_1$) \{ $catch\textrm{-}block_1$ \} \ldots{} \textbf{catch} ($ex_n$) \{ $catch\textrm{-}block_n$ \}
+\end{flushleft}
+\begin{flushleft}
+The binder constructs an abstract syntax tree where the try-catch statement has been lowered to a sequence of ordinary statements and
+then compiles that abstract syntax tree.
+\end{flushleft}
+
+For the following try-statement:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+    statement1;
+    try
+    {
+        statement2;
+    }
+    catch (const SomeException& ex)
+    {
+        handle_some_exception();
+    }
+    catch (const OtherException& ex)
+    {
+        handle_other_exception();
+    }
+    statement3;
+}
+\end{lstlisting}
+
+the binder construct the following code:
+\clearpage
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+    statement1;
+    <begin_try_statement>;
+    statement2;
+    <end_try_statement>;
+    goto over_catches;
+first_handler: // there's a goto to this label from the landing pads...
+    {
+        bool handle_1 = System.Support.HandleThisEx(<exception_base_id_table>, $ex, <exception_id_for_SomeException>);
+        if (!handle_1) goto next_handler;
+        SomeException* ex_ptr = cast<SomeException*>(System.Support.GetExceptionAddr(get_exception_table_addr(this_thread()), $ex));
+        set_current_exception_id($ex);
+        set_current_exception_addr(System.Support.GetExceptionAddr(get_exception_table_addr(this_thread()), $ex);
+        $ex = 0;
+        const SomeException& ex(*ex_ptr);
+        System.Support.ExDeleter<SomeException> ex_deleter(ex_ptr);
+        {
+            handle_some_exception();
+        }
+    }
+next_handler:
+    {
+        bool handle_2 = System.Support.HandleThisEx(<exception_base_id_table>, $ex, <exception_id_for_OtherException>);
+        if (!handle_2)
+        {
+            *$ex_p = $ex;
+            return;
+        }
+        OtherException* ex_ptr = cast<OtherExcetion*>(System.Support.GetExceptionAddr(get_exception_table_addr(this_thread()), $ex);
+        set_current_exception_id($ex);
+        set_current_exception_addr(System.Support.GetExceptionAddr(get_exception_table_addr(this_thread()), $ex);
+        *ex = 0;
+        const OtherException& ex(*ex_ptr);
+        System.Support.ExDeleter<OtherException> ex_deleter(ex_ptr);
+        {
+            handle_other_exception();
+        }
+    }
+over_catches:
+    statement3;
+}
+\end{lstlisting}
+
+\section{Binding an Assert Statement}
+
+The assert statement binder is used to bind statements of the form \textbf{\#assert}$(expr)$;
+when compiling in debug mode. In other modes assert statements have no effect.
+The binder pops the bound assert expression from the bound expression stack.
+It then checks that its a Boolean expression.
+It finally constructs the following function call that corresponds the assertion:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+if (!expr) System.Support.FailAssertion(<expr>, <file>, <line>);
+\end{lstlisting}
+
+\section{Binding Conditional Compilation Statements}
+
+The conditional compilation statement binder evaluates conditional compilation expressions,
+and conditionally compiles or skips a list of statements depending of the evaluated results.
+The following listing shows an example of conditional compilation statements:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void foo()
+{
+#if (DEBUG)
+    statements1;
+#elif (RELEASE || PROFILE)
+    statements2;
+#else
+    statements3;
+#endif
+}
+\end{lstlisting}
+
+The binder has a stack of Boolean values, $conditionalCompilationEvaluationStack$.
+As the binder visits abstract syntax tree nodes that represent conditional compilation expressions,
+it pushes and pops Boolean values to and from the $conditionalCompilationEvaluationStack$.
+
+The binder is abstract syntax tree visitor that overrides the following visitation points:
+
+\begin{itemize}
+\item
+\verb|Visit(CondCompPrimaryNode& condCompPrimaryNode)|:\\
+If the conditional compilation symbol contained by condCompPrimaryNode is defined,
+the binder pushes \textbf{true} to the $conditionalCompilationEvaluationStack$.
+Otherwise it pushes \textbf{false} to the $conditionalCompilationEvaluationStack$.
+\item
+\verb|Visit(CondCompNotNode& condCompNotNode)|:\\
+The binder pops a value from the $conditionalCompilationEvaluationStack$ and
+pushes \textbf{true} to the $conditionalCompilationEvaluationStack$ if the value is \textbf{false}.
+Otherwise it pushes \textbf{false} to the $conditionalCompilationEvaluationStack$.
+\item
+\verb|EndVisit(CondCompDisjunctionNode& condCompDisjunctionNode)|:\\
+The binder pops value $right$ from the $conditionalCompilationEvaluationStack$.
+It then pops value $left$ from the $conditionalCompilationEvaluationStack$.
+It pushes a value \verb:left || right: to the $conditionalCompilationEvaluationStack$.
+\item
+\verb|EndVisit(CondCompConjunctionNode& condCompConjunctionNode)|:\\
+The binder pops value $right$ from the $conditionalCompilationEvaluationStack$.
+It then pops value $left$ from the $conditionalCompilationEvaluationStack$.
+It pushes a value \verb:left && right: to the $conditionalCompilationEvaluationStack$.
+\item
+\verb|Visit(CondCompStatementNode& condCompStatementNode)|:\\
+The condCompStatementNode has an $ifPart$, a possibly empty list of $elifPart$s and optionally an $elsePart$.
+The binder evaluates the expression contained by the $ifPart$ by calling its \verb|Accept| member function.
+The result of this visitation is in the top of the $conditionalCompilationEvaluationStack$.
+The binder pops a value, $execute$, from the $conditionalCompilationEvaluationStack$.
+If $execute$ is \textbf{true}, it compiles the statements contained by $ifPart$.
+Otherwise, it evaluates expressions of the $elifPart$s one at a time and pops a value, $execute$, from the
+$conditionalCompilationEvaluationStack$.
+As soon as $execute$ is \textbf{true}, the binder compiles the statements contained by that $elifPart$ and breaks the loop.
+If none of the $elifPart$ expressions evaluated \textbf{true}, the binder compiles the statements contained by the $elsePart$, if present.
+\end{itemize}
+
 \chapter{Binding Functions}
+
+\section{Generating Receive Statements}\label{receives}
+
+Function parameters are not directly used in computation inside the body of a function.
+Instead there's a local variable corresponding to each parameter that \emph{receives} the value from the parameter.
+That variable has the same type as the parameter and is used as a replacement for the parameter in computations inside the body of a function.
+
+In the beginning of each function before user written statements,
+a \verb|BoundReceiveStatement| is generated for each parameter, to construct a local variable that receive its value from that parameter.
+
+\section{Static Initialization of Class Objects}
+
+The following statements are inserted to the beginning of each user written static constructor:
+\begin{enumerate}
+\item
+Construct a recursive mutex guard:
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+System.Support MtxGuard mtxGuard(<recursive mutex with compiler generated id>);
+\end{lstlisting}
+\item
+If already initialized, return.
+\item
+Set initialized to \textbf{true}.
+\item
+If class has a base class that has a static constructor, call the base class static constructor.
+\item
+For each static member variable of the class in the declaration order:
+\begin{itemize}
+\item
+If the static member variable has a user written initializer, call that initializer.
+\item
+Otherwise generate an initializer that calls the default constructor for the static member variable.
+\end{itemize}
+\end{enumerate}
+
+\clearpage
+\section{Initializing Class Objects}
+
+The following statements are inserted to the beginning of each user written constructor:
+
+\begin{enumerate}
+\item
+Receive statements.
+\item
+Call of the static constructor, if the class has one.
+\item
+Call of the base class constructor or another constructor of the class begin compiled.
+\begin{itemize}
+\item
+If the user has written a call to a base class constructor using syntax \textbf{base}$(arguments)$, it is called.
+\item
+Otherwise, if the user has written a call to another constructor of the same class using syntax \textbf{this}$(arguments)$, it is called.
+\item
+Otherwise, if the class has a base class, the default constructor of the base class is called.
+\end{itemize}
+\item
+If the class is virtual, the virtual function table pointer is initialized.
+\item
+Call of a constructor for each member variable the class has in the member variable declaration order.
+That is: for each member variable:
+\begin{itemize}
+\item
+If the user has written a member variable initializer using syntax $memVar(arguments)$, it is called.
+\item
+Otherwise, the compiler generates a call to the default constructor for the member variable, $memVar()$.
+\end{itemize}
+\end{enumerate}
+
+\section{Destroying Class Objects}
+
+The following statements are inserted to the beginning of each user written destructor:
+\begin{enumerate}
+\item
+Receive statement.
+\item
+If the class is virtual, the virtual function table pointer is set to correspond to the class being destroyed.
+\end{enumerate}
+The following statements are appended to the end of each user written destructor:
+\begin{enumerate}
+\item
+Call of a destructor for each member variable the class has in the reversed member variable declaration oreder.
+\item
+If the class has a base class, the base class destructor is called.
+\end{enumerate}
+
+\section{Synthesized Class Functions}
+
+\subsection{Synthesized Static Constructor}
+
+If the user has not written a static constructor for a class, and the class has static member variables, the compiler will implement a
+static constructor for the class.
+The compiler generated static constructor is called a \emph{synthesized static constructor}.
+The synthesized static constructor contains following code:
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+void static_ctor()
+{
+    System.Support MtxGuard mtxGuard(<recursive mutex with compiler generated id>);
+    if ($initialized) return;
+    $initialized = true;
+    'if class has a base class and the base class has a static constructor, call it'
+    'for each static member variable of the class, call the default constructor of the static member variable'
+}
+\end{lstlisting}
+
+\subsection{Synthesized Default Contructor}
+
+If the user has not written a constructor for a class, the compiler will implement a default constructor for that class if it's needed.
+Needed means that it is called explicitly by the user or called implicitly by other compiler generated code.
+That compiler generated default constructor is called a \emph{synthesized default constructor}.
+The synthesized default constructor contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+Call of a static constructor, if the class has one.
+\item
+If the class has a base class, the default constructor for the base class is called.
+\item
+If the class is virtual, the virtual function table pointer is initialized.
+\item
+For each member variable of the class, the default constructor for the member variable is called in the member variable declaration order.
+\end{enumerate}
+
+\subsection{Synthesized Copy Constructor}
+
+If the user has not written a copy or move operation or a destructor for a class, the compiler will implement a copy constructor for that class if it's needed.
+That compiler generated copy constructor is called a \emph{synthesized copy constructor}.
+The synthesized copy constructor contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+Call of a static constructor, if the class has one.
+\item
+If the class has a base class, the copy constructor for the base class is called.
+\item
+If the class is virtual, the virtual function table pointer is initialized.
+\item
+For each member variable of the class, the copy constructor for the member variable is called in the member variable declaration order.
+\end{enumerate}
+
+\subsection{Synthesized Move Constructor}
+
+If the user has not written a copy or move operation or a destructor for a class, the compiler will implement a move constructor for that class if it's needed.
+That compiler generated move constructor is called a \emph{synthesized move constructor}.
+The synthesized move constructor contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+Call of a static constructor, if the class has one.
+\item
+If the class has a base class, the move constructor for the base class is called.
+\item
+If the class is virtual, the virtual function table pointer is initialized.
+\item
+For each member variable of the class, the move constructor for the member variable is called in the member variable declaration order.
+\end{enumerate}
+
+\subsection{Synthesized Copy Assignment}
+
+If the user has not written a copy or move operation or destructor for a class, the compiler will implement a copy assignment for that class if it's needed.
+That compiler generated copy assignment is called a \emph{synthesized copy assignment}.
+The synthesized copy assignment contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+If the class has a base class, the copy assignment for the base class is called.
+\item
+For each member variable of the class, the copy assignment for the member variable is called in the member variable declaration order.
+\end{enumerate}
+
+\subsection{Synthesized Move Assignment}
+
+If the user has not written a copy or move operation or destructor for a class, the compiler will implement a move assignment for that class if it's needed.
+That compiler generated move assignment is called a \emph{synthesized move assignment}.
+The synthesized move assignment contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+If the class has a base class, the move assignment for the base class is called.
+\item
+For each member variable of the class, the move assignment for the member variable is called in the member variable declaration order.
+\end{enumerate}
+
+\subsection{Synthesized Equality Comparison Function}
+
+If the user has not written an equality comparison function for a class, the compiler will implement it for that class if it's needed.
+That compiler generated equality comparison function is called a \emph{synthesized equality comparison function}.
+The synthesized equality comparison function contains following statements:
+\begin{enumerate}
+\item
+Receive statements (\ref{receives}).
+\item
+If the class has a base class, the equality comparison function for the base class is called.
+If that returns \textbf{false}, the equality comparison function returns \textbf{false}.
+\item
+Otherwise, the equality comparison function the each member variable is called. As soon as one of those returns \textbf{false},
+the equality comparison function returns \textbf{false}.
+\item
+Otherwise, the equality comparison function returns \textbf{true}.
+\end{enumerate}
+
+\subsection{Synthesized Destructor}
+
+If the user has not written a destructor for a class and that class is virtual, has a nontrivial member variable destructor,
+or has a base class that has a destructor, the compiler will implement a destructor for that class.
+The compiler generated destructor is called a \emph{synthesized destructor}.
+The synthesized destructor contains following statements:
+\begin{enumerate}
+\item
+Receive statement (\ref{receives}).
+\item
+If the class is virtual, the virtual function pointer is set to correspond this class type.
+\item
+For each member variable in reverse member variable declaration order, the destructor for the member variable is called,
+if the member variable has a nontrivial destructor.
+\item
+If the class has a base class and that base class has a destructor, it is called.
+\end{enumerate}
 
 \chapter{Template Repositories}
 
