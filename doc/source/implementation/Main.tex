@@ -186,7 +186,7 @@ Quick introduction to intermediate instructions:
 
 \item
 \verb|%1|, \verb|%2|, etc. represent intermediate results of computation.
-They may be regarded as registers. There are inifinite number of them.
+They may be regarded as registers. There are infinite number of them.
 
 \item
 \textbf{i8}, \textbf{i16} and \textbf{i32} are 8-bit, 16-bit and 32-bit integer types.
@@ -299,11 +299,13 @@ In chapter 10 we inspect the algorithms used in overload resolution.
 Chapter 11 discusses concepts and their role in the overload resolution.
 \end{itemize}
 \item
-Chapter 12 describes the operation of the expression binder and in chapter 13 we inspect various statement binders.
+Chapter 12 describes the operation of the expression binder.
 \item
-In chapter 14 we concentrate on how templates are compiled.
+Chapter 13 shows various statement binders.
 \item
-Chapter 15 bundles the previous pieces together by describing the binding of whole compile units.
+Chapter 14 describes how the main binder binds classes and functions.
+\item
+Chapter 15 discusses the compilation of templates.
 \end{itemize}
 \item
 Chapter 16 is devoted to the emitter component of the compiler
@@ -9933,19 +9935,33 @@ As soon as $execute$ is \textbf{true}, the binder compiles the statements contai
 If none of the $elifPart$ expressions evaluated \textbf{true}, the binder compiles the statements contained by the $elsePart$, if present.
 \end{itemize}
 
-\chapter{Binding Functions}
+\chapter{Binding Classes and Functions}
 
-\section{Generating Receive Statements}\label{receives}
+The main binder generates bound classes from the abstract syntax tree class nodes and bound functions from the abstract syntax tree nodes for
+static constructors, constructors, destructors, member functions and nonmember functions.
+As it visits the abstract syntax tree nodes, it calls the statement binders to generate bound nodes for statements and expressions.
+It also completes user written functions with compiler generated statements.
+During this process the overload resolution also fires generation of \emph{synthesized functions}.
+When a class or function is fully processed its bound version is added to the end of the bound compile unit.
+
+\section{Completing User Written Functions}
+
+User written functions are completed with compiler generated statements.
+
+\subsection{Generating Receive Statements}\label{receives}
+
+In the beginning of every function, the compiler generates so called \emph{receive statements}.
 
 Function parameters are not directly used in computation inside the body of a function.
-Instead there's a local variable corresponding to each parameter that \emph{receives} the value from the parameter.
+Instead there's a local variable corresponding to each parameter that receives the value from the parameter.
 That variable has the same type as the parameter and is used as a replacement for the parameter in computations inside the body of a function.
 
 In the beginning of each function before user written statements,
 a \verb|BoundReceiveStatement| is generated for each parameter, to construct a local variable that receive its value from that parameter.
 
-\section{Static Initialization of Class Objects}
+\subsection{Static Initialization of Class Objects}
 
+User written static constructors are completed with compiler generated initialization statements.
 The following statements are inserted to the beginning of each user written static constructor:
 \begin{enumerate}
 \item
@@ -9970,9 +9986,9 @@ Otherwise generate an initializer that calls the default constructor for the sta
 \end{itemize}
 \end{enumerate}
 
-\clearpage
-\section{Initializing Class Objects}
+\subsection{Initializing Class Objects}
 
+User written constructors are completed with compiler generated initialization statements.
 The following statements are inserted to the beginning of each user written constructor:
 
 \begin{enumerate}
@@ -10003,8 +10019,9 @@ Otherwise, the compiler generates a call to the default constructor for the memb
 \end{itemize}
 \end{enumerate}
 
-\section{Destroying Class Objects}
+\subsection{Destroying Class Objects}
 
+User written destructors are completed with compiler generated destructor calls.
 The following statements are inserted to the beginning of each user written destructor:
 \begin{enumerate}
 \item
@@ -10015,12 +10032,14 @@ If the class is virtual, the virtual function table pointer is set to correspond
 The following statements are appended to the end of each user written destructor:
 \begin{enumerate}
 \item
-Call of a destructor for each member variable the class has in the reversed member variable declaration oreder.
+Call of a destructor for each member variable the class has in the reversed member variable declaration order.
 \item
 If the class has a base class, the base class destructor is called.
 \end{enumerate}
 
 \section{Synthesized Class Functions}
+
+The overload resolution process fires the generation of synthesized functions that are added to the bound compile unit.
 
 \subsection{Synthesized Static Constructor}
 
@@ -10159,9 +10178,79 @@ if the member variable has a nontrivial destructor.
 If the class has a base class and that base class has a destructor, it is called.
 \end{enumerate}
 
-\chapter{Template Repositories}
+\chapter{Templates}
 
-\chapter{Binding Compile Units}
+Apart from the template instantiation process, templates are not processed by the compiler in any other way
+than their abstract syntax tree representation is saved to the project's library file in binary form along
+with their symbol table entry.
+The template instantiation process has access to the abstract syntax tree representation of the template whether
+the template belongs to the project being compiled, or one of the libraries used by the project being compiled.
+In the first case, the abstract syntax tree representation is already in memory associated with the template's symbol table entry,
+in the latter case it is first loaded from the library file and then associated with the template's symbol table entry.
+
+Template instantiation approximately takes the abstract syntax tree representation of the template, binds type arguments to
+template parameters, and then pushes the result through the whole compilation pipeline starting from the creation of symbols
+for entities within the template and inserting them to the symbol table,
+then binding the types and values and importing namespaces, binding the statements and expressions of the template,
+and finally generating bound classes and functions and appending them to the current bound compile unit.
+
+\section{Function Templates}
+
+\subsection{Function Template Repository}
+
+A function template key contains the primary function template symbol and list of template argument symbols.
+Two function template keys are equal if they contain the same primary function template symbol and
+lists of template argument symbols that are pairwise equal.
+The function template repository keeps mappings from function template keys to function template instances, and caches them per compilation unit basis.
+
+\begin{algo}\label{getfunctiontemplatefromrepository} Get Function Template From Repository. Inputs: a function template key.
+\begin{enumerate}
+\item
+If a function template intance for the function template key is found from the repository, return it.
+\item
+Otherwise, return null.
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{addfunctiontemplatetorepository} Add Function Template To Repository. Inputs: a function template key, a function template instance.
+\begin{enumerate}
+\item
+Add $<key, instance>$ pair to the mappings.
+\end{enumerate}
+\end{algo}
+
+\subsection{Binding Type Parameters}
+
+\begin{algo}\label{bindtypeparam} Bind Type Parameters. Inputs: a primary function template, a function template instance, list of template arguments.
+\begin{enumerate}
+\item
+Let $n$ be the number of type parameters of the function template.
+\item
+For $i$ = 1, \ldots, $n$:
+\begin{enumerate}
+\item
+Let $typeParam$ be $i$'th type parameter.
+\item
+Let $templateArg$ be $i$'th template argument.
+\item
+Create a \verb|BoundTypeParameterSymbol| that maps name of $typeParam$ to $templateArg$, and add it to the function template instance using algorithm
+\ref{addsymboltocontainer}, so that the type resolver can find it from the scope of the function template instance (algorithm \ref{resolvesymboltype}).
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\subsection{Instantiation of a Function Template}
+
+\begin{algo}\label{instantiatefunctiontemplate} Instantiate a Function Template. Inputs: a primary function template, a list of template arguments.
+\begin{enumerate}
+\item
+Create a function template key, $key$, from the primary function template symbol and list of template argument symbols.
+\item
+Search $key$ from the function template repository (algorithm \ref{getfunctiontemplatefromrepository}). Let $symbol$ be the symbol found.
+\item
+If $symbol$ is not null, return $symbol$.
+\end{enumerate}
+\end{algo}
 
 \chapter{Emitter}
 
