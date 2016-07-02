@@ -253,7 +253,7 @@ Intermediate code is the glue between the front and back ends of a compiler.
 
 \section{Representations of Cmajor Programs}\label{representations}
 
-The Cmajor compiler front-end has many intermediate representations for Cmajor programs:
+The Cmajor compiler front-end has four intermediate representations for Cmajor programs:
 \begin{itemize}
 \item
 The first one is the \emph{abstract syntax tree representation} that the \emph{parser} component produces.
@@ -305,7 +305,7 @@ Chapter 13 shows various statement binders.
 \item
 Chapter 14 describes how the main binder binds classes and functions.
 \item
-Chapter 15 discusses the compilation of templates.
+Chapter 15 discusses templates.
 \end{itemize}
 \item
 Chapter 16 is devoted to the emitter component of the compiler
@@ -3882,7 +3882,7 @@ Close $d$ as described in section \ref{opencontainersymbol}.
 
 Creating and adding symbols to the global symbol table is done using the following algorithm:
 
-\begin{algo} Creating and Adding Symbols to the Global Symbol Table.
+\begin{algo}\label{addsymbolstoglobalsymboltable} Creating and Adding Symbols to the Global Symbol Table.
 The algorithm is implemented by an abstract syntax tree visitor called declaration visitor.
 The declaration visitor visits abstract syntax tree nodes by overriding the following visiting points:
 \begin{itemize}
@@ -5608,7 +5608,7 @@ Finally a type symbol \verb|const Set<int, System.Less<int>>&| is returned.
 \end{enumerate}
 \end{flushleft}
 
-\chapter{Importing Namespaces, and Binding Types and Values}
+\chapter{Importing Namespaces, and Binding Types and Values}\label{bindingtypesandvalues}
 
 In the next phase of compilation we:
 \begin{itemize}
@@ -5757,6 +5757,72 @@ Set access of $s$ to $access$.
 \end{enumerate}
 \end{algo}
 
+\section{Checking Access to a Symbol}
+
+\begin{algo}\label{checkaccesstosymbol} Checking Access to a Symbol.
+Inputs: a symbol from where you access a symbol, $source$, a target symbol you access, $target$.
+\begin{enumerate}
+\item
+Let $targetFun$ be the function symbol that contains the $target$ symbol, if any.
+\item
+If $targetFun$ is not null,
+\begin{enumerate}
+\item
+Let $sourceFun$ be the function symbol that is or contains the $source$ symbol.
+\item
+If $sourceFun$ is equal to the $targetFun$, return.
+\end{enumerate}
+\item
+If $source$ is a function symbol,
+\begin{enumerate}
+\item
+If $source$ is a function template specialization, return.
+\item
+If $source$ is a member of a class template specialization, return.
+\end{enumerate}
+\item
+Let $targetClass$ be the class symbol that contains the $target$ symbol, if any.
+\item
+If $targetClass$ is not null, check access from $source$ to $targetClass$ by calling this algorithm recursively.
+\item
+If access of $target$ is
+\begin{itemize}
+\item
+\verb|public|, return.
+\item
+\verb|protected|,
+\begin{enumerate}
+\item
+Let $sourceClass$ be the class symbol that contains the $source$ symbol, if any.
+\item
+If $sourceClass$ is not null,
+\begin{enumerate}
+\item
+If $targetClass$ is same as, parent of, or ancestor of $sourceClass$, return.
+\item
+If $sourceClass$ is derived from $targetClass$, return.
+\end{enumerate}
+\end{enumerate}
+\item
+\verb|internal|, return.
+\item
+\verb|private|,
+\begin{enumerate}
+\item
+If $targetClass$ is not null,
+\begin{enumerate}
+\item
+Let $sourceClass$ be the class symbol tha contains the $source$ symbol, if any.
+\item
+If $targetClass$ is same as, parent of, or ancestor of $sourceClass$, return.
+\end{enumerate}
+\end{enumerate}
+\end{itemize}
+\item
+Report error: $target$ "is inaccessible due to its protection level".
+\end{enumerate}
+\end{algo}
+
 \section{Checking the Validity of Specifiers}
 
 The following table shows possible specifiers for each symbol:\footnote{not all combination are valid}
@@ -5781,6 +5847,230 @@ The following table shows possible specifiers for each symbol:\footnote{not all 
 \hline
 \end{supertabular}
 \end{flushleft}
+
+\chapter{Binding Virtual Classes}\label{bindingvirtualclasses}
+
+\begin{defn}\label{virtualclass} A \emph{virtual class} is a class that has one or more virtual, overridden or abstract member function, implements an interface,
+or has a base class that is virtual.
+\end{defn}
+
+The next phase of compilation is to construct \emph{virtual function tables} and \emph{interface tables}.
+A virtual function table, or \emph{vtable} for short, is a table of pointers to virtual functions.
+An interface table, or \emph{itable} for short, is a table of pointers to functions that implement an interface.
+A virtual class has one vtable, and it has an itable for each interface it implements.
+
+\section{Constructing a Virtual Function Table}
+
+In Cmajor, the first entry of a virtual function table is reserved for the run-time type information table pointer, or RTTI table pointer, for a class.
+Other entries are pointers to virtual functions that this class or one of its base classes implement.
+A virtual function with signature $foo(type_1, \ldots, type_n)$ has always the same index in the vtable regardless of the class object used for calling it.
+A virtual function call is implemented by loading the vtable pointer of the class object using the this-pointer,
+the implicit first argument of each member function, then loading the virtual function pointer from the vtable in the index of the virtual function,
+and calling that function.
+
+\begin{algo}\label{initvtable} Initializing the VTable. Inputs: a class type symbol for which to initialize the vtable.
+\begin{enumerate}
+\item
+If the class has a base class,
+\begin{enumerate}
+\item
+Initialize vtable of the base class by calling this algorithm recursively for the base class symbol.
+\item
+If the base class is virtual, set this class also virtual.
+\end{enumerate}
+\item
+If this class is virtual,
+\begin{enumerate}
+\item
+If the class does not have a base class, or has a nonvirtual base class,
+\begin{enumerate}
+\item
+If the class has a base class, set virtual function table pointer index of this class to 1,
+\item
+otherwise, set virtual function table pointer index of this class to 0.
+\end{enumerate}
+\item
+Call algorithm InitVtbl (\ref{initvtbl}) with this class and this classes' vtable.
+\item
+For each virtual function in the vtable of this class,
+\begin{enumerate}
+\item
+If the virtual function is abstract, but this class is not declared abstract, report error "class containing abstract member functions must be declared abstract".
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{initvtbl} InitVtbl. Inputs: a class symbol and a vtable, $vtblToInit$, belonging to that class or one of the classes derived from it.
+\begin{enumerate}
+\item
+If this class has a base class, call this algorithm recursily for the base class symbol and $vtblToInit$ that belongs to this class.
+\item
+If $vtblToInit$ is empty, set the first entry to null pointer, thus reserving it to the RTTI table pointer.
+\item
+Let $virtualFunctions$ be a list of virtual functions initially empty.
+\item
+If this class has a destructor,
+\begin{enumerate}
+\item
+If the destructor is virtual or overridden, add the destructor to $virtualFunctions$.
+\end{enumerate}
+\item
+For each symbol this class contains:
+\begin{enumerate}
+\item
+If the symbol is a function symbol,
+\begin{enumerate}
+\item
+if the symbol is not destructor and it is virtual, abstract or overridden function symbol, add the symbol to the end of $virtualFunctions$.
+\end{enumerate}
+\end{enumerate}
+\item
+Let $n$ be size of $virtualFuctions + 1$, the number virtual functions plus one entry for RTTI table pointer.
+\item
+For $i$ = 1, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $f$ be $virtualFunctions[i - 1]$.
+\item
+Let $found$ be \textbf{false}.
+\item
+Let $m$ be the number of entries in the $vtblToInit$ list.
+\item
+For $j$ = 1, \ldots, $m - 1$:
+\begin{enumerate}
+\item
+Let $v$ be $vtblToInit[j]$.
+\item
+If $f$ overrides $v$ (algorithm \ref{overrides}),
+\begin{enumerate}
+\item
+If $f$ is not declared as \verb|override|, report error "overriding function should be declared with override specifier" and exit.
+\item
+If $f$ is declared as \verb|throw|, but $v$ is declared as \verb|nothrow| or vice versa, report error
+"overriding function has conflicting nothrow specification compared to base class virtual function" and exit.
+\item
+Set virtual function table index of $f$ to $j$.
+\item
+Set $vtblToInit[j]$ to $f$.
+\item
+Set $found$ to \textbf{true} and break the loop.
+\end{enumerate}
+\end{enumerate}
+\item
+If $found$ is \textbf{false},
+\begin{enumerate}
+\item
+If $f$ is declared as \verb|override|, report error "no suitable function to override" and exit.
+\item
+Set the virtual function table index of $f$ to $m$, and add $f$ to the end of $vtblToInit$.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{overrides} Overrides. Inputs: function symbols $f$ and $g$.
+The algorithm returns \textbf{true}, if $f$ overrides $g$, and \textbf{false} otherwise.
+\begin{enumerate}
+\item
+If $f$ is not a member function symbol, or $g$ is not a member function symbol, return \textbf{false}.
+\item
+If $f$ and $g$ have the same function group name and the same number of parameters,
+\begin{enumerate}
+\item
+For each parameter $p$ of $f$ and each corresponding parameter $q$ of $g$, except the first one which is the this-pointer parameter,
+\begin{enumerate}
+\item
+If the type of $p$ is not equal to the type of $q$, return \textbf{false}.
+\end{enumerate}
+\item
+Return \textbf{true}.
+\end{enumerate}
+\item
+Otherwise, return \textbf{false}.
+\end{enumerate}
+\end{algo}
+
+\section{Constructing Interface Tables}
+
+\begin{algo}\label{inititbls} Initialize Interface Tables. Inputs: class type symbol for which to initialize the interface tables, $itabs$.
+\begin{enumerate}
+\item
+If the class type does not implement any interfaces, return.
+\item
+Set the class type symbol virtual.
+\item
+If the class does not have any virtual functions, set the first entry of the vtable to zero, thus reserving it to the RTTI table pointer.
+\item
+For each interface type symbol that the class implements:
+\begin{enumerate}
+\item
+Add to the end of $itabs$, the list of itables, an empty itable that contains as many entries as there are member functions in the interface type.
+\item
+Set the itable to contain the interface type symbol.
+\end{enumerate}
+\item
+For each symbol the class type contains:
+\begin{enumerate}
+\item
+If the symbol is a function symbol,
+\begin{enumerate}
+\item
+Let $fun$ be the symbol.
+\item
+For each itable, $itab$, in $itabs$:
+\begin{enumerate}
+\item
+Let $intf$ be the interface type symbol contained by the itable.
+\item
+For each member function symbol of $intf$:
+\begin{itemize}
+\item
+Let $intfFun$ be the member function symbol.
+\item
+If $fun$ implements $intfFun$ (algorithm \ref{implements}), set the entry with index of $intfFun$ of $itab$ to $fun$.
+\end{itemize}
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\item
+For each itable, $itab$, in $itabs$:
+\begin{enumerate}
+\item
+For each entry in $itab$:
+\begin{enumerate}
+\item
+If the entry is empty, report error: "interface function missing".
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{algo}
+
+\begin{algo}\label{implements} Implements. Inputs: function symbols $f$ and $g$.
+The algorithm returns \textbf{true} if $f$ implements $g$, and \textbf{false} otherwise.
+\begin{enumerate}
+\item
+If the function group names of $f$ and $g$ are not same, return \textbf{false}.
+\item
+If $f$ or $g$ has no return type, return \textbf{false}.
+\item
+If return types of $f$ and $g$ are not the same, return \textbf{false}.
+\item
+If the number of parameters of $f$ and $g$ are not the same, return \textbf{false}.
+\item
+For each parameter $p$ of $f$ and corresponding parameter $q$ of $g$:
+\begin{enumerate}
+\item
+If $p$ and $q$ are first parameters, if type of $p$ is a \textbf{const} type and type of $q$ is not a \textbf{const} type, or vice versa, return \textbf{false}.
+\item
+Otherwise, if type of $p$ is not equal to the type of $q$, return \textbf{false}.
+\end{enumerate}
+\item
+If $f$ is \verb|throw| and $g$ is \verb|nothrow| or vice versa, report error "implementing function has conflicting nothrow specification compared to interface function".
+\item
+Return \textbf{true}.
+\end{enumerate}
+\end{algo}
 
 \chapter{Function Repositories}\label{functionrepositories}
 
@@ -8424,7 +8714,7 @@ Otherwise, report error.
 \begin{algo}\label{bindconstantsymbol} Bind a Constant Symbol.
 \begin{enumerate}
 \item
-Check access from the current function being compiled to the constant symbol.
+Check access from the current function being compiled to the constant symbol using algorithm \ref{checkaccesstosymbol}.
 \item
 Create a \verb|BoundConstant| with the constant symbol, set its type to the type of the constant symbol, and push it to the bound expression stack.
 \end{enumerate}
@@ -8445,7 +8735,7 @@ and push it to the bound expression stack.
 \begin{algo}\label{bindmembervariablesymbol} Bind a Member Variable Symbol.
 \begin{enumerate}
 \item
-Check access from the current function being compiled to the member variable symbol.
+Check access from the current function being compiled to the member variable symbol using algorithm \ref{checkaccesstosymbol}.
 \item
 Create a \verb|BoundMemberVariable| with the member variable symbol, set its type to the type of the member variable,
 and push it to the bound expression stack.
@@ -9296,7 +9586,7 @@ If $exprType$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $exprClassType$ be the base type of $exprType$.
 \item
-If $exprClassType$ is not virtual, report error and exit.
+If $exprClassType$ is not virtual (\ref{virtualclass}), report error and exit.
 \item
 Otherwise, resolve type of $typeExpr$ using algorithm \ref{resolvetype}. Let $type$ be the type resolved.
 \item
@@ -9304,7 +9594,7 @@ If $type$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $rightClassType$ be the base type of $type$.
 \item
-If $rightClassType$ is not virtual, report error and exit.
+If $rightClassType$ is not virtual (\ref{virtualclass}), report error and exit.
 \item
 Otherwise, create a \verb|BoundAsExpression| with $boundExpr$, $exprClassType$ and $rightClassType$, set its type to $type$,
 and push it to the bound expression stack.
@@ -9935,7 +10225,7 @@ As soon as $execute$ is \textbf{true}, the binder compiles the statements contai
 If none of the $elifPart$ expressions evaluated \textbf{true}, the binder compiles the statements contained by the $elsePart$, if present.
 \end{itemize}
 
-\chapter{Binding Classes and Functions}
+\chapter{Binding Classes and Functions}\label{bindingclassesandfunctions}
 
 The main binder generates bound classes from the abstract syntax tree class nodes and bound functions from the abstract syntax tree nodes for
 static constructors, constructors, destructors, member functions and nonmember functions.
@@ -10007,7 +10297,7 @@ Otherwise, if the user has written a call to another constructor of the same cla
 Otherwise, if the class has a base class, the default constructor of the base class is called.
 \end{itemize}
 \item
-If the class is virtual, the virtual function table pointer is initialized.
+If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 Call of a constructor for each member variable the class has in the member variable declaration order.
 That is: for each member variable:
@@ -10027,7 +10317,7 @@ The following statements are inserted to the beginning of each user written dest
 \item
 Receive statement.
 \item
-If the class is virtual, the virtual function table pointer is set to correspond to the class being destroyed.
+If the class is virtual (\ref{virtualclass}), the virtual function table pointer is set to correspond to the class being destroyed.
 \end{enumerate}
 The following statements are appended to the end of each user written destructor:
 \begin{enumerate}
@@ -10073,7 +10363,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the default constructor for the base class is called.
 \item
-If the class is virtual, the virtual function table pointer is initialized.
+If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the default constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10091,7 +10381,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the copy constructor for the base class is called.
 \item
-If the class is virtual, the virtual function table pointer is initialized.
+If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the copy constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10109,7 +10399,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the move constructor for the base class is called.
 \item
-If the class is virtual, the virtual function table pointer is initialized.
+If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the move constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10162,7 +10452,7 @@ Otherwise, the equality comparison function returns \textbf{true}.
 
 \subsection{Synthesized Destructor}
 
-If the user has not written a destructor for a class and that class is virtual, has a nontrivial member variable destructor,
+If the user has not written a destructor for a class and that class is virtual (\ref{virtualclass}), has a nontrivial member variable destructor,
 or has a base class that has a destructor, the compiler will implement a destructor for that class.
 The compiler generated destructor is called a \emph{synthesized destructor}.
 The synthesized destructor contains following statements:
@@ -10170,7 +10460,7 @@ The synthesized destructor contains following statements:
 \item
 Receive statement (\ref{receives}).
 \item
-If the class is virtual, the virtual function pointer is set to correspond this class type.
+If the class is virtual (\ref{virtualclass}), the virtual function pointer is set to correspond this class type.
 \item
 For each member variable in reverse member variable declaration order, the destructor for the member variable is called,
 if the member variable has a nontrivial destructor.
@@ -10192,36 +10482,71 @@ Template instantiation approximately takes the abstract syntax tree representati
 template parameters, and then pushes the result through the whole compilation pipeline starting from the creation of symbols
 for entities within the template and inserting them to the symbol table,
 then binding the types and values and importing namespaces, binding the statements and expressions of the template,
-and finally generating bound classes and functions and appending them to the current bound compile unit.
+and finally generating bound classes and functions and appending them to the currently bound compile unit.
 
-\section{Function Templates}
+\section{Instantiation of Function Templates}
+
+The following algorithm instantiates and binds a function template with given template arguments and
+inserts its bound version to the currently bound compile unit.
+A function template is instantiated into each compile unit that calls it.
+
+\begin{algo}\label{instantiatefunctiontemplate} Instantiate a Function Template. Inputs: a primary function template, a list of template arguments.
+The algorithm returns a function symbol that represents the instantiated function template.
+The steps are:
+\begin{enumerate}
+\item
+Create a function template key, $key$, from the primary function template symbol and list of template argument symbols (definition \ref{functiontemplatekey}).
+\item
+Search $key$ from the function template repository. Let $functionTemplateInstance$ be the function symbol found.
+\item
+If $functionTemplateInstance$ is not null, return $functionTemplateInstance$.
+\item
+Let $currentNs$ be null.
+\item
+Let $globalNs$ be an AST node created using algorithm \ref{creatingns} with the following inputs:
+\begin{itemize}
+\item
+the full name of the namespace that the primary function template belongs,
+\item
+using nodes contained by the primary function template,
+\item
+$currentNs$.
+\end{itemize}
+\item
+Create an AST node that is a copy of the primary function template using algorithm \ref{createfunctioninstance}. Let $functionInstance$ be the resulting AST node.
+\item
+Add $functionInstance$ to $currentNs$.
+\item
+Create a declaration visitor and call the \verb|Accept| member function of the $globalNs$
+with the declaration visitor to add symbols for the template to the symbol table.
+\item
+Set $functionTemplateInstance$ to the result of the visitation, the symbol for the function template instance.
+\item
+Add $functionTemplateInstance$ to the function template repository with $key$.
+\item
+Call algorithm \ref{bindtypeparams} to bind type parameters of the primary function template to template arguments.
+\item
+Bind types and import namespaces of the function template (chapter \ref{bindingtypesandvalues}).
+\item
+Create a main binder and bind the function template by calling the \verb|Accept| member function of the $globalNs$ with the main binder
+(chapter \ref{bindingclassesandfunctions}). This inserts the bound version of the instantiated function template to the currently bound compile unit.
+\item
+Return $functionTemplateInstance$.
+\end{enumerate}
+\end{algo}
 
 \subsection{Function Template Repository}
 
-A function template key contains the primary function template symbol and list of template argument symbols.
+\begin{defn}\label{functiontemplatekey} A \emph{function template key} contains the primary function template symbol and list of template argument symbols.
 Two function template keys are equal if they contain the same primary function template symbol and
 lists of template argument symbols that are pairwise equal.
+\end{defn}
+
 The function template repository keeps mappings from function template keys to function template instances, and caches them per compilation unit basis.
-
-\begin{algo}\label{getfunctiontemplatefromrepository} Get Function Template From Repository. Inputs: a function template key.
-\begin{enumerate}
-\item
-If a function template intance for the function template key is found from the repository, return it.
-\item
-Otherwise, return null.
-\end{enumerate}
-\end{algo}
-
-\begin{algo}\label{addfunctiontemplatetorepository} Add Function Template To Repository. Inputs: a function template key, a function template instance.
-\begin{enumerate}
-\item
-Add $<key, instance>$ pair to the mappings.
-\end{enumerate}
-\end{algo}
 
 \subsection{Binding Type Parameters}
 
-\begin{algo}\label{bindtypeparam} Bind Type Parameters. Inputs: a primary function template, a function template instance, list of template arguments.
+\begin{algo}\label{bindtypeparams} Bind Type Parameters. Inputs: a primary function template, a function template instance, list of template arguments.
 \begin{enumerate}
 \item
 Let $n$ be the number of type parameters of the function template.
@@ -10239,18 +10564,97 @@ Create a \verb|BoundTypeParameterSymbol| that maps name of $typeParam$ to $templ
 \end{enumerate}
 \end{algo}
 
-\subsection{Instantiation of a Function Template}
+\subsection{Creating AST Nodes for a Namespace}
 
-\begin{algo}\label{instantiatefunctiontemplate} Instantiate a Function Template. Inputs: a primary function template, a list of template arguments.
+\begin{algo}\label{creatingns} Creating Namespace Nodes. Inputs: full namespace name, using nodes, reference to current namespace node $currentNs$.
+The algorithm returns an AST node that represents the global namespace that contains namepace nodes for the given full namespace name,
+and given using nodes (namespace imports and alias declarations).
 \begin{enumerate}
 \item
-Create a function template key, $key$, from the primary function template symbol and list of template argument symbols.
+Create a namespace AST node, $globalNs$, for global namespace.
 \item
-Search $key$ from the function template repository (algorithm \ref{getfunctiontemplatefromrepository}). Let $symbol$ be the symbol found.
+Let $currentNs$ be $globalNs$.
 \item
-If $symbol$ is not null, return $symbol$.
+If full namespace name is not empty:
+\begin{enumerate}
+\item
+Split the full namespace name to a list of components separated by '.'. Let $nsComponents$ be the resulting list.
+\item
+For each namespace component:
+\begin{enumerate}
+\item
+Create a namespace AST node, $nsNode$, for namespace component.
+\item
+Add $nsNode$ to $currentNs$.
+\item
+Set $currentNs$ to $nsNode$.
+\end{enumerate}
+\item
+Return $globalNs$.
+\end{enumerate}
+\item
+For each using node:
+\begin{enumerate}
+\item
+Add a clone of the using node to $currentNs$.
+\end{enumerate}
 \end{enumerate}
 \end{algo}
+
+\subsection{Creating an AST Node for a Function Instance}
+
+\begin{algo}\label{createfunctioninstance} Creating Function Instance Node. Inputs: a primary function template symbol.
+\begin{enumerate}
+\item
+Let $functionInstanceNode$ be null.
+\item
+Let $body$ be null.
+\item
+Get AST node that corresponds the given primary function template from the symbol table. Let $functionTemplateNode$ be the AST node found.
+\item
+If $functionTemplateNode$ is not null, the function template belongs to the current project being compiled. In this case:
+\begin{enumerate}
+\item
+Create a new function AST node and set $functionInstanceNode$ to the created function node.
+\item
+Clone the return type expression node and the parameter nodes from the $functionTemplateNode$ and set them to $functionInstanceNode$.
+\item
+Set $body$ to the body of the $functionTemplateNode$.
+\end{enumerate}
+\item
+Otherwise,
+\begin{enumerate}
+\item
+Create a new function AST node, and set $functionInstanceNode$ to the created function node.
+\item
+Clone the return type expression node and the parameter nodes from the primary function template.
+\item
+Read the body of the function template from the library file that the primary function template belongs to and set it to $body$.
+\end{enumerate}
+\item
+Clone $body$ and set the body of the $functionInstanceNode$ to cloned $body$.
+\end{enumerate}
+\end{algo}
+
+\section{Instantiation of Class Templates}
+
+Instantiation of a class template is different from the instantiation of a function template.
+While a function template is instantiated into every compile unit that calls it, only the member functions of the class template that are
+actually called from a compile unit are instantiated into it. This is because often just a few of them are really needed.
+
+Therefore the instantiation of a class template is a two-step process.
+When some function in a compile unit refers to a class template,
+it is first bound without the bodies of its member functions by pushing it through the compilation pipeline.
+This inserts the necessary declarations of the instantiated class template to the bound compile unit.
+Then, when a member function of the class template is actually called, only that member function is instantiated by cloning its body,
+and pushing it through the compilation pipeline.
+
+Actually this is not the whole truth: if the class template has virtual functions or a destructor, they are all instantiated into every compile unit
+that calls some member function of the class template, regardless whether they are called or not.
+This is because the virtual function table of the class template is generated into a compile unit when a member function of that class template is called,
+and all the virtual functions contained by the virtual function table must exist. If not, you would get linker errors.
+
+
 
 \chapter{Emitter}
 
