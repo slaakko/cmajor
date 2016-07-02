@@ -277,38 +277,40 @@ The structure of the rest of this document is as follows:
 \begin{itemize}
 \item
 Chapters 2 and 3 are devoted to the lexical and syntactic analysis phases of compilation.
-We go through some theory and then see how they are implemented in the parser component of the Cmajor compiler.
+We go through some theory and then see how they are implemented in the parser component of the compiler.
 \item
 Chapter 4 describes the hierarchial symbol table component and presents algorithms for name lookup and construction of the symbol table.
 \item
 In chapters 5, 6 and 7 we inspect three utility components used by other components of the compiler:
 the type repository, the static evaluator and the type resolver.
 \item
-The following eight chapters describe different aspects of the binder component:
+The following nine chapters describe different aspects of the binder component:
 \begin{itemize}
 \item
-We begin by binding types and values in chapter 8.
+Chapter 8 describes the prebinder component that binds types and values.
 \item
-Chapters 9, 10 and 11 describe function overload resolution:
+Chapter 9 discusses generation of virtual function tables and interface tables for virtual classes.
+\item
+Chapters 10, 11 and 12 describe function overload resolution:
 \begin{itemize}
 \item
-Chapter 9 presents function repositories.
+Chapter 10 presents function repositories.
 \item
-In chapter 10 we inspect the algorithms used in overload resolution.
+In chapter 11 we inspect the algorithms used in overload resolution.
 \item
-Chapter 11 discusses concepts and their role in the overload resolution.
+Chapter 12 discusses concepts and their role in the overload resolution.
 \end{itemize}
 \item
-Chapter 12 describes the operation of the expression binder.
+Chapter 13 describes the operation of the expression binder.
 \item
-Chapter 13 shows various statement binders.
+Chapter 14 shows various statement binders.
 \item
-Chapter 14 describes how the main binder binds classes and functions.
+Chapter 15 describes how the main binder binds classes and functions.
 \item
-Chapter 15 discusses templates.
+Chapter 16 discusses instantiation of templates.
 \end{itemize}
 \item
-Chapter 16 is devoted to the emitter component of the compiler
+Chapter 17 is devoted to the emitter component that generates intermediate LLVM or C code.
 \end{itemize}
 
 \chapter{Lexical Analysis}
@@ -5610,22 +5612,22 @@ Finally a type symbol \verb|const Set<int, System.Less<int>>&| is returned.
 
 \chapter{Importing Namespaces, and Binding Types and Values}\label{bindingtypesandvalues}
 
-In the next phase of compilation we:
+The next phase of compilation is driven by a subcomponent of the binder called the \emph{prebinder}.
+The prebinder visits the abstract syntax trees of each compile unit in turn and
 \begin{itemize}
 \item
-import namespaces,
+imports namespaces,
 \item
-define aliases for symbols,
+defines aliases for symbols,
 \item
-bind types and values to symbols,
+binds types and values to symbols,
 \item
-set access to symbols, and
+sets access to symbols, and
 \item
-check the validity of specifiers.
+checks the validity of specifiers.
 \end{itemize}
-We begin by defining file scopes.
 
-\section{File Scopes}\label{filescope}
+\section{Importing Namespaces into File Scopes}\label{filescope}
 
 A \emph{file scope} consists of container scopes of imported namespaces and aliases for symbols in the header of a Cmajor source file.
 For example, the following Cmajor source file contains two namespace imports and two symbol aliases:
