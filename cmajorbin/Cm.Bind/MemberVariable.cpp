@@ -20,7 +20,7 @@
 namespace Cm { namespace Bind {
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::MemberVariableNode* memberVariableNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(memberVariableNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupMemberVariable);
     if (symbol)
@@ -28,7 +28,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         if (symbol->IsMemberVariableSymbol())
         {
             Cm::Sym::MemberVariableSymbol* memberVariableSymbol = static_cast<Cm::Sym::MemberVariableSymbol*>(symbol);
-            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -42,7 +42,7 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
 }
 
 void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::MemberVariableNode* memberVariableNode, Cm::Sym::MemberVariableSymbol* memberVariableSymbol)
 {
     if (memberVariableSymbol->Bound())
     {
@@ -83,6 +83,10 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
     {
         throw Cm::Core::Exception("member variable cannot be inline", memberVariableSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("member variable cannot be constexpr", memberVariableSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("member variable cannot be cdecl", memberVariableSymbol->GetSpan());
@@ -100,10 +104,10 @@ void BindMemberVariable(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerSco
         memberVariableSymbol->SetBound();
         return;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, memberVariableNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, memberVariableNode->TypeExpr());
     if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
     {
-        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, type);
         if (type->Access() < memberVariableSymbol->Access())
         {
             throw Cm::Core::Exception("type of a member variable must be at least as accessible as the member variable itself", type->GetSpan(), memberVariableSymbol->GetSpan());

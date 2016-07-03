@@ -18,13 +18,13 @@
 namespace Cm { namespace Bind {
 
 Cm::Sym::DelegateTypeSymbol* BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::DelegateNode* delegateNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(delegateNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupDelegate);
     if (symbol->IsDelegateTypeSymbol())
     {
         Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol = static_cast<Cm::Sym::DelegateTypeSymbol*>(symbol);
-        BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode, delegateTypeSymbol);
+        BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateNode, delegateTypeSymbol);
         return delegateTypeSymbol;
     }
     else
@@ -34,7 +34,7 @@ Cm::Sym::DelegateTypeSymbol* BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm:
 }
 
 void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::DelegateNode* delegateNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::DelegateNode* delegateNode, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol)
 {
     Cm::Ast::Specifiers specifiers = delegateNode->GetSpecifiers();
     bool isClassMember = delegateNode->Parent()->IsClassNode();
@@ -75,6 +75,10 @@ void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     {
         throw Cm::Core::Exception("delegate cannot be inline", delegateTypeSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("delegate cannot be constexpr", delegateTypeSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("delegate cannot be cdecl", delegateTypeSymbol->GetSpan());
@@ -90,22 +94,22 @@ void BindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
 }
 
 void CompleteBindDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol, Cm::Ast::DelegateNode* delegateNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::DelegateTypeSymbol* delegateTypeSymbol, Cm::Ast::DelegateNode* delegateNode)
 {
-    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode->ReturnTypeExpr());
+    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateNode->ReturnTypeExpr());
     delegateTypeSymbol->SetReturnType(returnType);
     delegateTypeSymbol->MakeIrType();
     delegateTypeSymbol->SetBound();
 }
 
 Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classDelegateNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupClassDelegate);
     if (symbol->IsClassDelegateTypeSymbol())
     {
         Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol = static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(symbol);
-        BindClassDelegate(symbolTable, containerScope, fileScopes, classDelegateNode, classDelegateTypeSymbol);
+        BindClassDelegate(symbolTable, containerScope, fileScopes, boundCompileUnit, classDelegateNode, classDelegateTypeSymbol);
         return classDelegateTypeSymbol;
     }
     else
@@ -115,7 +119,8 @@ Cm::Sym::ClassDelegateTypeSymbol* BindClassDelegate(Cm::Sym::SymbolTable& symbol
 }
 
 void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope,
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Ast::ClassDelegateNode* classDelegateNode, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    Cm::Ast::ClassDelegateNode* classDelegateNode, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol)
 {
     Cm::Ast::Specifiers specifiers = classDelegateNode->GetSpecifiers();
     bool isClassMember = classDelegateNode->Parent()->IsClassNode();
@@ -156,6 +161,10 @@ void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScop
     {
         throw Cm::Core::Exception("class delegate cannot be inline", classDelegateTypeSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("class delegate cannot be constexpr", classDelegateTypeSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("class delegate cannot be cdecl", classDelegateTypeSymbol->GetSpan());
@@ -171,9 +180,9 @@ void BindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScop
 }
 
 void CompleBindClassDelegate(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol, Cm::Ast::ClassDelegateNode* classDelegateNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::ClassDelegateTypeSymbol* classDelegateTypeSymbol, Cm::Ast::ClassDelegateNode* classDelegateNode)
 {
-    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateNode->ReturnTypeExpr());
+    Cm::Sym::TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classDelegateNode->ReturnTypeExpr());
     classDelegateTypeSymbol->SetReturnType(returnType);
     Cm::Sym::MemberVariableSymbol* obj = new Cm::Sym::MemberVariableSymbol(classDelegateNode->GetSpan(), "obj");
     symbolTable.SetSidAndAddSymbol(obj);

@@ -10,6 +10,7 @@
 #include <Cm.Bind/Concept.hpp>
 #include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Bind/TypeResolver.hpp>
+#include <Cm.Bind/Evaluator.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Core/Exception.hpp>
 #include <Cm.Sym/ConceptGroupSymbol.hpp>
@@ -78,6 +79,7 @@ public:
     void Visit(Cm::Ast::ConceptIdNode& conceptIdNode) override;
     void Visit(Cm::Ast::DisjunctiveConstraintNode& disjunctiveConstraintNode) override;
     void Visit(Cm::Ast::ConjunctiveConstraintNode& conjunctiveConstraintNode) override;
+    void Visit(Cm::Ast::PredicateConstraintNode& predicateConstraintNode) override;
     void Visit(Cm::Ast::IsConstraintNode& isConstraintNode) override;
     void Visit(Cm::Ast::MultiParamConstraintNode& multiParamConstraintNode) override;
     void Visit(Cm::Ast::TypenameConstraintNode& typenameConstraintNode) override;
@@ -472,7 +474,17 @@ void ConstraintChecker::Visit(Cm::Ast::VoidNode& voidNode)
 
 void ConstraintChecker::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    type = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), &derivedTypeExprNode);
+    type = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), *boundCompileUnit, &derivedTypeExprNode);
+}
+
+void ConstraintChecker::Visit(Cm::Ast::PredicateConstraintNode& predicateConstraintNode)
+{
+    Cm::Ast::Node* invokeExpr = predicateConstraintNode.InvokeExpr();
+    std::unique_ptr<Cm::Sym::Value> result(Evaluate(Cm::Sym::ValueType::boolValue, false, invokeExpr, boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(),
+        boundCompileUnit->ClassTemplateRepository(), *boundCompileUnit));
+    Cm::Sym::BoolValue* boolResult = static_cast<Cm::Sym::BoolValue*>(result.get());
+    constraintCheckStack.Push(boolResult->Value());
+    boundConstraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(boolResult->Value()));
 }
 
 void ConstraintChecker::Visit(Cm::Ast::IsConstraintNode& isConstraintNode)
@@ -610,7 +622,7 @@ void ConstraintChecker::Visit(Cm::Ast::ConstructorConstraintNode& constructorCon
     for (int i = 0; i < n; ++i)
     {
         Cm::Ast::ParameterNode* parameterNode = constructorConstraintNode.Parameters()[i];
-        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), 
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), *boundCompileUnit,
             parameterNode->TypeExpr());
         Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
         resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
@@ -671,7 +683,7 @@ void ConstraintChecker::Visit(Cm::Ast::MemberFunctionConstraintNode& memberFunct
     for (int i = 0; i < n; ++i)
     {
         Cm::Ast::ParameterNode* parameterNode = memberFunctionConstraintNode.Parameters()[i];
-        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), 
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), *boundCompileUnit,
             parameterNode->TypeExpr());
         Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
         resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
@@ -726,7 +738,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
         {
             Cm::Ast::ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
             Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), 
-                parameterNode->TypeExpr());
+                *boundCompileUnit, parameterNode->TypeExpr());
             Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
             resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
             functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, parameterType->GetContainerScope()->ClassInterfaceOrNsScope()));
@@ -743,7 +755,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
             {
                 Cm::Ast::ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
                 Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), 
-                    parameterNode->TypeExpr());
+                    *boundCompileUnit, parameterNode->TypeExpr());
                 Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
                 resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
             }
@@ -762,7 +774,7 @@ void ConstraintChecker::Visit(Cm::Ast::FunctionConstraintNode& functionConstrain
         {
             Cm::Ast::ParameterNode* parameterNode = functionConstraintNode.Parameters()[i];
             Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(), boundCompileUnit->ClassTemplateRepository(), 
-                parameterNode->TypeExpr());
+                *boundCompileUnit, parameterNode->TypeExpr());
             Cm::Core::ArgumentCategory argumentCategory = parameterType->IsReferenceType() ? Cm::Core::ArgumentCategory::lvalue : Cm::Core::ArgumentCategory::rvalue;
             resolutionArguments.push_back(Cm::Core::Argument(argumentCategory, parameterType));
             parameterTypes.push_back(parameterType);

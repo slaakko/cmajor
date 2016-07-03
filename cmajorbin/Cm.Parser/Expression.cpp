@@ -2639,56 +2639,163 @@ private:
     Context context;
 };
 
+class ExpressionGrammar::InvokeExprRule : public Cm::Parsing::Rule
+{
+public:
+    InvokeExprRule(const std::string& name_, Scope* enclosingScope_, Parser* definition_):
+        Cm::Parsing::Rule(name_, enclosingScope_, definition_), contextStack(), context()
+    {
+        AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+        SetValueTypeName("Cm::Ast::Node*");
+        AddLocalVariable(AttrOrVariable("std::unique_ptr<Node>", "expr"));
+        AddLocalVariable(AttrOrVariable("Span", "s"));
+    }
+    virtual void Enter(Cm::Parsing::ObjectStack& stack)
+    {
+        contextStack.push(std::move(context));
+        context = Context();
+        std::unique_ptr<Cm::Parsing::Object> ctx_value = std::move(stack.top());
+        context.ctx = *static_cast<Cm::Parsing::ValueObject<ParsingContext*>*>(ctx_value.get());
+        stack.pop();
+    }
+    virtual void Leave(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.value)));
+        }
+        context = std::move(contextStack.top());
+        contextStack.pop();
+    }
+    virtual void Link()
+    {
+        Cm::Parsing::ActionParser* a0ActionParser = GetAction("A0");
+        a0ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InvokeExprRule>(this, &InvokeExprRule::A0Action));
+        Cm::Parsing::ActionParser* a1ActionParser = GetAction("A1");
+        a1ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InvokeExprRule>(this, &InvokeExprRule::A1Action));
+        Cm::Parsing::ActionParser* a2ActionParser = GetAction("A2");
+        a2ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InvokeExprRule>(this, &InvokeExprRule::A2Action));
+        Cm::Parsing::ActionParser* a3ActionParser = GetAction("A3");
+        a3ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InvokeExprRule>(this, &InvokeExprRule::A3Action));
+        Cm::Parsing::ActionParser* a4ActionParser = GetAction("A4");
+        a4ActionParser->SetAction(new Cm::Parsing::MemberParsingAction<InvokeExprRule>(this, &InvokeExprRule::A4Action));
+        Cm::Parsing::NonterminalParser* identifierNonterminalParser = GetNonterminal("Identifier");
+        identifierNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<InvokeExprRule>(this, &InvokeExprRule::PostIdentifier));
+        Cm::Parsing::NonterminalParser* dotMemberIdNonterminalParser = GetNonterminal("dotMemberId");
+        dotMemberIdNonterminalParser->SetPostCall(new Cm::Parsing::MemberPostCall<InvokeExprRule>(this, &InvokeExprRule::PostdotMemberId));
+        Cm::Parsing::NonterminalParser* argumentListNonterminalParser = GetNonterminal("ArgumentList");
+        argumentListNonterminalParser->SetPreCall(new Cm::Parsing::MemberPreCall<InvokeExprRule>(this, &InvokeExprRule::PreArgumentList));
+    }
+    void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.value = context.expr.release();
+    }
+    void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.s = span;
+        context.expr.reset(context.fromIdentifier);
+    }
+    void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.s.SetEnd(span.End());
+        context.expr.reset(new DotNode(context.s, context.expr.release(), context.fromdotMemberId));
+    }
+    void A3Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr.reset(new InvokeNode(context.s, context.expr.release()));
+    }
+    void A4Action(const char* matchBegin, const char* matchEnd, const Span& span, const std::string& fileName, bool& pass)
+    {
+        context.expr->GetSpan().SetEnd(span.End());
+    }
+    void PostIdentifier(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromIdentifier_value = std::move(stack.top());
+            context.fromIdentifier = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromIdentifier_value.get());
+            stack.pop();
+        }
+    }
+    void PostdotMemberId(Cm::Parsing::ObjectStack& stack, bool matched)
+    {
+        if (matched)
+        {
+            std::unique_ptr<Cm::Parsing::Object> fromdotMemberId_value = std::move(stack.top());
+            context.fromdotMemberId = *static_cast<Cm::Parsing::ValueObject<Cm::Ast::IdentifierNode*>*>(fromdotMemberId_value.get());
+            stack.pop();
+        }
+    }
+    void PreArgumentList(Cm::Parsing::ObjectStack& stack)
+    {
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<ParsingContext*>(context.ctx)));
+        stack.push(std::unique_ptr<Cm::Parsing::Object>(new Cm::Parsing::ValueObject<Cm::Ast::Node*>(context.expr.get())));
+    }
+private:
+    struct Context
+    {
+        Context(): ctx(), value(), expr(), s(), fromIdentifier(), fromdotMemberId() {}
+        ParsingContext* ctx;
+        Cm::Ast::Node* value;
+        std::unique_ptr<Node> expr;
+        Span s;
+        Cm::Ast::IdentifierNode* fromIdentifier;
+        Cm::Ast::IdentifierNode* fromdotMemberId;
+    };
+    std::stack<Context> contextStack;
+    Context context;
+};
+
 void ExpressionGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.LiteralGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::LiteralGrammar::Create(pd);
+        grammar0 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.LiteralGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TemplateGrammar::Create(pd);
+        grammar1 = Cm::Parser::LiteralGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar2 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parsing::stdlib::Create(pd);
+        grammar3 = Cm::Parser::BasicTypeGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar4 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.BasicTypeGrammar");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.TemplateGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parser::BasicTypeGrammar::Create(pd);
+        grammar5 = Cm::Parser::TemplateGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
 }
 
 void ExpressionGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
-    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Literal", this, "LiteralGrammar.Literal"));
+    AddRuleLink(new Cm::Parsing::RuleLink("BasicType", this, "BasicTypeGrammar.BasicType"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("TemplateId", this, "TemplateGrammar.TemplateId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
     AddRule(new ExpressionRule("Expression", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::NonterminalParser("Equivalence", "Equivalence", 1))));
@@ -3092,6 +3199,26 @@ void ExpressionGrammar::CreateRules()
                     new Cm::Parsing::ActionParser("A2",
                         new Cm::Parsing::NonterminalParser("arg", "Expression", 1)),
                     new Cm::Parsing::CharParser(','))))));
+    AddRule(new InvokeExprRule("InvokeExpr", GetScope(),
+        new Cm::Parsing::ActionParser("A0",
+            new Cm::Parsing::SequenceParser(
+                new Cm::Parsing::SequenceParser(
+                    new Cm::Parsing::SequenceParser(
+                        new Cm::Parsing::SequenceParser(
+                            new Cm::Parsing::ActionParser("A1",
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)),
+                            new Cm::Parsing::KleeneStarParser(
+                                new Cm::Parsing::SequenceParser(
+                                    new Cm::Parsing::CharParser('.'),
+                                    new Cm::Parsing::ActionParser("A2",
+                                        new Cm::Parsing::ExpectationParser(
+                                            new Cm::Parsing::NonterminalParser("dotMemberId", "Identifier", 0)))))),
+                        new Cm::Parsing::ActionParser("A3",
+                            new Cm::Parsing::CharParser('('))),
+                    new Cm::Parsing::NonterminalParser("ArgumentList", "ArgumentList", 2)),
+                new Cm::Parsing::ActionParser("A4",
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(')')))))));
     SetSkipRuleName("spaces_and_comments");
 }
 

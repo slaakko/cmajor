@@ -25,17 +25,18 @@ namespace Cm.Sym
         virtuality = virtual_ | abstract_ | override_,
         nothrow_ = 1u << 6u,
         inline_ = 1u << 7u,
-        replicated = 1u << 8u,
-        suppressed = 1u << 9u,
-        default_ = 1u << 10u,
-        explicit_ = 1u << 11u,
-        conversion = 1u << 12u,
-        templateSpecialization = 1u << 13u,
-        memberOfTemplateType = 1u << 14u,
-        memberOfClassTemplate = 1u << 15u,
-        arrayConstructor = 1u << 16u,
-        arrayAssignment = 1u << 17u,
-        new_ = 1u << 18u
+        constexpr_ = 1u << 8u,
+        replicated = 1u << 9u,
+        suppressed = 1u << 10u,
+        default_ = 1u << 11u,
+        explicit_ = 1u << 12u,
+        conversion = 1u << 13u,
+        templateSpecialization = 1u << 14u,
+        memberOfTemplateType = 1u << 15u,
+        memberOfClassTemplate = 1u << 16u,
+        arrayConstructor = 1u << 17u,
+        arrayAssignment = 1u << 18u,
+        new_ = 1u << 19u
     }
     
     public enum ConversionType : byte
@@ -162,6 +163,7 @@ namespace Cm.Sym
             if (Parent() is TemplateTypeSymbol*) return false;
             if (IsReplica()) return false;
             if (Source() == SymbolSource.project && GetGlobalFlag(GlobalFlags.optimize) && IsInline()) return true;
+            if (Source() == SymbolSource.project && IsConstExpr()) return true;
             return base->IsExportSymbol(); 
         }
         public nothrow void SetFlags(FunctionSymbolFlags flags_)
@@ -322,6 +324,14 @@ namespace Cm.Sym
         public nothrow inline void SetInline()
         {
             SetFlag(FunctionSymbolFlags.inline_);
+        }
+        public nothrow inline bool IsConstExpr() const
+        {
+            return GetFlag(FunctionSymbolFlags.constexpr_);
+        }
+        public nothrow inline void SetConstExpr()
+        {
+            SetFlag(FunctionSymbolFlags.constexpr_);
         }
         public nothrow inline bool IsReplicated() const
         {
@@ -545,7 +555,7 @@ namespace Cm.Sym
                 persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
                 reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
             }
-            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol)
+            else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol))
             {
                 persistentFunctionData.Reset(new PersistentFunctionData());
                 bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
@@ -638,7 +648,7 @@ namespace Cm.Sym
                 writer.GetBinaryWriter().Write(bodySize);
                 writer.GetBinaryWriter().Seek(bodyEndPos);
             }
-            else if (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol)
+            else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags.optimize) && !IsMemberOfClassTemplate() && !justSymbol))
             {
                 bool hasUsingNodes = true;
                 if (persistentFunctionData.IsNull())

@@ -10,6 +10,7 @@
 #ifndef CM_BIND_TYPEDEF_INCLUDED
 #define CM_BIND_TYPEDEF_INCLUDED
 #include <Cm.Core/ClassTemplateRepository.hpp>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/Scope.hpp>
 #include <Cm.Sym/TypedefSymbol.hpp>
@@ -19,13 +20,13 @@
 namespace Cm { namespace Bind {
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefNode* typedefNode);
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol);
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefStatementNode* typedefStatementNode);
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode, Cm::Sym::TypedefSymbol* typedefSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefStatementNode* typedefStatementNode, Cm::Sym::TypedefSymbol* typedefSymbol);
 
 } } // namespace Cm::Bind
 

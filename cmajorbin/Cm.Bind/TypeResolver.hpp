@@ -10,6 +10,7 @@
 #ifndef CM_BIND_TYPE_RESOLVER_INCLUDED
 #define CM_BIND_TYPE_RESOLVER_INCLUDED
 #include <Cm.Core/ClassTemplateRepository.hpp>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 #include <Cm.Ast/Visitor.hpp>
@@ -46,10 +47,10 @@ inline TypeResolverFlags operator&(TypeResolverFlags left, TypeResolverFlags rig
 }
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* typeExpr);
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr, TypeResolverFlags flags);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* typeExpr, TypeResolverFlags flags);
 
 } } // namespace Cm::Bind
 

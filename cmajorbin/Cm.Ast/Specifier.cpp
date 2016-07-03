@@ -144,6 +144,14 @@ std::string SpecifierStr(Specifiers s)
         }
         str.append("inline");
     }
+    if ((s & Specifiers::constexpr_) != Specifiers::none)
+    {
+        if (!str.empty())
+        {
+            str.append(1, ' ');
+        }
+        str.append("constexpr");
+    }
     if ((s & Specifiers::new_) != Specifiers::none)
     {
         if (!str.empty())

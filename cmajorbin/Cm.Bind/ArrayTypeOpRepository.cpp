@@ -321,7 +321,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyConstructor(Cm::Sym::TypeSymbol* a
     thatParamNode->Accept(declarationVisitor);
     body->Accept(declarationVisitor);
     compileUnit.SymbolTable().EndContainer();
-    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository());
+    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository(), compileUnit);
     prebinder.BeginContainerScope(copyConstructorSymbol->GetContainerScope());
     thisParamNode->Accept(prebinder);
     thatParamNode->Accept(prebinder);
@@ -381,7 +381,7 @@ Cm::Sym::FunctionSymbol* GenerateArrayTypeCopyAssignment(Cm::Sym::TypeSymbol* ar
     thatParamNode->Accept(declarationVisitor);
     body->Accept(declarationVisitor);
     compileUnit.SymbolTable().EndContainer();
-    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository());
+    Prebinder prebinder(compileUnit.SymbolTable(), compileUnit.ClassTemplateRepository(), compileUnit);
     prebinder.BeginContainerScope(assignmentSymbol->GetContainerScope());
     thisParamNode->Accept(prebinder);
     thatParamNode->Accept(prebinder);

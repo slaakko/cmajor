@@ -26,12 +26,13 @@ enum class Specifiers: uint32_t
     suppress = 1024,
     default_ = 2048,
     inline_ = 4096,
-    cdecl_ = 8192,
-    nothrow_ = 16384,
-    throw_ = 32768,
-    new_ = 65536,
-    unit_test = 131072,
-    non_access_specifiers = static_ | virtuality | explicit_ | external | suppress | default_ | inline_ | cdecl_ | nothrow_ | throw_ | unit_test
+    constexpr_ = 8192,
+    cdecl_ = 16384,
+    nothrow_ = 32768,
+    throw_ = 65536,
+    new_ = 131072,
+    unit_test = 262144,
+    non_access_specifiers = static_ | virtuality | explicit_ | external | suppress | default_ | inline_ | constexpr_ | cdecl_ | nothrow_ | throw_ | unit_test
 };
 
 inline Specifiers operator|(Specifiers left, Specifiers right)

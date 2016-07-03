@@ -17,7 +17,7 @@
 namespace Cm { namespace Bind {
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefNode* typedefNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
     if (!symbol)
@@ -33,7 +33,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         if (symbol->IsTypedefSymbol())
         {
             Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
-            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode, typedefSymbol);
         }
         else
         {
@@ -47,7 +47,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
 }
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefStatementNode* typedefStatementNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(typedefStatementNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupTypedef);
     if (!symbol)
@@ -63,7 +63,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         if (symbol->IsTypedefSymbol())
         {
             Cm::Sym::TypedefSymbol* typedefSymbol = static_cast<Cm::Sym::TypedefSymbol*>(symbol);
-            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode, typedefSymbol);
         }
         else
         {
@@ -78,7 +78,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
 }
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefNode* typedefNode, Cm::Sym::TypedefSymbol* typedefSymbol)
 {
     if (typedefSymbol->Evaluating())
     {
@@ -127,6 +127,10 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     {
         throw Cm::Core::Exception("typedef cannot be inline", typedefSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("typedef cannot be constexpr", typedefSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("typedef cannot be cdecl", typedefSymbol->GetSpan());
@@ -145,14 +149,14 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
         return;
     }
     typedefSymbol->SetEvaluating();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode->TypeExpr());
     typedefSymbol->ResetEvaluating();
     typedefSymbol->SetType(type);
     typedefSymbol->SetBound();
 }
 
 void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::TypedefStatementNode* typedefStatementNode, Cm::Sym::TypedefSymbol* typedefSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::TypedefStatementNode* typedefStatementNode, Cm::Sym::TypedefSymbol* typedefSymbol)
 {
     if (typedefSymbol->Evaluating())
     {
@@ -164,7 +168,7 @@ void BindTypedef(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* con
     }
     SetAccess(typedefSymbol, Cm::Ast::Specifiers::public_, false);
     typedefSymbol->SetEvaluating();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode->TypeExpr());
     typedefSymbol->ResetEvaluating();
     typedefSymbol->SetType(type);
     typedefSymbol->SetBound();

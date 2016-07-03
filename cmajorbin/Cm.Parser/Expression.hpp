@@ -1,5 +1,5 @@
-#ifndef Expression_hpp_11627
-#define Expression_hpp_11627
+#ifndef Expression_hpp_92
+#define Expression_hpp_92
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -40,8 +40,9 @@ private:
     class NewExprRule;
     class ArgumentListRule;
     class ExpressionListRule;
+    class InvokeExprRule;
 };
 
 } } // namespace Cm.Parser
 
-#endif // Expression_hpp_11627
+#endif // Expression_hpp_92

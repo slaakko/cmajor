@@ -158,6 +158,7 @@ class MemberVariableNode;
 class DisjunctiveConstraintNode;
 class ConjunctiveConstraintNode;
 class WhereConstraintNode;
+class PredicateConstraintNode;
 class IsConstraintNode;
 class MultiParamConstraintNode;
 class TypenameConstraintNode;
@@ -399,6 +400,7 @@ public:
     virtual void Visit(ConjunctiveConstraintNode& conjunctiveConstraintNode) {}
     virtual void BeginVisit(WhereConstraintNode& whereConstraintNode) {}
     virtual void EndVisit(WhereConstraintNode& whereConstraintNode) {}
+    virtual void Visit(PredicateConstraintNode& predicateConstraintNode) {}
     virtual void Visit(IsConstraintNode& isConstraintNode) {}
     virtual void Visit(MultiParamConstraintNode& multiParamConstraintNode) {}
     virtual void Visit(TypenameConstraintNode& typenameConstraintNode) {}

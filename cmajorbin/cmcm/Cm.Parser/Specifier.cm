@@ -163,6 +163,8 @@ namespace Cm.Parser
                 a16ActionParser->SetAction(ParsingAction(A16Action));
                 ActionParser* a17ActionParser = GetAction("A17");
                 a17ActionParser->SetAction(ParsingAction(A17Action));
+                ActionParser* a18ActionParser = GetAction("A18");
+                a18ActionParser->SetAction(ParsingAction(A18Action));
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
@@ -218,21 +220,25 @@ namespace Cm.Parser
             }
             public throw void A13Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = Specifiers.cdecl_;
+                context.value = Specifiers.constexpr_;
             }
             public throw void A14Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = Specifiers.nothrow_;
+                context.value = Specifiers.cdecl_;
             }
             public throw void A15Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = Specifiers.throw_;
+                context.value = Specifiers.nothrow_;
             }
             public throw void A16Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = Specifiers.new_;
+                context.value = Specifiers.throw_;
             }
             public throw void A17Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = Specifiers.new_;
+            }
+            public throw void A18Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
                 context.value = Specifiers.unit_test;
             }
@@ -270,41 +276,44 @@ namespace Cm.Parser
                                                                         new AlternativeParser(
                                                                             new AlternativeParser(
                                                                                 new AlternativeParser(
-                                                                                    new ActionParser("A0",
-                                                                                        new KeywordParser("public")),
-                                                                                    new ActionParser("A1",
-                                                                                        new KeywordParser("protected"))),
-                                                                                new ActionParser("A2",
-                                                                                    new KeywordParser("private"))),
-                                                                            new ActionParser("A3",
-                                                                                new KeywordParser("internal"))),
-                                                                        new ActionParser("A4",
-                                                                            new KeywordParser("static"))),
-                                                                    new ActionParser("A5",
-                                                                        new KeywordParser("virtual"))),
-                                                                new ActionParser("A6",
-                                                                    new KeywordParser("override"))),
-                                                            new ActionParser("A7",
-                                                                new KeywordParser("abstract"))),
-                                                        new ActionParser("A8",
-                                                            new KeywordParser("suppress"))),
-                                                    new ActionParser("A9",
-                                                        new KeywordParser("default"))),
-                                                new ActionParser("A10",
-                                                    new KeywordParser("explicit"))),
-                                            new ActionParser("A11",
-                                                new KeywordParser("extern"))),
-                                        new ActionParser("A12",
-                                            new KeywordParser("inline"))),
-                                    new ActionParser("A13",
+                                                                                    new AlternativeParser(
+                                                                                        new ActionParser("A0",
+                                                                                            new KeywordParser("public")),
+                                                                                        new ActionParser("A1",
+                                                                                            new KeywordParser("protected"))),
+                                                                                    new ActionParser("A2",
+                                                                                        new KeywordParser("private"))),
+                                                                                new ActionParser("A3",
+                                                                                    new KeywordParser("internal"))),
+                                                                            new ActionParser("A4",
+                                                                                new KeywordParser("static"))),
+                                                                        new ActionParser("A5",
+                                                                            new KeywordParser("virtual"))),
+                                                                    new ActionParser("A6",
+                                                                        new KeywordParser("override"))),
+                                                                new ActionParser("A7",
+                                                                    new KeywordParser("abstract"))),
+                                                            new ActionParser("A8",
+                                                                new KeywordParser("suppress"))),
+                                                        new ActionParser("A9",
+                                                            new KeywordParser("default"))),
+                                                    new ActionParser("A10",
+                                                        new KeywordParser("explicit"))),
+                                                new ActionParser("A11",
+                                                    new KeywordParser("extern"))),
+                                            new ActionParser("A12",
+                                                new KeywordParser("inline"))),
+                                        new ActionParser("A13",
+                                            new KeywordParser("constexpr"))),
+                                    new ActionParser("A14",
                                         new KeywordParser("cdecl"))),
-                                new ActionParser("A14",
+                                new ActionParser("A15",
                                     new KeywordParser("nothrow"))),
-                            new ActionParser("A15",
+                            new ActionParser("A16",
                                 new KeywordParser("throw"))),
-                        new ActionParser("A16",
+                        new ActionParser("A17",
                             new KeywordParser("new"))),
-                    new ActionParser("A17",
+                    new ActionParser("A18",
                         new KeywordParser("unit_test")))));
         }
     }

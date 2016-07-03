@@ -452,7 +452,8 @@ void ClassTypeSymbol::InitVtbl(std::vector<Cm::Sym::FunctionSymbol*>& vtblToInit
 
 bool Implements(FunctionSymbol* memFun, FunctionSymbol* intfMemFun)
 {
-    if (!memFun->GetReturnType()) return false;
+    if (memFun->GroupName() != intfMemFun->GroupName()) return false;
+    if (!memFun->GetReturnType() || !intfMemFun->GetReturnType()) return false;
     if (!TypesEqual(memFun->GetReturnType(), intfMemFun->GetReturnType())) return false;
     int n = int(memFun->Parameters().size());
     if (n != int(intfMemFun->Parameters().size())) return false;
@@ -471,6 +472,10 @@ bool Implements(FunctionSymbol* memFun, FunctionSymbol* intfMemFun)
         {
             if (!TypesEqual(memFunParamType, intfMemFunParamType)) return false;
         }
+    }
+    if (memFun->CanThrow() && !intfMemFun->CanThrow() || !memFun->CanThrow() && intfMemFun->CanThrow())
+    {
+        throw Exception("implementing function has conflicting nothrow specification compared to interface function", memFun->GetSpan(), intfMemFun->GetSpan());
     }
     return true;
 }

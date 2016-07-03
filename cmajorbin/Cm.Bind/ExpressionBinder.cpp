@@ -1066,14 +1066,15 @@ void ExpressionBinder::Visit(Cm::Ast::VoidNode& voidNode)
 
 void ExpressionBinder::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    Cm::Sym::TypeSymbol* baseType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), derivedTypeExprNode.BaseTypeExprNode());
+    Cm::Sym::TypeSymbol* baseType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, derivedTypeExprNode.BaseTypeExprNode());
     std::vector<int> arrayDimensions;
     int n = derivedTypeExprNode.NumArrayDimensions();
     if (n > 0)
     {
         for (int i = 0; i < n; ++i)
         {
-            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository());
+            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), boundCompileUnit.SymbolTable(), containerScope, 
+                boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
             Cm::Sym::IntValue* intValue = static_cast<Cm::Sym::IntValue*>(value);
             int arrayDimension = intValue->Value();
             if (arrayDimension <= 0)
@@ -2134,7 +2135,7 @@ void ExpressionBinder::BindConstantSymbol(Cm::Ast::Node* idNode, Cm::Sym::Consta
         {
             Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
             Cm::Sym::ContainerScope* constantScope = boundCompileUnit.SymbolTable().GetContainerScope(constantNode);
-            BindConstant(boundCompileUnit.SymbolTable(), constantScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constantNode, constantSymbol);
+            BindConstant(boundCompileUnit.SymbolTable(), constantScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, constantNode, constantSymbol);
         }
         else
         {
@@ -2157,7 +2158,7 @@ void ExpressionBinder::BindLocalVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::L
             Cm::Ast::ConstructionStatementNode* constructionStatementNode = static_cast<Cm::Ast::ConstructionStatementNode*>(node);
             Cm::Sym::ContainerScope* localVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(constructionStatementNode);
             //BindLocalVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constructionStatementNode, localVariableSymbol);
-            BindLocalVariable(boundCompileUnit.SymbolTable(), localVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), constructionStatementNode, localVariableSymbol);
+            BindLocalVariable(boundCompileUnit.SymbolTable(), localVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, constructionStatementNode, localVariableSymbol);
         }
         else
         {
@@ -2184,7 +2185,7 @@ void ExpressionBinder::BindMemberVariableSymbol(Cm::Ast::Node* idNode, Cm::Sym::
             Cm::Ast::MemberVariableNode* memberVariableNode = static_cast<Cm::Ast::MemberVariableNode*>(node);
             Cm::Sym::ContainerScope* memberVariableScope = boundCompileUnit.SymbolTable().GetContainerScope(memberVariableNode);
             //BindMemberVariable(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), memberVariableNode, memberVariableSymbol);
-            BindMemberVariable(boundCompileUnit.SymbolTable(), memberVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), memberVariableNode, memberVariableSymbol);
+            BindMemberVariable(boundCompileUnit.SymbolTable(), memberVariableScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, memberVariableNode, memberVariableSymbol);
         }
         else
         {
@@ -2214,7 +2215,7 @@ void ExpressionBinder::BindClassTypeSymbol(Cm::Ast::Node* idNode, Cm::Sym::Class
         {
             Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
             Cm::Sym::ContainerScope* classScope = boundCompileUnit.SymbolTable().GetContainerScope(classNode);
-            BindClass(boundCompileUnit.SymbolTable(), classScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), classNode, classTypeSymbol);
+            BindClass(boundCompileUnit.SymbolTable(), classScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, classNode, classTypeSymbol);
         }
         else
         {
@@ -2329,7 +2330,7 @@ void ExpressionBinder::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 
 void ExpressionBinder::BindCast(Cm::Ast::Node* node, Cm::Ast::Node* targetTypeExpr, Cm::Ast::Node* sourceExpr, const Cm::Parsing::Span& span)
 {
-    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), targetTypeExpr);
+    Cm::Sym::TypeSymbol* toType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, fileScopes, boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, targetTypeExpr);
     lookupIdStack.Push(lookupId);
     lookupId = Cm::Sym::SymbolTypeSetId::lookupCastSource;
     sourceExpr->Accept(*this);
@@ -2384,7 +2385,7 @@ void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
             if (exprClassType->IsVirtual())
             {
                 Cm::Ast::Node* typeExpr = isNode.TypeExpr();
-                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), typeExpr);
+                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, typeExpr);
                 if (type->IsPointerToClassType())
                 {
                     Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
@@ -2443,7 +2444,7 @@ void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
             if (exprClassType->IsVirtual())
             {
                 Cm::Ast::Node* typeExpr = asNode.TypeExpr();
-                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), typeExpr);
+                Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, typeExpr);
                 if (type->IsPointerToClassType())
                 {
                     Cm::Sym::TypeSymbol* baseType = type->GetBaseType();
@@ -2495,7 +2496,7 @@ void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
 
 void ExpressionBinder::BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg)
 {
-    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), typeExpr);
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, typeExpr);
     if (type->IsReferenceType() || type->IsRvalueRefType())
     {
         throw Cm::Core::Exception("cannot construct a reference", node->GetSpan());
@@ -2605,7 +2606,7 @@ void ExpressionBinder::Visit(Cm::Ast::NewNode& newNode)
         memAlloc = boundCompileUnit.SymbolTable().GetOverload("System.Support.MemAlloc");
     }
     Cm::BoundTree::BoundExpressionList memAllocArguments;
-    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), newNode.TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, newNode.TypeExpr());
     Cm::BoundTree::BoundSizeOfExpression* boundSizeOfExpr = new Cm::BoundTree::BoundSizeOfExpression(&newNode, type);
     boundSizeOfExpr->SetType(boundCompileUnit.SymbolTable().GetTypeRepository().GetType(Cm::Sym::GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId)));
     memAllocArguments.Add(boundSizeOfExpr);
@@ -2631,7 +2632,7 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         for (const std::unique_ptr<Cm::Ast::Node>& templateArgument : templateIdNode.TemplateArguments())
         {
             Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), 
-                templateArgument.get());
+                boundCompileUnit, templateArgument.get());
             boundTemplateArguments.push_back(templateArgumentType);
         }
         boundFunctionGroup->SetBoundTemplateArguments(boundTemplateArguments);
@@ -2646,7 +2647,7 @@ void ExpressionBinder::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
         for (const std::unique_ptr<Cm::Ast::Node>& templateArgument : templateIdNode.TemplateArguments())
         {
             Cm::Sym::TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), 
-                templateArgument.get());
+                boundCompileUnit, templateArgument.get());
             typeArguments.push_back(templateArgumentType);
         }
         if (subjectType->IsClassTypeSymbol())

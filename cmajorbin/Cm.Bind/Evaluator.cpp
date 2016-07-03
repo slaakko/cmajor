@@ -12,8 +12,11 @@
 #include <Cm.Bind/TypeResolver.hpp>
 #include <Cm.Bind/Constant.hpp>
 #include <Cm.Bind/Enumeration.hpp>
+#include <Cm.Bind/OverloadResolution.hpp>
 #include <Cm.Sym/ConstantSymbol.hpp>
 #include <Cm.Sym/EnumSymbol.hpp>
+#include <Cm.Sym/SymbolTypeSet.hpp>
+#include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Ast/Literal.hpp>
 #include <Cm.Ast/Expression.hpp>
 #include <functional>
@@ -437,7 +440,8 @@ class Evaluator : public Cm::Ast::Visitor
 {
 public:
     Evaluator(Cm::Sym::ValueType targetType_, bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, 
-        const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_);
+        const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, 
+        EvaluationFlags flags_);
     Cm::Sym::Value* DoEvaluate(Cm::Ast::Node* value);
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;
@@ -455,10 +459,6 @@ public:
     void Visit(Cm::Ast::WStringLiteralNode& wstringLiteralNode) override;
     void Visit(Cm::Ast::UStringLiteralNode& ustringLiteralNode) override;
     void Visit(Cm::Ast::NullLiteralNode& nullLiteralNode) override;
-
-    void BeginVisit(Cm::Ast::ClassNode& classNode) override;
-    void BeginVisit(Cm::Ast::NamespaceNode& namespaceNode) override;
-    void BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode) override;
 
     void BeginVisit(Cm::Ast::EquivalenceNode& equivalenceNode) override;
     void BeginVisit(Cm::Ast::ImplicationNode& implicationNode) override;
@@ -508,29 +508,46 @@ public:
 private:
     Cm::Sym::ValueType targetType;
     bool cast;
+    std::stack<bool> castStack;
+    Cm::Sym::ContainerScope* qualifiedScope;
+    std::stack<Cm::Sym::ContainerScope*> qualifiedScopeStack;
     Cm::Sym::SymbolTable& symbolTable;
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
     Cm::Core::ClassTemplateRepository& classTemplateRepository;
+    Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     EvaluationStack stack;
     Cm::Sym::SymbolTypeSetId lookupId;
     Cm::Sym::LookupIdStack lookupIdStack;
+    EvaluationFlags flags;
     void EvaluateSymbol(Cm::Sym::Symbol* symbol);
 };
 
 Evaluator::Evaluator(Cm::Sym::ValueType targetType_, bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
-    Visitor(true, true), targetType(targetType_), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
-    classTemplateRepository(classTemplateRepository_), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, 
+    EvaluationFlags flags_) :
+    Visitor(true, true), targetType(targetType_), cast(cast_), qualifiedScope(nullptr), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_),
+    classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols), flags(flags_)
 {
 }
 
 Cm::Sym::Value* Evaluator::DoEvaluate(Cm::Ast::Node* value)
 {
-    value->Accept(*this);
-    std::unique_ptr<Cm::Sym::Value> result(stack.Pop());
-    result.reset(result->As(targetType, cast, value->GetSpan()));
-    return result.release();
+    try
+    {
+        value->Accept(*this);
+        std::unique_ptr<Cm::Sym::Value> result(stack.Pop());
+        result.reset(result->As(targetType, cast, value->GetSpan()));
+        return result.release();
+    }
+    catch (...)
+    {
+        if (flags != EvaluationFlags::dontThrow)
+        {
+            throw;
+        }
+    }
+    return nullptr;
 }
 
 void Evaluator::Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode)
@@ -779,24 +796,6 @@ private:
     Cm::Sym::ContainerSymbol* containerSymbol;
 };
 
-void Evaluator::BeginVisit(Cm::Ast::ClassNode& classNode)
-{
-    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&classNode);
-    stack.Push(new ScopedValue(scope->Container()));
-}
-
-void Evaluator::BeginVisit(Cm::Ast::NamespaceNode& namespaceNode)
-{
-    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&namespaceNode);
-    stack.Push(new ScopedValue(scope->Container()));
-}
-
-void Evaluator::BeginVisit(Cm::Ast::EnumTypeNode& enumTypeNode)
-{
-    Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(&enumTypeNode);
-    stack.Push(new ScopedValue(scope->Container()));
-}
-
 void Evaluator::BeginVisit(Cm::Ast::DotNode& dotNode)
 {
     lookupIdStack.Push(lookupId);
@@ -815,7 +814,11 @@ void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
         Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
         if (symbol)
         {
+            qualifiedScopeStack.push(qualifiedScope);
+            qualifiedScope = containerSymbol->GetContainerScope();
             EvaluateSymbol(symbol);
+            qualifiedScope = qualifiedScopeStack.top();
+            qualifiedScopeStack.pop();
         }
         else
         {
@@ -833,9 +836,84 @@ void Evaluator::Visit(Cm::Ast::ArrowNode& arrowNode)
     throw Cm::Core::Exception("cannot evaluate statically", arrowNode.GetSpan());
 }
 
+class FunctionGroupValue : public Cm::Sym::Value
+{
+public:
+    FunctionGroupValue(Cm::Sym::FunctionGroupSymbol* functionGroup_, Cm::Sym::ContainerScope* qualifiedScope_);
+    bool IsFuntionGroupValue() const override { return true; }
+    Cm::Sym::FunctionGroupSymbol* FunctionGroup() const { return functionGroup; }
+    Cm::Sym::ContainerScope* QualifiedScope() const { return qualifiedScope; }
+    Cm::Sym::ValueType GetValueType() const override { throw std::runtime_error("member function not applicable"); }
+    Cm::Sym::Value* Clone() const override { throw std::runtime_error("member function not applicable"); }
+    void Read(Cm::Sym::Reader& reader) override { throw std::runtime_error("member function not applicable"); }
+    void Write(Cm::Sym::Writer& writer) override { throw std::runtime_error("member function not applicable"); }
+    Cm::Sym::Value* As(Cm::Sym::ValueType targetType, bool cast, const Span& span) const override { throw std::runtime_error("member function not applicable"); }
+    virtual Ir::Intf::Object* CreateIrObject() const override { throw std::runtime_error("member function not applicable"); }
+private:
+    Cm::Sym::FunctionGroupSymbol* functionGroup;
+    Cm::Sym::ContainerScope* qualifiedScope;
+};
+
+FunctionGroupValue::FunctionGroupValue(Cm::Sym::FunctionGroupSymbol* functionGroup_, Cm::Sym::ContainerScope* qualifiedScope_) : functionGroup(functionGroup_), qualifiedScope(qualifiedScope_)
+{
+}
+
 void Evaluator::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
 {
-    throw Cm::Core::Exception("cannot evaluate statically", invokeNode.GetSpan());
+    std::vector<Cm::Core::Argument> args;
+    Cm::Ast::NodeList& argumentExprs = invokeNode.Arguments();
+    std::vector<std::unique_ptr<Cm::Sym::Value>> arguments;
+    int n = argumentExprs.Count();
+    for (int i = 0; i < n; ++i)
+    {
+        argumentExprs[i]->Accept(*this);
+        Cm::Sym::Value* value = stack.Pop();
+        arguments.push_back(std::unique_ptr<Cm::Sym::Value>(value));
+        Cm::Sym::TypeSymbol* type = Cm::Sym::GetTypeSymbol(value->GetValueType(), symbolTable);
+        if (type)
+        {
+            args.push_back(Cm::Core::Argument(Cm::Core::ArgumentCategory::rvalue, type));
+        }
+        else
+        {
+            throw Cm::Core::Exception("type not found", argumentExprs[i]->GetSpan());
+        }
+    }
+    lookupIdStack.Push(lookupId);
+    lookupId = Cm::Sym::SymbolTypeSetId::lookupInvokeSubject;
+    invokeNode.Subject()->Accept(*this);
+    lookupId = lookupIdStack.Pop();
+    std::unique_ptr<Cm::Sym::Value> value(stack.Pop());
+    if (value->IsFuntionGroupValue())
+    {
+        Cm::Sym::FunctionLookupSet functionLookups;
+        FunctionGroupValue* functionGroupValue = static_cast<FunctionGroupValue*>(value.get());
+        Cm::Sym::FunctionGroupSymbol* functionGroup = functionGroupValue->FunctionGroup();
+        if (functionGroupValue->QualifiedScope())
+        {
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base, functionGroupValue->QualifiedScope()));
+        }
+        else
+        {
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::this_and_base_and_parent, functionGroup->GetContainerScope()));
+            functionLookups.Add(Cm::Sym::FunctionLookup(Cm::Sym::ScopeLookup::fileScopes, nullptr));
+        }
+        std::vector<Cm::Sym::FunctionSymbol*> conversions;
+        Cm::Sym::FunctionSymbol* fun = ResolveOverload(currentContainerScope, boundCompileUnit, functionGroup->Name(), args, functionLookups, invokeNode.GetSpan(), conversions);
+        if (fun->IsConstExpr())
+        {
+
+        }
+        else
+        {
+            throw Cm::Core::Exception("constexpr function expected", invokeNode.Subject()->GetSpan());
+
+        }
+    }
+    else
+    {
+        throw Cm::Core::Exception("function group expected", invokeNode.Subject()->GetSpan());
+    }
 }
 
 void Evaluator::Visit(Cm::Ast::IndexNode& indexNode)
@@ -851,10 +929,10 @@ void Evaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void Evaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr);
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, targetTypeExpr);
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
-    stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository));
+    stack.Push(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, flags));
 }
 
 void Evaluator::Visit(Cm::Ast::ConstructNode& constructNode)
@@ -888,7 +966,7 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             if (node->IsConstantNode())
             {
                 Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, constantNode);
+                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode);
             }
             else
             {
@@ -907,7 +985,7 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
                 Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumConstantNode);
             }
             else
             {
@@ -915,6 +993,10 @@ void Evaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             }
         }
         stack.Push(enumConstantSymbol->GetValue()->Clone());
+    }
+    else if (symbol->IsFunctionGroupSymbol())
+    {
+        stack.Push(new FunctionGroupValue(static_cast<Cm::Sym::FunctionGroupSymbol*>(symbol), qualifiedScope));
     }
     else
     {
@@ -959,9 +1041,16 @@ void Evaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
 }
 
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository)
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
-    Evaluator evaluator(targetType, cast, symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
+    return Evaluate(targetType, cast, value, symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, EvaluationFlags::none);
+}
+
+Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    EvaluationFlags flags)
+{
+    Evaluator evaluator(targetType, cast, symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, flags);
     return evaluator.DoEvaluate(value);
 }
 
@@ -969,7 +1058,7 @@ class BooleanEvaluator : public Cm::Ast::Visitor
 {
 public:
     BooleanEvaluator(bool cast, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::Core::ClassTemplateRepository& classTemplateRepository_);
+        Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
     bool DoEvaluate(Cm::Ast::Node* value);
     void Visit(Cm::Ast::BooleanLiteralNode& booleanLiteralNode) override;
     void Visit(Cm::Ast::SByteLiteralNode& sbyteLiteralNode) override;
@@ -1044,6 +1133,7 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
     Cm::Core::ClassTemplateRepository& classTemplateRepository;
+    Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     EvaluationStack stack;
     bool interrupted;
     Cm::Sym::SymbolTypeSetId lookupId;
@@ -1052,9 +1142,9 @@ private:
 };
 
 BooleanEvaluator::BooleanEvaluator(bool cast_, Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository_) :
+    Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_) :
     Visitor(true, true), targetType(Cm::Sym::ValueType::boolValue), cast(cast_), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), 
-    classTemplateRepository(classTemplateRepository_), interrupted(false), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)
+    classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), interrupted(false), lookupId(Cm::Sym::SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)
 {
 }
 
@@ -1402,10 +1492,10 @@ void BooleanEvaluator::Visit(Cm::Ast::SizeOfNode& sizeOfNode)
 void BooleanEvaluator::Visit(Cm::Ast::CastNode& castNode)
 {
     Cm::Ast::Node* targetTypeExpr = castNode.TargetTypeExpr();
-    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, targetTypeExpr));
+    std::unique_ptr<Cm::Sym::TypeSymbol> type(ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, targetTypeExpr));
     Cm::Sym::SymbolType symbolType = type->GetSymbolType();
     Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
-    stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
+    stack.Push(IsAlwaysTrue(castNode.SourceExpr(), symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit) ? new Cm::Sym::BoolValue(true) : new Cm::Sym::BoolValue(false));
 }
 
 void BooleanEvaluator::Visit(Cm::Ast::ConstructNode& constructNode)
@@ -1439,7 +1529,7 @@ void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             if (node->IsConstantNode())
             {
                 Cm::Ast::ConstantNode* constantNode = static_cast<Cm::Ast::ConstantNode*>(node);
-                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, constantNode);
+                BindConstant(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode);
             }
             else
             {
@@ -1458,7 +1548,7 @@ void BooleanEvaluator::EvaluateSymbol(Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::EnumConstantNode* enumConstantNode = static_cast<Cm::Ast::EnumConstantNode*>(node);
                 Cm::Sym::ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumConstantNode);
             }
             else
             {
@@ -1510,11 +1600,11 @@ void BooleanEvaluator::Visit(Cm::Ast::TypeNameNode& typeNameNode)
 }
 
 bool IsAlwaysTrue(Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit)
 {
     try
     {
-        BooleanEvaluator evaluator(false, symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
+        BooleanEvaluator evaluator(false, symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit);
         return evaluator.DoEvaluate(value);
     }
     catch (...)

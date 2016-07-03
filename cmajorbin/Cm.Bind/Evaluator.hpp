@@ -9,6 +9,7 @@
 
 #ifndef CM_BIND_EVALUATOR_INCLUDED
 #define CM_BIND_EVALUATOR_INCLUDED
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Core/ClassTemplateRepository.hpp>
 #include <Cm.Sym/Value.hpp>
 #include <Cm.Sym/Scope.hpp>
@@ -18,11 +19,21 @@
 
 namespace Cm { namespace Bind {
 
+enum class EvaluationFlags
+{
+    none = 0, dontThrow = 1
+};
+
+Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope,
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
+
+
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, 
-    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository);
+    const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 
+    EvaluationFlags flags);
 
 bool IsAlwaysTrue(Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
 
 } } // namespace Cm::Bind
 
