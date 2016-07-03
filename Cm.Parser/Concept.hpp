@@ -1,5 +1,5 @@
-#ifndef Concept_hpp_11627
-#define Concept_hpp_11627
+#ifndef Concept_hpp_24848
+#define Concept_hpp_24848
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -38,6 +38,7 @@ private:
     class ConjunctiveConstraintExprRule;
     class PrimaryConstraintExprRule;
     class AtomicConstraintExprRule;
+    class PredicateConstraintRule;
     class IsConstraintRule;
     class ConceptOrTypeNameRule;
     class MultiParamConstraintRule;
@@ -45,4 +46,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Concept_hpp_11627
+#endif // Concept_hpp_24848

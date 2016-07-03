@@ -72,7 +72,7 @@ void InlineFunctionRepository::Instantiate(Cm::Sym::ContainerScope* containerSco
         functionInstanceSymbol->SetParent(classTypeSymbol);
         functionInstanceSymbol->GetContainerScope()->SetParent(classTypeSymbol->GetContainerScope());
     }
-    Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+    Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
     if (classTypeSymbol)
     {
         prebinder.SetCurrentClass(classTypeSymbol);

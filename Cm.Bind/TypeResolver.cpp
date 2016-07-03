@@ -25,7 +25,7 @@ class TypeResolver : public Cm::Ast::Visitor
 {
 public:
     TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::Core::ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_);
+        Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, TypeResolverFlags flags_);
     Cm::Sym::TypeSymbol* Resolve(Cm::Ast::Node* typeExpr);
     void Visit(Cm::Ast::BoolNode& boolNode) override;
     void Visit(Cm::Ast::SByteNode& sbyteNode) override;
@@ -52,6 +52,7 @@ private:
     Cm::Sym::ContainerScope* currentContainerScope;
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes;
     Cm::Core::ClassTemplateRepository& classTemplateRepository;
+    Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     TypeResolverFlags flags;
     Cm::Sym::TypeSymbol* typeSymbol;
     std::unique_ptr<Cm::Sym::TypeSymbol> nsTypeSymbol;
@@ -61,9 +62,9 @@ private:
 };
 
 TypeResolver::TypeResolver(Cm::Sym::SymbolTable& symbolTable_, Cm::Sym::ContainerScope* currentContainerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_) :
+    Cm::Core::ClassTemplateRepository& classTemplateRepository_, Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, TypeResolverFlags flags_) :
     Cm::Ast::Visitor(true, true), symbolTable(symbolTable_), currentContainerScope(currentContainerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), 
-    flags(flags_), typeSymbol(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeSymbols)
+    boundCompileUnit(boundCompileUnit_), flags(flags_), typeSymbol(nullptr), lookupId(Cm::Sym::SymbolTypeSetId::lookupTypeSymbols)
 {
 }
 
@@ -155,7 +156,7 @@ void TypeResolver::Visit(Cm::Ast::DoubleNode& doubleNode)
 void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
 {
     std::vector<Cm::Sym::TypeSymbol*> typeArguments;
-    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateIdNode.Subject(), flags);
+    Cm::Sym::TypeSymbol* subjectType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, templateIdNode.Subject(), flags);
     if (!subjectType)
     {
         typeSymbol = nullptr;
@@ -167,7 +168,7 @@ void TypeResolver::Visit(Cm::Ast::TemplateIdNode& templateIdNode)
     }
     for (const std::unique_ptr<Cm::Ast::Node>& templateArgNode : templateIdNode.TemplateArguments())
     {
-        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, templateArgNode.get(), flags);
+        Cm::Sym::TypeSymbol* argumentType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, templateArgNode.get(), flags);
         if (!argumentType)
         {
             typeSymbol = nullptr;
@@ -233,13 +234,13 @@ void TypeResolver::ResolveSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
             {
                 Cm::Ast::TypedefNode* typedefNode = static_cast<Cm::Ast::TypedefNode*>(tn);
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
-                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode, typedefSymbol);
             }
             else if (tn->IsTypedefStatementNode())
             {
                 Cm::Ast::TypedefStatementNode* typedefStatementNode = static_cast<Cm::Ast::TypedefStatementNode*>(tn);
                 Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(typedefStatementNode);
-                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+                BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode, typedefSymbol);
             }
             else if ((flags & TypeResolverFlags::dontThrow) == TypeResolverFlags::none)
             {
@@ -344,7 +345,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
 
 void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 {
-    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, derivedTypeExprNode.BaseTypeExprNode(), flags);
+    Cm::Sym::TypeSymbol* baseType = ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, derivedTypeExprNode.BaseTypeExprNode(), flags);
     if (!baseType)
     {
         typeSymbol = nullptr;
@@ -356,7 +357,8 @@ void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
     {
         for (int i = 0; i < n; ++i)
         {
-            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, currentContainerScope, fileScopes, classTemplateRepository);
+            Cm::Sym::Value* value = Evaluate(Cm::Sym::ValueType::intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, currentContainerScope, fileScopes, classTemplateRepository, 
+                boundCompileUnit);
             Cm::Sym::IntValue* intValue = static_cast<Cm::Sym::IntValue*>(value);
             int arrayDimension = intValue->Value();
             if (arrayDimension <= 0)
@@ -378,15 +380,15 @@ void TypeResolver::Visit(Cm::Ast::DerivedTypeExprNode& derivedTypeExprNode)
 }
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* typeExpr)
 {
-    return ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, typeExpr, TypeResolverFlags::none);
+    return ResolveType(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, typeExpr, TypeResolverFlags::none);
 }
 
 Cm::Sym::TypeSymbol* ResolveType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::Node* typeExpr, TypeResolverFlags flags)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::Node* typeExpr, TypeResolverFlags flags)
 {
-    TypeResolver resolver(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, flags);
+    TypeResolver resolver(symbolTable, currentContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, flags);
     return resolver.Resolve(typeExpr);
 }
 

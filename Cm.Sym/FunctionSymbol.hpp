@@ -77,17 +77,18 @@ enum class FunctionSymbolFlags: uint32_t
     virtuality = virtual_ | abstract_ | override_,
     nothrow = 1 << 6,
     inline_ = 1 << 7,
-    replicated = 1 << 8,
-    suppressed = 1 << 9,
-    default_ = 1 << 10,
-    explicit_ = 1 << 11,
-    conversion = 1 << 12,
-    templateSpecialization = 1 << 13,
-    memberOfTemplateType = 1 << 14,
-    memberOfClassTemplate = 1 << 15,
-    arrayConstructor = 1 << 16,
-    arrayAssignment = 1 << 17,
-    new_ = 1 << 18
+    constexpr_ = 1 << 8,
+    replicated = 1 << 9,
+    suppressed = 1 << 10,
+    default_ = 1 << 11,
+    explicit_ = 1 << 12,
+    conversion = 1 << 13,
+    templateSpecialization = 1 << 14,
+    memberOfTemplateType = 1 << 15,
+    memberOfClassTemplate = 1 << 16,
+    arrayConstructor = 1 << 17,
+    arrayAssignment = 1 << 18,
+    new_ = 1 << 19
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -178,6 +179,8 @@ public:
     bool IsInline() const { return GetFlag(FunctionSymbolFlags::inline_); }
     bool CanThrow() const { return !IsCDecl() && !IsNothrow() && !IsDestructor(); }
     void SetInline() { SetFlag(FunctionSymbolFlags::inline_); }
+    bool IsConstExpr() const { return GetFlag(FunctionSymbolFlags::constexpr_);  }
+    void SetConstExpr() { SetFlag(FunctionSymbolFlags::constexpr_); }
     bool IsReplicated() const { return GetFlag(FunctionSymbolFlags::replicated); }
     void SetReplicated() { SetFlag(FunctionSymbolFlags::replicated); }
     bool IsSuppressed() const { return GetFlag(FunctionSymbolFlags::suppressed); }

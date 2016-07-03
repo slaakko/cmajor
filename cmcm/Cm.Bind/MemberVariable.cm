@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -71,6 +71,10 @@ namespace Cm.Bind
         if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
         {
             throw Cm.Core.Error("member variable cannot be inline", memberVariableSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("member variable cannot be constexpr", memberVariableSymbol->GetSpan());
         }
         if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
         {

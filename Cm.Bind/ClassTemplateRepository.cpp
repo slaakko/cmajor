@@ -83,7 +83,7 @@ void ClassTemplateRepository::ResolveDefaultTypeArguments(std::vector<Cm::Sym::T
             {
                 throw Cm::Core::Exception("too few template arguments", span);
             }
-            Cm::Sym::TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgScope, boundCompileUnit.GetFileScopes(), *this, defaultTemplateArgumentNode);
+            Cm::Sym::TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgScope, boundCompileUnit.GetFileScopes(), *this, boundCompileUnit, defaultTemplateArgumentNode);
             typeArguments.push_back(typeArgument);
         }
     }
@@ -165,7 +165,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
             {
                 throw Cm::Core::Exception("too few template arguments", templateTypeSymbol->GetSpan());
             }
-            typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.GetFileScopes(), *this, defaultTemplateArgumentNode);
+            typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.GetFileScopes(), *this, boundCompileUnit, defaultTemplateArgumentNode);
             templateTypeSymbol->AddTypeArgument(typeArgument);
         }
         boundTypeParam->SetType(typeArgument);
@@ -185,7 +185,7 @@ void ClassTemplateRepository::BindTemplateTypeSymbol(Cm::Sym::TemplateTypeSymbol
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
     globalNs->Accept(declarationVisitor);
-    Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+    Prebinder prebinder(boundCompileUnit.SymbolTable(), *this, boundCompileUnit);
     prebinder.BeginCompileUnit();
     globalNs->Accept(prebinder);
     prebinder.EndCompileUnit();
@@ -232,7 +232,7 @@ void ClassTemplateRepository::AutoBindTemplates()
 {
     Cm::Ast::Node* stringNode = new Cm::Ast::TemplateIdNode(Cm::Parsing::Span(), new Cm::Ast::IdentifierNode(Cm::Parsing::Span(), "System.string"));
     boundCompileUnit.Own(stringNode);
-    Cm::Sym::TypeSymbol* stringTypeSymbol = ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.GetFileScopes(), *this, stringNode);
+    Cm::Sym::TypeSymbol* stringTypeSymbol = ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.GetFileScopes(), *this, boundCompileUnit, stringNode);
     if (stringTypeSymbol->IsTemplateTypeSymbol())
     {
         Cm::Sym::TemplateTypeSymbol* stringTemplate = static_cast<Cm::Sym::TemplateTypeSymbol*>(stringTypeSymbol);
@@ -357,7 +357,7 @@ void ClassTemplateRepository::Instantiate(Cm::Sym::ContainerScope* containerScop
         functionNode->Body()->Accept(declarationVisitor);
         boundCompileUnit.SymbolTable().EndContainer();
 
-        Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), *this, boundCompileUnit);
         prebinder.SetDontCompleteFunctions();
         prebinder.SetCurrentClass(templateTypeSymbol);
         prebinder.BeginCompileUnit();

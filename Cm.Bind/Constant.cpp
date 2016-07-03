@@ -22,7 +22,7 @@
 namespace Cm { namespace Bind {
 
 void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::ConstantNode* constantNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str(), Cm::Sym::SymbolTypeSetId::lookupConstant);
     if (symbol)
@@ -30,7 +30,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         if (symbol->IsConstantSymbol())
         {
             Cm::Sym::ConstantSymbol* constantSymbol = static_cast<Cm::Sym::ConstantSymbol*>(symbol);
-            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode, constantSymbol);
+            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode, constantSymbol);
         }
         else
         {
@@ -44,7 +44,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
 }
 
 void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::ConstantNode* constantNode, Cm::Sym::ConstantSymbol* constantSymbol)
 {
     if (constantSymbol->Evaluating())
     {
@@ -93,6 +93,10 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
     {
         throw Cm::Core::Exception("constant cannot be inline", constantSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("constant cannnot be constexpr", constantSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("constant cannot be cdecl", constantSymbol->GetSpan());
@@ -110,7 +114,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         constantSymbol->SetBound();
         return;
     }
-    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode->TypeExpr());
+    Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode->TypeExpr());
     if (type->IsBoolTypeSymbol() || type->IsCharTypeSymbol() || type->IsWCharTypeSymbol() || type->IsUCharTypeSymbol() || type->IsEnumTypeSymbol() || type->IsIntegerTypeSymbol() || 
         type->IsFloatingPointTypeSymbol())
     {
@@ -124,12 +128,12 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
                 {
                     Cm::Ast::EnumTypeNode* enumTypeNode = static_cast<Cm::Ast::EnumTypeNode*>(node);
                     Cm::Sym::ContainerScope* scope = symbolTable.GetContainerScope(enumTypeNode);
-                    BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, enumTypeNode);
+                    BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, enumTypeNode);
                 }
             }
             type = enumTypeSymbol->GetUnderlyingType();
         }
-        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
+        BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, type);
         if (type->Access() < constantSymbol->Access())
         {
             throw Cm::Core::Exception("type of a constant must be at least as accessible as the constant itself", type->GetSpan(), constantSymbol->GetSpan());
@@ -138,7 +142,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         Cm::Sym::SymbolType symbolType = type->GetSymbolType();
         Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
         constantSymbol->SetEvaluating();
-        Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+        Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
         constantSymbol->ResetEvaluating();
         constantSymbol->SetValue(value);
         constantSymbol->SetBound();

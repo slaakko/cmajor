@@ -75,6 +75,14 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
         }
         s.append("inline");
     }
+    if ((flags & FunctionSymbolFlags::constexpr_) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("constexpr");
+    }
     if ((flags & FunctionSymbolFlags::suppressed) != FunctionSymbolFlags::none)
     {
         if (!s.empty())
@@ -258,6 +266,7 @@ bool FunctionSymbol::IsExportSymbol() const
     if (Parent()->IsTemplateTypeSymbol()) return false;
     if (IsReplica()) return false;
     if (Source() == SymbolSource::project && GetGlobalFlag(GlobalFlags::optimize) && IsInline()) return true;
+    if (Source() == SymbolSource::project && IsConstExpr()) return true;
     return ContainerSymbol::IsExportSymbol();
 }
 
@@ -425,7 +434,7 @@ void FunctionSymbol::Write(Writer& writer)
             throw std::runtime_error("write: not function node");
         }
     }
-    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol)
+    else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol))
     {
         if (persistentFunctionData)
         {
@@ -517,7 +526,7 @@ void FunctionSymbol::Read(Reader& reader)
         persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
         reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
     }
-    else if (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol)
+    else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol))
     {
         persistentFunctionData.reset(new PersistentFunctionData());
         bool hasUsingNodes = reader.GetBinaryReader().ReadBool();

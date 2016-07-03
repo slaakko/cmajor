@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -70,6 +70,10 @@ namespace Cm.Bind
         if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
         {
             throw Cm.Core.Error("delegate cannot be inline", delegateTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("delegate cannot be constexpr", delegateTypeSymbol->GetSpan());
         }
         if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
         {
@@ -156,6 +160,10 @@ namespace Cm.Bind
         if ((specifiers & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none)
         {
             throw Cm.Core.Error("class delegate cannot be inline", classDelegateTypeSymbol->GetSpan());
+        }
+        if ((specifiers & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class delegate cannot be constexpr", classDelegateTypeSymbol->GetSpan());
         }
         if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
         {

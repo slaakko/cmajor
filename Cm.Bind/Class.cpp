@@ -23,7 +23,7 @@
 namespace Cm { namespace Bind {
 
 Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::ClassNode* classNode)
 {
     Cm::Sym::Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm::Sym::ScopeLookup::this_and_base_and_parent, Cm::Sym::SymbolTypeSetId::lookupClassSymbols);
     if (symbol)
@@ -31,7 +31,7 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
         if (symbol->IsClassTypeSymbol())
         {
             Cm::Sym::ClassTypeSymbol* classTypeSymbol = static_cast<Cm::Sym::ClassTypeSymbol*>(symbol);
-            BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, classTypeSymbol);
+            BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classNode, classTypeSymbol);
             return classTypeSymbol;
         }
         else
@@ -46,7 +46,7 @@ Cm::Sym::ClassTypeSymbol* BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::
 }
 
 void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::ClassNode* classNode, Cm::Sym::ClassTypeSymbol* classTypeSymbol)
 {
     if (classTypeSymbol->Bound()) return;
     if (classNode->GetCompileUnit())
@@ -92,6 +92,10 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     {
         throw Cm::Core::Exception("class cannnot be inline", classTypeSymbol->GetSpan());
     }
+    if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+    {
+        throw Cm::Core::Exception("class cannnot be constexpr", classTypeSymbol->GetSpan());
+    }
     if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
     {
         throw Cm::Core::Exception("class cannnot be cdecl", classTypeSymbol->GetSpan());
@@ -115,7 +119,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
     }
     for (const std::unique_ptr<Cm::Ast::Node>& baseClassOrImplIntf : classNode->BaseClassOrImplIntfTypeExprs())
     {
-        Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassOrImplIntf.get());
+        Cm::Sym::TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, boundCompileUnit, baseClassOrImplIntf.get());
         if (type)
         {
             if (type->IsClassTypeSymbol())
@@ -138,7 +142,7 @@ void BindClass(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* conta
                         {
                             Cm::Ast::ClassNode* baseClassNode = static_cast<Cm::Ast::ClassNode*>(node);
                             Cm::Sym::ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
-                            BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassType);
+                            BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, baseClassNode, baseClassType);
                         }
                         else
                         {

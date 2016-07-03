@@ -216,11 +216,13 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.FunctionNode& functionNode)
         {
+            bool usingNodesSet = false;
             if (functionNode.TemplateParameters().Count() > 0)
             {
                 PushSkipContent(true);
                 Cm.Sym.FunctionSymbol* templateFunction = BindFunction(symbolTable, containerScope, fileScopes, &functionNode, null);
                 templateFunction->SetUsingNodes(usingNodes);
+                usingNodesSet = true;
             }
             else
             {
@@ -228,6 +230,12 @@ namespace Cm.Bind
                 if ((functionNode.GetSpecifiers() & Cm.Ast.Specifiers.inline_) != Cm.Ast.Specifiers.none && Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.optimize))
                 {
                     currentFunction->SetUsingNodes(usingNodes);
+                    usingNodesSet = true;
+                }
+                if ((functionNode.GetSpecifiers() & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none && !usingNodesSet)
+                {
+                    currentFunction->SetUsingNodes(usingNodes);
+                    usingNodesSet = true;
                 }
                 BeginContainerScope(symbolTable.GetContainerScope(&functionNode));
                 parameterIndex = 0;

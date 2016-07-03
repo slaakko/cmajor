@@ -31,6 +31,7 @@ enum class ValueType : uint8_t
 std::string ValueTypeStr(ValueType valueType);
 ValueType GetValueTypeFor(SymbolType symbolType);
 ValueType GetCommonType(ValueType left, ValueType right);
+TypeSymbol* GetTypeSymbol(ValueType valueType, SymbolTable& symbolTable);
 
 class Value
 {
@@ -43,6 +44,7 @@ public:
     virtual Value* As(ValueType targetType, bool cast, const Span& span) const = 0;
     virtual Ir::Intf::Object* CreateIrObject() const = 0;
     virtual bool IsScopedValue() const { return false; }
+    virtual bool IsFuntionGroupValue() const { return false; }
     virtual bool IsNull() const { return false; }
     virtual std::string ToString() const { return ""; }
 };

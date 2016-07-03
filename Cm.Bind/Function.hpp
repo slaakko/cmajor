@@ -11,6 +11,7 @@
 #define CM_BIND_FUNCTION_INCLUDED
 #include <Cm.BoundTree/BoundFunction.hpp>
 #include <Cm.Core/ClassTemplateRepository.hpp>
+#include <Cm.BoundTree/BoundCompileUnit.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 #include <Cm.Ast/Function.hpp>
 
@@ -20,13 +21,13 @@ Cm::Sym::FunctionSymbol* BindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym
     Cm::Ast::FunctionNode* functionNode, Cm::Sym::ClassTypeSymbol* currentClass);
 
 void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Ast::FunctionNode* functionNode, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Sym::ClassTypeSymbol* currentClass);
 
 void CheckFunctionReturnPaths(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Ast::FunctionNode* functionNode);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionSymbol, Cm::Ast::FunctionNode* functionNode);
 
 void CheckFunctionAccessLevels(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes,
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::FunctionSymbol* functionSymbol);
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionSymbol);
 
 } } // namespace Cm::Bind
 

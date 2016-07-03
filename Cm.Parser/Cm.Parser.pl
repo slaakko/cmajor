@@ -98,6 +98,7 @@ namespace Cm.Parser
         ConjunctiveConstraintExpr(ParsingContext* ctx, var Span s): Cm::Ast::ConstraintNode*;
         PrimaryConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
         AtomicConstraintExpr(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
+        PredicateConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*;
         IsConstraint(ParsingContext* ctx, var std::unique_ptr<Node> typeExpr): Cm::Ast::ConstraintNode*;
         ConceptOrTypeName(ParsingContext* ctx): Cm::Ast::Node*;
         MultiParamConstraint(ParsingContext* ctx, var std::unique_ptr<MultiParamConstraintNode> constraint): Cm::Ast::ConstraintNode*;
@@ -126,6 +127,7 @@ namespace Cm.Parser
         NewExpr(ParsingContext* ctx): Cm::Ast::Node*;
         ArgumentList(ParsingContext* ctx, Cm::Ast::Node* node);
         ExpressionList(ParsingContext* ctx, Cm::Ast::Node* node);
+        InvokeExpr(ParsingContext* ctx, var std::unique_ptr<Node> expr, var Span s): Cm::Ast::Node*;
     }
     grammar InterfaceGrammar
     {

@@ -83,6 +83,10 @@ namespace Cm.Bind
         {
             throw Cm.Core.Error("class cannot be inline", classTypeSymbol->GetSpan());
         }
+        if ((specifiers & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+        {
+            throw Cm.Core.Error("class cannot be constexpr", classTypeSymbol->GetSpan());
+        }
         if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
         {
             throw Cm.Core.Error("class cannot be cdecl", classTypeSymbol->GetSpan());

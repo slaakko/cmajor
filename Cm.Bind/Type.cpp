@@ -16,7 +16,7 @@
 namespace Cm { namespace Bind {
 
 void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* containerScope, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, 
-    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::Sym::TypeSymbol* type)
+    Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::TypeSymbol* type)
 {
     if (type->Bound()) return;
     if (type->IsDerivedTypeSymbol()) return;
@@ -33,7 +33,7 @@ void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* contai
         {
             throw std::runtime_error("not class node");
         }
-        BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, static_cast<Cm::Sym::ClassTypeSymbol*>(type));
+        BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classNode, static_cast<Cm::Sym::ClassTypeSymbol*>(type));
     }
     else if (type->IsInterfaceTypeSymbol())
     {
@@ -59,7 +59,7 @@ void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* contai
         {
             throw std::runtime_error("not enum type node");
         }
-        BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, enumTypeNode, static_cast<Cm::Sym::EnumTypeSymbol*>(type));
+        BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumTypeNode, static_cast<Cm::Sym::EnumTypeSymbol*>(type));
     }
     else if (type->IsDelegateTypeSymbol())
     {
@@ -72,7 +72,7 @@ void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* contai
         {
             throw std::runtime_error("not delegate type node");
         }
-        BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateTypeNode, static_cast<Cm::Sym::DelegateTypeSymbol*>(type));
+        BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateTypeNode, static_cast<Cm::Sym::DelegateTypeSymbol*>(type));
     }
     else if (type->IsClassDelegateTypeSymbol())
     {
@@ -85,7 +85,7 @@ void BindType(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* contai
         {
             throw std::runtime_error("not delegate type node");
         }
-        BindClassDelegate(symbolTable, containerScope, fileScopes, classDelegateTypeNode, static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(type));
+        BindClassDelegate(symbolTable, containerScope, fileScopes, boundCompileUnit, classDelegateTypeNode, static_cast<Cm::Sym::ClassDelegateTypeSymbol*>(type));
     }
 }
 

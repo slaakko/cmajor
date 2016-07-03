@@ -559,7 +559,7 @@ bool DeduceTypeParameters(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree
         Cm::Sym::ParameterSymbol* parameterSymbol = parameters[i];
         Cm::Ast::ParameterNode* parameterNode = static_cast<Cm::Ast::ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
         Cm::Ast::Node* parameterTypeExpr = parameterNode->TypeExpr();
-        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), parameterTypeExpr,
+        Cm::Sym::TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.GetFileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, parameterTypeExpr,
             TypeResolverFlags::dontThrow);
         if (!parameterType)
         {

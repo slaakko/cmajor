@@ -59,6 +59,10 @@ namespace Cm.Bind
                 {
                     throw Cm.Core.Error("interface cannot be inline", interfaceTypeSymbol->GetSpan());
                 }
+                if ((specifiers & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+                {
+                    throw Cm.Core.Error("interface cannot be constexpr", interfaceTypeSymbol->GetSpan());
+                }
                 if ((specifiers & Cm.Ast.Specifiers.cdecl_) != Cm.Ast.Specifiers.none)
                 {
                     throw Cm.Core.Error("interface cannot be cdecl", interfaceTypeSymbol->GetSpan());

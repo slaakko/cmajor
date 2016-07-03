@@ -47,6 +47,7 @@ KeywordGrammar::KeywordGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
     keywords0.push_back("class");
     keywords0.push_back("concept");
     keywords0.push_back("const");
+    keywords0.push_back("constexpr");
     keywords0.push_back("construct");
     keywords0.push_back("continue");
     keywords0.push_back("default");

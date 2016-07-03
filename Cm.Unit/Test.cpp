@@ -280,7 +280,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
     prebindCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(prebindCompileUnit));
     std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
-    Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository());
+    Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository(), prebindCompileUnit);
     testUnit->Accept(prebinder);
     fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
     Cm::Bind::VirtualBinder virtualBinder(symbolTable, testUnit, prebindCompileUnit);

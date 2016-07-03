@@ -235,6 +235,44 @@ void WhereConstraintNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+PredicateConstraintNode::PredicateConstraintNode(const Span& span_) : ConstraintNode(span_)
+{
+}
+
+PredicateConstraintNode::PredicateConstraintNode(const Span& span_, Node* invokeExpr_) : ConstraintNode(span_), invokeExpr(invokeExpr_)
+{
+}
+
+Node* PredicateConstraintNode::Clone(CloneContext& cloneContext) const
+{
+    return new PredicateConstraintNode(GetSpan(), invokeExpr->Clone(cloneContext));
+}
+
+void PredicateConstraintNode::Read(Reader& reader)
+{
+    invokeExpr.reset(reader.ReadNode());
+}
+
+void PredicateConstraintNode::Write(Writer& writer)
+{
+    writer.Write(invokeExpr.get());
+}
+
+std::string PredicateConstraintNode::ToString() const
+{
+    return invokeExpr->ToString();
+}
+
+std::string PredicateConstraintNode::DocId() const
+{
+    return invokeExpr->DocId();
+}
+
+void PredicateConstraintNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
+}
+
 IsConstraintNode::IsConstraintNode(const Span& span_) : ConstraintNode(span_)
 {
 }

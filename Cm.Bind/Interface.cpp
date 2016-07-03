@@ -61,6 +61,10 @@ void BindInterface(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* c
             {
                 throw Cm::Core::Exception("interface cannot be inline", interfaceTypeSymbol->GetSpan());
             }
+            if ((specifiers & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+            {
+                throw Cm::Core::Exception("interface cannot be constexpr", interfaceTypeSymbol->GetSpan());
+            }
             if ((specifiers & Cm::Ast::Specifiers::cdecl_) != Cm::Ast::Specifiers::none)
             {
                 throw Cm::Core::Exception("interface cannot be cdecl", interfaceTypeSymbol->GetSpan());

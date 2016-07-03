@@ -10,6 +10,7 @@
 #include <Cm.Sym/Value.hpp>
 #include <Cm.Sym/Exception.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
+#include <Cm.Sym/BasicTypeSymbol.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 #include <Cm.Sym/TypeSymbol.hpp>
 
@@ -68,6 +69,30 @@ const char* valueTypeStr[uint8_t(ValueType::max)] =
 std::string ValueTypeStr(ValueType valueType)
 {
     return valueTypeStr[uint8_t(valueType)];
+}
+
+TypeSymbol* GetTypeSymbol(ValueType valueType, SymbolTable& symbolTable)
+{
+    switch (valueType)
+    {
+        case ValueType::boolValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::boolId));
+        case ValueType::charValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::charId));
+        case ValueType::wcharValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::wcharId));
+        case ValueType::ucharValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ucharId));
+        case ValueType::sbyteValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::sbyteId));
+        case ValueType::byteValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::byteId));
+        case ValueType::shortValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::shortId));
+        case ValueType::ushortValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ushortId));
+        case ValueType::intValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::intId));
+        case ValueType::uintValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::uintId));
+        case ValueType::longValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::longId));
+        case ValueType::ulongValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::ulongId));
+        case ValueType::floatValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::floatId));
+        case ValueType::doubleValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
+        case ValueType::nullValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
+        case ValueType::stringValue: return symbolTable.GetTypeRepository().MakeConstCharPtrType(Span());
+    }
+    return nullptr;
 }
 
 Value::~Value()

@@ -116,6 +116,23 @@ private:
     std::unique_ptr<ConstraintNode> constraint;
 };
 
+class PredicateConstraintNode : public ConstraintNode
+{
+public:
+    PredicateConstraintNode(const Span& span_);
+    PredicateConstraintNode(const Span& span_, Node* invokeExpr_);
+    NodeType GetNodeType() const override { return NodeType::predicateConstraintNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    void Read(Reader& reader) override;
+    void Write(Writer& writer) override;
+    std::string ToString() const override;
+    std::string DocId() const override;
+    void Accept(Visitor& visitor) override;
+    Node* InvokeExpr() const { return invokeExpr.get(); }
+private:
+    std::unique_ptr<Node> invokeExpr;
+};
+
 class IsConstraintNode : public ConstraintNode
 {
 public:

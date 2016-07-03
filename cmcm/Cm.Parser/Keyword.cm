@@ -38,6 +38,7 @@ namespace Cm.Parser
             keywords0.Add("class");
             keywords0.Add("concept");
             keywords0.Add("const");
+            keywords0.Add("constexpr");
             keywords0.Add("construct");
             keywords0.Add("continue");
             keywords0.Add("default");

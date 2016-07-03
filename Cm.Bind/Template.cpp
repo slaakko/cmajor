@@ -133,7 +133,7 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     functionTemplateInstance->SetReplicated();
     functionTemplateInstance->SetFunctionTemplateSpecialization();
     BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);
-    Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+    Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
     prebinder.BeginCompileUnit();
     globalNs->Accept(prebinder);
     functionTemplateInstance->SetTypeArguments(templateArguments);
