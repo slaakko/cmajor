@@ -6401,7 +6401,9 @@ or there are no acceptable conversion for all argument types
 \end{verbatim}
 \item
 Otherwise, if there is exactly one matching function, the overload resolution succeeds:
-If the matching function is a function template or member of a class template, it is instantiated with bound template arguments and the instance is returned;
+If the matching function is a function template or member of a class template, it is instantiated with bound template arguments
+(algorithm \ref{instantiatefunctiontemplate} or \ref{instantiatememfunofclasstemplate})
+and the instance is returned;
 otherwise (the matching function is not a function template and not member of a class template) it is simply returned.
 \item
 Otherwise:
@@ -6411,6 +6413,7 @@ Sort the list of matching functions according to the function ordering rules (se
 \item
 If a single best matching function is found, the overload resolution succeeds:
 If the best matching function is a function template or member of a class template, it is instantiated with bound template arguments
+(algorithm \ref{instantiatefunctiontemplate} or \ref{instantiatememfunofclasstemplate})
 and the instance is returned; otherwise (the best matching function is not a function template and not member of a class template) it is simply returned.
 \item
 Otherwise, report ambiguous overload resolution error with references to ambiguous functions.
@@ -7109,7 +7112,7 @@ Function [1], the forward iterator version, is called in this case.
 
 The following algorithm is used for checking and binding constraints:
 
-\begin{algo} Check Constraint. Inputs: a container scope, a constraint represented as an abstract syntax tree node,
+\begin{algo}\label{checkconstraints} Check Constraint. Inputs: a container scope, a constraint represented as an abstract syntax tree node,
 list of template parameters, list of template argument types, a reference to a bound constraint.
 The algorithm returns \textbf{true} if the constraint is satisfied, and \textbf{false} otherwise.
 \begin{enumerate}
@@ -9651,7 +9654,6 @@ Otherwise, if $subject$ is \verb|BoundTypeExpression|,
 \item
 Let $typeArguments$ be a list of type symbols.
 \item
-\item
 For each $templateArgumentNode$ of the templateIdNode:
 \begin{enumerate}
 \item
@@ -9663,7 +9665,16 @@ Add the type resolved to $typeArguments$.
 If type of $subject$ is a class type,
 \begin{enumerate}
 \item
-Call algorithm \ref{maketemplatetype} to make a class template specialization with the type of $subject$ and $typeArguments$. Let $type$ be the type returned.
+Let $subjectClassType$ be the class type of $subject$.
+\item
+Let $n$ be the number of type parameters of $subjectClassType$.
+\item
+Let $m$ be the number of template arguments of templateIdNode.
+\item
+If $m < n$, resolve the default template arguments using algorithm \ref{resolvedefaulttypearguments}, giving it $typeArguments$, $subjectClassType$,
+current container scope and file scopes.
+\item
+Call algorithm \ref{maketemplatetype} to make a class template specialization with $subjectClassType$ and $typeArguments$. Let $type$ be the type returned.
 \item
 Create a \verb|BoundTypeExpression| with $type$, and push it to the bound expression stack.
 \end{enumerate}
@@ -10242,7 +10253,7 @@ User written functions are completed with compiler generated statements.
 
 \subsection{Generating Receive Statements}\label{receives}
 
-In the beginning of every function, the compiler generates so called \emph{receive statements}.
+In the beginning of every function the compiler generates so called \emph{receive statements}.
 
 Function parameters are not directly used in computation inside the body of a function.
 Instead there's a local variable corresponding to each parameter that receives the value from the parameter.
@@ -10560,8 +10571,8 @@ Let $typeParam$ be $i$'th type parameter.
 \item
 Let $templateArg$ be $i$'th template argument.
 \item
-Create a \verb|BoundTypeParameterSymbol| that maps name of $typeParam$ to $templateArg$, and add it to the function template instance using algorithm
-\ref{addsymboltocontainer}, so that the type resolver can find it from the scope of the function template instance (algorithm \ref{resolvesymboltype}).
+Create a \verb|BoundTypeParameterSymbol| that maps name of $typeParam$ to $templateArg$, and add it as a member of the function template instance,
+so that the type resolver can find it from the scope of the function template instance (algorithm \ref{resolvesymboltype}).
 \end{enumerate}
 \end{enumerate}
 \end{algo}
@@ -10619,7 +10630,8 @@ If $functionTemplateNode$ is not null, the function template belongs to the curr
 \item
 Create a new function AST node and set $functionInstanceNode$ to the created function node.
 \item
-Clone the return type expression node and the parameter nodes from the $functionTemplateNode$ and set them to $functionInstanceNode$.
+Clone the return type expression node and the parameter nodes from\\
+the $functionTemplateNode$ and set them to $functionInstanceNode$.
 \item
 Set $body$ to the body of the $functionTemplateNode$.
 \end{enumerate}
@@ -10656,7 +10668,211 @@ that calls some member function of the class template, regardless whether they a
 This is because the virtual function table of the class template is generated into a compile unit when a member function of that class template is called,
 and all the virtual functions contained by the virtual function table must exist. If not, you would get linker errors.
 
+\begin{algo}\label{bindtemplatetypesymbol} Bind Class Template Specialization. Inputs: class template specialization symbol, container scope, list of file scopes.
+\begin{enumerate}
+\item
+If the class template specialization symbol is already bound, return.
+\item
+Insert the class template specialization symbol to the class template repository (section \ref{classtemplaterepository}).
+Let $primaryClassTemplate$ be the primary class template symbol of the class template specialization.
+\item
+Let $classNode$ be the AST node for $primaryClassTemplate$.
+\item
+If $classNode$ is null, read the AST node from the library file. Set $classNode$ to the node read.
+\item
+Let $currentNs$ be null.
+\item
+Let $globalNs$ be an AST node created using algorithm \ref{creatingns} with the following inputs:
+\begin{itemize}
+\item
+the full name of the namespace that $primaryClassTemplate$ belongs,
+\item
+using nodes contained by $primaryClassTemplate$,
+\item
+$currentNs$.
+\end{itemize}
+\item
+Clone $classNode$ without member function bodies and set it to variable $classInstanceNode$.
+\item
+Let $n$ be the number of type parameters of $primaryClassTemplate$.
+\item
+Let $m$ be the number of template arguments contained by the class template specialization symbol.
+\item
+If $n < m$ report error "too many template arguments" and exit.
+\item
+For $i$ = 0, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $typeParameterSymbol$ be $i$'th type parameter symbol of $primaryClassTemplate$.
+\item
+Let $boundTypeParam$ be a created \verb|BoundTypeParameter| with the name of\\
+$typeParameterSymbol$.
+\item
+Let $templateArgument$ be null.
+\item
+If $i < m$, set $templateArgument$ to $i$'th template argument contained by the class template specialization symbol.
+\item
+Otherwise,
+\begin{enumerate}
+\item
+If $i \ge $ number of template parameter nodes contained by $node$, report error "too few template arguments" and exit.
+\item
+Let $templateParameterNode$ be the $i$'th template parameter nodes of $classNode$.
+\item
+Let $defaultTemplateArgumentNode$ be the default template argument of $templateParameterNode$.
+\item
+If $defaultTemplateArgumentNode$ is null, report error "too few template arguments" and exit.
+\item
+Set $typeArgument$ to the type resolved using algorithm \ref{resolvetype} with\\
+$defaultTemplateArgumentNode$.
+\item
+Add $typeArgument$ to the type arguments of the class template specialization symbol.
+\end{enumerate}
+\item
+Set type of $boundTypeParam$ to $typeArgument$.
+\item
+Add $boundTypeParam$ as the member of the class template specialization symbol
+so that it is found by the type resolver when binding the class template specialization.
+The $boundTypeParam$ will map a name of a template parameter to the corresponding template argument symbol.
+\end{enumerate}
+\item
+Add $classInstanceNode$ to $currentNs$.
+\item
+Create a declaration visitor and call the \verb|Accept| member function of $globalNs$ with the declaration visitor.
+This visits the AST of the class template specialization and adds the symbols contained by it to the symbol table.
+\item
+Create a prebinder and call the \verb|Accept| member function of $globalNs$ with the prebinder.
+This visits the AST of the class template specialization and binds the types and values contained by it.
+\item
+If $classNode$ has a constraint, check that constraint.
+\item
+If the class template specialization is a virtual class, generate the vtable and itables for it.
+\item
+Create a main binder and call the \verb|Accept| member function of $globalNs$ with the main binder.
+This visits the AST of the class template specialization and ands the bound version of it to the currently bound compile unit.
+\end{enumerate}
+\end{algo}
 
+\subsection{Class Template Repository}\label{classtemplaterepository}
+
+The class template repository holds primary class template symbols and class template specialization symbols.
+It frees the AST nodes of the primary class template symbols at the end of binding the bound compile unit.
+The algorithms in this chapter have implicit access to the class template repository.
+
+\subsection{Instantiation of a Member Function of a Class Template}
+
+\begin{algo}\label{instantiatememfunofclasstemplate} Instantiate a Member Function of a Class Template. Inputs: a container scope,
+a member function symbol to instantiate.
+\begin{enumerate}
+\item
+If member function symbol already instantiated, return.
+\item
+Get AST node, $functionNode$, for the member function symbol from the symbol table.
+\item
+Add member function symbol to instantiated functions of the compile unit.
+\item
+Get the AST node for the body of the member function. Clone it, and set is as the body of $functionNode$.
+\item
+Get the AST node for the parent class template specialization and set it to the variable $ttNode$.
+\item
+Create a declaration visitor and call the \verb|Accept| meber function of the body of $functionNode$ with the declaration visitor.
+This visits the AST of the body of $functionNode$ and adds local variable symbols to the symbol table.
+\item
+Create a prebinder.
+\item
+Set the parent class template specialization of this member function as the current class of the prebinder so that
+types and values contained by the class template specialization required by the member function are found.
+\item
+Call the \verb|Accept| member function of $functionNode$ with the prebinder.
+This visits the AST of $functionNode$ and binds types and values contained by it.
+\item
+Create a main binder.
+\item
+Call main binder's \verb|BeginVisit| member function with $ttNode$.
+This sets the scope so that symbols from the class template specialization are found when binding the member function node.
+\item
+Call the \verb|Accept| member function of $functionNode$ with the main binder.
+This visits the AST of $functionNode$ and binds the statements and expressions contained by it,
+and adds the bound version of the function to the currently bound compile unit.
+\item
+Call main binder's \verb|EndVisit| member function with $ttNode$.
+\item
+If the parent class template specialization of this member function has virtual functions or a destructor,
+instantiate them recursively using this algorithm.
+\end{enumerate}
+\end{algo}
+
+\subsection{Resolving Default Template Arguments}
+
+A class template may have default arguments such as the value of template parameter $C$ in the following example:
+
+\lstset{language=Cmajor}
+\begin{lstlisting}[frame=trBL]
+public class Set<T, C = Less<T>>
+{
+    // ...
+}
+
+void main()
+{
+    Set<int> s; // Set<int> will be resolved to System.Set<int, System.Less<int>>;
+}
+\end{lstlisting}
+
+Here's the algorithm that resolves the default template arguments:
+
+\begin{algo}\label{resolvedefaulttypearguments} Resolve Default Template Arguments. Inputs: a reference to a list of template argument symbols,
+    a primary class template symbol, a container scope and a list of file scopes.
+\begin{enumerate}
+\item
+Get the AST node of the primary class template symbol from the symbol table. Let $classNode$ be the node found.
+\item
+If $classNode$ is null, read the AST node from the library file and assign it to $classNode$.
+\item
+Let $n$ be the number of type parameters of primary class template symbol.
+\item
+Let $m$ be the number of template argument symbols.
+\item
+Create a container scope, $resolveScope$, for resolving and set its parent scope to the given container scope.
+\item
+Let $boundTypeParameters$ be a list of \verb|BoundTypeParameterSymbol|s.
+\item
+For $i$ = 0, \ldots, $n - 1$:
+\begin{enumerate}
+\item
+Let $typeParameterSymbol$ be $i$'th type parameter symbol of the primary class template symbol.
+\item
+Create a \verb|BoundTypeParameterSymbol|, $boundTypeParam$,\\ with the name of $typeParameterSymbol$.
+\item
+Add it to the end of $boundTypeParameters$.
+\item
+If $i < m$,
+\begin{enumerate}
+\item
+Set the type of $boundTypeParam$ to $i$'th template argument.
+\item
+Install $boundTypeParam$ to $resolveScope$.
+\end{enumerate}
+\item
+Otherwise,
+\begin{enumerate}
+\item
+If $i \ge $ the number of template parameter nodes in the $classNode$, report error "too few template arguments" and exit.
+\item
+Let $templateParameterNode$ be the $i$'th template parameter node of the $classNode$.
+\item
+Let $defaultTemplateArgumentNode$ be the default template argument node of $templateParameterNode$.
+\item
+If $defaultTemplateArgumentNode$ is null, report error "too few template arguments" and exit.
+\item
+Let $templateArgument$ be a template argument type symbol resolved by the type resolver from $defaultTemplateArgumentNode$ with $resolveScope$
+using algorithm \ref{resolvetype}.
+\item
+Add $templateArgument$ to the end of template argument symbols.
+\end{enumerate}
+\end{enumerate}
+\end{enumerate}
+\end{algo}
 
 \chapter{Emitter}
 
