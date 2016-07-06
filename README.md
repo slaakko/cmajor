@@ -85,7 +85,7 @@ Source code organization
 
     C Code Generator
 
-### Cmajor Parser Generator Tool ###
+### Recursive Descent Backtracking Parser Generator Tool ###
 
 +   **Cm.Parsing**
 
@@ -107,25 +107,25 @@ Source code organization
 
     Parser File Syntax
 
-### Cmajor Debugger ###
+### Debugger ###
 
 +   **Cm.Debugger**
 
     Debugger
 
-### Cmajor Profiler ###
+### Profiler ###
 
 +   **Cm.Profiler**
 
     Profiler
 
-### Cmajor Unit Test Engine ###
+### Unit Test Engine ###
 
 +   **Cm.Unit**
 
     Unit Tester
 
-### Cmajor Libraries, Examples, Documentation ###
+### Cmajor Libraries, Examples and Documentation ###
 
 +   **system**
 
@@ -165,7 +165,7 @@ Source code organization
 
 +   **SourceLines**
 
-    Cmajor Source Code Line Statistic Calculator
+    Source Code Line Statistic Calculator
 
 +   **SourceRead**
 
