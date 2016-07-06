@@ -71,7 +71,7 @@ Source code organization
 
 +   **Dwarf**
 
-    Debugging Constant (not used currently)
+    Dwarf Debugging Constants (not used currently)
 
 +   **Ir.Intf**
 
