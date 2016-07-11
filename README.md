@@ -14,7 +14,7 @@ implementation of concepts, has an IDE in Windows, and has support for
 debugging integrated in IDE in Windows and using command line tool
 cmdb in Linux.
 
-Latest release version can be found in [SourceForge Cmajor Site](http://sourceforge.net/projects/cmajor/).
+Latest release version and binaries can be found in [SourceForge Cmajor Site](http://sourceforge.net/projects/cmajor/).
 
 Source code organization
 ------------------------
@@ -79,17 +79,17 @@ Source code organization
 
 +   **Llvm.Ir**
 
-    LLVM Code Generator
+    LLVM Intermediate Code Generator
 
 +    **C.Ir**
 
-    C Code Generator
+    C Intermediate Code Generator
 
 ### Recursive Descent Backtracking Parser Generator Tool ###
 
 +   **Cm.Parsing**
 
-    Parsing Runtime Library
+    Parsing Runtime Library.
 
 +   **Cm.Parsing.Cpp**
 
@@ -101,7 +101,8 @@ Source code organization
 
 +   **Cm.Parsing.Generator**
 
-    Parser Generator Executable Project
+    Parser Generator Executable Project.
+    Generates executable named cmpg.
 
 +   **Cm.Parsing.Syntax**
 
@@ -135,13 +136,17 @@ Source code organization
 
     Cmajor Example Programs
 
-+   **src**
++   **cmcm**
 
-    System Library Sources in PDF
+    Cmajor Compiler written in Cmajor
 
 +   **doc**
 
     Documentation
+
++   **src**
+
+    System Library Sources in PDF
 
 +   **test**
 
