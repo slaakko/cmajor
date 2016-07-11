@@ -14,33 +14,531 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Bind
 {
-    internal Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
-        const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository)
+    public enum EvaluationFlags : byte
     {
-        Evaluator evaluator(targetType, cast_, symbolTable, containerScope, fileScopes, classTemplateRepository);
+        none = 0u,
+        dontThrow = 1u
+    }
+    
+    public class VariableValueSymbol : Cm.Sym.VariableSymbol
+    {
+        public nothrow VariableValueSymbol(const Span& span_, const string& name_) : base(span_, name_)
+        {
+        }
+        public nothrow VariableValueSymbol(const Span& span_, const string& name_, Cm.Sym.Value* value_) : base(span_, name_), value(value_)
+        {
+        }
+        public nothrow override Cm.Sym.SymbolType GetSymbolType() const 
+        {
+            return Cm.Sym.SymbolType.variableValueSymbol;
+        }
+        public nothrow inline Cm.Sym.Value* GetValue() const
+        {
+            return value.GetPtr();
+        }
+        public nothrow inline void SetValue(Cm.Sym.Value* value_)
+        {
+            value.Reset(value_);
+        }
+        private UniquePtr<Cm.Sym.Value> value;
+    }
+    
+    internal Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
+        const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
+    {
+        return Evaluate(targetType, cast_, value, symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, EvaluationFlags.none);
+    }
+    
+    internal Cm.Sym.Value* Evaluate(Cm.Sym.ValueType targetType, bool cast_, Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, 
+        const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, EvaluationFlags flags)
+    {
+        Evaluator evaluator(targetType, cast_, symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, flags);
         return evaluator.DoEvaluate(value);
     }
     
     internal class Evaluator : Cm.Ast.Visitor
     {
         public nothrow Evaluator(Cm.Sym.ValueType targetType_, bool cast__, Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.Core.ClassTemplateRepository& classTemplateRepository_) : base(true, true), targetType(targetType_), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_), 
-            fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantAndEnumConstantSymbols)
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, EvaluationFlags flags_) : 
+            base(true, true), targetType(targetType_), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_), fileScopes(fileScopes_), currentDeclarationBlock(null), currentFunction(null),
+            currentFunctionGroupSymbol(null), classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), 
+            lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantEnumConstantAndVariableValueSymbols), flags(flags_), returned(false), interrupted(false), breaked(false), continued(false), leaveLvalue(false)
         {
         }
         public Cm.Sym.Value* DoEvaluate(Cm.Ast.Node* value)
         {
-            value->Accept(*this);
-            UniquePtr<Cm.Sym.Value> result(evaluationStack.Pop());
-            result.Reset(result->As(targetType, cast_, value->GetSpan()));
-            return result.Release();
+            try
+            {
+                value->Accept(*this);
+                if (interrupted) return null;
+                UniquePtr<Cm.Sym.Value> result(evaluationStack.Pop());
+                result.Reset(result->As(targetType, cast_, value->GetSpan()));
+                return result.Release();
+            }
+            catch (const Exception& ex)
+            {
+                if (!DontThrow())
+                {
+                    ExceptionPtr x = CaptureCurrentException();
+                    RethrowException(x);
+                }
+            }
+            return null;
+        }
+        public override void Visit(Cm.Ast.NamespaceImportNode& namespaceImportNode)
+        {
+            UniquePtr<Cm.Sym.FileScope>& lastFileScope = functionFileScopes.Back();
+            lastFileScope->InstallNamespaceImport(containerScope, &namespaceImportNode);
+        }
+        public override void Visit(Cm.Ast.AliasNode& aliasNode)
+        {
+            UniquePtr<Cm.Sym.FileScope>& lastFileScope = functionFileScopes.Back();
+            lastFileScope->InstallAlias(containerScope, &aliasNode);
+        }
+        public override void BeginVisit(Cm.Ast.FunctionNode& functionNode)
+        {
+            for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+            {
+                functionFileScopes.Add(UniquePtr<Cm.Sym.FileScope>(fileScope->Clone()));
+            }
+            functionFileScopes.Add(UniquePtr<Cm.Sym.FileScope>(new Cm.Sym.FileScope()));
+            for (const UniquePtr<Cm.Ast.Node>& usingNode : currentFunction->GetUsingNodes())
+            {
+                usingNode->Accept(*this);
+            }
+            PushSkipContent(true);
+            int n = functionNode.Parameters().Count();
+            List<UniquePtr<VariableValueSymbol>> receives;
+            Cm.Sym.DeclarationBlock functionSymbols(functionNode.GetSpan(), "functionSymbols");
+            functionSymbols.SetParent(containerScope->Container());
+            functionSymbols.GetContainerScope()->SetParent(containerScope);
+            containerScopeStack.Push(containerScope);
+            containerScope = functionSymbols.GetContainerScope();
+            int bn = currentFunctionGroupSymbol->BoundTemplateArguments().Count();
+            if (bn > 0)
+            {
+                for (int i = 0; i < bn; ++i)
+                {
+                    Cm.Sym.TypeParameterSymbol* typeParam = currentFunction->TypeParameters()[i];
+                    Cm.Sym.BoundTypeParameterSymbol* boundTypeParam = new Cm.Sym.BoundTypeParameterSymbol(functionNode.GetSpan(), typeParam->Name());
+                    Cm.Sym.TypeSymbol* templateArgumentType = currentFunctionGroupSymbol->BoundTemplateArguments()[i];
+                    boundTypeParam->SetType(templateArgumentType);
+                    functionSymbols.AddSymbol(boundTypeParam);
+                }
+                Cm.Sym.TypeSymbol* returnType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, FScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, functionNode.ReturnTypeExpr());
+                currentFunction->SetReturnType(returnType);
+            }
+            currentFunctionGroupSymbol = null;
+            for (int i = 0; i < n; ++i)
+            {
+                UniquePtr<Cm.Sym.Value> arg(evaluationStack.Pop());
+                Cm.Ast.ParameterNode* param = functionNode.Parameters()[i];
+                string id;
+                if (param->Id() != null)
+                {
+                    id = param->Id()->Str();
+                }
+                else
+                {
+                    id = "__parameter" + ToString(i);
+                }
+                VariableValueSymbol* var = new VariableValueSymbol(param->GetSpan(), id, arg.Release());
+                var->SetType(ResolveType(boundCompileUnit.SymbolTable(), containerScope, FScopes(), classTemplateRepository, boundCompileUnit, param->TypeExpr()));
+                var->SetOwned();
+                receives.Add(UniquePtr<VariableValueSymbol>(var));
+                functionSymbols.AddSymbol(var);
+            }
+            returnedStack.Push(returned);
+            returned = false;
+            functionNode.Body()->Accept(*this);
+            if (breaked)
+            {
+                throw Cm.Core.Error("break not inside a while, do or for statement", functionNode.GetSpan());
+            }
+            if (continued)
+            {
+                throw Cm.Core.Error("continue not inside a while, do or for statement", functionNode.GetSpan());
+            }
+            returned = returnedStack.Pop();
+            containerScope = containerScopeStack.Pop();
+        }
+        public override void EndVisit(Cm.Ast.FunctionNode& functionNode)
+        {
+            PopSkipContent();
+        }
+        public override void BeginVisit(Cm.Ast.CompoundStatementNode& compoundStatementNode)
+        {
+            PushSkipContent(true);
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.DeclarationBlock> blockVars(new Cm.Sym.DeclarationBlock(compoundStatementNode.GetSpan(), "blockVars"));
+            blockVars->SetParent(containerScope->Container());
+            blockVars->GetContainerScope()->SetParent(containerScope);
+            containerScopeStack.Push(containerScope);
+            containerScope = blockVars->GetContainerScope();
+            declarationBlockStack.Push(currentDeclarationBlock);
+            currentDeclarationBlock = blockVars.GetPtr();
+            PushSkipContent(false);
+            int n = compoundStatementNode.Statements().Count();
+            for (int i = 0; i < n; ++i)
+            {
+                compoundStatementNode.Statements()[i]->Accept(*this);
+                if (returned || breaked || continued || interrupted)
+                {
+                    PopSkipContent();
+                    containerScope = containerScopeStack.Pop();
+                    return;
+                }
+            }
+            PopSkipContent();
+            containerScope = containerScopeStack.Pop();
+        }
+        public override void EndVisit(Cm.Ast.CompoundStatementNode& compoundStatementNode)
+        {
+            PopSkipContent();
+        }
+        public override void BeginVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
+        {
+            PushSkipContent(true);
+            PushSkipArguments(true);
+            if (returned) return;
+            if (interrupted) return;
+            List<Cm.Core.Argument> args;
+            Cm.Sym.TypeSymbol* type = ResolveType(boundCompileUnit.SymbolTable(), containerScope, FScopes(), classTemplateRepository, boundCompileUnit, constructionStatementNode.TypeExpr());
+            Cm.Sym.SymbolType symbolType = type->GetSymbolType();
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, DontThrow());
+            if (valueType == Cm.Sym.ValueType.none) { interrupted = true; return; }
+            Cm.Sym.TypeSymbol* ptrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakePointerType(type, constructionStatementNode.GetSpan());
+            args.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.lvalue, ptrType));
+            Cm.Ast.NodeList<Cm.Ast.Node>& argumentExprs = constructionStatementNode.Arguments();
+            List<UniquePtr<Cm.Sym.Value>> arguments;
+            UniquePtr<VariableValueSymbol> var(new VariableValueSymbol(constructionStatementNode.GetSpan(), constructionStatementNode.Id()->Str()));
+            var->SetType(type);
+            int n = argumentExprs.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                argumentExprs[i]->Accept(*this);
+                if (interrupted) return;
+                UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+                arguments.Add(UniquePtr<Cm.Sym.Value>(value->As(valueType, false, constructionStatementNode.GetSpan())));
+                args.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, type));
+            }
+            Cm.Sym.FunctionLookupSet functionLookups;
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, boundCompileUnit.SymbolTable().GlobalScope()));
+            functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
+            List<Cm.Sym.FunctionSymbol*> conversions;
+            Cm.Sym.FunctionSymbol* ctor = ResolveOverload(containerScope, boundCompileUnit, "@constructor", args, functionLookups, constructionStatementNode.GetSpan(), conversions);
+            ConstructorDelegate ctorDlg;
+            if (ctor->IsDefaultConstructor() || ctor is Cm.Core.DefaultCtor*)
+            {
+                ctorDlg = DefaultConstructorDelegates.Instance().Get()[cast<int>(valueType)];
+            }
+            else if (ctor->IsCopyConstructor() || ctor is Cm.Core.CopyCtor*)
+            {
+                ctorDlg = CopyConstructorDelegates.Instance().Get()[cast<int>(valueType)];
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("cannot evaluate constructor '" + ctor->FullName() + "' statically", constructionStatementNode.GetSpan());
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(arguments[i].Release()));
+            }
+            ctorDlg(*var, evaluationStack);
+            currentDeclarationBlock->AddSymbol(var.Release());
+        }
+        public override void EndVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
+        {
+            PopSkipArguments();
+            PopSkipContent();
+        }
+        public override void BeginVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
+        {
+            PushVisitExpressions(false);
+            leaveLvalueStack.Push(leaveLvalue);
+            leaveLvalue = true;
+            assignmentStatementNode.TargetExpr()->Accept(*this);
+            if (interrupted) return;
+            leaveLvalue = leaveLvalueStack.Pop();
+            UniquePtr<Cm.Sym.Value> targetValue(evaluationStack.Pop());
+            if (targetValue.GetPtr() is VariableValue*)
+            {
+                VariableValue* variableValue = cast<VariableValue*>(targetValue.GetPtr());
+                VariableValueSymbol* variableValueSymbol = variableValue->GetVariableValueSymbol();
+                Cm.Sym.TypeSymbol* type = variableValueSymbol->GetType();
+                Cm.Sym.SymbolType symbolType = type->GetSymbolType();
+                Cm.Sym.ValueType targetType = Cm.Sym.GetValueTypeFor(symbolType, DontThrow());
+                if (targetType == Cm.Sym.ValueType.none) { interrupted = true; return; }
+                assignmentStatementNode.SourceExpr()->Accept(*this);
+                variableValueSymbol->SetValue(evaluationStack.Pop()->As(targetType, false, assignmentStatementNode.SourceExpr()->GetSpan()));
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("assignment needs a variable", assignmentStatementNode.TargetExpr()->GetSpan());
+                }
+            }
+        }
+        public override void EndVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
+        {
+            PopVisitExpressions();
+        }
+        public override void BeginVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
+        {
+            PopSkipContent();
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, conditionalStatementNode.GetSpan()));
+            Cm.Sym.BoolValue* cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            if (cond->GetValue())
+            {
+                conditionalStatementNode.ThenS()->Accept(*this);
+            }
+            else
+            {
+                if (conditionalStatementNode.ElseS() != null)
+                {
+                    conditionalStatementNode.ElseS()->Accept(*this);
+                }
+            }
+        }
+        public override void EndVisit(Cm.Ast.ReturnStatementNode& returnStatementNode)
+        {
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            Cm.Sym.SymbolType returnSymbolType = currentFunction->GetReturnType()->GetSymbolType();
+            Cm.Sym.ValueType returnValueType = Cm.Sym.GetValueTypeFor(returnSymbolType, DontThrow());
+            if (returnValueType == Cm.Sym.ValueType.none) { interrupted = true; return; }
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(value->As(returnValueType, false, returnStatementNode.GetSpan())));
+            returned = true;
+        }
+        public override void BeginVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
+        {
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", switchStatementNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.CaseStatementNode& caseStatementNode)
+        {
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", caseStatementNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DefaultStatementNode& defaultStatementNode)
+        {
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", defaultStatementNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.GotoCaseStatementNode& gotoCaseStatementNode)
+        {
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", gotoCaseStatementNode.GetSpan());
+            }
+        }
+        public override void Visit(Cm.Ast.GotoDefaultStatementNode& gotoDefaultStatementNode)
+        {
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", gotoDefaultStatementNode.GetSpan());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
+        {
+            PushSkipContent(true);
+        }
+        public override void EndVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
+        {
+            PopSkipContent();
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, whileStatementNode.GetSpan()));
+            Cm.Sym.BoolValue* cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            while (cond->GetValue())
+            {
+                whileStatementNode.Statement()->Accept(*this);
+                if (returned) return;
+                if (interrupted) return;
+                if (breaked)
+                {
+                    breaked = false;
+                    break;
+                }
+                if (continued)
+                {
+                    continued = false;
+                }
+                whileStatementNode.Condition()->Accept(*this);
+                if (returned) return;
+                if (interrupted) return;
+                value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, whileStatementNode.GetSpan()));
+                cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            }
+        }
+        public override void BeginVisit(Cm.Ast.DoStatementNode& doStatementNode)
+        {
+            PushSkipContent(true);
+            PushVisitExpressions(false);
+        }
+        public override void EndVisit(Cm.Ast.DoStatementNode& doStatementNode)
+        {
+            PopVisitExpressions();
+            PopSkipContent();
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value;
+            Cm.Sym.BoolValue* cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            do
+            {
+                doStatementNode.Statement()->Accept(*this);
+                if (returned) return;
+                if (interrupted) return;
+                if (breaked)
+                {
+                    breaked = false;
+                    break;
+                }
+                if (continued)
+                {
+                    continued = false;
+                }
+                doStatementNode.Condition()->Accept(*this);
+                if (returned) return;
+                if (interrupted) return;
+                value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, doStatementNode.GetSpan()));
+                cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            } 
+            while(cond->GetValue());
+        }
+        override void BeginVisit(Cm.Ast.ForStatementNode& forStatementNode)
+        {
+            PushSkipContent(true);
+            PushVisitExpressions(false);
+        }
+        public override void EndVisit(Cm.Ast.ForStatementNode& forStatementNode)
+        {
+            PopVisitExpressions();
+            PopSkipContent();
+            if (returned) return;
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.DeclarationBlock> forVars(new Cm.Sym.DeclarationBlock(forStatementNode.GetSpan(), "forVars"));
+            forVars->SetParent(containerScope->Container());
+            forVars->GetContainerScope()->SetParent(containerScope);
+            containerScopeStack.Push(containerScope);
+            containerScope = forVars->GetContainerScope();
+            declarationBlockStack.Push(currentDeclarationBlock);
+            currentDeclarationBlock = forVars.GetPtr();
+            forStatementNode.Init()->Accept(*this);
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value;
+            if (forStatementNode.HasCondition())
+            {
+                forStatementNode.Condition()->Accept(*this);
+                if (interrupted) return;
+                value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, forStatementNode.GetSpan()));
+            }
+            Cm.Sym.BoolValue* cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+            while (cond == null || cond->GetValue())
+            {
+                forStatementNode.Action()->Accept(*this);
+                if (interrupted) return;
+                if (returned)
+                {
+                    containerScope = containerScopeStack.Pop();
+                    return;
+                }
+                if (breaked)
+                {
+                    breaked = false;
+                    break;
+                }
+                if (continued)
+                {
+                    continued = false;
+                }
+                if (forStatementNode.HasIncrement())
+                {
+                    forStatementNode.Increment()->Accept(*this);
+                    if (interrupted) return;
+                    UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+                }
+                if (forStatementNode.HasCondition())
+                {
+                    forStatementNode.Condition()->Accept(*this);
+                    if (interrupted) return;
+                    value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, forStatementNode.GetSpan()));
+                    cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
+                }
+            }
+            containerScope = containerScopeStack.Pop();
+        }
+        public override void Visit(Cm.Ast.BreakStatementNode& breakStatementNode)
+        {
+            breaked = true;
+        }
+        public override void Visit(Cm.Ast.ContinueStatementNode& continueStatementNode)
+        {
+            continued = true;
+        }
+        public override void EndVisit(Cm.Ast.SimpleStatementNode& simpleStatementNode)
+        {
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
         }
         public override void Visit(Cm.Ast.IdentifierNode& identifierNode)
         {
             Cm.Sym.Symbol* symbol = containerScope->Lookup(identifierNode.Str(), Cm.Sym.ScopeLookup.this_and_base_and_parent, lookupId);
             if (symbol == null)
             {
-                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : fileScopes)
+                for (const UniquePtr<Cm.Sym.FileScope>& fileScope : FScopes())
                 {
                     symbol = fileScope->Lookup(identifierNode.Str(), lookupId);
                     if (symbol != null) break;
@@ -199,9 +697,21 @@ namespace Cm.Bind
         {
             EvaluateBinOp(targetType, evaluationStack, RemDelegates.Instance().Get(), cast_, remNode.GetSpan());
         }
+        public override void BeginVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
+        {
+            // todo
+        }
+        public override void EndVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
+        {
+            // todo
+        }
         public override void BeginVisit(Cm.Ast.InvokeNode& invokeNode)
         {
-            ThrowCannotEvaluateStatically(invokeNode.GetSpan());
+            // todo
+        }
+        public override void EndVisit(Cm.Ast.InvokeNode& invokeNode)
+        {
+            // todo
         }
         public override void Visit(Cm.Ast.IndexNode& indexNode)
         {
@@ -242,11 +752,11 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.PostfixIncNode& postfixIncNode)
         {
-            ThrowCannotEvaluateStatically(postfixIncNode.GetSpan());
+            // todo
         }
         public override void Visit(Cm.Ast.PostfixDecNode& postfixDecNode)
         {
-            ThrowCannotEvaluateStatically(postfixDecNode.GetSpan());
+            // todo
         }
         public override void Visit(Cm.Ast.DerefNode& derefNode)
         {
@@ -272,14 +782,6 @@ namespace Cm.Bind
         {
             EvaluateUnaryOp(targetType, evaluationStack, BitwiseComplementDelegates.Instance().Get(), cast_, complementNode.GetSpan());
         }
-        public override void BeginVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
-        {
-            ThrowCannotEvaluateStatically(prefixIncNode.GetSpan());
-        }
-        public override void BeginVisit(Cm.Ast.PrefixDecNode& prefixDecNode)
-        {
-            ThrowCannotEvaluateStatically(prefixDecNode.GetSpan());
-        }
         public override void Visit(Cm.Ast.SizeOfNode& sizeOfNode)
         {
             ThrowNotImplemented();
@@ -291,10 +793,10 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.CastNode& castNode)
         {
             Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
-            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, targetTypeExpr);
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, targetTypeExpr);
             Cm.Sym.SymbolType symbolType = type->GetSymbolType();
-            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
-            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository)));
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, FScopes(), classTemplateRepository, boundCompileUnit)));
         }
         public override void Visit(Cm.Ast.IsNode& isNode)
         {
@@ -340,7 +842,7 @@ namespace Cm.Bind
                     if (node is Cm.Ast.ConstantNode*)
                     {
                         Cm.Ast.ConstantNode* constantNode = cast<Cm.Ast.ConstantNode*>(node);
-                        BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode);
+                        BindConstant(symbolTable, containerScope, FScopes(), classTemplateRepository, boundCompileUnit, constantNode);
                     }
                     else
                     {
@@ -359,7 +861,7 @@ namespace Cm.Bind
                     {
                         Cm.Ast.EnumConstantNode* enumConstantNode = cast<Cm.Ast.EnumConstantNode*>(node);
                         Cm.Sym.ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                        BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                        BindEnumConstant(symbolTable, enumConstantContainerScope, FScopes(), classTemplateRepository, boundCompileUnit, enumConstantNode);
                     }
                     else
                     {
@@ -373,15 +875,51 @@ namespace Cm.Bind
                 ThrowCannotEvaluateStatically(symbol->GetSpan());
             }
         }
+        private nothrow inline bool DontThrow() const
+        {
+            return (flags & EvaluationFlags.dontThrow) != EvaluationFlags.none;
+        }
+        private nothrow const List<UniquePtr<Cm.Sym.FileScope>>& FScopes() const
+        {
+            const List<UniquePtr<Cm.Sym.FileScope>>* fscopes = null;
+            if (functionFileScopes.IsEmpty())
+            {
+                fscopes = &fileScopes;
+            }
+            else
+            {
+                fscopes = &functionFileScopes;
+            }
+            return *fscopes;
+        }
         private Cm.Sym.ValueType targetType;
         private bool cast_;
+        private Cm.Sym.ContainerScope* qualifiedScope;
+        private Stack<Cm.Sym.ContainerScope*> qualifiedScopeStack;
         private Cm.Sym.SymbolTable& symbolTable;
         private Cm.Sym.ContainerScope* containerScope;
+        private Stack<Cm.Sym.ContainerScope*> containerScopeStack;
+        private Cm.Sym.FunctionSymbol* currentFunction;
+        private Stack<Cm.Sym.FunctionSymbol*> functionStack;
+        private Cm.Sym.DeclarationBlock* currentDeclarationBlock;
+        private Stack<Cm.Sym.DeclarationBlock*> declarationBlockStack;
+        private Cm.Sym.FunctionGroupSymbol* currentFunctionGroupSymbol;
+        private Stack<Cm.Sym.FunctionGroupSymbol*> functionGroupSymbolStack;
         private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
+        private List<UniquePtr<Cm.Sym.FileScope>> functionFileScopes;
         private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
         private Cm.Sym.SymbolTypeSetId lookupId;
         private Stack<Cm.Sym.SymbolTypeSetId> lookupIdStack;
+        private EvaluationFlags flags;
+        private bool returned;
+        private Stack<bool> returnedStack;
+        private bool interrupted;
+        private bool breaked;
+        private bool continued;
+        private bool leaveLvalue;
+        private Stack<bool> leaveLvalueStack;
     }
     
     public void ThrowNotImplemented()
@@ -418,7 +956,112 @@ namespace Cm.Bind
             ThrowNotImplemented();
             return null;
         }
+        public override void Inc(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Dec(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Deref(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
         private Cm.Sym.ContainerSymbol* containerSymbol;
+    }
+    
+    public class FunctionGroupValue : Cm.Sym.Value
+    {
+        public nothrow FunctionGroupValue(Cm.Sym.FunctionGroupSymbol* functionGroup_, Cm.Sym.ContainerScope* qualifiedScope_) : functionGroup(functionGroup_), qualifiedScope(qualifiedScope_)
+        {
+        }
+        public nothrow inline Cm.Sym.FunctionGroupSymbol* FunctionGroup() const
+        {
+            return functionGroup;
+        }
+        public nothrow inline Cm.Sym.ContainerScope* QualifiedScope() const
+        {
+            return qualifiedScope;
+        }
+        public nothrow override Cm.Sym.ValueType GetValueType() const 
+        {
+            #assert(false);
+            return Cm.Sym.ValueType.none;
+        }
+        public nothrow override Cm.Sym.Value* Clone() const
+        {
+            #assert(false);
+            return null;
+        }
+        public override Cm.Sym.Value* As(Cm.Sym.ValueType targetType, bool cast_, const Span& span_)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override void Inc(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Dec(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Deref(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        private Cm.Sym.FunctionGroupSymbol* functionGroup;
+        private Cm.Sym.ContainerScope* qualifiedScope;
+    }
+
+    public class VariableValue : Cm.Sym.Value
+    {
+        public nothrow VariableValue(VariableValueSymbol* variableValueSymbol_) : variableValueSymbol(variableValueSymbol_)
+        {
+        }
+        public nothrow inline VariableValueSymbol* GetVariableValueSymbol() const
+        {
+            return variableValueSymbol;
+        }
+        public nothrow override Cm.Sym.ValueType GetValueType() const 
+        {
+            #assert(false);
+            return Cm.Sym.ValueType.none;
+        }
+        public nothrow override Cm.Sym.Value* Clone() const
+        {
+            #assert(false);
+            return null;
+        }
+        public override Cm.Sym.Value* As(Cm.Sym.ValueType targetType, bool cast_, const Span& span_)
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            ThrowNotImplemented();
+            return null;
+        }
+        public override void Inc(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Dec(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        public override void Deref(const Span& span)
+        {
+            ThrowNotImplemented();
+        }
+        private VariableValueSymbol* variableValueSymbol;
     }
     
     internal void ThrowCannotEvaluateStatically(const Span& span)
@@ -428,6 +1071,7 @@ namespace Cm.Bind
     
     internal delegate Cm.Sym.Value* BinaryOperatorDelegate(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span);
     internal delegate Cm.Sym.Value* UnaryOperatorDelegate(Cm.Sym.Value* operand, const Span& span);
+    internal delegate void ConstructorDelegate(VariableValueSymbol& variable, Stack<UniquePtr<Cm.Sym.Value>>& stack);
 
     internal Cm.Sym.Value* NotSupported(Cm.Sym.Value* left, Cm.Sym.Value* right, const Span& span)
     {
@@ -438,7 +1082,12 @@ namespace Cm.Bind
     {
         throw Cm.Core.Error("operation not supported for type " + Cm.Sym.ValueTypeStr(operand->GetValueType()), span);
     }
-
+    
+    internal void NotSupported(VariableValueSymbol& variable, Stack<UniquePtr<Cm.Sym.Value>>&)
+    {
+        throw Cm.Core.Error("operation not supported for this type");
+    }
+    
     internal List<BinaryOperatorDelegate> DefaultBinaryDelegates()
     {
         List<BinaryOperatorDelegate> defaultBinaryDelegates;
@@ -460,7 +1109,18 @@ namespace Cm.Bind
         }
         return defaultUnaryDelegates;
     }
-                        
+    
+    internal List<ConstructorDelegate> NotSupportedConstructorDelegates()
+    {
+        List<ConstructorDelegate> notSupportedConstructorDelegates;
+        int n = cast<int>(Cm.Sym.ValueType.max);
+        for (int i = 0; i < n; ++i)
+        {
+            notSupportedConstructorDelegates.Add(ConstructorDelegate(NotSupported));
+        }
+        return notSupportedConstructorDelegates;
+    }
+    
     internal class DisjunctionDelegates
     {
         static DisjunctionDelegates() : instance(new DisjunctionDelegates())
@@ -491,10 +1151,6 @@ namespace Cm.Bind
         Cm.Sym.ValueType rightType = right->GetValueType();
         Cm.Sym.ValueType commonType = Cm.Sym.GetCommonType(leftType, rightType);
         Cm.Sym.ValueType operationType = commonType;
-        if (targetType > commonType)
-        {
-            operationType = targetType;
-        }
         UniquePtr<Cm.Sym.Value> leftOperand(left->As(operationType, cast_, span));
         UniquePtr<Cm.Sym.Value> rightOperand(right->As(operationType, cast_, span));
         BinaryOperatorDelegate dlg = delegates[cast<int>(operationType)];
@@ -672,6 +1328,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(Equality<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<EqualityDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -719,6 +1376,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(Inequality<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<InequalityDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -759,6 +1417,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(LessThanRelation<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<LessThanRelationDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -799,6 +1458,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(GreaterThanRelation<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<GreaterThanRelationDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -839,6 +1499,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(LessOrEqualRelation<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<LessOrEqualRelationDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -879,6 +1540,7 @@ namespace Cm.Bind
             delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.ULongValue>);
             delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.FloatValue>);
             delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = BinaryOperatorDelegate(GreaterOrEqualRelation<Cm.Sym.CharPtrValue>);
         }
         private static UniquePtr<GreaterOrEqualRelationDelegates> instance;
         private List<BinaryOperatorDelegate> delegates;
@@ -1140,10 +1802,6 @@ namespace Cm.Bind
         UniquePtr<Cm.Sym.Value> operand = evaluationStack.Pop();
         Cm.Sym.ValueType operandType = operand->GetValueType();
         Cm.Sym.ValueType operationType = operandType;
-        if (targetType > operandType)
-        {
-            operationType = targetType;
-        }
         UniquePtr<Cm.Sym.Value> operandAsOperationType(operand->As(operationType, cast_, span));
         UnaryOperatorDelegate dlg = delegates[cast<int>(operationType)];
         evaluationStack.Push(UniquePtr<Cm.Sym.Value>(dlg(operandAsOperationType.GetPtr(), span)));
@@ -1292,5 +1950,86 @@ namespace Cm.Bind
     internal Cm.Sym.Value* BitwiseComplement<ValueT>(Cm.Sym.Value* operand, const Span& span) where ValueT is Cm.Sym.ValueClass
     {
         return UnaryEvaluate<ValueT>(operand, BitNot<ValueT.OperandType>());
+    }
+    
+    internal void DefaultConstructor<ValueT>(VariableValueSymbol& variable, Stack<UniquePtr<Cm.Sym.Value>>& stack) where ValueT is Cm.Sym.ValueClass
+    {
+        variable.SetValue(new ValueT());
+    }
+    
+    internal void CopyConstructor<ValueT>(VariableValueSymbol& variable, Stack<UniquePtr<Cm.Sym.Value>>& stack) where ValueT is Cm.Sym.ValueClass
+    {
+        UniquePtr<Cm.Sym.Value> value(stack.Pop());
+        variable.SetValue(value.Release());
+    }
+     
+    internal class DefaultConstructorDelegates
+    {
+        static DefaultConstructorDelegates() : instance(new DefaultConstructorDelegates())
+        {
+        }
+        public static nothrow DefaultConstructorDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow const List<ConstructorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private DefaultConstructorDelegates()
+        {
+            delegates = NotSupportedConstructorDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.nullValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.NullValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.stringValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.StringValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = ConstructorDelegate(DefaultConstructor<Cm.Sym.CharPtrValue>);
+        }
+        private static UniquePtr<DefaultConstructorDelegates> instance;
+        private List<ConstructorDelegate> delegates;
+    }
+    
+    internal class CopyConstructorDelegates
+    {
+        static CopyConstructorDelegates() : instance(new CopyConstructorDelegates())
+        {
+        }
+        public static nothrow CopyConstructorDelegates& Instance()
+        {
+            return *instance;
+        }
+        public nothrow const List<ConstructorDelegate>& Get() const
+        {
+            return delegates;
+        }
+        private CopyConstructorDelegates()
+        {
+            delegates = NotSupportedConstructorDelegates();
+            delegates[cast<int>(Cm.Sym.ValueType.boolValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.BoolValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.sbyteValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.SByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.byteValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.ByteValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.shortValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.ShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ushortValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.UShortValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.intValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.IntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.uintValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.UIntValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.longValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.LongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.ulongValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.ULongValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.floatValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.FloatValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.doubleValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.DoubleValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.nullValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.NullValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.stringValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.StringValue>);
+            delegates[cast<int>(Cm.Sym.ValueType.charPtrValue)] = ConstructorDelegate(CopyConstructor<Cm.Sym.CharPtrValue>);
+        }
+        private static UniquePtr<CopyConstructorDelegates> instance;
+        private List<ConstructorDelegate> delegates;
     }
 }
