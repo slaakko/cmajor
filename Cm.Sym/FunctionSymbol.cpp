@@ -115,6 +115,14 @@ std::string FunctionSymbolFlagString(FunctionSymbolFlags flags)
         }
         s.append("new");
     }
+    if ((flags & FunctionSymbolFlags::intrinsic) != FunctionSymbolFlags::none)
+    {
+        if (!s.empty())
+        {
+            s.append(1, ' ');
+        }
+        s.append("intrinsic");
+    }
     return s;
 }
 
@@ -122,7 +130,7 @@ FunctionLookup::FunctionLookup(ScopeLookup lookup_, ContainerScope* scope_) : lo
 {
 }
 
-PersistentFunctionData::PersistentFunctionData(): bodyPos(0), bodySize(0), specifiers(), returnTypeExprNode(nullptr), groupId(nullptr), constraint(nullptr), functionPos(0), functionSize(0)
+PersistentFunctionData::PersistentFunctionData(): functionPos(0), functionSize(0)
 {
 }
 
@@ -307,6 +315,15 @@ const Cm::Ast::NodeList& FunctionSymbol::GetUsingNodes() const
     return persistentFunctionData->usingNodes;
 }
 
+void FunctionSymbol::SetConstraint(Cm::Ast::WhereConstraintNode* constraint)
+{
+    if (!persistentFunctionData)
+    {
+        persistentFunctionData.reset(new PersistentFunctionData());
+    }
+    persistentFunctionData->constraint.reset(constraint);
+}
+
 bool FunctionSymbol::IsCopyAssignment() const
 {
     if (groupName == "operator=" && parameters.size() == 2)
@@ -366,10 +383,6 @@ bool FunctionSymbol::IsDestructor() const
 
 void FunctionSymbol::Write(Writer& writer)
 {
-    if (Sid() == noSid)
-    {
-        std::cout << FullName() << " has no sid" << std::endl;
-    }
     bool justSymbol = false;
     if (IsFunctionTemplateSpecialization() || IsMemberOfTemplateType())
     {
@@ -381,60 +394,7 @@ void FunctionSymbol::Write(Writer& writer)
     writer.GetBinaryWriter().Write(groupName);
     writer.GetBinaryWriter().Write(vtblIndex);
     writer.GetBinaryWriter().Write(itblIndex);
-    if (IsFunctionTemplate() && !justSymbol)
-    {
-        SymbolTable* symbolTable = writer.GetSymbolTable();
-        Cm::Ast::Node* node = symbolTable->GetNode(this);
-        if (!node)
-        {
-            throw std::runtime_error("write: function node not found from symbol table");
-        }
-        if (node->IsFunctionNode())
-        {
-            Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
-            bool hasReturnType = functionNode->ReturnTypeExpr();
-            writer.GetBinaryWriter().Write(hasReturnType);
-            if (hasReturnType)
-            {
-                writer.GetAstWriter().Write(functionNode->ReturnTypeExpr());
-            }
-            if (!functionNode->Body())
-            {
-                throw std::runtime_error("write: function node has no body");
-            }
-            writer.GetAstWriter().Write(functionNode->GetSpecifiers());
-            writer.GetAstWriter().Write(functionNode->GroupId());
-            bool hasConstraint = functionNode->Constraint() != nullptr;
-            writer.GetBinaryWriter().Write(hasConstraint);
-            if (hasConstraint)
-            {
-                writer.GetAstWriter().Write(functionNode->Constraint());
-            }
-            if (persistentFunctionData)
-            {
-                writer.GetBinaryWriter().Write(true);
-                persistentFunctionData->usingNodes.Write(writer.GetAstWriter());
-            }
-            else
-            {
-                writer.GetBinaryWriter().Write(false);
-            }
-            uint64_t sizePos = writer.GetBinaryWriter().Pos();
-            writer.GetBinaryWriter().Write(uint64_t(0));
-            uint64_t bodyPos = writer.GetBinaryWriter().Pos();
-            writer.GetAstWriter().Write(functionNode->Body());
-            uint64_t bodyEndPos = writer.GetBinaryWriter().Pos();
-            uint64_t bodySize = bodyEndPos - bodyPos;
-            writer.GetBinaryWriter().Seek(sizePos);
-            writer.GetBinaryWriter().Write(bodySize);
-            writer.GetBinaryWriter().Seek(bodyEndPos);
-        }
-        else
-        {
-            throw std::runtime_error("write: not function node");
-        }
-    }
-    else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol))
+    if ((IsFunctionTemplate() || IsConstExpr() || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())) && !justSymbol)
     {
         if (persistentFunctionData)
         {
@@ -454,6 +414,13 @@ void FunctionSymbol::Write(Writer& writer)
         if (node->IsFunctionNode())
         {
             Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+            Cm::Ast::WhereConstraintNode* constraint = functionNode->Constraint();
+            bool hasConstraint = constraint != nullptr;
+            writer.GetBinaryWriter().Write(hasConstraint);
+            if (hasConstraint)
+            {
+                writer.GetAstWriter().Write(constraint);
+            }
             uint64_t sizePos = writer.GetBinaryWriter().Pos();
             writer.GetBinaryWriter().Write(uint64_t(0));
             uint64_t functionPos = writer.GetBinaryWriter().Pos();
@@ -498,45 +465,30 @@ void FunctionSymbol::Read(Reader& reader)
     ContainerSymbol::Read(reader);
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
+    if (groupName == "MinValue")
+    {
+        int x = 0;
+    }
     vtblIndex = reader.GetBinaryReader().ReadShort();
     itblIndex = reader.GetBinaryReader().ReadShort();
     bool justSymbol = JustSymbol();
-    if (IsFunctionTemplate() && !justSymbol)
+    bool isConstExpr = IsConstExpr();
+    if ((IsFunctionTemplate() || IsConstExpr() || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate())) && !justSymbol)
     {
         persistentFunctionData.reset(new PersistentFunctionData());
-        bool hasReturnType = reader.GetBinaryReader().ReadBool();
-        if (hasReturnType)
+        persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
+        bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
+        if (hasUsingNodes)
         {
-            persistentFunctionData->returnTypeExprNode.reset(reader.GetAstReader().ReadNode());
+            persistentFunctionData->usingNodes.Read(reader.GetAstReader());
         }
-        persistentFunctionData->specifiers = reader.GetAstReader().ReadSpecifiers();
-        persistentFunctionData->groupId.reset(reader.GetAstReader().ReadFunctionGroupIdNode());
-        bool hasConstraint = reader.GetBinaryReader().ReadBool();
-        if (hasConstraint)
+        bool hasConstaint = reader.GetBinaryReader().ReadBool();
+        if (hasConstaint)
         {
             persistentFunctionData->constraint.reset(reader.GetAstReader().ReadWhereConstraintNode());
         }
-        bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
-        if (hasUsingNodes)
-        {
-            persistentFunctionData->usingNodes.Read(reader.GetAstReader());
-        }
-        persistentFunctionData->bodySize = reader.GetBinaryReader().ReadULong();
-        persistentFunctionData->bodyPos = reader.GetBinaryReader().GetPos();
-        persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
-        reader.GetBinaryReader().Skip(persistentFunctionData->bodySize);
-    }
-    else if ((IsConstExpr() && !justSymbol) || (IsInline() && GetGlobalFlag(GlobalFlags::optimize) && !IsMemberOfClassTemplate() && !justSymbol))
-    {
-        persistentFunctionData.reset(new PersistentFunctionData());
-        bool hasUsingNodes = reader.GetBinaryReader().ReadBool();
-        if (hasUsingNodes)
-        {
-            persistentFunctionData->usingNodes.Read(reader.GetAstReader());
-        }
         persistentFunctionData->functionSize = reader.GetBinaryReader().ReadULong();
         persistentFunctionData->functionPos = reader.GetBinaryReader().GetPos();
-        persistentFunctionData->cmlFilePath = reader.GetBinaryReader().FileName();
         reader.GetBinaryReader().Skip(persistentFunctionData->functionSize);
         bool hasReturnType = reader.GetBinaryReader().ReadBool();
         if (hasReturnType)

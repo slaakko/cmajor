@@ -251,6 +251,7 @@ Node* PredicateConstraintNode::Clone(CloneContext& cloneContext) const
 void PredicateConstraintNode::Read(Reader& reader)
 {
     invokeExpr.reset(reader.ReadNode());
+    invokeExpr->SetParent(this);
 }
 
 void PredicateConstraintNode::Write(Writer& writer)

@@ -13,13 +13,13 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal Cm.Sym.DelegateTypeSymbol* BindDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.DelegateNode* delegateNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.DelegateNode* delegateNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(delegateNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupDelegate);
         if (symbol is Cm.Sym.DelegateTypeSymbol*)
         {
             Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol = cast<Cm.Sym.DelegateTypeSymbol*>(symbol);
-            BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode, delegateTypeSymbol);
+            BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateNode, delegateTypeSymbol);
             return delegateTypeSymbol;
         }
         else
@@ -29,7 +29,7 @@ namespace Cm.Bind
     }
 
     internal void BindDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.DelegateNode* delegateNode, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.DelegateNode* delegateNode, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = delegateNode->GetSpecifiers();
         #assert(delegateNode->Parent() != null);
@@ -94,22 +94,22 @@ namespace Cm.Bind
     }
     
     internal void CompleteBindDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol, Cm.Ast.DelegateNode* delegateNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.DelegateTypeSymbol* delegateTypeSymbol, Cm.Ast.DelegateNode* delegateNode)
     {
-        Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateNode->ReturnTypeExpr());
+        Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateNode->ReturnTypeExpr());
         delegateTypeSymbol->SetReturnType(returnType);
         delegateTypeSymbol->MakeIrType();
         delegateTypeSymbol->SetBound();
     }
         
     internal Cm.Sym.ClassDelegateTypeSymbol* BindClassDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ClassDelegateNode* classDelegateNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ClassDelegateNode* classDelegateNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(classDelegateNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupClassDelegate);
         if (symbol is Cm.Sym.ClassDelegateTypeSymbol*)
         {
             Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol = cast<Cm.Sym.ClassDelegateTypeSymbol*>(symbol);
-            BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateNode, classDelegateTypeSymbol);
+            BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classDelegateNode, classDelegateTypeSymbol);
             return classDelegateTypeSymbol;
         }
         else
@@ -119,7 +119,8 @@ namespace Cm.Bind
     }
 
     internal void BindClassDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ClassDelegateNode* classDelegateNode, Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ClassDelegateNode* classDelegateNode, 
+        Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = classDelegateNode->GetSpecifiers();
         #assert(classDelegateNode->Parent() != null);
@@ -184,9 +185,10 @@ namespace Cm.Bind
     }
 
     internal void CompleteBindClassDelegate(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol, Cm.Ast.ClassDelegateNode* classDelegateNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ClassDelegateTypeSymbol* classDelegateTypeSymbol, 
+        Cm.Ast.ClassDelegateNode* classDelegateNode)
     {
-        Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateNode->ReturnTypeExpr());
+        Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classDelegateNode->ReturnTypeExpr());
         classDelegateTypeSymbol->SetReturnType(returnType);
         Cm.Sym.MemberVariableSymbol* obj = new Cm.Sym.MemberVariableSymbol(classDelegateNode->GetSpan(), "obj");
         symbolTable.SetSidAndAddSymbol(obj);

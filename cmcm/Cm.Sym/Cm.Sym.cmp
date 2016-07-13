@@ -31,6 +31,7 @@ source <InterfaceCounter.cm>;
 source <InterfaceTypeSymbol.cm>;
 source <LocalVariableSymbol.cm>;
 source <MemberVariableSymbol.cm>;
+source <Meta.cm>;
 source <Module.cm>;
 source <MutexTable.cm>;
 source <NameMangling.cm>;

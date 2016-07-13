@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -678,6 +678,10 @@ namespace Cm.Ast
             argument->SetParent(this);
             arguments.Add(argument);
         }
+        public inline nothrow NodeList<Node>& Arguments()
+        {
+            return arguments;
+        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
@@ -706,7 +710,10 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.BeginVisit(*this);
-            arguments.Accept(visitor);
+            if (!visitor.SkipArguments())
+            {
+                arguments.Accept(visitor);
+            }            
             visitor.EndVisit(*this);
         }
         private NodeList<Node> arguments;

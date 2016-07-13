@@ -40,6 +40,7 @@ namespace Cm.Build
         mainCompileUnit.SetMainUnit();
         mainCompileUnit.SetClassTemplateRepository(new Cm.Bind.ClassTemplateRepository(mainCompileUnit));
         mainCompileUnit.SetInlineFunctionRepository(new Cm.Bind.InlineFunctionRepository(mainCompileUnit));
+        mainCompileUnit.SetConstExprFunctionRepository(new Cm.Bind.ConstExprFunctionRepository(mainCompileUnit));
         mainCompileUnit.SetSynthesizedClassFunRepository(new Cm.Bind.SynthesizedClassFunRepository(mainCompileUnit));
         mainCompileUnit.SetDelegateTypeOpRepository(new Cm.Bind.DelegateTypeOpRepository(mainCompileUnit));
         mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm.Bind.ClassDelegateTypeOpRepository(mainCompileUnit));

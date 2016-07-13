@@ -50,6 +50,10 @@ FunctionTemplateRepository::FunctionTemplateRepository(Cm::Sym::SymbolTable& sym
 
 FunctionTemplateRepository::~FunctionTemplateRepository()
 {
+    for (const std::pair<const FunctionTemplateKey&, Cm::Sym::FunctionSymbol*>& p : functionTemplateMap)
+    {
+        p.first.Subject()->FreeFunctionNode(symbolTable);
+    }
 }
 
 Cm::Sym::FunctionSymbol* FunctionTemplateRepository::GetFunctionTemplateInstance(const FunctionTemplateKey& key) const

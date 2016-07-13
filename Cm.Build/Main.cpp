@@ -18,6 +18,7 @@
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/InlineFunctionRepository.hpp> 
+#include <Cm.Bind/ConstExprFunctionRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
@@ -62,6 +63,7 @@ bool GenerateMainCompileUnit(Cm::Sym::SymbolTable& symbolTable, const std::strin
     mainCompileUnit.SetMainUnit();
     mainCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(mainCompileUnit));
     mainCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(mainCompileUnit));
+    mainCompileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(mainCompileUnit));
     mainCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(mainCompileUnit));
     mainCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(mainCompileUnit));
     mainCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(mainCompileUnit));

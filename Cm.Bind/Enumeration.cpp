@@ -157,7 +157,7 @@ void BindEnumConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope
             Cm::Sym::EnumTypeSymbol* enumType = static_cast<Cm::Sym::EnumTypeSymbol*>(containerScope->Container());
             Cm::Sym::TypeSymbol* underlyingType = enumType->GetUnderlyingType();
             Cm::Sym::SymbolType symbolType = underlyingType->GetSymbolType();
-            Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
+            Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType, false);
             enumConstantSymbol->SetEvaluating();
             Cm::Sym::Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
             enumConstantSymbol->ResetEvaluating();

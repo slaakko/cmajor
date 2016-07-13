@@ -43,60 +43,6 @@ Cm::Ast::NamespaceNode* CreateNamespaces(const Cm::Parsing::Span& span, const st
     return globalNs;
 }
 
-Cm::Ast::CompoundStatementNode* ReadFunctionTemplateBody(Cm::Sym::FunctionSymbol* functionTemplate)
-{
-    const std::string& cmlFilePath = functionTemplate->CmlFilePath();
-    Cm::Ser::BinaryReader binaryReader(cmlFilePath);
-    binaryReader.SetPos(functionTemplate->BodyPos());
-    Cm::Ast::Reader astReader(binaryReader);
-    astReader.SetReplaceFileIndex(functionTemplate->GetSpan().FileIndex());
-    Cm::Ast::CompoundStatementNode* body = astReader.ReadCompoundStatementNode();
-    return body;
-}
-
-Cm::Ast::FunctionNode* CreateFunctionInstanceNode(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* functionTemplate, std::unique_ptr<Cm::Ast::CompoundStatementNode>& ownedBody,
-    std::string& constraintStr)
-{
-    Cm::Ast::CloneContext cloneContext;
-    Cm::Ast::FunctionNode* functionInstanceNode = nullptr;
-    Cm::Ast::CompoundStatementNode* body = nullptr;
-    Cm::Ast::FunctionNode* functionTemplateNode = static_cast<Cm::Ast::FunctionNode*>(boundCompileUnit.SymbolTable().GetNode(functionTemplate, false));
-    if (functionTemplateNode)
-    {
-        if (functionTemplateNode->Constraint())
-        {
-            constraintStr = functionTemplateNode->Constraint()->ToString();
-        }
-        Cm::Ast::Node* returnTypeExpr = functionTemplateNode->ReturnTypeExpr();
-        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
-            static_cast<Cm::Ast::FunctionGroupIdNode*>(functionTemplateNode->GroupId()->Clone(cloneContext)));
-        body = functionTemplateNode->Body();
-        for (const std::unique_ptr<Cm::Ast::ParameterNode>& parameterNode : functionTemplateNode->Parameters())
-        {
-            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameterNode->Clone(cloneContext)));
-        }
-    }
-    else
-    {
-        if (functionTemplate->Constraint())
-        {
-            constraintStr = functionTemplate->Constraint()->ToString();
-        }
-        Cm::Ast::Node* returnTypeExpr = functionTemplate->ReturnTypeExprNode();
-        Cm::Ast::FunctionGroupIdNode* groupId = functionTemplate->GroupId();
-        functionInstanceNode = new Cm::Ast::FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), returnTypeExpr ? returnTypeExpr->Clone(cloneContext) : nullptr,
-            static_cast<Cm::Ast::FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
-        ownedBody.reset(ReadFunctionTemplateBody(functionTemplate));
-        for (const Cm::Sym::ParameterSymbol* parameter : functionTemplate->Parameters())
-        {
-            functionInstanceNode->AddParameter(static_cast<Cm::Ast::ParameterNode*>(parameter->ParameterNode()->Clone(cloneContext)));
-        }
-        body = ownedBody.get();
-    }
-    functionInstanceNode->SetBody(static_cast<Cm::Ast::CompoundStatementNode*>(body->Clone(cloneContext)));
-    return functionInstanceNode;
-}
-
 void BindTypeParameters(Cm::Sym::FunctionSymbol* functionTemplate, Cm::Sym::FunctionSymbol* functionTemplateInstance, const std::vector<Cm::Sym::TypeSymbol*>& templateArguments)
 {
     int n = int(functionTemplate->TypeParameters().size());
@@ -118,16 +64,31 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     {
         return functionTemplateInstance;
     }
+    Cm::Ast::Node* node = boundCompileUnit.SymbolTable().GetNode(functionTemplate, false);
+    if (!node)
+    {
+        functionTemplate->ReadFunctionNode(boundCompileUnit.SymbolTable(), functionTemplate->GetSpan().FileIndex());
+        node = boundCompileUnit.SymbolTable().GetNode(functionTemplate);
+    }
+    if (!node->IsFunctionNode())
+    {
+        throw std::runtime_error("node is not function node");
+    }
+    Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
     Cm::Ast::NamespaceNode* currentNs = nullptr;
     std::unique_ptr<Cm::Ast::NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), functionTemplate->GetUsingNodes(), currentNs));
-    std::unique_ptr<Cm::Ast::CompoundStatementNode> ownedBody;
-    std::string constraintStr;
-    Cm::Ast::FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody, constraintStr);
+    Cm::Ast::CloneContext cloneContext;
+    cloneContext.SetInstantiateFunctionNode();
+    Cm::Ast::FunctionNode* functionInstanceNode = static_cast<Cm::Ast::FunctionNode*>(functionNode->Clone(cloneContext));
     currentNs->AddMember(functionInstanceNode);
     Cm::Sym::DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
     declarationVisitor.MarkFunctionSymbolAsTemplateSpecialization();
     globalNs->Accept(declarationVisitor);
     functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+    if (functionTemplate->IsConstExpr())
+    {
+        functionTemplateInstance->SetConstExpr();
+    }
     functionTemplateInstance->SetFunctionTemplate(functionTemplate);
     functionTemplateRepository.AddFunctionTemplateInstance(key, functionTemplateInstance);
     functionTemplateInstance->SetReplicated();
@@ -138,6 +99,11 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     globalNs->Accept(prebinder);
     functionTemplateInstance->SetTypeArguments(templateArguments);
     functionTemplateInstance->ComputeName();
+    std::string constraintStr;
+    if (functionNode->Constraint())
+    {
+        constraintStr = functionNode->Constraint()->ToString();
+    }
     if (!constraintStr.empty())
     {
         functionTemplateInstance->SetName(functionTemplateInstance->Name() + " " + constraintStr);
@@ -145,9 +111,9 @@ Cm::Sym::FunctionSymbol* Instantiate(Cm::Core::FunctionTemplateRepository& funct
     prebinder.EndCompileUnit();
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::generate_docs))
     {
-        if (functionTemplate->Constraint())
+        if (functionNode->Constraint())
         {
-            functionTemplateInstance->SetConstraintDocId(functionTemplate->Constraint()->DocId());
+            functionTemplateInstance->SetConstraintDocId(functionNode->Constraint()->DocId());
         }
     }
     else

@@ -10,6 +10,7 @@
 #include <Cm.Core/InitSymbolTable.hpp>
 #include <Cm.Core/BasicTypeOp.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
+#include <Cm.Sym/Meta.hpp>
 
 namespace Cm { namespace Core {
 
@@ -355,6 +356,7 @@ void InitSymbolTable(Cm::Sym::SymbolTable& symbolTable, GlobalConceptData& globa
 {
     MakeBasicTypes(symbolTable);
     globalConceptData.AddIntrinsicConceptsToSymbolTable(symbolTable);
+    Cm::Sym::MetaInit(symbolTable);
 }
 
 } } // namespace Cm::Core

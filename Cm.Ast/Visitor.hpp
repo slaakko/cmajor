@@ -427,14 +427,22 @@ public:
 
     bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }
-    void PushSkipContent();
+    void PushSkipContent(bool skip);
     void PopSkipContent();
     bool SkipContent() const { return skipContent; }
+    void PushVisitExpressions(bool visit);
+    void PopVisitExpressions();
+    bool SkipArguments() const { return skipArguments; }
+    void PushSkipArguments(bool skip);
+    void PopSkipArguments();
 private:
     bool visitExpressions;
     bool visitBodies;
     bool skipContent;
+    bool skipArguments;
     std::stack<bool> skipContentStack;
+    std::stack<bool> visitExpressionsStack;
+    std::stack<bool> skipArgumentsStack;
 };
 
 } } // namespace Cm::Ast

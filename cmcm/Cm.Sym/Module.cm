@@ -15,7 +15,7 @@ namespace Cm.Sym
 {
     public nothrow const char* ModuleFileTag()
     {
-        return "MC14";
+        return "MC15";
     }
     
     public class ModuleFileFormatError : Error

@@ -280,10 +280,14 @@ void Prebinder::BeginVisit(Cm::Ast::FunctionNode& functionNode)
     bool usingNodesSet = false;
     if (functionNode.TemplateParameters().Count() > 0)
     {
-        PushSkipContent();
+        PushSkipContent(true);
         Cm::Sym::FunctionSymbol* templateFunction = BindFunction(symbolTable, currentContainerScope, fileScopes, &functionNode, nullptr);
         templateFunction->SetUsingNodes(usingNodes);
         usingNodesSet = true;
+        if ((functionNode.GetSpecifiers() & Cm::Ast::Specifiers::constexpr_) != Cm::Ast::Specifiers::none)
+        {
+            templateFunction->SetConstExpr();
+        }
     }
     else
     {

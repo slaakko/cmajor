@@ -24,6 +24,8 @@
 #include <Cm.Bind/Enumeration.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
+#include <Cm.Bind/StatementBinder.hpp>
+#include <Cm.Bind/Binder.hpp>
 #include <Cm.Core/Argument.hpp>
 #include <Cm.Core/GlobalSettings.hpp>
 #include <Cm.Sym/BasicTypeSymbol.hpp>
@@ -37,6 +39,7 @@
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Ast/BasicType.hpp>
 #include <Cm.Ast/Clone.hpp>
+#include <Cm.Ast/Statement.hpp>
 #include <Cm.Parser/FileRegistry.hpp>
 #include <Cm.IrIntf/Rep.hpp>
 
@@ -302,9 +305,9 @@ Cm::BoundTree::BoundExpressionList BoundExpressionStack::Pop(int numExpressions)
 }
 
 ExpressionBinder::ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-    Cm::BoundTree::BoundFunction* currentFunction_) :
+    Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_) :
     Cm::Ast::Visitor(true, true), boundCompileUnit(boundCompileUnit_), containerScope(containerScope_),
-    fileScopes(fileScopes_), currentFunction(currentFunction_), expressionCount(0), lookupId(Cm::Sym::SymbolTypeSetId::lookupAllSymbols), unaryMinus(false)
+    fileScopes(fileScopes_), currentFunction(currentFunction_), binder(binder_), expressionCount(0), lookupId(Cm::Sym::SymbolTypeSetId::lookupAllSymbols), unaryMinus(false)
 {
 }
 
@@ -590,6 +593,42 @@ void ExpressionBinder::EndVisit(Cm::Ast::PrefixIncNode& prefixIncNode)
     operand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(operand);
     BindUnaryOp(&prefixIncNode, "operator++");
+    std::unique_ptr<Cm::BoundTree::BoundExpression> opPlusPlus(boundExpressionStack.Pop());
+    if (opPlusPlus->IsBoundUnaryOp())
+    {
+        Cm::BoundTree::BoundUnaryOp* unaryOp = static_cast<Cm::BoundTree::BoundUnaryOp*>(opPlusPlus.get());
+        Cm::Sym::TypeSymbol* type = unaryOp->Operand()->GetType();
+        if (type->IsReferenceType() && type->GetBaseType()->IsBasicTypeSymbol())
+        {
+            std::unique_ptr<Cm::BoundTree::BoundExpression> operand(unaryOp->ReleaseOperand());
+            Cm::Ast::CloneContext cloneContext;
+            Cm::Ast::Node* one = nullptr;
+            if (type->GetBaseType()->IsUnsignedType())
+            {
+                one = new Cm::Ast::ByteLiteralNode(prefixIncNode.GetSpan(), 1);
+            }
+            else
+            {
+                one = new Cm::Ast::SByteLiteralNode(prefixIncNode.GetSpan(), 1);
+            }
+            std::unique_ptr<Cm::Ast::Node> advanceNode(new Cm::Ast::AssignmentStatementNode(prefixIncNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext),
+                new Cm::Ast::AddNode(prefixIncNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext), one)));
+            Cm::Bind::AssignmentStatementBinder assignmentStatementBinder(boundCompileUnit, containerScope, fileScopes, currentFunction, binder);
+            advanceNode->Accept(assignmentStatementBinder);
+            Cm::BoundTree::BoundStatement* assignmentStatement = assignmentStatementBinder.Result();
+            binder->CurrentParent()->AddStatement(assignmentStatement);
+            currentFunction->Own(advanceNode.release());
+            boundExpressionStack.Push(operand.release());
+        }
+        else
+        {
+            boundExpressionStack.Push(opPlusPlus.release());
+        }
+    }
+    else
+    {
+        boundExpressionStack.Push(opPlusPlus.release());
+    }
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
@@ -598,6 +637,42 @@ void ExpressionBinder::EndVisit(Cm::Ast::PrefixDecNode& prefixDecNode)
     operand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(operand);
     BindUnaryOp(&prefixDecNode, "operator--");
+    std::unique_ptr<Cm::BoundTree::BoundExpression> opMinusMinus(boundExpressionStack.Pop());
+    if (opMinusMinus->IsBoundUnaryOp())
+    {
+        Cm::BoundTree::BoundUnaryOp* unaryOp = static_cast<Cm::BoundTree::BoundUnaryOp*>(opMinusMinus.get());
+        Cm::Sym::TypeSymbol* type = unaryOp->Operand()->GetType();
+        if (type->IsReferenceType() && type->GetBaseType()->IsBasicTypeSymbol())
+        {
+            std::unique_ptr<Cm::BoundTree::BoundExpression> operand(unaryOp->ReleaseOperand());
+            Cm::Ast::CloneContext cloneContext;
+            Cm::Ast::Node* one = nullptr;
+            if (type->GetBaseType()->IsUnsignedType())
+            {
+                one = new Cm::Ast::ByteLiteralNode(prefixDecNode.GetSpan(), 1);
+            }
+            else
+            {
+                one = new Cm::Ast::SByteLiteralNode(prefixDecNode.GetSpan(), 1);
+            }
+            std::unique_ptr<Cm::Ast::Node> backNode(new Cm::Ast::AssignmentStatementNode(prefixDecNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext),
+                new Cm::Ast::SubNode(prefixDecNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext), one)));
+            Cm::Bind::AssignmentStatementBinder assignmentStatementBinder(boundCompileUnit, containerScope, fileScopes, currentFunction, binder);
+            backNode->Accept(assignmentStatementBinder);
+            Cm::BoundTree::BoundStatement* assignmentStatement = assignmentStatementBinder.Result();
+            binder->CurrentParent()->AddStatement(assignmentStatement);
+            currentFunction->Own(backNode.release());
+            boundExpressionStack.Push(operand.release());
+        }
+        else
+        {
+            boundExpressionStack.Push(opMinusMinus.release());
+        }
+    }
+    else
+    {
+        boundExpressionStack.Push(opMinusMinus.release());
+    }
 }
 
 void ExpressionBinder::EndVisit(Cm::Ast::UnaryPlusNode& unaryPlusNode) 
@@ -684,9 +759,43 @@ void ExpressionBinder::Visit(Cm::Ast::PostfixIncNode& postfixIncNode)
     incOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(incOperand);
     BindUnaryOp(&postfixIncNode, "operator++");
-    Cm::BoundTree::BoundExpression* incExpr = boundExpressionStack.Pop();
-    Cm::BoundTree::BoundSimpleStatement* increment = new Cm::BoundTree::BoundSimpleStatement(&postfixIncNode);
-    increment->SetExpression(incExpr);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> incExpr(boundExpressionStack.Pop());
+    Cm::BoundTree::BoundStatement* increment = nullptr;
+    if (incExpr->IsBoundUnaryOp())
+    {
+        Cm::BoundTree::BoundUnaryOp* unaryOp = static_cast<Cm::BoundTree::BoundUnaryOp*>(incExpr.get());
+        Cm::Sym::TypeSymbol* type = unaryOp->Operand()->GetType();
+        if (type->IsReferenceType() && type->GetBaseType()->IsBasicTypeSymbol())
+        {
+            std::unique_ptr<Cm::BoundTree::BoundExpression> operand(unaryOp->ReleaseOperand());
+            Cm::Ast::CloneContext cloneContext;
+            Cm::Ast::Node* one = nullptr;
+            if (type->GetBaseType()->IsUnsignedType())
+            {
+                one = new Cm::Ast::ByteLiteralNode(postfixIncNode.GetSpan(), 1);
+            }
+            else
+            {
+                one = new Cm::Ast::SByteLiteralNode(postfixIncNode.GetSpan(), 1);
+            }
+            std::unique_ptr<Cm::Ast::Node> advanceNode(new Cm::Ast::AssignmentStatementNode(postfixIncNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext),
+                new Cm::Ast::AddNode(postfixIncNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext), one)));
+            Cm::Bind::AssignmentStatementBinder assignmentStatementBinder(boundCompileUnit, containerScope, fileScopes, currentFunction, binder);
+            advanceNode->Accept(assignmentStatementBinder);
+            increment = assignmentStatementBinder.Result();
+            currentFunction->Own(advanceNode.release());
+        }
+        else
+        {
+            increment = new Cm::BoundTree::BoundSimpleStatement(&postfixIncNode);
+            static_cast<Cm::BoundTree::BoundSimpleStatement*>(increment)->SetExpression(incExpr.release());
+        }
+    }
+    else
+    {
+        increment = new Cm::BoundTree::BoundSimpleStatement(&postfixIncNode);
+        static_cast<Cm::BoundTree::BoundSimpleStatement*>(increment)->SetExpression(incExpr.release());
+    }
     Cm::BoundTree::BoundPostfixIncDecExpr* postfixIncExpr = new Cm::BoundTree::BoundPostfixIncDecExpr(&postfixIncNode, value, increment);
     postfixIncExpr->SetType(value->GetType());
     boundExpressionStack.Push(postfixIncExpr);
@@ -707,9 +816,43 @@ void ExpressionBinder::Visit(Cm::Ast::PostfixDecNode& postfixDecNode)
     decOperand->SetFlag(Cm::BoundTree::BoundNodeFlags::lvalue);
     boundExpressionStack.Push(decOperand);
     BindUnaryOp(&postfixDecNode, "operator--");
-    Cm::BoundTree::BoundExpression* decExpr = boundExpressionStack.Pop();
-    Cm::BoundTree::BoundSimpleStatement* decrement = new Cm::BoundTree::BoundSimpleStatement(&postfixDecNode);
-    decrement->SetExpression(decExpr);
+    std::unique_ptr<Cm::BoundTree::BoundExpression> decExpr(boundExpressionStack.Pop());
+    Cm::BoundTree::BoundStatement* decrement = nullptr;
+    if (decExpr->IsBoundUnaryOp())
+    {
+        Cm::BoundTree::BoundUnaryOp* unaryOp = static_cast<Cm::BoundTree::BoundUnaryOp*>(decExpr.get());
+        Cm::Sym::TypeSymbol* type = unaryOp->Operand()->GetType();
+        if (type->IsReferenceType() && type->GetBaseType()->IsBasicTypeSymbol())
+        {
+            std::unique_ptr<Cm::BoundTree::BoundExpression> operand(unaryOp->ReleaseOperand());
+            Cm::Ast::CloneContext cloneContext;
+            Cm::Ast::Node* one = nullptr;
+            if (type->GetBaseType()->IsUnsignedType())
+            {
+                one = new Cm::Ast::ByteLiteralNode(postfixDecNode.GetSpan(), 1);
+            }
+            else
+            {
+                one = new Cm::Ast::SByteLiteralNode(postfixDecNode.GetSpan(), 1);
+            }
+            std::unique_ptr<Cm::Ast::Node> backNode(new Cm::Ast::AssignmentStatementNode(postfixDecNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext),
+                new Cm::Ast::SubNode(postfixDecNode.GetSpan(), operand->SyntaxNode()->Clone(cloneContext), one)));
+            Cm::Bind::AssignmentStatementBinder assignmentStatementBinder(boundCompileUnit, containerScope, fileScopes, currentFunction, binder);
+            backNode->Accept(assignmentStatementBinder);
+            decrement = assignmentStatementBinder.Result();
+            currentFunction->Own(backNode.release());
+        }
+        else
+        {
+            decrement = new Cm::BoundTree::BoundSimpleStatement(&postfixDecNode);
+            static_cast<Cm::BoundTree::BoundSimpleStatement*>(decrement)->SetExpression(decExpr.release());
+        }
+    }
+    else
+    {
+        decrement = new Cm::BoundTree::BoundSimpleStatement(&postfixDecNode);
+        static_cast<Cm::BoundTree::BoundSimpleStatement*>(decrement)->SetExpression(decExpr.release());
+    }
     Cm::BoundTree::BoundPostfixIncDecExpr* postfixDecExpr = new Cm::BoundTree::BoundPostfixIncDecExpr(&postfixDecNode, value, decrement);
     postfixDecExpr->SetType(value->GetType());
     boundExpressionStack.Push(postfixDecExpr);
@@ -1590,8 +1733,17 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
                 std::string overloadName = MakeOverloadName(functionGroupName, resolutionArguments2);
                 std::string matchedFunctionNames;
                 matchedFunctionNames.append(bestMatch1.function->FullName());
-                matchedFunctionNames.append(" or ").append(bestMatch2.function->FullName());
-                throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, node->GetSpan(), 
+                if (bestMatch1.function->HasConstraint())
+                {
+                    matchedFunctionNames.append(1, ' ').append(bestMatch1.function->GetConstraint()->ToString());
+                }
+                matchedFunctionNames.append(", or ");
+                matchedFunctionNames.append(bestMatch2.function->FullName());
+                if (bestMatch2.function->HasConstraint())
+                {
+                    matchedFunctionNames.append(1, ' ').append(bestMatch2.function->GetConstraint()->ToString());
+                }
+                throw Cm::Core::Exception("overload resolution for overload name '" + overloadName + "' failed: call is ambiguous:\n" + matchedFunctionNames, node->GetSpan(),
                     bestMatch1.function->GetSpan(), bestMatch2.function->GetSpan());
             }
         }
@@ -1689,6 +1841,13 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         PrepareArguments(containerScope, boundCompileUnit, currentFunction, fun->GetReturnType(), fun->Parameters(), arguments, firstArgByRef && fun->IsMemberFunctionSymbol() && !fun->IsStatic(), 
             boundCompileUnit.IrClassTypeRepository(), fun->IsBasicTypeOp());
     }
+    if (fun->IsConstExpr())
+    {
+        if (EvaluateConstExprFun(fun, node))
+        {
+            return;
+        }
+    }
     Cm::BoundTree::BoundFunctionCall* functionCall = new Cm::BoundTree::BoundFunctionCall(node, std::move(arguments));
     uint32_t functionCallSid = boundCompileUnit.SymbolTable().GetSid();
     functionCall->SetFunctionCallSid(functionCallSid);
@@ -1721,6 +1880,37 @@ void ExpressionBinder::BindInvoke(Cm::Ast::Node* node, int numArgs)
         functionCall->SetTraceCallInfo(CreateTraceCallInfo(boundCompileUnit, currentFunction->GetFunctionSymbol(), node->GetSpan()));
     }
     boundExpressionStack.Push(functionCall);
+}
+
+bool ExpressionBinder::EvaluateConstExprFun(Cm::Sym::FunctionSymbol* constExprFun, Cm::Ast::Node* node)
+{
+    try
+    {
+        Cm::Sym::TypeSymbol* returnType = constExprFun->GetReturnType();
+        if (returnType && !returnType->IsVoidTypeSymbol())
+        {
+            Cm::Sym::ValueType targetType = Cm::Sym::GetValueTypeFor(returnType->GetSymbolType(), false);
+            Cm::Sym::Value* value = Evaluate(targetType, false, node, BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(),
+                BoundCompileUnit(), EvaluationFlags::dontThrow);
+            if (value)
+            {
+                Cm::Sym::ValueType valueType = value->GetValueType();
+                if (valueType != Cm::Sym::ValueType::charPtrValue)
+                {
+                    Cm::Sym::TypeSymbol* type = Cm::Sym::GetTypeSymbol(valueType, boundCompileUnit.SymbolTable());
+                    Cm::BoundTree::BoundLiteral* lit = new Cm::BoundTree::BoundLiteral(node);
+                    lit->SetValue(value);
+                    lit->SetType(type);
+                    boundExpressionStack.Push(lit);
+                    return true;
+                }
+            }
+        }
+    }
+    catch (...)
+    {
+    }
+    return false;
 }
 
 Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeConstructTemporary(Cm::Ast::Node* node, std::vector<Cm::Sym::FunctionSymbol*>& conversions, Cm::BoundTree::BoundExpressionList& arguments,
@@ -1832,6 +2022,10 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, FunctionMatch& bestMatch, 
     std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception, Cm::Sym::ContainerScope* qualifiedScope)
 {
+    if (functionGroupSymbol->Name() == "x")
+    {
+        int x = 0;
+    }
     Cm::Sym::FunctionLookupSet functionLookups;
     bool first = true;
     bool firstArgIsPointerOrReference = false;
@@ -2103,6 +2297,7 @@ void ExpressionBinder::BindSymbol(Cm::Ast::Node* node, Cm::Sym::Symbol* symbol)
         case Cm::Sym::SymbolType::functionGroupSymbol:
         {
             Cm::Sym::FunctionGroupSymbol* functionGroupSymbol = static_cast<Cm::Sym::FunctionGroupSymbol*>(symbol);
+            functionGroupSymbol->SetBoundTemplateArguments(std::vector<Cm::Sym::TypeSymbol*>());
             BindFunctionGroup(node, functionGroupSymbol);
             break;
         }
@@ -2401,32 +2596,32 @@ void ExpressionBinder::Visit(Cm::Ast::IsNode& isNode)
                         }
                         else
                         {
-                            throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                            throw Cm::Core::Exception("right operand of is-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                         }
                     }
                     else
                     {
-                        throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                        throw Cm::Core::Exception("right operand of is-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                     }
                 }
                 else
                 {
-                    throw Cm::Core::Exception("right operand of is-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                    throw Cm::Core::Exception("right operand of is-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                 }
             }
             else
             {
-                throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
+                throw Cm::Core::Exception("type of left operand of is-expression must be pointer to polymorphic class type", expr->GetSpan());
             }
         }
         else
         {
-            throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
+            throw Cm::Core::Exception("type of left operand of is-expression must be pointer to polymorphic class type", expr->GetSpan());
         }
     }
     else
     {
-        throw Cm::Core::Exception("type of left operand of is-expression must be pointer to virtual class type", expr->GetSpan());
+        throw Cm::Core::Exception("type of left operand of is-expression must be pointer to polymorphic class type", expr->GetSpan());
     }
 }
 
@@ -2465,32 +2660,32 @@ void ExpressionBinder::Visit(Cm::Ast::AsNode& asNode)
                         }
                         else
                         {
-                            throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                            throw Cm::Core::Exception("right operand of as-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                         }
                     }
                     else
                     {
-                        throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                        throw Cm::Core::Exception("right operand of as-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                     }
                 }
                 else
                 {
-                    throw Cm::Core::Exception("right operand of as-expression must be pointer to virtual class type", typeExpr->GetSpan());
+                    throw Cm::Core::Exception("right operand of as-expression must be pointer to polymorphic class type", typeExpr->GetSpan());
                 }
             }
             else
             {
-                throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
+                throw Cm::Core::Exception("type of left operand of as-expression must be pointer to polymorphic class type", expr->GetSpan());
             }
         }
         else
         {
-            throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
+            throw Cm::Core::Exception("type of left operand of as-expression must be pointer to polymorphic class type", expr->GetSpan());
         }
     }
     else
     {
-        throw Cm::Core::Exception("type of left operand of as-expression must be pointer to virtual class type", expr->GetSpan());
+        throw Cm::Core::Exception("type of left operand of as-expression must be pointer to polymorphic class type", expr->GetSpan());
     }
 }
 

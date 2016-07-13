@@ -22,12 +22,15 @@ public:
     CloneContext();
     void SetInstantiateClassNode() { instantiateClassNode = true; }
     bool InstantiateClassNode() const { return instantiateClassNode; }
+    void SetInstantiateFunctionNode() { instantiateFunctionNode = true; }
+    bool InstantiateFunctionNode() const { return instantiateFunctionNode; }
     void SetMakeTestUnits() { makeTestUnits = true; }
     bool MakeTestUnits() const { return makeTestUnits; }
     void AddUnitTestFunction(Cm::Ast::FunctionNode* unitTestFunction);
     std::vector<std::unique_ptr<FunctionNode>>& UnitTestFunctions();
 private:
     bool instantiateClassNode;
+    bool instantiateFunctionNode;
     bool makeTestUnits;
     std::vector<std::unique_ptr<FunctionNode>> unitTestFunctions;
 };

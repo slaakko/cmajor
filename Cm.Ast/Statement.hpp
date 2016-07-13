@@ -279,7 +279,9 @@ public:
     void Accept(Visitor& visitor) override;
     bool HasCondition() const { return condition != nullptr; }
     bool HasIncrement() const { return increment != nullptr; }
+    StatementNode* Init() const { return init.get(); }
     Node* Condition() const { return condition.get(); }
+    Node* Increment() const { return increment.get(); }
     StatementNode* Action() const { return action.get(); }
     void SetAsRangeForStatement() { rangeForStatement = true; }
     bool IsRangeForStatement() const { return rangeForStatement; }
@@ -414,6 +416,8 @@ public:
     void Print(CodeFormatter& formatter) override;
     void Accept(Visitor& visitor) override;
     std::string ToString() const { return targetExpr->ToString() + " = " + sourceExpr->ToString() + ";"; }
+    Node* TargetExpr() const { return targetExpr.get(); }
+    Node* SourceExpr() const { return sourceExpr.get(); }
 private:
     std::unique_ptr<Node> targetExpr;
     std::unique_ptr<Node> sourceExpr;
@@ -435,6 +439,7 @@ public:
     std::string ToString() const;
     Node* TypeExpr() const { return typeExpr.get(); }
     IdentifierNode* Id() const { return id.get(); }
+    NodeList& Arguments() { return arguments; }
 private:
     std::unique_ptr<Node> typeExpr;
     std::unique_ptr<IdentifierNode> id;

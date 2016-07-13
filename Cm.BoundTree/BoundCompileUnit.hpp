@@ -27,6 +27,7 @@
 #include <Cm.Core/ConceptRepository.hpp>
 #include <Cm.Core/ExternalConstantRepository.hpp>
 #include <Cm.Core/InlineFunctionRepository.hpp>
+#include <Cm.Core/ConstExprFunctionRepository.hpp>
 #include <Cm.Core/ArrayTypeOpRepository.hpp>
 #include <Cm.Sym/SymbolTable.hpp>
 
@@ -61,6 +62,7 @@ public:
     Cm::Ast::CompileUnitNode* SyntaxUnit() const { return syntaxUnit; }
     void AddFileScope(Cm::Sym::FileScope* fileScope_);
     void RemoveLastFileScope();
+    void Release();
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& GetFileScopes() const { return fileScopes; }
     const std::string& IrFilePath() const { return irFilePath; }
     const std::string& OptIrFilePath() const { return optIrFilePath; }
@@ -85,6 +87,8 @@ public:
     Cm::Core::FunctionTemplateRepository& FunctionTemplateRepository() { return functionTemplateRepository; }
     Cm::Core::InlineFunctionRepository& InlineFunctionRepository() { return *inlineFunctionRepository; }
     void SetInlineFunctionRepository(Cm::Core::InlineFunctionRepository* inlineFunctionRepository_);
+    Cm::Core::ConstExprFunctionRepository& ConstExprFunctionRepository() { return *constExprFunctionRepository; }
+    void SetConstExprFunctionRepository(Cm::Core::ConstExprFunctionRepository* constExprFunctionRepository_);
     Cm::Core::DelegateTypeOpRepository& DelegateTypeOpRepository() { return *delegateTypeOpRepository; }
     void SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_);
     Cm::Core::ClassDelegateTypeOpRepository& ClassDelegateTypeOpRepository() { return *classDelegateTypeOpRepository; }
@@ -139,6 +143,7 @@ private:
     std::unique_ptr<Cm::Core::ClassTemplateRepository> classTemplateRepository;
     Cm::Core::FunctionTemplateRepository functionTemplateRepository;
     std::unique_ptr<Cm::Core::InlineFunctionRepository> inlineFunctionRepository;
+    std::unique_ptr<Cm::Core::ConstExprFunctionRepository> constExprFunctionRepository;
     std::unique_ptr<Cm::Core::DelegateTypeOpRepository> delegateTypeOpRepository;
     std::unique_ptr<Cm::Core::ClassDelegateTypeOpRepository> classDelegateTypeOpRepository;
     std::unique_ptr<Cm::Core::ArrayTypeOpRepository> arrayTypeOpRepository;

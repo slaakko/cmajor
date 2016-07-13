@@ -58,6 +58,10 @@ namespace Cm.BoundTree
                 #assert(false);
             }
         }
+        public void Release()
+        {
+            constExprFunctionRepository->Release();
+        }
         public void SetPaths(const string& basePath)
         {
             if (Cm.IrIntf.GetBackend() == Cm.IrIntf.Backend.llvm)
@@ -194,6 +198,14 @@ namespace Cm.BoundTree
         public nothrow void SetInlineFunctionRepository(Cm.Core.InlineFunctionRepository* inlineFunctionRepository_)
         {
             inlineFunctionRepository.Reset(inlineFunctionRepository_);
+        }
+        public nothrow inline Cm.Core.ConstExprFunctionRepository& ConstExprFunctionRepository() 
+        {
+            return *constExprFunctionRepository;
+        }
+        public nothrow void SetConstExprFunctionRepository(Cm.Core.ConstExprFunctionRepository* constExprFunctionRepository_)
+        {
+            constExprFunctionRepository.Reset(constExprFunctionRepository_);
         }
         public nothrow inline Cm.Core.DelegateTypeOpRepository& DelegateTypeOpRepository()
         {
@@ -367,6 +379,7 @@ namespace Cm.BoundTree
         private UniquePtr<Cm.Core.ClassTemplateRepository> classTemplateRepository;
         private Cm.Core.FunctionTemplateRepository functionTemplateRepository;
         private UniquePtr<Cm.Core.InlineFunctionRepository> inlineFunctionRepository;
+        private UniquePtr<Cm.Core.ConstExprFunctionRepository> constExprFunctionRepository;
         private UniquePtr<Cm.Core.DelegateTypeOpRepository> delegateTypeOpRepository;
         private UniquePtr<Cm.Core.ClassDelegateTypeOpRepository> classDelegateTypeOpRepository;
         private UniquePtr<Cm.Core.ArrayTypeOpRepository> arrayTypeOpRepository;

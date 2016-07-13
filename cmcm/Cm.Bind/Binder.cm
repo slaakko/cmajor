@@ -121,12 +121,13 @@ namespace Cm.Bind
             }
             else if ((constructorNode.GetSpecifiers() & Cm.Ast.Specifiers.suppress_) == Cm.Ast.Specifiers.none)
             {
-                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                    boundFunction->FunctionSymbol());
                 if (boundFunction->Body() != null)
                 {
                     GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
                     bool callToThisInitializerGenerated = false;
-                    GenerateClassInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), boundClass->Symbol(), &constructorNode, 
+                    GenerateClassInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, boundClass->Symbol(), &constructorNode, 
                         callToThisInitializerGenerated);
                     if (boundClass->Symbol()->IsVirtual() && !callToThisInitializerGenerated)
                     {
@@ -134,7 +135,7 @@ namespace Cm.Bind
                     }
                     if (!callToThisInitializerGenerated)
                     {
-                        GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), boundClass->Symbol(), &constructorNode);
+                        GenerateMemberVariableInitStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, boundClass->Symbol(), &constructorNode);
                     }
                     boundClass->AddMember(boundFunction.Release());
                 }
@@ -154,7 +155,8 @@ namespace Cm.Bind
         {
             if ((destructorNode.GetSpecifiers() & Cm.Ast.Specifiers.default_) == Cm.Ast.Specifiers.none)
             {
-                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                    boundFunction->FunctionSymbol());
                 if (boundFunction->Body() != null)
                 {
                     GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
@@ -162,8 +164,8 @@ namespace Cm.Bind
                     {
                         GenerateInitVPtrStatement(boundClass->Symbol(), boundFunction.GetPtr());
                     }
-                    GenerateMemberVariableDestructionStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), boundClass->Symbol(), &destructorNode);
-                    GenerateBaseClassDestructionStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), boundClass->Symbol(), &destructorNode);
+                    GenerateMemberVariableDestructionStatements(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, boundClass->Symbol(), &destructorNode);
+                    GenerateBaseClassDestructionStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, boundClass->Symbol(), &destructorNode);
                     boundClass->AddMember(boundFunction.Release());
                 }
                 EndContainerScope();
@@ -223,13 +225,14 @@ namespace Cm.Bind
                 {
                     if (!boundFunction->FunctionSymbol()->IsAbstract() && boundFunction->Body() != null)
                     {
-                        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol(), 
-                            &memberFunctionNode);
-                        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+                        CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                            boundFunction->FunctionSymbol(), &memberFunctionNode);
+                        CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                            boundFunction->FunctionSymbol());
                         GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
                         if (boundFunction->FunctionSymbol()->IsStatic() && boundClass->Symbol()->StaticConstructor() != null)
                         {
-                            GenerateStaticConstructorCall(boundCompileUnit, boundFunction.GetPtr(), boundClass->Symbol(), &memberFunctionNode);
+                            GenerateStaticConstructorCall(boundCompileUnit, boundFunction.GetPtr(), this, boundClass->Symbol(), &memberFunctionNode);
                         }
                         boundClass->AddMember(boundFunction.Release());
                     }
@@ -249,9 +252,10 @@ namespace Cm.Bind
         }
         public override void EndVisit(Cm.Ast.ConversionFunctionNode& conversionFunctionNode)
         {
-            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol(),
-                &conversionFunctionNode);
-            CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+            CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, 
+                boundFunction->FunctionSymbol(), &conversionFunctionNode);
+            CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                boundFunction->FunctionSymbol());
             if (boundFunction->Body() != null)
             {
                 GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
@@ -269,7 +273,7 @@ namespace Cm.Bind
         {
             if (boundFunction->Body() != null)
             {
-                GenerateStaticInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), boundClass->Symbol(), &staticConstructorNode);
+                GenerateStaticInitStatement(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, boundClass->Symbol(), &staticConstructorNode);
                 boundClass->AddMember(boundFunction.Release());
             }
             EndContainerScope();
@@ -295,9 +299,10 @@ namespace Cm.Bind
             }
             else 
             {
-                CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol(), 
-                    &functionNode);
-                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundFunction->FunctionSymbol());
+                CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit,
+                    boundFunction->FunctionSymbol(), &functionNode);
+                CheckFunctionAccessLevels(boundCompileUnit.SymbolTable(), currentContainerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, 
+                    boundFunction->FunctionSymbol());
                 GenerateReceives(currentContainerScope, boundCompileUnit, boundFunction.GetPtr());
                 boundCompileUnit.AddBoundNode(boundFunction.Release());
                 EndContainerScope();
@@ -343,7 +348,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundForStatement*)
             {
                 Cm.BoundTree.BoundForStatement* forStatement = cast<Cm.BoundTree.BoundForStatement*>(cp);
-                ForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), forStatement);
+                ForStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, forStatement);
                 forStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -369,7 +374,7 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.ReturnStatementNode& returnStatementNode)
         {
-            ReturnStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            ReturnStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             returnStatementNode.Accept(binder);
             currentParent->AddStatement(binder.Result());
         }
@@ -384,7 +389,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundConditionalStatement*)
             {
                 Cm.BoundTree.BoundConditionalStatement* conditionalStatement = cast<Cm.BoundTree.BoundConditionalStatement*>(cp);
-                ConditionalStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), conditionalStatement);
+                ConditionalStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, conditionalStatement);
                 conditionalStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -407,7 +412,7 @@ namespace Cm.Bind
             parentStack.Push(currentParent.Release());
             switchStatementStack.Push(switchStatement);
             switchStatement = new Cm.BoundTree.BoundSwitchStatement(&switchStatementNode);
-            SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), switchStatement);
+            SwitchStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, switchStatement);
             switchStatementNode.Accept(binder);
             currentParent.Reset(switchStatement);
         }
@@ -445,7 +450,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundCaseStatement*)
             {
                 Cm.BoundTree.BoundCaseStatement* caseStatement = cast<Cm.BoundTree.BoundCaseStatement*>(cp);
-                CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), caseStatement, switchStatement);
+                CaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, caseStatement, switchStatement);
                 caseStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -474,7 +479,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundDefaultStatement*)
             {
                 Cm.BoundTree.BoundDefaultStatement* defaultStatement = cast<Cm.BoundTree.BoundDefaultStatement*>(cp);
-                DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), defaultStatement);
+                DefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, defaultStatement);
                 defaultStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -494,13 +499,13 @@ namespace Cm.Bind
         }
         public override void EndVisit(Cm.Ast.GotoCaseStatementNode& gotoCaseStatementNode)
         {
-            GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), switchStatement);
+            GotoCaseStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, switchStatement);
             gotoCaseStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
         public override void Visit(Cm.Ast.GotoDefaultStatementNode& gotoDefaultStatementNode)
         {
-            GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            GotoDefaultStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             gotoDefaultStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
@@ -515,7 +520,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundWhileStatement*)
             {
                 Cm.BoundTree.BoundWhileStatement* whileStatement = cast<Cm.BoundTree.BoundWhileStatement*>(cp);
-                WhileStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), whileStatement);
+                WhileStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, whileStatement);
                 whileStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -544,7 +549,7 @@ namespace Cm.Bind
             if (cp is Cm.BoundTree.BoundDoStatement*)
             {
                 Cm.BoundTree.BoundDoStatement* doStatement = cast<Cm.BoundTree.BoundDoStatement*>(cp);
-                DoStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), doStatement);
+                DoStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this, doStatement);
                 doStatementNode.Accept(binder);
                 Cm.BoundTree.BoundParentStatement* parent = parentStack.Pop();
                 if (parent != null)
@@ -564,13 +569,13 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.BreakStatementNode& breakStatementNode)
         {
-            BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            BreakStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             breakStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
         public override void Visit(Cm.Ast.ContinueStatementNode& continueStatementNode)
         {
-            ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            ContinueStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             continueStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
@@ -596,19 +601,19 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
         {
-            AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            AssignmentStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             assignmentStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
         public override void BeginVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
         {
-            ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            ConstructionStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             constructionStatementNode.Accept(binder);
             AddBoundStatement(binder.Result());
         }
         public override void BeginVisit(Cm.Ast.DeleteStatementNode& deleteStatementNode)
         {
-            DeleteStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            DeleteStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             deleteStatementNode.Accept(binder);
             if (binder.Result() != null)
             {
@@ -619,7 +624,7 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.DestroyStatementNode& destroyStatementNode)
         {
-            DestroyStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+            DestroyStatementBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
             destroyStatementNode.Accept(binder);
             if (binder.Result() != null)
             {
@@ -654,7 +659,7 @@ namespace Cm.Bind
         {
             if (Cm.Core.GetConfig() == "debug")
             {
-                AssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr());
+                AssertBinder binder(boundCompileUnit, currentContainerScope, boundCompileUnit.FileScopes(), boundFunction.GetPtr(), this);
                 assertStatementNode.Accept(binder);
                 AddBoundStatement(binder.Result());
             }
@@ -762,7 +767,7 @@ namespace Cm.Bind
         {
             currentContainerScope = containerScopeStack.Pop();
         }
-        public Cm.BoundTree.BoundCompoundStatement* GetCurrentCompound() 
+        public nothrow Cm.BoundTree.BoundCompoundStatement* GetCurrentCompound() 
         {
             Cm.BoundTree.BoundParentStatement* parent = currentParent.GetPtr();
             if (parent is Cm.BoundTree.BoundCompoundStatement*)
@@ -773,6 +778,10 @@ namespace Cm.Bind
             {
                 return parent->CompoundParent();
             }
+        }
+        public nothrow inline Cm.BoundTree.BoundParentStatement* CurrentParent() const
+        {
+            return currentParent.GetPtr();
         }
         public void BeginClass(Cm.Sym.ClassTypeSymbol* classTypeSymbol)
         {

@@ -138,6 +138,10 @@ public:
     {
         SetFlag(ClassTypeSymbolFlags::virtual_);
     }
+    bool IsPolymorphic() const override
+    {
+        return IsVirtual();
+    }
     bool IsAbstract() const override
     {
         return GetFlag(ClassTypeSymbolFlags::abstract_);

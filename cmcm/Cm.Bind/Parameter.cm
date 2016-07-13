@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal void BindParameter(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ParameterNode* parameterNode, int parameterIndex)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ParameterNode* parameterNode, int parameterIndex)
     {
         Cm.Sym.Symbol* symbol = null;
         if (parameterNode->Id() != null)
@@ -30,7 +30,7 @@ namespace Cm.Bind
             {
                 Cm.Sym.ParameterSymbol* parameterSymbol = cast<Cm.Sym.ParameterSymbol*>(symbol);
                 if (parameterSymbol->IsBound()) return;
-                Cm.Sym.TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterNode->TypeExpr());
+                Cm.Sym.TypeSymbol* parameterType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, parameterNode->TypeExpr());
                 parameterSymbol->SetType(parameterType);
                 parameterSymbol->SetBound();
             }

@@ -16,6 +16,7 @@ namespace Cm.Core
     {
         MakeBasicTypes(symbolTable);
         GlobalConceptData.Instance()->AddIntrinsicConceptsToSymbolTable(symbolTable);
+        Cm.Sym.MetaInit(symbolTable);
     }
 
     internal void MakeBasicTypes(Cm.Sym.SymbolTable& symbolTable)

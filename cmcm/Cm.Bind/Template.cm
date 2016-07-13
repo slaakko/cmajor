@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -44,26 +44,46 @@ namespace Cm.Bind
         {
             return functionTemplateInstance;
         }
+        Cm.Ast.Node* node = boundCompileUnit.SymbolTable().GetNode(functionTemplate, false);
+        if (node == null)
+        {
+            functionTemplate->ReadFunctionNode(boundCompileUnit.SymbolTable(), functionTemplate->GetSpan().FileIndex());
+            node = boundCompileUnit.SymbolTable().GetNode(functionTemplate);
+        }
+        if (!(node is Cm.Ast.FunctionNode*))
+        {
+            throw Exception("function node expected");
+        }
+        Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
         Cm.Ast.NamespaceNode* currentNs = null;
         UniquePtr<Cm.Ast.NamespaceNode> globalNs(CreateNamespaces(functionTemplate->GetSpan(), functionTemplate->Ns()->FullName(), functionTemplate->GetUsingNodes(), currentNs));
-        UniquePtr<Cm.Ast.CompoundStatementNode> ownedBody;
-        string constraintStr;
-        Cm.Ast.FunctionNode* functionInstanceNode = CreateFunctionInstanceNode(boundCompileUnit, functionTemplate, ownedBody, constraintStr);
+        Cm.Ast.CloneContext cloneContext;
+        cloneContext.SetInstantiateFunctionNode();
+        Cm.Ast.FunctionNode* functionInstanceNode = cast<Cm.Ast.FunctionNode*>(functionNode->Clone(cloneContext));
         currentNs->AddMember(functionInstanceNode);
         Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
         declarationVisitor.MarkFunctionSymbolAsTemplateSpecialization();
         globalNs->Accept(declarationVisitor);
         functionTemplateInstance = boundCompileUnit.SymbolTable().GetFunctionSymbol(functionInstanceNode);
+        if (functionTemplate->IsConstExpr())
+        {
+            functionTemplateInstance->SetConstExpr();
+        }
         functionTemplateInstance->SetFunctionTemplate(functionTemplate);
         functionTemplateRepository.AddFunctionTemplateInstance(key, functionTemplateInstance);
         functionTemplateInstance->SetReplicated();
         functionTemplateInstance->SetFunctionTemplateSpecialization();
         BindTypeParameters(functionTemplate, functionTemplateInstance, templateArguments);
-        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
         prebinder.BeginCompileUnit();
         globalNs->Accept(prebinder);
         functionTemplateInstance->SetTypeArguments(templateArguments);
         functionTemplateInstance->ComputeName();
+        string constraintStr;
+        if (functionNode->Constraint() != null)
+        {
+            constraintStr = functionNode->Constraint()->ToString();
+        }
         if (!constraintStr.IsEmpty())
         {
             functionTemplateInstance->SetName(functionTemplateInstance->Name() + " " + constraintStr);
@@ -71,7 +91,7 @@ namespace Cm.Bind
         prebinder.EndCompileUnit();
         if (Cm.Sym.GetGlobalFlag(Cm.Sym.GlobalFlags.generate_docs))
         {
-            if (functionTemplate->Constraint() != null)
+            if (functionTemplate->HasConstraint())
             {
                 //functionTemplateInstance->SetConstraintDocId(functionTemplate->Constraint()->DocId()); // todo: docs
             }
@@ -86,70 +106,6 @@ namespace Cm.Bind
         }
         functionTemplateInstance->SetGlobalNs(globalNs.Release());
         return functionTemplateInstance;
-    }
-    
-    internal Cm.Ast.CompoundStatementNode* ReadFunctionTemplateBody(Cm.Sym.FunctionSymbol* functionTemplate)
-    {
-        const string& cmlFilePath = functionTemplate->CmlFilePath();
-        Cm.Ser.BinaryReader binaryReader(cmlFilePath);
-        binaryReader.SetPos(functionTemplate->BodyPos());
-        Cm.Ast.Reader astReader(binaryReader);
-        astReader.SetReplaceFileIndex(functionTemplate->GetSpan().FileIndex());
-        Cm.Ast.CompoundStatementNode* body = astReader.ReadCompoundStatementNode();
-        return body;
-    }
-    
-    internal Cm.Ast.FunctionNode* CreateFunctionInstanceNode(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FunctionSymbol* functionTemplate, UniquePtr<Cm.Ast.CompoundStatementNode>& ownedBody,
-        string& constraintStr)
-    {
-        Cm.Ast.CloneContext cloneContext;
-        Cm.Ast.FunctionNode* functionInstanceNode = null;
-        Cm.Ast.CompoundStatementNode* body = null;
-        Cm.Ast.FunctionNode* functionTemplateNode = cast<Cm.Ast.FunctionNode*>(boundCompileUnit.SymbolTable().GetNode(functionTemplate, false));
-        if (functionTemplateNode != null)
-        {
-            if (functionTemplateNode->Constraint() != null)
-            {
-                constraintStr = functionTemplateNode->Constraint()->ToString();
-            }
-            Cm.Ast.Node* returnTypeExpr = functionTemplateNode->ReturnTypeExpr();
-            Cm.Ast.Node* clonedReturnTypeExpr = null;
-            if (returnTypeExpr != null)
-            {
-                clonedReturnTypeExpr = returnTypeExpr->Clone(cloneContext);
-            }
-            functionInstanceNode = new Cm.Ast.FunctionNode(functionTemplate->GetSpan(), functionTemplateNode->GetSpecifiers(), clonedReturnTypeExpr, 
-                cast<Cm.Ast.FunctionGroupIdNode*>(functionTemplateNode->GroupId()->Clone(cloneContext)));
-            body = functionTemplateNode->Body();
-            for (const UniquePtr<Cm.Ast.ParameterNode>& parameterNode : functionTemplateNode->Parameters())
-            {
-                functionInstanceNode->AddParameter(cast<Cm.Ast.ParameterNode*>(parameterNode->Clone(cloneContext)));
-            }
-        }
-        else
-        {
-            if (functionTemplate->Constraint() != null)
-            {
-                constraintStr = functionTemplate->Constraint()->ToString();
-            }
-            Cm.Ast.Node* returnTypeExpr = functionTemplate->ReturnTypeExprNode();
-            Cm.Ast.Node* clonedReturnTypeExpr = null;
-            if (returnTypeExpr != null)
-            {
-                clonedReturnTypeExpr = returnTypeExpr->Clone(cloneContext);
-            }
-            Cm.Ast.FunctionGroupIdNode* groupId = functionTemplate->GroupId();
-            functionInstanceNode = new Cm.Ast.FunctionNode(functionTemplate->GetSpan(), functionTemplate->GetSpecifiers(), clonedReturnTypeExpr, 
-                cast<Cm.Ast.FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
-            ownedBody.Reset(ReadFunctionTemplateBody(functionTemplate));
-            for (const Cm.Sym.ParameterSymbol* parameter : functionTemplate->Parameters())
-            {
-                functionInstanceNode->AddParameter(cast<Cm.Ast.ParameterNode*>(parameter->ParameterNode()->Clone(cloneContext)));
-            }
-            body = ownedBody.GetPtr();
-        }
-        functionInstanceNode->SetBody(cast<Cm.Ast.CompoundStatementNode*>(body->Clone(cloneContext)));
-        return functionInstanceNode;
     }
     
     internal void BindTypeParameters(Cm.Sym.FunctionSymbol* functionTemplate, Cm.Sym.FunctionSymbol* functionTemplateInstance, const List<Cm.Sym.TypeSymbol*>& templateArguments)

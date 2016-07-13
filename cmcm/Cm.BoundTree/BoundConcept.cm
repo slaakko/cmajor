@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -14,30 +14,117 @@ namespace Cm.BoundTree
 {
     public abstract class BoundConstraint : BoundNode
     {
+        public nothrow BoundConstraint() : base(null)
+        {
+        }
         public nothrow BoundConstraint(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
         {
         }
-        public abstract bool Imply(BoundConstraint* that) const;
+        public abstract bool Subsume(BoundConstraint* that) const;
+        public abstract BoundConstraint* Clone() const;
     }
     
     public class BoundAtomicConstraint : BoundConstraint
     {
-        public nothrow BoundAtomicConstraint(Cm.Ast.Node* syntaxNode_) : base(syntaxNode_)
+        public nothrow BoundAtomicConstraint(bool satisfied_) : base(), satisfied(satisfied_), conceptSymbol(null)
         {
         }
-        public override bool Imply(BoundConstraint* that) const
+        public override bool Subsume(BoundConstraint* that) const
         {
-            return true;
+            if (that is BoundBinaryConstraint*)
+            {
+                BoundBinaryConstraint* thatBinaryConstraint = cast<BoundBinaryConstraint*>(that);
+                BoundConstraint* thatLeft = thatBinaryConstraint->Left();
+                BoundConstraint* thatRight = thatBinaryConstraint->Right();
+                bool subsumeLeft = Subsume(thatLeft);
+                bool subsumeRight = Subsume(thatRight);
+                if (that is BoundConjunctiveConstraint*)
+                {
+                    return subsumeLeft && subsumeRight;
+                }
+                else if (that is BoundDisjunctiveConstraint*)
+                {
+                    return subsumeLeft || subsumeRight;
+                }
+                else
+                {
+                    #assert(false);
+                }
+            }
+            else if (that is BoundAtomicConstraint*)
+            {
+                BoundAtomicConstraint* thatAtomic = cast<BoundAtomicConstraint*>(that);
+                if (satisfied && !thatAtomic->satisfied)
+                {
+                    return true;
+                }
+                else if (!satisfied && thatAtomic->satisfied)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (conceptSymbol != null && thatAtomic->conceptSymbol == null)
+                    {
+                        return true;
+                    }
+                    else if (conceptSymbol == null && thatAtomic->conceptSymbol != null)
+                    {
+                        return false;
+                    }
+                    else if (conceptSymbol == null && thatAtomic->conceptSymbol == null)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        if (conceptSymbol == thatAtomic->conceptSymbol)
+                        {
+                            return true;
+                        }
+                        Cm.Sym.ConceptSymbol* refinedConcept = conceptSymbol->RefinedConcept();
+                        while (refinedConcept != null)
+                        {
+                            if (refinedConcept == thatAtomic->conceptSymbol)
+                            {
+                                return true;
+                            }
+                            else
+                            {
+                                refinedConcept = refinedConcept->RefinedConcept();
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return false;
         }
         public override void Accept(Visitor& visitor)
         {
             visitor.Visit(*this);
         }
+        public override BoundConstraint* Clone() const
+        {
+            BoundAtomicConstraint* clone = new BoundAtomicConstraint(satisfied);
+            clone->SetConcept(conceptSymbol);
+            return clone;
+        }
+        public nothrow inline bool Satisfied() const
+        {
+            return satisfied;
+        }
+        public nothrow inline void SetConcept(Cm.Sym.ConceptSymbol* conceptSymbol_)
+        {
+            conceptSymbol = conceptSymbol_;
+        }
+        private bool satisfied;
+        private Cm.Sym.ConceptSymbol* conceptSymbol;
     }
     
     public abstract class BoundBinaryConstraint : BoundConstraint
     {
-        public nothrow BoundBinaryConstraint(Cm.Ast.Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : base(syntaxNode_), left(left_), right(right_)
+        public nothrow BoundBinaryConstraint(BoundConstraint* left_, BoundConstraint* right_) : base(), left(left_), right(right_)
         {
         }
         public nothrow inline BoundConstraint* Left() const
@@ -54,10 +141,10 @@ namespace Cm.BoundTree
     
     public class BoundDisjunctiveConstraint : BoundBinaryConstraint
     {
-        public nothrow BoundDisjunctiveConstraint(Cm.Ast.Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : base(syntaxNode_, left_, right_)
+        public nothrow BoundDisjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_) : base(left_, right_)
         {
         }
-        public override bool Imply(BoundConstraint* that) const
+        public override bool Subsume(BoundConstraint* that) const
         {
             BoundConstraint* left = Left();
             BoundConstraint* right = Right();
@@ -66,19 +153,19 @@ namespace Cm.BoundTree
                 BoundBinaryConstraint* thatBinaryConstraint = cast<BoundBinaryConstraint*>(that);
                 BoundConstraint* thatLeft = thatBinaryConstraint->Left();
                 BoundConstraint* thatRight = thatBinaryConstraint->Right();
-                bool leftImplyThatLeft = left->Imply(thatLeft);
-                bool leftImplyThatRight = left->Imply(thatRight);
-                bool rightImplyThatLeft = right->Imply(thatLeft);
-                bool rightImplyThatRight = right->Imply(thatRight);
-                bool leftImplyThatLeftOrThatRight = leftImplyThatLeft || leftImplyThatRight;
-                bool rightImplyThatLeftOrThatRight = rightImplyThatLeft || rightImplyThatRight;
+                bool leftSubsumeThatLeft = left->Subsume(thatLeft);
+                bool leftSubsumeThatRight = left->Subsume(thatRight);
+                bool rightSubsumeThatLeft = right->Subsume(thatLeft);
+                bool rightSubsumeThatRight = right->Subsume(thatRight);
+                bool leftSubsumeThatLeftOrThatRight = leftSubsumeThatLeft || leftSubsumeThatRight;
+                bool rightSubsumeThatLeftOrThatRight = rightSubsumeThatLeft || rightSubsumeThatRight;
                 if (that is BoundConjunctiveConstraint*)
                 {
-                    return leftImplyThatLeftOrThatRight && rightImplyThatLeftOrThatRight;
+                    return leftSubsumeThatLeftOrThatRight && rightSubsumeThatLeftOrThatRight;
                 }
                 else if (that is BoundDisjunctiveConstraint*)
                 {
-                    return leftImplyThatLeftOrThatRight || rightImplyThatLeftOrThatRight;
+                    return leftSubsumeThatLeftOrThatRight || rightSubsumeThatLeftOrThatRight;
                 }
                 else 
                 {
@@ -88,9 +175,9 @@ namespace Cm.BoundTree
             }
             else
             {
-                bool leftImplyThat = left->Imply(that);
-                bool rightImplyThat = right->Imply(that);
-                return leftImplyThat && rightImplyThat;
+                bool leftSubsumeThat = left->Subsume(that);
+                bool rightSubsumeThat = right->Subsume(that);
+                return leftSubsumeThat && rightSubsumeThat;
             }
         }
         public override void Accept(Visitor& visitor)
@@ -98,15 +185,19 @@ namespace Cm.BoundTree
             Left()->Accept(visitor);
             Right()->Accept(visitor);
             visitor.Visit(*this);
+        }
+        public override BoundConstraint* Clone() const
+        {
+            return new BoundDisjunctiveConstraint(Left()->Clone(), Right()->Clone());
         }
     }
     
     public class BoundConjunctiveConstraint : BoundBinaryConstraint
     {
-        public nothrow BoundConjunctiveConstraint (Cm.Ast.Node* syntaxNode_, BoundConstraint* left_, BoundConstraint* right_) : base(syntaxNode_, left_, right_)
+        public nothrow BoundConjunctiveConstraint (BoundConstraint* left_, BoundConstraint* right_) : base(left_, right_)
         {
         }
-        public override bool Imply(BoundConstraint* that) const
+        public override bool Subsume(BoundConstraint* that) const
         {
             BoundConstraint* left = Left();
             BoundConstraint* right = Right();
@@ -115,19 +206,19 @@ namespace Cm.BoundTree
                 BoundBinaryConstraint* thatBinaryConstraint = cast<BoundBinaryConstraint*>(that);
                 BoundConstraint* thatLeft = thatBinaryConstraint->Left();
                 BoundConstraint* thatRight = thatBinaryConstraint->Right();
-                bool leftImplyThatLeft = left->Imply(thatLeft);
-                bool rightImplyThatLeft = right->Imply(thatLeft);
-                bool leftImplyThatRight = left->Imply(thatRight);
-                bool rightImplyThatRight = right->Imply(thatRight);
-                bool leftOrRightImplyThatLeft = leftImplyThatLeft || rightImplyThatLeft;
-                bool leftOrRightImplyThatRight = leftImplyThatRight || rightImplyThatRight;
+                bool leftSubsumeThatLeft = left->Subsume(thatLeft);
+                bool rightSubsumeThatLeft = right->Subsume(thatLeft);
+                bool leftSubsumeThatRight = left->Subsume(thatRight);
+                bool rightSubsumeThatRight = right->Subsume(thatRight);
+                bool leftOrRightSubsumeThatLeft = leftSubsumeThatLeft || rightSubsumeThatLeft;
+                bool leftOrRightSubsumeThatRight = leftSubsumeThatRight || rightSubsumeThatRight;
                 if (that is BoundConjunctiveConstraint*)
                 {
-                    return leftOrRightImplyThatLeft && leftOrRightImplyThatRight;
+                    return leftOrRightSubsumeThatLeft && leftOrRightSubsumeThatRight;
                 }
                 else if (that is BoundDisjunctiveConstraint*)
                 {
-                    return leftOrRightImplyThatLeft || leftOrRightImplyThatRight;
+                    return leftOrRightSubsumeThatLeft || leftOrRightSubsumeThatRight;
                 }
                 else 
                 {
@@ -137,9 +228,9 @@ namespace Cm.BoundTree
             }
             else
             {
-                bool leftImplyThat = left->Imply(that);
-                bool righImplyThat = right->Imply(that);
-                return leftImplyThat || righImplyThat;
+                bool leftSubsumeThat = left->Subsume(that);
+                bool rightSubsumeThat = right->Subsume(that);
+                return leftSubsumeThat || rightSubsumeThat;
             }
         }
         public override void Accept(Visitor& visitor)
@@ -148,234 +239,9 @@ namespace Cm.BoundTree
             Right()->Accept(visitor);
             visitor.Visit(*this);
         }
-    }
-    
-    public class BoundTypeSatisfyConceptConstraint : BoundConstraint
-    {
-        public nothrow BoundTypeSatisfyConceptConstraint(Cm.Ast.Node* syntaxNode_, Cm.Sym.TypeSymbol* type_, BoundConcept* concept_) : base(syntaxNode_), type(type_), boundConcept(concept_)
+        public override BoundConstraint* Clone() const
         {
+            return new BoundConjunctiveConstraint(Left()->Clone(), Right()->Clone());
         }
-        public override bool Imply(BoundConstraint* that) const
-        {
-            if (that is BoundBinaryConstraint*)
-            {
-                BoundBinaryConstraint* thatConstraint = cast<BoundBinaryConstraint*>(that);
-                BoundConstraint* thatLeft = thatConstraint->Left();
-                BoundConstraint* thatRight = thatConstraint->Right();
-                bool implyLeft = Imply(thatLeft);
-                bool implyRight = Imply(thatRight);
-                if (that is BoundConjunctiveConstraint*)
-                {
-                    return implyLeft && implyRight;
-                }
-                else if (that is BoundDisjunctiveConstraint*)
-                {
-                    return implyLeft || implyRight;
-                }
-                else
-                {
-                    #assert(false);
-                    return false;
-                }
-            }
-            else if (!(that is BoundTypeSatisfyConceptConstraint*))
-            {
-                return false;                
-            }
-            else
-            {
-                BoundTypeSatisfyConceptConstraint* thatTypeSatisfyConceptConstraint = cast<BoundTypeSatisfyConceptConstraint*>(that);
-                if (!Cm.Sym.TypesEqual(type, thatTypeSatisfyConceptConstraint->type))
-                {
-                    return false;
-                }
-                else
-                {
-                    return boundConcept->Imply(thatTypeSatisfyConceptConstraint->boundConcept.GetPtr());
-                }
-            }
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-        }
-        public nothrow inline Cm.Sym.TypeSymbol* Type() const
-        {
-            return type;
-        }
-        public nothrow inline Cm.Sym.ConceptSymbol* Concept() const
-        {
-            return boundConcept->Symbol();
-        }
-        private Cm.Sym.TypeSymbol* type;
-        private UniquePtr<BoundConcept> boundConcept;
-    }
-    
-    public class BoundTypeIsTypeConstraint : BoundConstraint
-    {
-        public nothrow BoundTypeIsTypeConstraint(Cm.Ast.Node* syntaxNode_, Cm.Sym.TypeSymbol* left_, Cm.Sym.TypeSymbol* right_) : base(syntaxNode_), left(left_), right(right_)
-        {
-        }
-        public override bool Imply(BoundConstraint* that) const
-        {
-            if (that is BoundBinaryConstraint*)
-            {
-                BoundBinaryConstraint* thatConstraint = cast<BoundBinaryConstraint*>(that);
-                BoundConstraint* thatLeft = thatConstraint->Left();
-                BoundConstraint* thatRight = thatConstraint->Right();
-                bool implyLeft = Imply(thatLeft);
-                bool implyRight = Imply(thatRight);
-                if (that is BoundConjunctiveConstraint*)
-                {
-                    return implyLeft && implyRight;
-                }
-                else if (that is BoundDisjunctiveConstraint*)
-                {
-                    return implyLeft || implyRight;
-                }
-                else
-                {
-                    #assert(false);
-                    return false;
-                }
-            }
-            else if (!(that is BoundTypeIsTypeConstraint*))
-            {
-                return false;
-            }
-            else
-            {
-                BoundTypeIsTypeConstraint* thatTypeIsTypeConstraint = cast<BoundTypeIsTypeConstraint*>(that);
-                if (!Cm.Sym.TypesEqual(left, thatTypeIsTypeConstraint->left))
-                {
-                    return false;
-                }
-                if (!Cm.Sym.TypesEqual(right, thatTypeIsTypeConstraint->right))
-                {
-                    return false;
-                }
-                return true;
-            }
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-        }
-        public nothrow inline Cm.Sym.TypeSymbol* Left() const
-        {
-            return left;
-        }
-        public nothrow inline Cm.Sym.TypeSymbol* Right() const
-        {
-            return right;
-        }
-        private Cm.Sym.TypeSymbol* left;
-        private Cm.Sym.TypeSymbol* right;
-    }
-    
-    public class BoundMultiParamConstraint : BoundConstraint
-    {
-        public nothrow BoundMultiParamConstraint(Cm.Ast.Node* syntaxNode_, const List<Cm.Sym.TypeSymbol*>& types_, BoundConcept* concept_) : base(syntaxNode_), types(types_), boundConcept(concept_)
-        {
-        }
-        public override bool Imply(BoundConstraint* that) const
-        {
-            if (that is BoundBinaryConstraint*)
-            {
-                BoundBinaryConstraint* thatConstraint = cast<BoundBinaryConstraint*>(that);
-                BoundConstraint* thatLeft = thatConstraint->Left();
-                BoundConstraint* thatRight = thatConstraint->Right();
-                bool implyLeft = Imply(thatLeft);
-                bool implyRight = Imply(thatRight);
-                if (that is BoundConjunctiveConstraint*)
-                {
-                    return implyLeft && implyRight;
-                }
-                else if (that is BoundDisjunctiveConstraint*)
-                {
-                    return implyLeft || implyRight;
-                }
-                else
-                {
-                    #assert(false);
-                    return false;
-                }
-            }
-            else if (!(that is BoundMultiParamConstraint*))
-            {
-                return false;
-            }
-            else
-            {
-                BoundMultiParamConstraint* thatMultiParamConstraint = cast<BoundMultiParamConstraint*>(that);
-                int n = types.Count();
-                if (n != thatMultiParamConstraint->types.Count())
-                {
-                    return false;
-                }
-                for (int i = 0; i < n; ++i)
-                {
-                    Cm.Sym.TypeSymbol* left = types[i];
-                    Cm.Sym.TypeSymbol* right = thatMultiParamConstraint->types[i];
-                    if (!Cm.Sym.TypesEqual(left, right)) 
-                    {
-                        return false;
-                    }
-                }
-                return boundConcept->Imply(thatMultiParamConstraint->boundConcept.GetPtr());
-            }
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-        }
-        public nothrow inline List<Cm.Sym.TypeSymbol*>& Types() const
-        {
-            return types;
-        }
-        public nothrow inline Cm.Sym.ConceptSymbol* Concept() const
-        {
-            return boundConcept->Symbol();
-        }
-        private List<Cm.Sym.TypeSymbol*> types;
-        private UniquePtr<BoundConcept> boundConcept;
-    }
-    
-    public class BoundConcept : BoundConstraint
-    {
-        public nothrow BoundConcept(Cm.Ast.Node* syntaxNode_, Cm.Sym.ConceptSymbol* concept_) : base(syntaxNode_), conceptSymbol(concept_)
-        {
-        }
-        public override bool Imply(BoundConstraint* that) const
-        {
-            if (!(that is BoundConcept*))
-            {
-                return false;
-            }
-            BoundConcept* thatConcept = cast<BoundConcept*>(that);
-            if (conceptSymbol == thatConcept->conceptSymbol) 
-            {
-                return true;
-            }
-            Cm.Sym.ConceptSymbol* refined = conceptSymbol->RefinedConcept();
-            while (refined != null)
-            {
-                if (refined == thatConcept->conceptSymbol)
-                {
-                    return true;
-                }
-                refined = refined->RefinedConcept();
-            }
-            return false;
-        }
-        public override void Accept(Visitor& visitor)
-        {
-            visitor.Visit(*this);
-        }
-        public nothrow inline Cm.Sym.ConceptSymbol* Symbol() const
-        {
-            return conceptSymbol;
-        }
-        private Cm.Sym.ConceptSymbol* conceptSymbol;
     }
 }

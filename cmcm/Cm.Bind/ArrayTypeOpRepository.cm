@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -445,7 +445,7 @@ namespace Cm.Bind
         thatParamNode->Accept(declarationVisitor);
         body->Accept(declarationVisitor);
         boundCompileUnit.SymbolTable().EndContainer();
-        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
         prebinder.BeginContainerScope(copyConstructorSymbol->GetContainerScope());
         thisParamNode->Accept(prebinder);
         thatParamNode->Accept(prebinder);
@@ -569,7 +569,7 @@ namespace Cm.Bind
         thatParamNode->Accept(declarationVisitor);
         body->Accept(declarationVisitor);
         boundCompileUnit.SymbolTable().EndContainer();
-        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository());
+        Prebinder prebinder(boundCompileUnit.SymbolTable(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit);
         prebinder.BeginContainerScope(assignmentSymbol->GetContainerScope());
         thisParamNode->Accept(prebinder);
         thatParamNode->Accept(prebinder);

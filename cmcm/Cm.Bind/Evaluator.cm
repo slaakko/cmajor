@@ -276,9 +276,10 @@ namespace Cm.Bind
                 VariableValueSymbol* variableValueSymbol = variableValue->GetVariableValueSymbol();
                 Cm.Sym.TypeSymbol* type = variableValueSymbol->GetType();
                 Cm.Sym.SymbolType symbolType = type->GetSymbolType();
-                Cm.Sym.ValueType targetType = Cm.Sym.GetValueTypeFor(symbolType, DontThrow());
+                PushTargetType(Cm.Sym.GetValueTypeFor(symbolType, DontThrow()));
                 if (targetType == Cm.Sym.ValueType.none) { interrupted = true; return; }
                 assignmentStatementNode.SourceExpr()->Accept(*this);
+                PopTargetType();
                 variableValueSymbol->SetValue(evaluationStack.Pop()->As(targetType, false, assignmentStatementNode.SourceExpr()->GetSpan()));
             }
             else
@@ -301,9 +302,11 @@ namespace Cm.Bind
         public override void BeginVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
         {
             PushSkipContent(true);
+            PushTargetType(Cm.Sym.ValueType.boolValue);
         }
         public override void EndVisit(Cm.Ast.ConditionalStatementNode& conditionalStatementNode)
         {
+            PopTargetType();
             PopSkipContent();
             if (returned) return;
             if (interrupted) return;
@@ -395,9 +398,11 @@ namespace Cm.Bind
         public override void BeginVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
         {
             PushSkipContent(true);
+            PushTargetType(Cm.Sym.ValueType.boolValue);
         }
         public override void EndVisit(Cm.Ast.WhileStatementNode& whileStatementNode)
         {
+            PopTargetType();
             PopSkipContent();
             if (returned) return;
             if (interrupted) return;
@@ -417,7 +422,9 @@ namespace Cm.Bind
                 {
                     continued = false;
                 }
+                PushTargetType(Cm.Sym.ValueType.boolValue);
                 whileStatementNode.Condition()->Accept(*this);
+                PopTargetType();
                 if (returned) return;
                 if (interrupted) return;
                 value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, whileStatementNode.GetSpan()));
@@ -451,7 +458,9 @@ namespace Cm.Bind
                 {
                     continued = false;
                 }
+                PushTargetType(Cm.Sym.ValueType.boolValue);
                 doStatementNode.Condition()->Accept(*this);
+                PopTargetType();
                 if (returned) return;
                 if (interrupted) return;
                 value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, doStatementNode.GetSpan()));
@@ -482,7 +491,9 @@ namespace Cm.Bind
             UniquePtr<Cm.Sym.Value> value;
             if (forStatementNode.HasCondition())
             {
+                PushTargetType(Cm.Sym.ValueType.boolValue);
                 forStatementNode.Condition()->Accept(*this);
+                PopTargetType();
                 if (interrupted) return;
                 value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, forStatementNode.GetSpan()));
             }
@@ -513,7 +524,9 @@ namespace Cm.Bind
                 }
                 if (forStatementNode.HasCondition())
                 {
+                    PushTargetType(Cm.Sym.ValueType.boolValue);
                     forStatementNode.Condition()->Accept(*this);
+                    PopTargetType();
                     if (interrupted) return;
                     value.Reset(evaluationStack.Pop()->As(Cm.Sym.ValueType.boolValue, false, forStatementNode.GetSpan()));
                     cond = cast<Cm.Sym.BoolValue*>(value.GetPtr());
@@ -550,180 +563,489 @@ namespace Cm.Bind
             }
             else
             {
-                throw Cm.Core.Error("constant or enumeration constant symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("symbol '" + identifierNode.Str() + "' not found", identifierNode.GetSpan());
+                }
             }
         }
         public override void Visit(Cm.Ast.BooleanLiteralNode& booleanLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(booleanLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.SByteLiteralNode& sbyteLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.SByteValue(sbyteLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.ByteLiteralNode& byteLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ByteValue(byteLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.ShortLiteralNode& shortLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ShortValue(shortLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.UShortLiteralNode& ushortLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UShortValue(ushortLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.IntLiteralNode& intLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.IntValue(intLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.UIntLiteralNode& uintLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.UIntValue(uintLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.LongLiteralNode& longLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.LongValue(longLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.ULongLiteralNode& ulongLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.ULongValue(ulongLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.FloatLiteralNode& floatLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.FloatValue(floatLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.DoubleLiteralNode& doubleLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.DoubleValue(doubleLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.CharLiteralNode& charLiteralNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.CharValue(charLiteralNode.Value())));
         }
         public override void Visit(Cm.Ast.StringLiteralNode& stringLiteralNode)
         {
-            ThrowCannotEvaluateStatically(stringLiteralNode.GetSpan());
+            if (returned) return;
+            if (interrupted) return;
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.CharPtrValue(stringLiteralNode.Value().Chars())));
         }
         public override void Visit(Cm.Ast.WStringLiteralNode& wstringLiteralNode)
         {
-            ThrowCannotEvaluateStatically(wstringLiteralNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(wstringLiteralNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.UStringLiteralNode& ustringLiteralNode)
         {
-            ThrowCannotEvaluateStatically(ustringLiteralNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(ustringLiteralNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.NullLiteralNode& nullLiteralNode)
         {
-            ThrowCannotEvaluateStatically(nullLiteralNode.GetSpan());
+            if (returned) return;
+            if (interrupted) return;
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.NullValue()));
         }
         public override void BeginVisit(Cm.Ast.EquivalenceNode& equivalenceNode)
         {
-            ThrowCannotEvaluateStatically(equivalenceNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(equivalenceNode.GetSpan());
+            }
         }
         public override void BeginVisit(Cm.Ast.ImplicationNode& implicationNode)
         {
-            ThrowCannotEvaluateStatically(implicationNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(implicationNode.GetSpan());
+            }
         }
         public override void EndVisit(Cm.Ast.DisjunctionNode& disjunctionNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, DisjunctionDelegates.Instance().Get(), cast_, disjunctionNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.ConjunctionNode& conjunctionNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, ConjunctionDelegates.Instance().Get(), cast_, conjunctionNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.BitOrNode& bitOrNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, BitwiseOrDelegates.Instance().Get(), cast_, bitOrNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.BitAndNode& bitAndNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, BitwiseAndDelegates.Instance().Get(), cast_, bitAndNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.BitXorNode& bitXorNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, BitwiseXorDelegates.Instance().Get(), cast_, bitXorNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.EqualNode& equalNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, EqualityDelegates.Instance().Get(), cast_, equalNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.NotEqualNode& notEqualNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, InequalityDelegates.Instance().Get(), cast_, notEqualNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.LessNode& lessNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, LessThanRelationDelegates.Instance().Get(), cast_, lessNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.GreaterNode& greaterNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, GreaterThanRelationDelegates.Instance().Get(), cast_, greaterNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.LessOrEqualNode& lessOrEqualNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, LessOrEqualRelationDelegates.Instance().Get(), cast_, lessOrEqualNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.GreaterOrEqualNode& greaterOrEqualNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, GreaterOrEqualRelationDelegates.Instance().Get(), cast_, greaterOrEqualNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.ShiftLeftNode& shiftLeftNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, ShiftLeftDelegates.Instance().Get(), cast_, shiftLeftNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.ShiftRightNode& shiftRightNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, ShiftRightDelegates.Instance().Get(), cast_, shiftRightNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.AddNode& addNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, AddDelegates.Instance().Get(), cast_, addNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.SubNode& subNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, SubDelegates.Instance().Get(), cast_, subNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.MulNode& mulNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, MulDelegates.Instance().Get(), cast_, mulNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.DivNode& divNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, DivDelegates.Instance().Get(), cast_, divNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.RemNode& remNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateBinOp(targetType, evaluationStack, RemDelegates.Instance().Get(), cast_, remNode.GetSpan());
         }
         public override void BeginVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
         {
-            // todo
+            if (returned) return;
+            if (interrupted) return;
+            leaveLvalueStack.Push(leaveLvalue);
+            leaveLvalue = true;
         }
         public override void EndVisit(Cm.Ast.PrefixIncNode& prefixIncNode)
         {
-            // todo
+            if (returned) return;
+            if (interrupted) return;
+            leaveLvalue = leaveLvalueStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is VariableValue*)
+            {
+                VariableValue* variableValue = cast<VariableValue*>(value.GetPtr());
+                variableValue->GetVariableValueSymbol()->GetValue()->Inc(prefixIncNode.GetSpan());
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(variableValue->GetVariableValueSymbol()->GetValue()->Clone()));
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("prefix operator++ needs a variable", prefixIncNode.Child()->GetSpan());
+                }
+            }
+        }
+        public override void BeginVisit(Cm.Ast.PrefixDecNode& prefixDecNode)
+        {
+            if (returned) return;
+            if (interrupted) return;
+            leaveLvalueStack.Push(leaveLvalue);
+            leaveLvalue = true;
+        }
+        public override void EndVisit(Cm.Ast.PrefixDecNode& prefixDecNode)
+        {
+            if (returned) return;
+            if (interrupted) return;
+            leaveLvalue = leaveLvalueStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is VariableValue*)
+            {
+                VariableValue* variableValue = cast<VariableValue*>(value.GetPtr());
+                variableValue->GetVariableValueSymbol()->GetValue()->Inc(prefixDecNode.GetSpan());
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(variableValue->GetVariableValueSymbol()->GetValue()->Clone()));
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("prefix operator-- needs a variable", prefixDecNode.Child()->GetSpan());
+                }
+            }
         }
         public override void BeginVisit(Cm.Ast.InvokeNode& invokeNode)
         {
-            // todo
+            PushSkipContent(true);
+            PushSkipArguments(true);
+            functionGroupSymbolStack.Push(currentFunctionGroupSymbol);
+            currentFunctionGroupSymbol = null;
+            if (returned) return;
+            if (interrupted) return;
+            List<Cm.Core.Argument> args;
+            Cm.Ast.NodeList<Cm.Ast.Node>& argumentExprs = invokeNode.Arguments();
+            List<UniquePtr<Cm.Sym.Value>> arguments;
+            int n = argumentExprs.Count();
+            for (int i = 0; i < n; ++i)
+            {
+                argumentExprs[i]->Accept(*this);
+                if (interrupted) return;
+                UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+                Cm.Sym.TypeSymbol* type = Cm.Sym.GetTypeSymbol(value->GetValueType(), symbolTable);
+                arguments.Add(UniquePtr<Cm.Sym.Value>(value.Release()));
+                if (type != null)
+                {
+                    args.Add(Cm.Core.Argument(Cm.Core.ArgumentCategory.rvalue, type));
+                }
+                else
+                {
+                    if (DontThrow())
+                    {
+                        interrupted = true;
+                        return;
+                    }
+                    else
+                    {
+                        throw Cm.Core.Error("type not found", argumentExprs[i]->GetSpan());
+                    }
+                }
+            }
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupInvokeSubject;
+            invokeNode.Subject()->Accept(*this);
+            if (interrupted) return;
+            lookupId = lookupIdStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is FunctionGroupValue*)
+            {
+                Cm.Sym.FunctionLookupSet functionLookups;
+                FunctionGroupValue* functionGroupValue = cast<FunctionGroupValue*>(value.GetPtr());
+                Cm.Sym.FunctionGroupSymbol* functionGroup = functionGroupValue->FunctionGroup();
+                if (functionGroupValue->QualifiedScope() != null)
+                {
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base, functionGroupValue->QualifiedScope()));
+                }
+                else
+                {
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.this_and_base_and_parent, functionGroup->GetContainerScope()));
+                    functionLookups.Add(Cm.Sym.FunctionLookup(Cm.Sym.ScopeLookup.fileScopes, null));
+                }
+                List<Cm.Sym.FunctionSymbol*> conversions;
+                Cm.Sym.FunctionSymbol* fun = ResolveOverload(containerScope, boundCompileUnit, functionGroup->Name(), args, functionLookups, invokeNode.GetSpan(), conversions,
+                    Cm.Sym.ConversionType.implicit, functionGroup->BoundTemplateArguments(), OverloadResolutionFlags.dontInstantiate);
+                if (fun->IsConstExpr())
+                {
+                    Cm.Ast.Node* node = boundCompileUnit.ConstExprFunctionRepository().GetNodeFor(fun);
+                    if (!(node is Cm.Ast.FunctionNode*))
+                    {
+                        if (DontThrow())
+                        {
+                            interrupted = true;
+                            return;
+                        }
+                        else
+                        {
+                            throw Exception("function node expected");
+                        }
+                    }
+                    Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
+                    CheckFunctionReturnPaths(boundCompileUnit.SymbolTable(), containerScope, FScopes(), classTemplateRepository, boundCompileUnit, fun, functionNode);
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Cm.Sym.FunctionSymbol* conversion = conversions[i];
+                        if (conversion != null)
+                        {
+                            Cm.Sym.SymbolType symbolType = conversion->GetTargetType()->GetSymbolType();
+                            Cm.Sym.ValueType targetType = Cm.Sym.GetValueTypeFor(symbolType, DontThrow());
+                            if (targetType == Cm.Sym.ValueType.none) { interrupted = true; return; }
+                            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(arguments[i]->As(targetType, false, invokeNode.GetSpan())));
+                        }
+                        else
+                        {
+                            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(arguments[i].Release()));
+                        }
+                    }
+                    functionStack.Push(currentFunction);
+                    currentFunction = fun;
+                    currentFunctionGroupSymbol = functionGroup;
+                    functionNode->Accept(*this);
+                    if (interrupted) return;
+                    currentFunction = functionStack.Pop();
+                }
+                else
+                {
+                    if (fun->IsIntrinsic())
+                    {
+                        Cm.Sym.IntrinsicFunction* intrinsic = fun->GetIntrinsic();
+                        if (intrinsic != null)
+                        {
+                            intrinsic->Evaluate(evaluationStack, currentFunctionGroupSymbol->BoundTemplateArguments());
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("intrinsic function implementation not set", fun->GetSpan());
+                        }
+                    }
+                    else
+                    {
+                        if (DontThrow())
+                        {
+                            interrupted = true;
+                            return;
+                        }
+                        else
+                        {
+                            throw Cm.Core.Error("constexpr or intrinsic function expected", invokeNode.Subject()->GetSpan());
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("function group expected", invokeNode.Subject()->GetSpan());
+                }
+            }
+            currentFunctionGroupSymbol = functionGroupSymbolStack.Pop();
         }
         public override void EndVisit(Cm.Ast.InvokeNode& invokeNode)
         {
-            // todo
+            PopSkipArguments();
+            PopSkipContent();
         }
         public override void Visit(Cm.Ast.IndexNode& indexNode)
         {
-            ThrowCannotEvaluateStatically(indexNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                throw Cm.Core.Error("cannot evaluate statically", indexNode.GetSpan());
+            }
         }
         public override void BeginVisit(Cm.Ast.DotNode& dotNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             lookupIdStack.Push(lookupId);
             lookupId = Cm.Sym.SymbolTypeSetId.lookupContainerSymbols;
         }
         public override void EndVisit(Cm.Ast.DotNode& dotNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             lookupId = lookupIdStack.Pop();
             UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
             if (value.GetPtr() is ScopedValue*)
@@ -734,7 +1056,10 @@ namespace Cm.Bind
                 Cm.Sym.Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
                 if (symbol != null)
                 {
+                    qualifiedScopeStack.Push(qualifiedScope);
+                    qualifiedScope = containerSymbol->GetContainerScope();
                     EvaluateSymbol(symbol);
+                    qualifiedScope = qualifiedScopeStack.Pop();
                 }
                 else
                 {
@@ -748,86 +1073,265 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.ArrowNode& arrowNode)
         {
-            ThrowCannotEvaluateStatically(arrowNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(arrowNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.PostfixIncNode& postfixIncNode)
         {
-            // todo
+            if (returned) return;
+            if (interrupted) return;
+            postfixIncNode.Child()->Accept(*this);
+            if (interrupted) return;
+            leaveLvalueStack.Push(leaveLvalue);
+            leaveLvalue = true;
+            postfixIncNode.Child()->Accept(*this);
+            if (interrupted) return;
+            leaveLvalue = leaveLvalueStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is VariableValue*)
+            {
+                VariableValue* variableValue = cast<VariableValue*>(value.GetPtr());
+                variableValue->GetVariableValueSymbol()->GetValue()->Inc(postfixIncNode.GetSpan());
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("postfix operator++ needs a variable", postfixIncNode.Child()->GetSpan());
+                }
+            }
         }
         public override void Visit(Cm.Ast.PostfixDecNode& postfixDecNode)
         {
-            // todo
+            if (returned) return;
+            if (interrupted) return;
+            postfixDecNode.Child()->Accept(*this);
+            if (interrupted) return;
+            leaveLvalueStack.Push(leaveLvalue);
+            leaveLvalue = true;
+            postfixDecNode.Child()->Accept(*this);
+            if (interrupted) return;
+            leaveLvalue = leaveLvalueStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is VariableValue*)
+            {
+                VariableValue* variableValue = cast<VariableValue*>(value.GetPtr());
+                variableValue->GetVariableValueSymbol()->GetValue()->Inc(postfixDecNode.GetSpan());
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("postfix operator-- needs a variable", postfixDecNode.Child()->GetSpan());
+                }
+            }
         }
         public override void Visit(Cm.Ast.DerefNode& derefNode)
         {
-            ThrowCannotEvaluateStatically(derefNode.GetSpan());
+            if (returned) return;
+            if (interrupted) return;
+            derefNode.Subject()->Accept(*this);
+            if (interrupted) return;
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(value->Deref(derefNode.Subject()->GetSpan())));
         }
         public override void Visit(Cm.Ast.AddrOfNode& addrOfNode)
         {
-            ThrowCannotEvaluateStatically(addrOfNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(addrOfNode.GetSpan());
+            }
         }
         public override void EndVisit(Cm.Ast.NotNode& notNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateUnaryOp(targetType, evaluationStack, NotDelegates.Instance().Get(), cast_, notNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.UnaryPlusNode& unaryPlusNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateUnaryOp(targetType, evaluationStack, UnaryPlusDelegates.Instance().Get(), cast_, unaryPlusNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.UnaryMinusNode& unaryMinusNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateUnaryOp(targetType, evaluationStack, UnaryMinusDelegates.Instance().Get(), cast_, unaryMinusNode.GetSpan());
         }
         public override void EndVisit(Cm.Ast.ComplementNode& complementNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             EvaluateUnaryOp(targetType, evaluationStack, BitwiseComplementDelegates.Instance().Get(), cast_, complementNode.GetSpan());
         }
         public override void Visit(Cm.Ast.SizeOfNode& sizeOfNode)
         {
-            ThrowNotImplemented();
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(sizeOfNode.GetSpan());
+            }   
         }
         public override void Visit(Cm.Ast.TypeNameNode& typeNameNode)
         {
-            ThrowCannotEvaluateStatically(typeNameNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(typeNameNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.CastNode& castNode)
         {
+            if (returned) return;
+            if (interrupted) return;
             Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
-            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, targetTypeExpr);
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, FScopes(), classTemplateRepository, boundCompileUnit, targetTypeExpr);
             Cm.Sym.SymbolType symbolType = type->GetSymbolType();
-            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
-            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, FScopes(), classTemplateRepository, boundCompileUnit)));
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, DontThrow());
+            if (valueType == Cm.Sym.ValueType.none) { interrupted = true; return; }
+            evaluationStack.Push(UniquePtr<Cm.Sym.Value>(Evaluate(valueType, true, castNode.SourceExpr(), symbolTable, containerScope, FScopes(), classTemplateRepository, boundCompileUnit, flags)));
         }
         public override void Visit(Cm.Ast.IsNode& isNode)
         {
-            ThrowCannotEvaluateStatically(isNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(isNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.AsNode& asNode)
         {
-            ThrowCannotEvaluateStatically(asNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(asNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.NewNode& newNode)
         {
-            ThrowCannotEvaluateStatically(newNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(newNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.ConstructNode& constructNode)
         {
-            ThrowCannotEvaluateStatically(constructNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(constructNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.ThisNode& thisNode)
         {
-            ThrowCannotEvaluateStatically(thisNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(thisNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.BaseNode& baseNode)
         {
-            ThrowCannotEvaluateStatically(baseNode.GetSpan());
+            if (DontThrow())
+            {
+                interrupted = true;
+                return;
+            }
+            else
+            {
+                ThrowCannotEvaluateStatically(baseNode.GetSpan());
+            }
         }
         public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
         {
-            ThrowCannotEvaluateStatically(templateIdNode.GetSpan());
+            lookupIdStack.Push(lookupId);
+            lookupId = Cm.Sym.SymbolTypeSetId.lookupFunctionGroup;
+            templateIdNode.Subject()->Accept(*this);
+            lookupId = lookupIdStack.Pop();
+            UniquePtr<Cm.Sym.Value> value(evaluationStack.Pop());
+            if (value.GetPtr() is FunctionGroupValue*)
+            {
+                FunctionGroupValue* functionGroupValue = cast<FunctionGroupValue*>(value.GetPtr());
+                List<Cm.Sym.TypeSymbol*> templateArguments;
+                for (const UniquePtr<Cm.Ast.Node>& templateArgument : templateIdNode.TemplateArguments())
+                {
+                    Cm.Sym.TypeSymbol* templateArgumentType = ResolveType(boundCompileUnit.SymbolTable(), containerScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(),
+                        boundCompileUnit, templateArgument.GetPtr());
+                    templateArguments.Add(templateArgumentType);
+                }
+                functionGroupValue->FunctionGroup()->SetBoundTemplateArguments(templateArguments);
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(value.Release()));
+            }
+            else
+            {
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("function group expected", templateIdNode.Subject()->GetSpan());
+                }
+            }
         }
         private void EvaluateSymbol(Cm.Sym.Symbol* symbol)
         {
+            if (returned) return;
+            if (interrupted) return;
             if (symbol is Cm.Sym.ContainerSymbol*)
             {
                 Cm.Sym.ContainerSymbol* containerSymbol = cast<Cm.Sym.ContainerSymbol*>(symbol);
@@ -865,14 +1369,48 @@ namespace Cm.Bind
                     }
                     else
                     {
-                        throw Exception("enum constant node expected");
+                        if (DontThrow())
+                        {
+                            interrupted = true;
+                            return;
+                        }
+                        else
+                        {
+                            throw Exception("enumeration constant node expected");
+                        }
                     }
                 }
                 evaluationStack.Push(UniquePtr<Cm.Sym.Value>(enumConstantSymbol->GetValue()->Clone()));
             }
+            else if (symbol is VariableValueSymbol*)
+            {
+                VariableValueSymbol* variableValueSymbol = cast<VariableValueSymbol*>(symbol);
+                if (leaveLvalue)
+                {
+                    evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new VariableValue(variableValueSymbol)));
+                }
+                else
+                {
+                    evaluationStack.Push(UniquePtr<Cm.Sym.Value>(variableValueSymbol->GetValue()->Clone()));
+                }
+            }
+            else if (symbol is Cm.Sym.FunctionGroupSymbol*)
+            {
+                Cm.Sym.FunctionGroupSymbol* functionGroup = cast<Cm.Sym.FunctionGroupSymbol*>(symbol);
+                functionGroup->SetBoundTemplateArguments(List<Cm.Sym.TypeSymbol*>());
+                evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new FunctionGroupValue(functionGroup, qualifiedScope)));
+            }
             else
             {
-                ThrowCannotEvaluateStatically(symbol->GetSpan());
+                if (DontThrow())
+                {
+                    interrupted = true;
+                    return;
+                }
+                else
+                {
+                    throw Cm.Core.Error("cannot evaluate statically", symbol->GetSpan());
+                }
             }
         }
         private nothrow inline bool DontThrow() const
@@ -892,7 +1430,17 @@ namespace Cm.Bind
             }
             return *fscopes;
         }
+        private inline void PushTargetType(Cm.Sym.ValueType targetType_)
+        {
+            targetTypeStack.Push(targetType);
+            targetType = targetType_;
+        }
+        private inline void PopTargetType()
+        {
+            targetType = targetTypeStack.Pop();
+        }
         private Cm.Sym.ValueType targetType;
+        private Stack<Cm.Sym.ValueType> targetTypeStack;
         private bool cast_;
         private Cm.Sym.ContainerScope* qualifiedScope;
         private Stack<Cm.Sym.ContainerScope*> qualifiedScopeStack;

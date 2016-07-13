@@ -14,7 +14,7 @@ namespace Cm.Ast
 {
     public class Visitor
     {
-        public nothrow Visitor(bool visitBodies_, bool visitExpressions_): visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false)
+        public nothrow Visitor(bool visitBodies_, bool visitExpressions_): visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false), skipArguments(false)
         {
         }
         public nothrow virtual ~Visitor()
@@ -33,9 +33,31 @@ namespace Cm.Ast
         {
             return skipContent;
         }
+        public void PushSkipArguments(bool skipArguments_)
+        {
+            skipArgumentsStack.Push(skipArguments);
+            skipArguments = skipArguments_;
+        }
+        public void PopSkipArguments()
+        {
+            skipArguments = skipArgumentsStack.Pop();
+        }
+        public nothrow inline bool SkipArguments() const
+        {
+            return skipArguments;
+        }
         public nothrow inline bool VisitBodies() const
         {
             return visitBodies;
+        }
+        public void PushVisitExpressions(bool visit)
+        {
+            visitExpressionsStack.Push(visitExpressions);
+            visitExpressions = visit;
+        }
+        public void PopVisitExpressions()
+        {
+            visitExpressions = visitExpressionsStack.Pop();
         }
         public nothrow inline bool VisitExpressions() const
         {
@@ -605,6 +627,9 @@ namespace Cm.Ast
         public virtual void EndVisit(WhereConstraintNode& whereConstraintNode)
         {
         }
+        public virtual void Visit(PredicateConstraintNode& predicateConstraintNode)
+        {
+        }
         public virtual void Visit(IsConstraintNode& isConstraintNode)
         {
         }
@@ -692,12 +717,15 @@ namespace Cm.Ast
         public virtual void Visit(CommonConstraintNode& commonConstraintNode)
         {
         }
-        public virtual void Visit(NonReferenceTypeConstraintNode& mjonReferenceTypeConstraintNode)
+        public virtual void Visit(NonReferenceTypeConstraintNode& nonReferenceTypeConstraintNode)
         {
         }
         private bool visitBodies;
         private bool visitExpressions;
+        private Stack<bool> visitExpressionsStack;
         private bool skipContent;
         private Stack<bool> skipContentStack;
+        private bool skipArguments;
+        private Stack<bool> skipArgumentsStack;
     }
 }

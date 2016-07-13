@@ -463,7 +463,10 @@ std::string InvokeNode::ToString() const
 void InvokeNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    arguments.Accept(visitor);
+    if (!visitor.SkipArguments())
+    {
+        arguments.Accept(visitor);
+    }
     visitor.EndVisit(*this);
 }
 

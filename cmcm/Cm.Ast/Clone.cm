@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -13,7 +13,7 @@ namespace Cm.Ast
 {
     public class CloneContext
     {
-        public nothrow CloneContext() : instantiateClassNode(false)
+        public nothrow CloneContext() : instantiateClassNode(false), instantiateFunctionNode(false)
         {
         }
         public nothrow void SetInstantiateClassNode()
@@ -24,6 +24,15 @@ namespace Cm.Ast
         {
             return instantiateClassNode;
         }
+        public nothrow void SetInstantiateFunctionNode()
+        {
+            instantiateFunctionNode = true;
+        }
+        public inline nothrow bool InstantiateFunctionNode() const
+        {
+            return instantiateFunctionNode;
+        }
         private bool instantiateClassNode;
+        private bool instantiateFunctionNode;
     }
 }

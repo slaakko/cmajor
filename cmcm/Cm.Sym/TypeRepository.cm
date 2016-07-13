@@ -622,7 +622,7 @@ namespace Cm.Sym
             {
                 case Cm.Ast.Derivation.pointer: 
                 {
-                    numPointers = numPointers + 1u;
+                    ++numPointers;
                     break;
                 }
                 case Cm.Ast.Derivation.reference: 

@@ -27,6 +27,7 @@
     <ClInclude Include="ClassTemplateRepository.hpp" />
     <ClInclude Include="Concept.hpp" />
     <ClInclude Include="Constant.hpp" />
+    <ClInclude Include="ConstExprFunctionRepository.hpp" />
     <ClInclude Include="ControlFlowAnalyzer.hpp" />
     <ClInclude Include="Delegate.hpp" />
     <ClInclude Include="DelegateTypeOpRepository.hpp" />
@@ -59,6 +60,7 @@
     <ClCompile Include="ClassTemplateRepository.cpp" />
     <ClCompile Include="Concept.cpp" />
     <ClCompile Include="Constant.cpp" />
+    <ClCompile Include="ConstExprFunctionRepository.cpp" />
     <ClCompile Include="ControlFlowAnalyzer.cpp" />
     <ClCompile Include="Delegate.cpp" />
     <ClCompile Include="DelegateTypeOpRepository.cpp" />

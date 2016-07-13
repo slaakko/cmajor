@@ -46,6 +46,7 @@ enum class SymbolTypeSetId : uint8_t
     lookupEnumType,
     lookupEnumConstant,
     lookupConstantAndEnumConstantSymbols,
+    lookupConstantEnumConstantAndVariableValueSymbols,
     max 
 };
 

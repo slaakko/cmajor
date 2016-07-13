@@ -14,7 +14,7 @@
 
 namespace Cm { namespace Ast {
 
-CloneContext::CloneContext() : instantiateClassNode(false) , makeTestUnits(false)
+CloneContext::CloneContext() : instantiateClassNode(false) , instantiateFunctionNode(false), makeTestUnits(false)
 {
 }
 

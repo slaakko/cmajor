@@ -289,7 +289,7 @@ The following nine chapters describe different aspects of the binder component:
 \item
 Chapter 8 describes the prebinder component that binds types and values.
 \item
-Chapter 9 discusses generation of virtual function tables and interface tables for virtual classes.
+Chapter 9 discusses generation of virtual function tables and interface tables for polymorphic classes.
 \item
 Chapters 10, 11 and 12 describe function overload resolution:
 \begin{itemize}
@@ -310,7 +310,7 @@ Chapter 15 describes how the main binder binds classes and functions.
 Chapter 16 discusses instantiation of templates.
 \end{itemize}
 \item
-Chapter 17 is devoted to the emitter component that generates intermediate LLVM or C code.
+Chapter 17 is devoted to emitters that generate intermediate LLVM or C code.
 \end{itemize}
 
 \chapter{Lexical Analysis}
@@ -3505,7 +3505,7 @@ Finally the abstract syntax trees of the project being compiled are iterated
 and symbols that correspond abstract syntax tree nodes are created and inserted to the global symbol table.
 \end{enumerate}
 
-\subsection{Insertion of Basic Types and Their Operations}
+\subsection{Insertion of Basic Types and Their Operations}\label{basictypeoperations}
 
 The first stage in constructing the global symbol table is inserting the basic types and their operations to the global symbol table.
 The following listing shows the basic type symbols that are inserted to the global namespace of the global symbol table:
@@ -3530,7 +3530,7 @@ BasicTypeSymbol
     NullPtrTypeSymbol
 \end{verbatim}
 
-The following listing shows operations for basic types that are inserted to the global namespace of the global symbol table:
+The following listing shows operations for basic types that are inserted to the global namespace of the global symbol table for each basic type:
 \footnote{The group name of the function symbol is shown in brackets after the operation.}
 
 \begin{verbatim}
@@ -5850,16 +5850,16 @@ The following table shows possible specifiers for each symbol:\footnote{not all 
 \end{supertabular}
 \end{flushleft}
 
-\chapter{Binding Virtual Classes}\label{bindingvirtualclasses}
+\chapter{Binding Polymorphic Classes}\label{bindingvirtualclasses}
 
-\begin{defn}\label{virtualclass} A \emph{virtual class} is a class that has one or more virtual, overridden or abstract member function, implements an interface,
-or has a base class that is virtual.
+\begin{defn}\label{virtualclass} A \emph{polymorphic class} is a class that has one or more virtual, overridden or abstract member function, implements an interface,
+or has a base class that is polymorphic.
 \end{defn}
 
 The next phase of compilation is to construct \emph{virtual function tables} and \emph{interface tables}.
 A virtual function table, or \emph{vtable} for short, is a table of pointers to virtual functions.
 An interface table, or \emph{itable} for short, is a table of pointers to functions that implement an interface.
-A virtual class has one vtable, and it has an itable for each interface it implements.
+A polymorphic class has one vtable, and it has an itable for each interface it implements.
 
 \section{Constructing a Virtual Function Table}
 
@@ -5878,13 +5878,13 @@ If the class has a base class,
 \item
 Initialize vtable of the base class by calling this algorithm recursively for the base class symbol.
 \item
-If the base class is virtual, set this class also virtual.
+If the base class is polymorphic, set this class also polymorphic.
 \end{enumerate}
 \item
-If this class is virtual,
+If this class is polymorphic,
 \begin{enumerate}
 \item
-If the class does not have a base class, or has a nonvirtual base class,
+If the class does not have a base class, or has a nonpolymorphic base class,
 \begin{enumerate}
 \item
 If the class has a base class, set virtual function table pointer index of this class to 1,
@@ -6000,7 +6000,7 @@ Otherwise, return \textbf{false}.
 \item
 If the class type does not implement any interfaces, return.
 \item
-Set the class type symbol virtual.
+Set the class type symbol polymorphic.
 \item
 If the class does not have any virtual functions, set the first entry of the vtable to zero, thus reserving it to the RTTI table pointer.
 \item
@@ -6655,9 +6655,9 @@ Otherwise, if both $left$ and $right$ have a constraint:
 \item
 Let $lc$ be the bound constraint of the $left$ and $rc$ be the bound constraint of the $right$.
 \item
-If $lc$ imply $rc$, and not $rc$ imply $lc$, return \textbf{true}.
+If $lc$ subsume $rc$, and not $rc$ subsume $lc$, return \textbf{true}.
 \item
-Otherwise, if $rc$ imply $lc$ and not $lc$ imply $rc$, return \textbf{false}.
+Otherwise, if $rc$ subsume $lc$ and not $lc$ subsume $rc$, return \textbf{false}.
 \item
 Otherwise, return \textbf{false}.
 \end{enumerate}
@@ -7028,12 +7028,13 @@ After this stage we may have several function templates in the list of matching 
 
 \item
 The second stage is to \emph{compare} bound constraints built from original constraints during constraint checking.
-The bound constraints are compared using the \emph{imply} relation.
+The bound constraints are compared using the \emph{subsume} relation.
 This is done for selecting the best, i.e. the most strictly satisfying, constraint from the bound constraints.
-When comparing two constraints $A$ and $B$: if $imply(A, B)$ is \textbf{true} and $imply(B, A)$ is \textbf{false},
+When comparing two constraints $A$ and $B$: if $subsume(A, B)$ is \textbf{true} and $subsume(B, A)$ is \textbf{false},
 then the function containing constraint $A$ is a better match than the function containing $B$.
-Otherwise, if $imply(B, A)$ is \textbf{true} and $imply(A, B)$ is \textbf{false},
+Otherwise, if $subsume(B, A)$ is \textbf{true} and $subsume(A, B)$ is \textbf{false},
 then the function containing $B$ is a better match than the function containing $A$.
+Otherwise we report an ambiguous overload resolution error.
 \end{enumerate}
 
 \begin{exmp} Overload Resolution Using Concepts.
@@ -7061,8 +7062,8 @@ the \verb|BidirectionalIterator| concept refines the \verb|ForwardIterator| conc
 \verb|RandomAccessIterator| concept refines the \verb|BidirectionalIterator| concept.
 The refine relation is transitive, so that if a concept $A$ refines a concept $B$ and
 the concept $B$ refines a concept $C$, then $A$ refines $C$.
-When a concept $A$ refines a concept $B$, the $imply(A, B)$ relation is \textbf{true} and
-$imply(B, A)$ relation is \textbf{false}.
+When a concept $A$ refines a concept $B$, the $subsume(A, B)$ relation is \textbf{true} and
+$subsume(B, A)$ relation is \textbf{false}.
 
 Now consider following code:
 \begin{flushleft}
@@ -7099,7 +7100,7 @@ the other for random access iterators, [2].
 The \verb|List<int>.ConstIterator|, the iterator type that the \verb|list.CBegin()| and \verb|list.CEnd()| calls return,
 conforms to both RandomAccessIterator and ForwardIterator concepts,
 so for the \verb|Distance| function call at line 20, both functions [1] and [2] are included in the list of matching functions.
-When comparing the constraints for functions [1] and [2], constraint for [2] wins because constraint of [2] imply constraint of [1], but not vice versa.
+When comparing the constraints for functions [1] and [2], constraint for [2] wins because constraint of [2] subsumes constraint of [1], but not vice versa.
 Function [2], the random access iterator version, is called in this case.
 
 The \verb|ForwardList<int>.ConstIterator|, the iterator type that the \verb|fwdList.CBegin()| and \verb|fwdList.CEnd()| calls return, conforms only to ForwardIterator concept,
@@ -7710,8 +7711,8 @@ A \verb|BoundBinaryConstraint| contains two child constraints, $left$ and $right
 
 The following algorithm is used to compare bound constraints to find out which of them is the most stricly satisfying constraint:
 
-\begin{algo}\label{imply} Imply. Inputs: two bound constraints $A$ and $B$.
-The algorithm returns \textbf{true} if $imply(A, B)$ is \textbf{true} and \textbf{false} otherwise.
+\begin{algo}\label{subsume} Subsume. Inputs: two bound constraints $A$ and $B$.
+The algorithm returns \textbf{true} if $subsume(A, B)$ is \textbf{true} and \textbf{false} otherwise.
 \begin{enumerate}
 \item
 If $A$ is \verb|BoundAtomicConstraint|:
@@ -7724,9 +7725,9 @@ Let $LB$ be the left constraint of $B$.
 \item
 Let $RB$ be the right constraint of $B$.
 \item
-Let $L$ be $imply(A, LB)$.
+Let $L$ be $subsume(A, LB)$.
 \item
-Let $R$ be $imply(A, RB)$.
+Let $R$ be $subsume(A, RB)$.
 \item
 If $B$ is \verb|BoundConjunctiveConstraint|, return $L$ \textbf{and} $R$.
 \item
@@ -7736,14 +7737,21 @@ Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $L$ \textbf{or} $R$.
 Otherwise, $B$ is \verb|BoundAtomicConstraint|:
 \begin{enumerate}
 \item
-If $A$ is satisfied and $B$ is not satisfied, return \textbf{false}.
+If $A$ is satisfied and $B$ is not satisfied, return \textbf{true}.
 \item
-Otherwise, if $A$ contains a concept symbol and $B$ does not contain a concept symbol, return \textbf{false}.
+Otherwise, if $A$ is not satisfied and $B$ is satisfied, return \textbf{false}.
 \item
-Otherwise, if $A$ does not contain a concept symbol and $B$ contains a concept symbol, return \textbf{true}.
-\item
-Otherwise, if both $A$ and $B$ contain a concept symbol:
+Otherwise,
 \begin{enumerate}
+\item
+If $A$ contains a concept symbol and $B$ does not contain a concept symbol, return \textbf{true}.
+\item
+Otherwise, if $A$ does not contain a concept symbol and $B$ contains a concept symbol, return \textbf{false}.
+\item
+Otherwise, if neither $A$ and $b$ contain a concept symbol, return \textbf{true}.
+\item
+Otherwise, both $A$ and $B$ contain a concept symbol:
+\begin{itemize}
 \item
 If concept symbol contained by $A$ is equal to the concept symbol contained by $B$, return \textbf{true}.
 \item
@@ -7758,9 +7766,8 @@ Otherwise, set $refinedConcept$ to the refined concept of the $refinedConcept$.
 \end{itemize}
 \item
 Return \textbf{false}.
+\end{itemize}
 \end{enumerate}
-\item
-Otherwise, return \textbf{true}.
 \end{enumerate}
 \end{enumerate}
 \item
@@ -7778,13 +7785,13 @@ Let $BL$ be the left constraint of $B$.
 \item
 Let $BR$ be the right constraint of $B$.
 \item
-Let $LL$ be $imply(AL, BL)$.
+Let $LL$ be $subsume(AL, BL)$.
 \item
-Let $LR$ be $imply(AL, BR)$.
+Let $LR$ be $subsume(AL, BR)$.
 \item
-Let $RL$ be $imply(AR, BL)$.
+Let $RL$ be $subsume(AR, BL)$.
 \item
-Let $RR$ be $imply(AR, BR)$.
+Let $RR$ be $subsume(AR, BR)$.
 \item
 Let $LLorLR$ be $LL$ \textbf{or} $LR$.
 \item
@@ -7798,9 +7805,9 @@ Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LLorLR$ \textbf{or}
 Otherwise, $B$ is \verb|BoundAtomicConstraint|:
 \begin{enumerate}
 \item
-Let $LB$ be $imply(AL, B)$.
+Let $LB$ be $subsume(AL, B)$.
 \item
-Let $RB$ be $imply(AR, B)$.
+Let $RB$ be $subsume(AR, B)$.
 \item
 Return $LB$ \textbf{and} $RB$.
 \end{enumerate}
@@ -7820,13 +7827,13 @@ Let $BL$ be the left constraint of $B$.
 \item
 Let $BR$ be the right constraint of $B$.
 \item
-Let $LL$ be $imply(AL, BL)$.
+Let $LL$ be $subsume(AL, BL)$.
 \item
-Let $RL$ be $imply(AR, BL)$.
+Let $RL$ be $subsume(AR, BL)$.
 \item
-Let $LR$ be $imply(AL, BR)$.
+Let $LR$ be $subsume(AL, BR)$.
 \item
-Let $RR$ be $imply(AR, BR)$.
+Let $RR$ be $subsume(AR, BR)$.
 \item
 Let $LorRL$ be $LL$ \textbf{or} $RL$.
 \item
@@ -7840,9 +7847,9 @@ Otherwise, $B$ is \verb|BoundDisjunctiveConstraint|, return $LorRL$ \textbf{or} 
 Otherwise, $B$ is \verb|BoundAtomicConstraint|:
 \begin{enumerate}
 \item
-Let $LB$ be $imply(AL, B)$.
+Let $LB$ be $subsume(AL, B)$.
 \item
-Let $RB$ be $imply(AR, B)$.
+Let $RB$ be $subsume(AR, B)$.
 \item
 Return $LB$ \textbf{or} $RB$.
 \end{enumerate}
@@ -8067,7 +8074,7 @@ Set $fun$ to a function symbol resolved.
 \item
 If $conversions[0]$ is not null, replace $leftOperand$ with a \verb|BoundConversion| containing a conversion function $conversions[0]$ and $leftOperand$.
 \item
-If $conversions[1]$ is not null, replace $leftOperand$ with a \verb|BoundConversion| containing a conversion function $conversions[1]$ and $rightOperand$.
+If $conversions[1]$ is not null, replace $rightOperand$ with a \verb|BoundConversion| containing a conversion function $conversions[1]$ and $rightOperand$.
 \item
 Create a \verb|BoundBinaryOp| $op$ with a function symbol $fun$ and operands $leftOperand$ and $rightOperand$.
 \item
@@ -9560,7 +9567,7 @@ If $exprType$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $exprClassType$ be the base type of $exprType$.
 \item
-If $exprClassType$ is not virtual, report error and exit.
+If $exprClassType$ is not polymorphic, report error and exit.
 \item
 Otherwise, resolve type of $typeExpr$ using algorithm \ref{resolvetype}. Let $type$ be the type resolved.
 \item
@@ -9568,7 +9575,7 @@ If $type$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $rightClassType$ be the base type of $type$.
 \item
-If $rightClassType$ is not virtual, report error and exit.
+If $rightClassType$ is not polymorphic, report error and exit.
 \item
 Otherwise, create a \verb|BoundIsExpression| with $boundExpr$, $exprClassType$ and $rightClassType$, set its type to \textbf{bool},
 and push it to the bound expression stack.
@@ -9591,7 +9598,7 @@ If $exprType$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $exprClassType$ be the base type of $exprType$.
 \item
-If $exprClassType$ is not virtual (\ref{virtualclass}), report error and exit.
+If $exprClassType$ is not polymorphic (\ref{virtualclass}), report error and exit.
 \item
 Otherwise, resolve type of $typeExpr$ using algorithm \ref{resolvetype}. Let $type$ be the type resolved.
 \item
@@ -9599,7 +9606,7 @@ If $type$ is not 'pointer to class type', report error and exit.
 \item
 Otherwise, let $rightClassType$ be the base type of $type$.
 \item
-If $rightClassType$ is not virtual (\ref{virtualclass}), report error and exit.
+If $rightClassType$ is not polymorphic (\ref{virtualclass}), report error and exit.
 \item
 Otherwise, create a \verb|BoundAsExpression| with $boundExpr$, $exprClassType$ and $rightClassType$, set its type to $type$,
 and push it to the bound expression stack.
@@ -10310,7 +10317,7 @@ Otherwise, if the user has written a call to another constructor of the same cla
 Otherwise, if the class has a base class, the default constructor of the base class is called.
 \end{itemize}
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
+If the class is polymorphic (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 Call of a constructor for each member variable the class has in the member variable declaration order.
 That is: for each member variable:
@@ -10330,7 +10337,7 @@ The following statements are inserted to the beginning of each user written dest
 \item
 Receive statement.
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function table pointer is set to correspond to the class being destroyed.
+If the class is polymorphic (\ref{virtualclass}), the virtual function table pointer is set to correspond to the class being destroyed.
 \end{enumerate}
 The following statements are appended to the end of each user written destructor:
 \begin{enumerate}
@@ -10376,7 +10383,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the default constructor for the base class is called.
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
+If the class is polymorphic (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the default constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10394,7 +10401,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the copy constructor for the base class is called.
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
+If the class is polymorphic (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the copy constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10412,7 +10419,7 @@ Call of a static constructor, if the class has one.
 \item
 If the class has a base class, the move constructor for the base class is called.
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function table pointer is initialized.
+If the class is polymorphic (\ref{virtualclass}), the virtual function table pointer is initialized.
 \item
 For each member variable of the class, the move constructor for the member variable is called in the member variable declaration order.
 \end{enumerate}
@@ -10465,7 +10472,7 @@ Otherwise, the equality comparison function returns \textbf{true}.
 
 \subsection{Synthesized Destructor}
 
-If the user has not written a destructor for a class and that class is virtual (\ref{virtualclass}), has a nontrivial member variable destructor,
+If the user has not written a destructor for a class and that class is polymorphic (\ref{virtualclass}), has a nontrivial member variable destructor,
 or has a base class that has a destructor, the compiler will implement a destructor for that class.
 The compiler generated destructor is called a \emph{synthesized destructor}.
 The synthesized destructor contains following statements:
@@ -10473,7 +10480,7 @@ The synthesized destructor contains following statements:
 \item
 Receive statement (\ref{receives}).
 \item
-If the class is virtual (\ref{virtualclass}), the virtual function pointer is set to correspond this class type.
+If the class is polymorphic (\ref{virtualclass}), the virtual function pointer is set to correspond this class type.
 \item
 For each member variable in reverse member variable declaration order, the destructor for the member variable is called,
 if the member variable has a nontrivial destructor.
@@ -10514,6 +10521,10 @@ Search $key$ from the function template repository. Let $functionTemplateInstanc
 \item
 If $functionTemplateInstance$ is not null, return $functionTemplateInstance$.
 \item
+Get the function node that represents the AST node for the primary function template from the symbol table. Let $functionNode$ be the function node found.
+\item
+If $functionNode$ is null, read the function node from the library file and set it as the value of $functionNode$.
+\item
 Let $currentNs$ be null.
 \item
 Let $globalNs$ be an AST node created using algorithm \ref{creatingns} with the following inputs:
@@ -10526,7 +10537,7 @@ using nodes contained by the primary function template,
 $currentNs$.
 \end{itemize}
 \item
-Create an AST node that is a copy of the primary function template using algorithm \ref{createfunctioninstance}. Let $functionInstance$ be the resulting AST node.
+Clone $functionNode$ without template parameter symbols. Let $functionInstance$ be the resulting AST node.
 \item
 Add $functionInstance$ to $currentNs$.
 \item
@@ -10611,42 +10622,6 @@ For each using node:
 \item
 Add a clone of the using node to $currentNs$.
 \end{enumerate}
-\end{enumerate}
-\end{algo}
-
-\subsection{Creating an AST Node for a Function Instance}
-
-\begin{algo}\label{createfunctioninstance} Creating Function Instance Node. Inputs: a primary function template symbol.
-\begin{enumerate}
-\item
-Let $functionInstanceNode$ be null.
-\item
-Let $body$ be null.
-\item
-Get AST node that corresponds the given primary function template from the symbol table. Let $functionTemplateNode$ be the AST node found.
-\item
-If $functionTemplateNode$ is not null, the function template belongs to the current project being compiled. In this case:
-\begin{enumerate}
-\item
-Create a new function AST node and set $functionInstanceNode$ to the created function node.
-\item
-Clone the return type expression node and the parameter nodes from\\
-the $functionTemplateNode$ and set them to $functionInstanceNode$.
-\item
-Set $body$ to the body of the $functionTemplateNode$.
-\end{enumerate}
-\item
-Otherwise,
-\begin{enumerate}
-\item
-Create a new function AST node, and set $functionInstanceNode$ to the created function node.
-\item
-Clone the return type expression node and the parameter nodes from the primary function template.
-\item
-Read the body of the function template from the library file that the primary function template belongs to and set it to $body$.
-\end{enumerate}
-\item
-Clone $body$ and set the body of the $functionInstanceNode$ to cloned $body$.
 \end{enumerate}
 \end{algo}
 
@@ -10746,7 +10721,7 @@ This visits the AST of the class template specialization and binds the types and
 \item
 If $classNode$ has a constraint, check that constraint.
 \item
-If the class template specialization is a virtual class, generate the vtable and itables for it.
+If the class template specialization is a polymorphic class, generate the vtable and itables for it.
 \item
 Create a main binder and call the \verb|Accept| member function of $globalNs$ with the main binder.
 This visits the AST of the class template specialization and ands the bound version of it to the currently bound compile unit.
@@ -10874,7 +10849,315 @@ Add $templateArgument$ to the end of template argument symbols.
 \end{enumerate}
 \end{algo}
 
-\chapter{Emitter}
+\chapter{Emitters}
+
+The compiler has two intermediate code emitters: the LLVM emitter and the C emitter.
+It generates LLVM or C intermediate code depending on whether the option \verb|-backend=llvm| (default) or \verb|-backend=c| is given to it.
+The intermediate code is feeded to \verb|llc| or \verb|gcc| to generate object code from LLVM or C code respectively.
+Both emitters walk through the bound tree representation of functions using visitor pattern and generate intermediate instructions along the way.
+This document focuses on the implementation of the LLVM generator. The C generator is analogical.
+
+\section{IR Objects}
+
+The intermediate representation objects that the generator operates on are:
+
+\begin{description}
+\item[Object]
+Base class of object types.
+\item[Constant]
+Represents a compile time constant.
+\item[Global]
+Represents a static member variable, for example.
+\item[LabelObject]
+Represents a label to jump to.
+\item[MemberVar]
+Represents a nonstatic member variable.
+\item[Parameter]
+Represents a parameter of a function.
+\item[RefVar]
+Represents a reference variable of a basic type.
+\item[RegVar]
+Represents a temporary register variable of a basic type.
+\item[StackVar]
+Represents a local variable.
+\end{description}
+The objecst support two basic operations: \verb|Init| and \verb|Assign|.
+The operations are implemented as double dispatching operations.
+The \verb|Init| operation is implementated as:
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+void Init(Emitter& emitter, Type* type, Object* from, Object* to)
+{
+    from->InitTo(emitter, type, to);
+}
+\end{lstlisting}
+And the \verb|Assign| operation is implementated as:
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+void Assign(Emitter& emitter, Type* type, Object* from, Object* to)
+{
+    from->AssignTo(emitter, type, to);
+}
+\end{lstlisting}
+The \verb|Object| class declares an interface for these operations:
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+virtual void InitTo(Emitter& emitter, Type* type, Object* to) = 0;
+virtual void InitFrom(Emitter& emitter, Type* type, Constant* constant) = 0;
+virtual void InitFrom(Emitter& emitter, Type* type, Global* global) = 0;
+// ...
+virtual void AssignTo(Emitter& emitter, Type* type, Object* to= 0;
+virtual void AssignFrom(Emitter& emitter, Type* type, Constant* constant) = 0;
+virtual void AssignFrom(Emitter& emitter, Type* type, Global* global) = 0;
+// ...
+\end{lstlisting}
+And then the \verb|RegVar|, for example, implements it:
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+void RegVar::InitTo(Emitter& emitter, Type* type, Object* to)
+{
+    to->InitFrom(emitter, type, this);
+}
+void RegVar::InitFrom(Emitter& emitter, Type* type, Constant* constant)
+{
+    // ...
+}
+void RegVar::InitFrom(Emitter& emitter, Type* type, Global* global)
+{
+    // ...
+}
+// ...
+\end{lstlisting}
+
+\section{Types}
+
+Every intermediate object has a type.
+In addition each type symbol derived from the \verb|TypeSymbol| class (see section \ref{typesymbolhierarchy}) contains an \emph{irType},
+an intermediate representation of the type.
+The types are:
+\begin{description}
+\item[Type]
+A base class for types.
+\item[VoidType]
+Represents lack of return type in functions, and a base type for generic pointers.
+\item[LabelType]
+Represents a type for \verb|LabelObject|s.
+\item[IntegerType]
+Represents a base type for integer and Boolean types.
+\item[I1Type]
+Represents a Boolean type. Derives from the \verb|IntegerType|.
+\item[I8Type]
+Represents 8-bit integer type. Derives from the \verb|IntegerType|.
+\item[I16Type]
+Represents 16-bit integer type. Derives from the \verb|IntegerType|.
+\item[I32Type]
+Represents 32-bit integer type. Derives from the \verb|IntegerType|.
+\item[I64Type]
+Represents 64-bit integer type. Derives from the \verb|IntegerType|.
+\item[I64Type]
+Represents 64-bit integer type. Derives from the \verb|IntegerType|.
+\item[FloatingPoinType]
+Represents a base type for floating point types.
+\item[FloatType]
+Represents a 32-bit floating point type. Derives from the \verb|FloatingPoinType|.
+\item[DoubleType]
+Represents a 64-bit floating point type. Derives from the \verb|FloatingPoinType|.
+\item[ArrayType]
+Represents an array type. Contains an item type.
+\item[StringType]
+Represents a string type. Derives from the \verb|ArrayType|.
+\item[StructureType]
+Represents a structured type. Contains a list of element types.
+\item[PointerType]
+Represents a pointer type. Contains a pointed-to type.
+\item[RvalueRefType]
+Represents an rvalue reference type. Contains a referred-to type.
+\item[FunctionType]
+Represents a function type. Contains a return type and parameter types.
+\end{description}
+
+\section{Instructions}
+
+The compiler implements a subset of all possible LLVM instructions.
+The instructions implemented are:
+
+\begin{description}
+\item[Instruction]
+Represents an LLVM intermediate instruction. Is the abstract base class for concrete LLVM instructions.
+\item[BinOpInstruction]
+Represents a binary operator instruction.
+Has a \verb|Type|, and a result, operand1 and operand2 \verb|Object|s.
+\item[IntegerBinOpInstruction]
+Represents a binary operator instruction with integer type operands.
+\item[AddInst]
+Represents \verb|add| instruction. Derives from the \verb|IntegerBinOpInstruction|.
+\item[SubInst]
+Represents \verb|sub| instruction. Derives from the \verb|IntegerBinOpInstruction|.
+\item[MulInst]
+Represents \verb|mul| instruction. Derives from the \verb|IntegerBinOpInstruction|.
+\item[UDivInst]
+Represents \verb|udiv| instruction, unsigned integer division.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[SDivInst]
+Represents \verb|sdiv| instruction, signed integer division.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[URemInst]
+Represents \verb|urem| instruction, unsigned integer remainder.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[SRemInst]
+Represents \verb|urem| instruction, signed integer remainder.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[ShlInst]
+Represents \verb|shl| instruction, shift left. Derives from the \verb|IntegerBinOpInstruction|.
+\item[LShrInst]
+Represents \verb|lshr| instruction, shift right logically.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[AShrInst]
+Represents \verb|ashr| instruction, shift right arithmetically.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[AndInst]
+Represents \verb|and| instruction, bitwise and.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[OrInst]
+Represents \verb|or| instruction, bitwise or.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[XOrInst]
+Represents \verb|xor| instruction, bitwise xor.\\Derives from the \verb|IntegerBinOpInstruction|.
+\item[FloatingPointBinOpInstruction]
+Represents a binary operator instruction with floating point type operands.
+\item[FAddInst]
+Represents \verb|fadd| instruction, floating point addition.\\Derives from the \verb|FloatingPointBinOpInstruction|.
+\item[FSubInst]
+Represents \verb|fsub| instruction, floating point difference.\\Derives from the \verb|FloatingPointBinOpInstruction|.
+\item[FMulInst]
+Represents \verb|fmul| instruction, floating point multiplication.\\Derives from the \verb|FloatingPointBinOpInstruction|.
+\item[FDivInst]
+Represents \verb|fdiv| instruction, floating point division.\\Derives from the \verb|FloatingPointBinOpInstruction|.
+\item[FRemInst]
+Represents \verb|frem| instruction, floating point remainder.\\Derives from the \verb|FloatingPointBinOpInstruction|.
+\item[RetInst]
+Represents \verb|ret| instruction, a return from a function, may contain a value \verb|Object|.
+\item[BrInst]
+Represents \verb|br| instruction, a conditional or unconditional branch to a label.
+Contains a destination \verb|LabelObject|, if represents an unconditional branch.
+Contains a condition \verb|Object|, a true target and a false target \verb|LabelObject|, if represents a conditional branch.
+\item[SwitchInst]
+Repsents \verb|switch| instruction.
+Contains a \verb|Type|, a value based on witch to branch, default destinations and other destinations.
+\item[AllocaInst]
+Represents \verb|alloca| instruction that allocates memory from the stack frame for a local variable.
+\item[LoadInst]
+Represents \verb|load| instruction that loads the value of an object to a register.
+\item[StoreInst]
+Represents \verb|store| instruction that stores a value from a register to an object.
+\item[GetElementPtrInst]
+Represents \verb|getelementptr| instruction that computes an address of an object pointed by a pointer, or contained by structures or arrays.
+\item[CallInst]
+Represents a \verb|call| instruction that calls a function with supplied arguments.
+\item[IndirectCallInst]
+Represents a \verb|call| instruction that calls a function through a function pointer with supplied arguments.
+\item[ICmpInst]
+Represents \verb|icmp| instruction that compares two integer or pointer operands with a condition code.
+\item[FCmpInst]
+Represents \verb|fcmp| instruction that compares two floating point operands wit a condition code.
+\item[ConversionInstruction]
+Represents a base class for conversion instructions.
+\item[TruncInst]
+Represents \verb|trunc| instruction that truncates an integer value.
+\item[ZextInst]
+Represents \verb|zext| instruction that zero extends an integer value.
+\item[SextInst]
+Represents \verb|sext| instruction that sign extends an integer value.
+\item[FptruncInst]
+Represents \verb|fptrunc| instruction that truncates a floating point value.
+\item[FptouiInst]
+Represents \verb|fptoui| instruction that converts a floating point value to a unsigned integer value.
+\item[FptouiInst]
+Represents \verb|fptosi| instruction that converts a floating point value to a signed integer value.
+\item[UitofpInst]
+Represents \verb|uitofp| instruction that converts an unsigned integer value to a floating point value.
+\item[SitofpInst]
+Represents \verb|sitofp| instruction that converts a signed integer value to a floating point value.
+\item[PtrtointInst]
+Represents \verb|ptrtoint| instruction that converts a pointer value to an integer value.
+\item[InttoptrInst]
+Represents \verb|inttoptr| instruction that converts an integer value to a pointer value.
+\item[BitcastInst]
+Represents \verb|bitcast| instruction that changes the type of a value without converting the bits of a value.
+\end{description}
+
+\section{Emitter}
+
+The emitter class stores LLVM instructions of a function, processes them and writes them in text to an .ll file when requested.
+The processing consists of removing unused labels and unnecessary jumps, for example.
+
+\section{Implementation of Basic Type Operations}
+
+Section \ref{basictypeoperations} shows the basic type symbols and the function symbols that represent operations for each basic type.
+Instructions for the operations for basic types are generated inline by calling the \verb|Generate| member function of the operation.
+The following listing sketches the implementation of some of the constructors:
+
+\begin{flushleft}
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+class BasicTypeOp
+{
+public:
+    BasicTypeOp(TypeSymbol* type_) : type(type_) {}
+    TypeSymbol* Type() const { return type; }
+    virtual void Generate(Emitter& emitter, GenResult& result) = 0;
+    Ir::Intf::Type* GetIrType() const { return type->GetIrType(); }
+    Ir::Intf::Object* GetDefaultIrValue() const { return type->GetDefaultIrValue(); }
+private:
+    TypeSymbol* type;
+};
+
+class DefaultCtor : public BasicTypeOp
+{
+public:
+    void Generate(Emitter& emitter, GenResult& result) override
+    {
+        Init(emitter, GetIrType(), GetDefaultIrValue(), result.MainObject());
+    }
+};
+
+class CopyCtor : public BasicTypeOp
+{
+public:
+    void Generate(Emitter& emitter, GenResult& result) override
+    {
+        Init(emitter, GetIrType(), result.Arg1(), result.MainObject());
+    }
+};
+
+// ...
+\end{lstlisting}
+
+\clearpage
+The following listing sketches the implementation of the binary operator functions:
+\lstset{language=C++}
+\begin{lstlisting}[frame=trBL]
+class BinOp : public BasicTypeOp
+{
+public:
+    void Generate(Emitter& emitter, GenResult& result) override
+    {
+       emitter.Emit(CreateInstruction(GetIrType(), result.MainObject(), result.Arg1(), result.Arg2()));
+    }
+    virtual Ir::Intf::Instruction* CreateInstruction(Type* irType, Object* result, Object* operand1, Object* operand2) const = 0;
+};
+
+class OpAdd : public BinOp
+{
+public:
+    Ir::Intf::Instruction* CreateInstruction(Type* irType, Object* result, Object* operand1, Object* operand2) const override
+    {
+        if (Type()->IsFloatingPointTypeSymbol())
+        {
+            return FAdd(irType, result, operand1, operand2);
+        }
+        else
+        {
+            return Add(irType, result, operand1, operand2);
+        }
+    }
+};
+
+// ...
+\end{lstlisting}
+\end{flushleft}
 
 \clearpage
 \begin{thebibliography}{4}

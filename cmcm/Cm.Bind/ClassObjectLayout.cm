@@ -14,7 +14,7 @@ using Span = System.Text.Parsing.Span;
 namespace Cm.Bind
 {
     internal void GenerateClassInitStatement(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
+        Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.ConstructorNode* constructorNode, bool& callToThisInitializerGenerated)
     {
         callToThisInitializerGenerated = false;
         if (classType->StaticConstructor() != null)
@@ -27,7 +27,7 @@ namespace Cm.Bind
             ++classObjectLayoutFunIndex;
             currentFunction->SetClassObjectLayoutFunIndex(classObjectLayoutFunIndex);
         }
-        ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
+        ClassInitializerHandler classInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, binder, classType);
         const Cm.Ast.NodeList<Cm.Ast.InitializerNode>& initializers = constructorNode->Initializers();
         for (const UniquePtr<Cm.Ast.InitializerNode>& initializerNode : initializers)
         {
@@ -50,8 +50,8 @@ namespace Cm.Bind
     internal class ClassInitializerHandler : ExpressionBinder
     {
         public nothrow ClassInitializerHandler(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.Sym.ClassTypeSymbol* classType_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_), 
-            baseInitializer(null), thisInitializer(null)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.Sym.ClassTypeSymbol* classType_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), classType(classType_), baseInitializer(null), thisInitializer(null)
         {
         }
         public nothrow inline Cm.Ast.BaseInitializerNode* BaseInitializer() const
@@ -214,9 +214,9 @@ namespace Cm.Bind
     }
     
     internal void GenerateMemberVariableInitStatements(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.ConstructorNode* constructorNode)
+        Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.ConstructorNode* constructorNode)
     {
-        MemberVariableInitializerHandler memberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
+        MemberVariableInitializerHandler memberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, binder, classType);
         const Cm.Ast.NodeList<Cm.Ast.InitializerNode>& initializers = constructorNode->Initializers();
         for (const UniquePtr<Cm.Ast.InitializerNode>& initializerNode : initializers)
         {
@@ -228,7 +228,8 @@ namespace Cm.Bind
     internal class MemberVariableInitializerHandler : ExpressionBinder
     {
         public MemberVariableInitializerHandler(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.Sym.ClassTypeSymbol* classType_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.Sym.ClassTypeSymbol* classType_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), classType(classType_)
         {
             int n = classType->MemberVariables().Count();
             initializationStatements.Resize(n);
@@ -353,7 +354,7 @@ namespace Cm.Bind
     }
     
     internal void GenerateMemberVariableDestructionStatements(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.DestructorNode* destructorNode)
+        Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.DestructorNode* destructorNode)
     {
         int n = classType->MemberVariables().Count();
         for (int i = n - 1; i >= 0; --i)
@@ -380,7 +381,7 @@ namespace Cm.Bind
     }
     
     internal void GenerateBaseClassDestructionStatement(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
-        Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.DestructorNode* destructorNode)
+        Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.DestructorNode* destructorNode)
     {
         if (classType->BaseClass() == null) return;
         Cm.Sym.ClassTypeSymbol* baseClass = classType->BaseClass();
@@ -402,14 +403,14 @@ namespace Cm.Bind
     }
     
     internal void GenerateStaticInitStatement(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
-        Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.StaticConstructorNode* staticConstructorNode)
+        Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, Cm.Ast.StaticConstructorNode* staticConstructorNode)
     {
         GenerateStaticCheckInitializedStatement(boundCompileUnit, containerScope, currentFunction, classType, staticConstructorNode);
         if (classType->BaseClass() != null && classType->BaseClass()->StaticConstructor() != null)
         {
             GenerateStaticBaseClassInitStatement(currentFunction, classType, staticConstructorNode);
         }
-        StaticMemberVariableInitializerHandler staticMemberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, classType);
+        StaticMemberVariableInitializerHandler staticMemberVariableInitializerHandler(boundCompileUnit, containerScope, fileScopes, currentFunction, binder, classType);
         const Cm.Ast.NodeList<Cm.Ast.InitializerNode>& initializers = staticConstructorNode->Initializers();
         for (const UniquePtr<Cm.Ast.InitializerNode>& initializerNode : initializers)
         {
@@ -539,7 +540,8 @@ namespace Cm.Bind
     internal class StaticMemberVariableInitializerHandler : ExpressionBinder
     {
         public StaticMemberVariableInitializerHandler(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.Sym.ClassTypeSymbol* classType_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), classType(classType_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.Sym.ClassTypeSymbol* classType_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), classType(classType_)
         {
             int n = classType->StaticMemberVariables().Count();
             initializationStatements.Resize(n);
@@ -673,7 +675,7 @@ namespace Cm.Bind
         private HashMap<string, int> staticMemberVariableNameIndexMap;
     }
     
-    internal void GenerateStaticConstructorCall(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.BoundTree.BoundFunction* currentFunction, Cm.Sym.ClassTypeSymbol* classType, 
+    internal void GenerateStaticConstructorCall(Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.BoundTree.BoundFunction* currentFunction, Binder* binder, Cm.Sym.ClassTypeSymbol* classType, 
         Cm.Ast.MemberFunctionNode* memberFunctionNode)
     {
         Cm.BoundTree.BoundExpressionList arguments;

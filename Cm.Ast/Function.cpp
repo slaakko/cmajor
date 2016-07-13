@@ -88,9 +88,12 @@ void FunctionNode::SetBody(CompoundStatementNode* body_)
 Node* FunctionNode::Clone(CloneContext& cloneContext) const
 {
     FunctionNode* clone = new FunctionNode(GetSpan(), specifiers, returnTypeExpr->Clone(cloneContext), static_cast<FunctionGroupIdNode*>(groupId->Clone(cloneContext)));
-    for (const std::unique_ptr<TemplateParameterNode>& templateParameter : templateParameters)
+    if (!cloneContext.InstantiateFunctionNode())
     {
-        clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
+        for (const std::unique_ptr<TemplateParameterNode>& templateParameter : templateParameters)
+        {
+            clone->AddTemplateParameter(static_cast<TemplateParameterNode*>(templateParameter->Clone(cloneContext)));
+        }
     }
     for (const std::unique_ptr<ParameterNode>& parameter : parameters)
     {

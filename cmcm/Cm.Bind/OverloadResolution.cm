@@ -166,6 +166,7 @@ namespace Cm.Bind
                 }
             }
         }
+        List<UniquePtr<Cm.BoundTree.BoundConstraint>> boundConstraints;
         List<FunctionMatch> functionMatches;
         Cm.Sym.FunctionSymbol* convertingCtor = null;
         bool mustCast = false;
@@ -201,25 +202,36 @@ namespace Cm.Bind
                         {
                             Cm.Ast.FunctionNode* functionNode = cast<Cm.Ast.FunctionNode*>(node);
                             constraintNode = functionNode->Constraint();
+                            if (constraintNode != null)
+                            {
+                                if (!viableFunction->HasConstraint())
+                                {
+                                    Cm.Ast.CloneContext cloneContext;
+                                    viableFunction->SetConstraint(cast<Cm.Ast.WhereConstraintNode*>(constraintNode->Clone(cloneContext)));
+                                }
+                            }
                         }
                         else
                         {
                             throw Exception("function node expected");
                         }                    
                     }
-                    else
+                    else if (viableFunction->HasConstraint())
                     {
-                        constraintNode = viableFunction->Constraint();
+                        constraintNode = viableFunction->GetConstraint();
                     }
                 }
                 if (candidateFound && constraintNode != null)
                 {
                     Cm.Core.ConceptCheckError conceptCheckError;
+                    UniquePtr<Cm.BoundTree.BoundConstraint> boundConstraint;
                     candidateFound = CheckConstraint(containerScope, boundCompileUnit, viableFunction->GetFileScope(containerScope), constraintNode, viableFunction->TypeParameters(), 
-                        functionMatch.TemplateArguments(), conceptCheckError);
+                        functionMatch.TemplateArguments(), conceptCheckError, boundConstraint);
                     if (candidateFound)
                     {
                         functionMatch.SetConstraint(constraintNode);
+                        functionMatch.SetBoundConstraint(boundConstraint.GetPtr());
+                        boundConstraints.Add(Rvalue(boundConstraint));
                     }
                     else
                     {
@@ -289,8 +301,7 @@ namespace Cm.Bind
             bestMatch = Rvalue(bm);
             if (functionMatches.Count() > 1)
             {
-                List<UniquePtr<Cm.BoundTree.BoundConstraint>> boundConstraints;
-                BetterFunctionMatch betterFunctionMatch(&boundConstraints);
+                BetterFunctionMatch betterFunctionMatch;
                 Sort(functionMatches.Begin(), functionMatches.End(), betterFunctionMatch);
                 if (betterFunctionMatch(functionMatches[0], functionMatches[1]))
                 {
@@ -310,7 +321,7 @@ namespace Cm.Bind
                     for (int i = 1; i < n; ++i)
                     {
                         FunctionMatch match = Rvalue(functionMatches[i]);
-                        if (!betterFunctionMatch(equalMatch, match))
+                        if (!betterFunctionMatch(equalMatches[0], match))
                         {
                             equalMatches.Add(Rvalue(match));
                         }
@@ -324,9 +335,13 @@ namespace Cm.Bind
                         }
                         else
                         {
-                            matchedFunctionNames.Append(" or ");
+                            matchedFunctionNames.Append(", or ");
                         }
                         matchedFunctionNames.Append(match.Function()->FullName());
+                        if (match.Function()->HasConstraint())
+                        {
+                            matchedFunctionNames.Append(' ').Append(match.Function()->GetConstraint()->ToString());
+                        }
                         references.Add(match.Function()->GetSpan());
                     }
                     if (GetFlag(OverloadResolutionFlags.nothrow_, flags))
@@ -604,9 +619,6 @@ namespace Cm.Bind
     
     public class BetterFunctionMatch : Rel<FunctionMatch>
     {
-        public nothrow BetterFunctionMatch(List<UniquePtr<Cm.BoundTree.BoundConstraint>>* boundConstraints_) : boundConstraints(boundConstraints_)
-        {
-        }
         public nothrow bool operator()(const FunctionMatch& left, const FunctionMatch& right) const
         {
             int leftBetterArgumentMatches = 0;
@@ -695,27 +707,13 @@ namespace Cm.Bind
                 {
                     if (left.Constraint() != null && right.Constraint() != null)
                     {
-                        if (left.BoundConstraint() == null)
-                        {
-                            Cm.BoundTree.BoundConstraint* boundConstraint = BindConstraint(left.Function()->TypeParameters(), left.TemplateArguments(), left.ContainerScope(), *left.BoundCompileUnit(), 
-                                left.Function()->GetFileScope(left.ContainerScope()), left.Constraint());
-                            left.SetBoundConstraint(boundConstraint);
-                            AddBoundConstraint(boundConstraint);
-                        }
-                        if (right.BoundConstraint() == null)
-                        {
-                            Cm.BoundTree.BoundConstraint* boundConstraint = BindConstraint(right.Function()->TypeParameters(), right.TemplateArguments(), right.ContainerScope(), *right.BoundCompileUnit(), 
-                                right.Function()->GetFileScope(right.ContainerScope()), right.Constraint());
-                            right.SetBoundConstraint(boundConstraint);
-                            AddBoundConstraint(boundConstraint);
-                        }
-                        bool leftImplyRight = left.BoundConstraint()->Imply(right.BoundConstraint());
-                        bool rightImplyLeft = right.BoundConstraint()->Imply(left.BoundConstraint());
-                        if (leftImplyRight && !rightImplyLeft)
+                        bool leftSubsumeRight = left.BoundConstraint()->Subsume(right.BoundConstraint());
+                        bool rightSubsumeLeft = right.BoundConstraint()->Subsume(left.BoundConstraint());
+                        if (leftSubsumeRight && !rightSubsumeLeft )
                         {
                             return true;
                         }
-                        else if (rightImplyLeft && !leftImplyRight)
+                        else if (rightSubsumeLeft && !leftSubsumeRight )
                         {
                             return false;
                         }
@@ -736,11 +734,6 @@ namespace Cm.Bind
             }
             return false;
         }
-        private void AddBoundConstraint(Cm.BoundTree.BoundConstraint* boundConstraint)
-        {
-            boundConstraints->Add(UniquePtr<Cm.BoundTree.BoundConstraint>(boundConstraint));
-        }
-        private List<UniquePtr<Cm.BoundTree.BoundConstraint>>* boundConstraints;
     }
         
     internal nothrow string MakeOverloadName(const string& groupName, const List<Cm.Core.Argument>& arguments)
@@ -807,8 +800,8 @@ namespace Cm.Bind
             Cm.Sym.ParameterSymbol* parameterSymbol = parameters[i];
             Cm.Ast.ParameterNode* parameterNode = cast<Cm.Ast.ParameterNode*>(boundCompileUnit.SymbolTable().GetNode(parameterSymbol));
             Cm.Ast.Node* parameterTypeExpr = parameterNode->TypeExpr();
-            Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), parameterTypeExpr, 
-                TypeResolverFlags.dontThrow);
+            Cm.Sym.TypeSymbol* parameterType = ResolveType(boundCompileUnit.SymbolTable(), &deductionScope, boundCompileUnit.FileScopes(), boundCompileUnit.ClassTemplateRepository(), boundCompileUnit, 
+                parameterTypeExpr, TypeResolverFlags.dontThrow);
             if (parameterType == null)
             {
                 return false;
@@ -1024,7 +1017,7 @@ namespace Cm.Bind
         {
             argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
             conversion = derivedBaseConversion;
-            numConversions = numConversions + 1;
+            ++numConversions;
             return true;
         }
         if (conversionType == Cm.Sym.ConversionType.explicit_)
@@ -1036,7 +1029,7 @@ namespace Cm.Bind
             {
                 argumentMatch = ArgumentMatch(Cm.Sym.ConversionRank.conversion, distance, parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
                 conversion = baseDerivedConversion;
-                numConversions = numConversions + 1;
+                ++numConversions;
                 return true;
             }
         }
@@ -1101,7 +1094,7 @@ namespace Cm.Bind
             {
                 argumentMatch = ArgumentMatch(otherConversion->GetConversionRank(), otherConversion->GetConversionDistance(), parameterType->GetDerivationCounts(), argumentType->GetDerivationCounts());
                 conversion = otherConversion;
-                numConversions = numConversions + 1;
+                ++numConversions;
                 return true;
             }
         }

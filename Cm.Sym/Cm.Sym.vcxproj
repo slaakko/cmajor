@@ -46,6 +46,7 @@
     <ClInclude Include="InterfaceTypeSymbol.hpp" />
     <ClInclude Include="LocalVariableSymbol.hpp" />
     <ClInclude Include="MemberVariableSymbol.hpp" />
+    <ClInclude Include="Meta.hpp" />
     <ClInclude Include="Module.hpp" />
     <ClInclude Include="MutexTable.hpp" />
     <ClInclude Include="NameMangling.hpp" />
@@ -96,6 +97,7 @@
     <ClCompile Include="InterfaceTypeSymbol.cpp" />
     <ClCompile Include="LocalVariableSymbol.cpp" />
     <ClCompile Include="MemberVariableSymbol.cpp" />
+    <ClCompile Include="Meta.cpp" />
     <ClCompile Include="Module.cpp" />
     <ClCompile Include="MutexTable.cpp" />
     <ClCompile Include="NameMangling.cpp" />

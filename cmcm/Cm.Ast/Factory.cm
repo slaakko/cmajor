@@ -157,6 +157,7 @@ namespace Cm.Ast
             Register(NodeType.disjunctiveConstraintNode, new Creator<DisjunctiveConstraintNode>());
             Register(NodeType.conjunctiveConstraintNode, new Creator<ConjunctiveConstraintNode>());
             Register(NodeType.whereConstraintNode, new Creator<WhereConstraintNode>());
+            Register(NodeType.predicateConstraintNode, new Creator<PredicateConstraintNode>());
             Register(NodeType.isConstraintNode, new Creator<IsConstraintNode>());
             Register(NodeType.multiParamConstraintNode,  new Creator<MultiParamConstraintNode>());
             Register(NodeType.typeNameConstraintNode, new Creator<TypeNameConstraintNode>());

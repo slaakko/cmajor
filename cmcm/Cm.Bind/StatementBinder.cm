@@ -77,7 +77,7 @@ namespace Cm.Bind
     public abstract class StatementBinder : ExpressionBinder
     {
         public nothrow StatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), result(null)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), result(null)
         {
         }
         public nothrow inline void SetResult(Cm.BoundTree.BoundStatement* result_) 
@@ -94,13 +94,14 @@ namespace Cm.Bind
     public class ConstructionStatementBinder : StatementBinder
     {
         public nothrow ConstructionStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), constructionStatement(null)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), constructionStatement(null)
         {
         }
         public override void BeginVisit(Cm.Ast.ConstructionStatementNode& constructionStatementNode)
         {
             constructionStatement = new Cm.BoundTree.BoundConstructionStatement(&constructionStatementNode);
-            Cm.Sym.LocalVariableSymbol* localVariable = BindLocalVariable(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), &constructionStatementNode);
+            Cm.Sym.LocalVariableSymbol* localVariable = BindLocalVariable(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(),
+                BoundCompileUnit(), &constructionStatementNode);
             constructionStatement->SetLocalVariable(localVariable);
             CurrentFunction()->AddLocalVariable(localVariable);
         }
@@ -191,7 +192,7 @@ namespace Cm.Bind
     public class AssignmentStatementBinder : StatementBinder
     {
         public nothrow AssignmentStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void EndVisit(Cm.Ast.AssignmentStatementNode& assignmentStatementNode)
@@ -305,7 +306,7 @@ namespace Cm.Bind
     public class SimpleStatementBinder : StatementBinder
     {
         public nothrow SimpleStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void EndVisit(Cm.Ast.SimpleStatementNode& simpleStatementNode)
@@ -432,7 +433,7 @@ namespace Cm.Bind
     public class ReturnStatementBinder : StatementBinder
     {
         public nothrow ReturnStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void EndVisit(Cm.Ast.ReturnStatementNode& returnStatementNode)
@@ -442,7 +443,7 @@ namespace Cm.Bind
             Cm.Ast.Node* returnTypeExpr = functionNode->ReturnTypeExpr();
             if (returnTypeExpr != null)
             {
-                Cm.Sym.TypeSymbol* returnType = ResolveType(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), returnTypeExpr);
+                Cm.Sym.TypeSymbol* returnType = ResolveType(BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), BoundCompileUnit(), returnTypeExpr);
                 if (!(returnType is Cm.Sym.VoidTypeSymbol*))
                 {
                     if (returnStatementNode.ReturnsValue())
@@ -573,8 +574,8 @@ namespace Cm.Bind
     public class ConditionalStatementBinder : StatementBinder
     {
         public ConditionalStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundConditionalStatement* conditionalStatement_) : 
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), conditionalStatement(conditionalStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundConditionalStatement* conditionalStatement_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), conditionalStatement(conditionalStatement_)
         {
             PushSkipContent(true);
         }
@@ -596,8 +597,8 @@ namespace Cm.Bind
     public class WhileStatementBinder : StatementBinder
     {
         public WhileStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundWhileStatement* whileStatement_) : 
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), whileStatement(whileStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundWhileStatement* whileStatement_) : 
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), whileStatement(whileStatement_)
         {
             PushSkipContent(true);
         }
@@ -619,8 +620,8 @@ namespace Cm.Bind
     public class DoStatementBinder : StatementBinder
     {
         public DoStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundDoStatement* doStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), doStatement(doStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundDoStatement* doStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), doStatement(doStatement_)
         {
             PushSkipContent(true);
         }
@@ -642,8 +643,8 @@ namespace Cm.Bind
     public class ForStatementBinder : StatementBinder
     {
         public ForStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundForStatement* forStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), forStatement(forStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundForStatement* forStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), forStatement(forStatement_)
         {
             PushSkipContent(true);
         }
@@ -676,7 +677,7 @@ namespace Cm.Bind
     {
         public RangeForStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
             Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void EndVisit(Cm.Ast.RangeForStatementNode& rangeForStatementNode)
@@ -746,8 +747,8 @@ namespace Cm.Bind
     public class SwitchStatementBinder : StatementBinder
     {
         public nothrow SwitchStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), switchStatement(switchStatement_)
         {
         }
         public override void BeginVisit(Cm.Ast.SwitchStatementNode& switchStatementNode)
@@ -804,8 +805,8 @@ namespace Cm.Bind
     public class CaseStatementBinder : StatementBinder
     {
         public CaseStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundCaseStatement* caseStatement_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), caseStatement(caseStatement_), switchStatement(switchStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundCaseStatement* caseStatement_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), caseStatement(caseStatement_), switchStatement(switchStatement_)
         {
             PushSkipContent(true);
         }
@@ -821,8 +822,8 @@ namespace Cm.Bind
                     condType = enumTypeSymbol->GetUnderlyingType();
                 }
                 Cm.Sym.SymbolType symbolType = condType->GetSymbolType();
-                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
-                Cm.Sym.Value* value = Evaluate(valueType, false, expr.GetPtr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
+                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
+                Cm.Sym.Value* value = Evaluate(valueType, false, expr.GetPtr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(), BoundCompileUnit());
                 caseStatement->AddValue(value);
             }
             for (const UniquePtr<Cm.Ast.StatementNode>& statement : caseStatementNode.Statements())
@@ -838,8 +839,8 @@ namespace Cm.Bind
     public class DefaultStatementBinder : StatementBinder
     {
         public DefaultStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundDefaultStatement* defaultStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), defaultStatement(defaultStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundDefaultStatement* defaultStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), defaultStatement(defaultStatement_)
         {
         }
         public override void EndVisit(Cm.Ast.DefaultStatementNode& defaultStatementNode)
@@ -856,7 +857,7 @@ namespace Cm.Bind
     public class BreakStatementBinder : StatementBinder
     {
         public nothrow BreakStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void Visit(Cm.Ast.BreakStatementNode& breakStatementNode)
@@ -878,7 +879,7 @@ namespace Cm.Bind
     public class ContinueStatementBinder : StatementBinder
     {
         public nothrow ContinueStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void Visit(Cm.Ast.ContinueStatementNode& continueStatementNode)
@@ -900,8 +901,8 @@ namespace Cm.Bind
     public class GotoCaseStatementBinder : StatementBinder
     {
         public nothrow GotoCaseStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), switchStatement(switchStatement_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_, Cm.BoundTree.BoundSwitchStatement* switchStatement_) :
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), switchStatement(switchStatement_)
         {
         }
         public override void EndVisit(Cm.Ast.GotoCaseStatementNode& gotoCaseStatementNode)
@@ -922,8 +923,9 @@ namespace Cm.Bind
                 condType = enumTypeSymbol->GetUnderlyingType();
             }
             Cm.Sym.SymbolType symbolType = condType->GetSymbolType();
-            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
-            Cm.Sym.Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository());
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
+            Cm.Sym.Value* value = Evaluate(valueType, false, gotoCaseStatementNode.TargetCaseExpr(), BoundCompileUnit().SymbolTable(), ContainerScope(), FileScopes(), BoundCompileUnit().ClassTemplateRepository(),
+                BoundCompileUnit());
             Cm.BoundTree.BoundGotoCaseStatement* boundGotoCaseStatement = new Cm.BoundTree.BoundGotoCaseStatement(&gotoCaseStatementNode);
             boundGotoCaseStatement->SetValue(value);
             SetResult(boundGotoCaseStatement);
@@ -934,7 +936,7 @@ namespace Cm.Bind
     public class GotoDefaultStatementBinder : StatementBinder
     {
         public nothrow GotoDefaultStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void Visit(Cm.Ast.GotoDefaultStatementNode& gotoDefaultStatementNode)
@@ -956,7 +958,7 @@ namespace Cm.Bind
     public class DestroyStatementBinder : StatementBinder
     {
         public nothrow DestroyStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void EndVisit(Cm.Ast.DestroyStatementNode& destroyStatementNode)
@@ -992,7 +994,7 @@ namespace Cm.Bind
     public class DeleteStatementBinder : StatementBinder
     {
         public nothrow DeleteStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), freeStatement(null)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_), freeStatement(null)
         {
         }
         public override void EndVisit(Cm.Ast.DeleteStatementNode& deleteStatementNode)
@@ -1061,7 +1063,7 @@ namespace Cm.Bind
     {
         public nothrow ThrowStatementBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
             Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) :
-            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void EndVisit(Cm.Ast.ThrowStatementNode& throwStatementNode)
@@ -1268,7 +1270,7 @@ namespace Cm.Bind
     public class TryBinder : StatementBinder
     {
         public nothrow TryBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void Visit(Cm.Ast.TryStatementNode& tryStatementNode)
@@ -1318,7 +1320,7 @@ namespace Cm.Bind
     public class CatchBinder : StatementBinder
     {
         public nothrow CatchBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void Visit(Cm.Ast.CatchNode& catchNode)
@@ -1560,7 +1562,7 @@ namespace Cm.Bind
     public class ExitTryBinder : StatementBinder
     {
         public nothrow ExitTryBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_), binder(binder_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder& binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, &binder_), binder(binder_)
         {
         }
         public override void Visit(Cm.Ast.ExitTryStatementNode& exitTryStatementNode)
@@ -1575,7 +1577,7 @@ namespace Cm.Bind
     public class AssertBinder : StatementBinder
     {
         public nothrow AssertBinder(Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.BoundTree.BoundFunction* currentFunction_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_)
+            Cm.BoundTree.BoundFunction* currentFunction_, Binder* binder_) : base(boundCompileUnit_, containerScope_, fileScopes_, currentFunction_, binder_)
         {
         }
         public override void Visit(Cm.Ast.AssertStatementNode& assertStatementNode)

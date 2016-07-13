@@ -15,7 +15,8 @@ namespace Cm.Sym
 {
     public enum ValueType : byte
     {
-        none, boolValue, charValue, wcharValue, ucharValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, max
+        none, boolValue, charValue, wcharValue, ucharValue, sbyteValue, byteValue, shortValue, ushortValue, intValue, uintValue, longValue, ulongValue, floatValue, doubleValue, nullValue, stringValue, 
+        charPtrValue, max
     }
     
     public concept ValueClass<T>
@@ -48,8 +49,34 @@ namespace Cm.Sym
             case ValueType.doubleValue: return "double";
             case ValueType.nullValue: return "@nullptrtype";
             case ValueType.stringValue: return "string";
+            case ValueType.charPtrValue: return "char*";
         }
         return "";
+    }
+    
+    public TypeSymbol* GetTypeSymbol(ValueType valueType, SymbolTable& symbolTable)
+    {
+        switch (valueType)
+        {
+            case ValueType.boolValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.boolId));
+            case ValueType.charValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.charId));
+            case ValueType.wcharValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.wcharId));
+            case ValueType.ucharValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ucharId));
+            case ValueType.sbyteValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.sbyteId));
+            case ValueType.byteValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.byteId));
+            case ValueType.shortValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.shortId));
+            case ValueType.ushortValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ushortId));
+            case ValueType.intValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.intId));
+            case ValueType.uintValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.uintId));
+            case ValueType.longValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.longId));
+            case ValueType.ulongValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.ulongId));
+            case ValueType.floatValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.floatId));
+            case ValueType.doubleValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.doubleId));
+            case ValueType.nullValue: return symbolTable.GetTypeRepository().GetTypeNothrow(Cm.Sym.TypeId(Cm.Sym.ShortBasicTypeId.nullPtrId));
+            case ValueType.stringValue: return symbolTable.GetTypeRepository().MakeConstCharPtrType(Span());
+            case ValueType.charPtrValue: return symbolTable.GetTypeRepository().MakeConstCharPtrType(Span());
+        }
+        return null;
     }
     
     internal class CommonTypeMap
@@ -218,11 +245,17 @@ namespace Cm.Sym
 
             List<ValueType> nullValues = None();
             nullValues[cast<int>(ValueType.nullValue)] = ValueType.nullValue;
+            nullValues[cast<int>(ValueType.charPtrValue)] = ValueType.charPtrValue;
             commonTypeMap.Add(Rvalue(nullValues));
 
             List<ValueType> stringValues = None();
             stringValues[cast<int>(ValueType.stringValue)] = ValueType.stringValue;
             commonTypeMap.Add(Rvalue(stringValues));
+            
+            List<ValueType> charPtrValues = None();
+            charPtrValues[cast<int>(ValueType.nullValue)] = ValueType.charPtrValue;
+            charPtrValues[cast<int>(ValueType.charPtrValue)] = ValueType.charPtrValue;
+            commonTypeMap.Add(Rvalue(charPtrValues));
         }
         private List<ValueType> None()
         {
@@ -276,19 +309,23 @@ namespace Cm.Sym
             valueTypes[cast<int>(SymbolType.floatSymbol)] = ValueType.floatValue;
             valueTypes[cast<int>(SymbolType.doubleSymbol)] = ValueType.doubleValue;
             valueTypes[cast<int>(SymbolType.nullptrSymbol)] = ValueType.nullValue;
-
         }
-        public nothrow ValueType GetValueType(SymbolType symbolType) const
+        public ValueType GetValueType(SymbolType symbolType, bool dontThrow) const
         {
-            return valueTypes[cast<int>(symbolType)];
+            ValueType valueType = valueTypes[cast<int>(symbolType)];
+            if (valueType == ValueType.none && !dontThrow)
+            {
+                throw Error("invalid basic value type for symbol type");
+            }
+            return valueType;
         }
         private static UniquePtr<ValueTypeMap> instance;
         private List<ValueType> valueTypes;
     }
     
-    public nothrow ValueType GetValueTypeFor(SymbolType symbolType)
+    public ValueType GetValueTypeFor(SymbolType symbolType, bool dontThrow)
     {
-        return ValueTypeMap.Instance().GetValueType(symbolType);
+        return ValueTypeMap.Instance().GetValueType(symbolType, dontThrow);
     }
     
     public abstract class Value
@@ -305,11 +342,10 @@ namespace Cm.Sym
         {
         }
         public abstract Value* As(ValueType targetType, bool cast_, const Span& span_);
+        public abstract void Inc(const Span& span);
+        public abstract void Dec(const Span& span);
+        public abstract Value* Deref(const Span& span) const;
         public abstract Ir.Intf.Object* CreateIrObject() const;
-        public virtual nothrow bool IsScopedValue() const 
-        {
-            return false;
-        }
         public virtual nothrow string ToString() const
         {
             return "";
@@ -465,6 +501,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a Boolean", span);
+        }
+        public override void Inc(const Span& span)
+        {
+             throw Error("cannot increment a Boolean", span);   
+        }
+        public override void Dec(const Span& span)
+        {
+             throw Error("cannot decrement a Boolean", span);   
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -654,6 +702,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a char", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a char", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a char", span);
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -845,6 +905,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a wchar", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a wchar", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a wchar", span);
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -1044,6 +1116,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a uchar", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a uchar", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a uchar", span);
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeUI32Constant(cast<uint>(value));
@@ -1207,6 +1291,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference an sbyte", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeI8Constant(value);
@@ -1348,6 +1444,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a byte", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -1519,6 +1627,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a short", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeI16Constant(value);
@@ -1674,6 +1794,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a ushort", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -1852,6 +1984,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference an int", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeI32Constant(value);
@@ -2021,6 +2165,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a uint", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -2213,6 +2369,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a long", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeI64Constant(value);
@@ -2404,6 +2572,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a ulong", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeUI64Constant(value);
@@ -2594,6 +2774,18 @@ namespace Cm.Sym
                     throw Error("invalid conversion", span_);
                 }
             }
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a float", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a float", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a float", span);
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -2793,6 +2985,18 @@ namespace Cm.Sym
                 }
             }
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference a double", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a double", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a double", span);
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeDoubleConstant(value);
@@ -2810,7 +3014,7 @@ namespace Cm.Sym
     
     public class NullValue : Value
     {
-        typedef char OperandType; // dummy operand type to satisfy requirements of ValueClass
+        public typedef char OperandType; // dummy operand type to satisfy requirements of ValueClass
         
         public nothrow NullValue() : type(null)
         {
@@ -2829,6 +3033,18 @@ namespace Cm.Sym
         public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
         {
             throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
+        }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference null", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment null", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement null", span);
         }
         public override Ir.Intf.Object* CreateIrObject() const
         {
@@ -2860,7 +3076,7 @@ namespace Cm.Sym
     
     public class StringValue : Value
     {
-        typedef string OperandType;
+        public typedef string OperandType;
         
         public nothrow StringValue() : value("")
         {
@@ -2888,6 +3104,18 @@ namespace Cm.Sym
         {
             throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
         }
+        public override Value* Deref(const Span& span)
+        {
+            throw Error("cannot dereference string", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            throw Error("cannot increment a string", span);
+        }
+        public override void Dec(const Span& span)
+        {
+            throw Error("cannot decrement a string", span);
+        }
         public override Ir.Intf.Object* CreateIrObject() const
         {
             return Cm.IrIntf.MakeStringConstant(value);
@@ -2902,4 +3130,65 @@ namespace Cm.Sym
         }
         private string value;
     }    
+    
+    public class CharPtrValue : Value
+    {
+        public typedef const char* OperandType;
+        
+        public nothrow CharPtrValue() : value(null)
+        {
+        }
+        public nothrow CharPtrValue(const char* value_) : value(value_)
+        {
+        }
+        public nothrow override ValueType GetValueType() const
+        {
+            return ValueType.charPtrValue;
+        }
+        public nothrow override Value* Clone() const
+        {
+            return new CharPtrValue(value);
+        }
+        public override void Read(Cm.Ser.BinaryReader& reader)
+        {
+            throw Exception("reading char* not supported");
+        }
+        public override void Write(Cm.Ser.BinaryWriter& writer)
+        {
+            throw Exception("writing char* not supported");
+        }
+        public override Value* As(ValueType targetType, bool cast_, const Span& span_) const
+        {
+            if (targetType != ValueType.charPtrValue)
+            {
+                throw Error("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span_);
+            }
+            return new CharPtrValue(value);
+        }
+        public override Value* Deref(const Span& span)
+        {
+            if (value != null)
+            {
+                return new CharValue(*value);
+            }
+            throw Error("tried to dereference a null char*", span);
+        }
+        public override void Inc(const Span& span)
+        {
+            ++value;
+        }
+        public override void Dec(const Span& span)
+        {
+            --value;
+        }
+        public override Ir.Intf.Object* CreateIrObject() const
+        {
+            throw Exception("create IR object for char* not supported");
+        }
+        public nothrow inline const char* GetValue() const
+        {
+            return value;
+        }
+        private const char* value;
+    }
 }

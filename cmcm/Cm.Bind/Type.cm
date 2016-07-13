@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal void BindType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Sym.TypeSymbol* type)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.TypeSymbol* type)
     {
         if (type->IsBound()) return;
         if (type is Cm.Sym.DerivedTypeSymbol*) return;
@@ -30,7 +30,7 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("class node expected", node->GetSpan(), type->GetSpan());
             }
-            BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, cast<Cm.Sym.ClassTypeSymbol*>(type));
+            BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classNode, cast<Cm.Sym.ClassTypeSymbol*>(type));
         }
         else if (type is Cm.Sym.InterfaceTypeSymbol*)
         {
@@ -56,7 +56,7 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("enum type node expected", node->GetSpan(), type->GetSpan());
             }
-            BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, enumTypeNode, cast<Cm.Sym.EnumTypeSymbol*>(type));
+            BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumTypeNode, cast<Cm.Sym.EnumTypeSymbol*>(type));
         }
         else if (type is Cm.Sym.DelegateTypeSymbol*)
         {
@@ -69,7 +69,7 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("delegate type node expected", node->GetSpan(), type->GetSpan());
             }
-            BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, delegateTypeNode, cast<Cm.Sym.DelegateTypeSymbol*>(type));
+            BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, delegateTypeNode, cast<Cm.Sym.DelegateTypeSymbol*>(type));
         }
         else if (type is Cm.Sym.ClassDelegateTypeSymbol*)
         {
@@ -82,7 +82,7 @@ namespace Cm.Bind
             {
                 throw Cm.Core.Error("class delegate type node expected", node->GetSpan(), type->GetSpan());
             }
-            BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, classDelegateTypeNode, cast<Cm.Sym.ClassDelegateTypeSymbol*>(type));
+            BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classDelegateTypeNode, cast<Cm.Sym.ClassDelegateTypeSymbol*>(type));
         }
     }
 }

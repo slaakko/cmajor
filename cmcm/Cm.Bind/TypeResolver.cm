@@ -44,24 +44,24 @@ namespace Cm.Bind
     }
     
     internal Cm.Sym.TypeSymbol* ResolveType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.Node* typeExpr)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.Node* typeExpr)
     {
-        return ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typeExpr, TypeResolverFlags.none);
+        return ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typeExpr, TypeResolverFlags.none);
     }
 
     internal Cm.Sym.TypeSymbol* ResolveType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.Node* typeExpr, TypeResolverFlags flags)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.Node* typeExpr, TypeResolverFlags flags)
     {
-        TypeResolver resolver(symbolTable, containerScope, fileScopes, classTemplateRepository, flags);
+        TypeResolver resolver(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, flags);
         return resolver.Resolve(typeExpr);
     }
     
     internal class TypeResolver : Cm.Ast.Visitor
     {
         public TypeResolver(Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_, 
-            Cm.Core.ClassTemplateRepository& classTemplateRepository_, TypeResolverFlags flags_) : 
-            base(true, true), symbolTable(symbolTable_), containerScope(containerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), flags(flags_), typeSymbol(null), 
-            lookupId(Cm.Sym.SymbolTypeSetId.lookupTypeSymbols)
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_, TypeResolverFlags flags_) : 
+            base(true, true), symbolTable(symbolTable_), containerScope(containerScope_), fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), 
+            flags(flags_), typeSymbol(null), lookupId(Cm.Sym.SymbolTypeSetId.lookupTypeSymbols)
         {
         }
         public Cm.Sym.TypeSymbol* Resolve(Cm.Ast.Node* typeExpr)
@@ -136,7 +136,7 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.TemplateIdNode& templateIdNode)
         {
             List<Cm.Sym.TypeSymbol*> typeArguments;
-            Cm.Sym.TypeSymbol* subjectType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, templateIdNode.Subject(), flags);
+            Cm.Sym.TypeSymbol* subjectType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, templateIdNode.Subject(), flags);
             if (subjectType == null)
             {
                 typeSymbol = null;
@@ -148,7 +148,7 @@ namespace Cm.Bind
             }
             for (const UniquePtr<Cm.Ast.Node>& templateArgNode : templateIdNode.TemplateArguments())
             {
-                Cm.Sym.TypeSymbol* argumentType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, templateArgNode.GetPtr(), flags);
+                Cm.Sym.TypeSymbol* argumentType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, templateArgNode.GetPtr(), flags);
                 if (argumentType == null)
                 {
                     typeSymbol = null;
@@ -265,7 +265,7 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.DerivedTypeExprNode& derivedTypeExprNode)
         {
-            Cm.Sym.TypeSymbol* baseType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, derivedTypeExprNode.BaseTypeExprNode(), flags);
+            Cm.Sym.TypeSymbol* baseType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, derivedTypeExprNode.BaseTypeExprNode(), flags);
             if (baseType == null)
             {
                 typeSymbol = null;
@@ -277,7 +277,7 @@ namespace Cm.Bind
             {
                 for (int i = 0; i < n; ++i)
                 {
-                    Cm.Sym.Value* value = Evaluate(Cm.Sym.ValueType.intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, containerScope, fileScopes, classTemplateRepository);
+                    Cm.Sym.Value* value = Evaluate(Cm.Sym.ValueType.intValue, false, derivedTypeExprNode.ArrayDimensionNode(i), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
                     if (value is Cm.Sym.IntValue*)
                     {
                         Cm.Sym.IntValue* intValue = cast<Cm.Sym.IntValue*>(value);
@@ -316,13 +316,13 @@ namespace Cm.Bind
                     {
                         Cm.Ast.TypedefNode* typedefNode = cast<Cm.Ast.TypedefNode*>(tn);
                         Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(typedefNode);
-                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode, typedefSymbol);
                     }
                     else if (tn is Cm.Ast.TypedefStatementNode*)
                     {
                         Cm.Ast.TypedefStatementNode* typedefStatementNode = cast<Cm.Ast.TypedefStatementNode*>(tn);
                         Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(typedefStatementNode);
-                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+                        BindTypedef(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode, typedefSymbol);
                     }
                     else if ((flags & TypeResolverFlags.dontThrow) == TypeResolverFlags.none)
                     {
@@ -363,6 +363,7 @@ namespace Cm.Bind
         private Cm.Sym.ContainerScope* containerScope;
         private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
         private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private TypeResolverFlags flags;
         private Cm.Sym.TypeSymbol* typeSymbol;
         private UniquePtr<Cm.Sym.TypeSymbol> nsTypeSymbol;

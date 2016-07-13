@@ -18,7 +18,7 @@ class StatementBinder : public ExpressionBinder
 {
 public:
     StatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     Cm::Sym::SymbolTable& SymbolTable() { return symbolTable; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& FileScopes() const { return fileScopes; }
@@ -35,7 +35,7 @@ class ConstructionStatementBinder : public StatementBinder
 {
 public:
     ConstructionStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void BeginVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
     void EndVisit(Cm::Ast::ConstructionStatementNode& constructionStatementNode) override;
 private:
@@ -46,7 +46,7 @@ class AssignmentStatementBinder : public StatementBinder
 {
 public:
     AssignmentStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void EndVisit(Cm::Ast::AssignmentStatementNode& assignmentStatementNode) override;
 };
 
@@ -66,7 +66,7 @@ class ReturnStatementBinder : public StatementBinder
 {
 public:
     ReturnStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void EndVisit(Cm::Ast::ReturnStatementNode& returnStatementNode) override;
 };
 
@@ -74,7 +74,7 @@ class ConditionalStatementBinder : public StatementBinder
 {
 public:
     ConditionalStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundConditionalStatement* conditionalStatement_);
     void EndVisit(Cm::Ast::ConditionalStatementNode& conditionalStatementNode) override;
 private:
     Cm::BoundTree::BoundConditionalStatement* conditionalStatement;
@@ -84,7 +84,7 @@ class WhileStatementBinder : public StatementBinder
 {
 public:
     WhileStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundWhileStatement* whileStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundWhileStatement* whileStatement_);
     void EndVisit(Cm::Ast::WhileStatementNode& whileStatementNode) override;
 private:
     Cm::BoundTree::BoundWhileStatement* whileStatement;
@@ -94,7 +94,7 @@ class DoStatementBinder : public StatementBinder
 {
 public:
     DoStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDoStatement* doStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundDoStatement* doStatement_);
     void EndVisit(Cm::Ast::DoStatementNode& doStatementNode) override;
 private:
     Cm::BoundTree::BoundDoStatement* doStatement;
@@ -104,7 +104,7 @@ class ForStatementBinder : public StatementBinder
 {
 public:
     ForStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundForStatement* forStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundForStatement* forStatement_);
     void EndVisit(Cm::Ast::ForStatementNode& forStatementNode) override;
 private:
     Cm::BoundTree::BoundForStatement* forStatement;
@@ -126,7 +126,7 @@ class SwitchStatementBinder : public StatementBinder
 {
 public:
     SwitchStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
     void BeginVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
     void EndVisit(Cm::Ast::SwitchStatementNode& switchStatementNode) override;
 private:
@@ -137,7 +137,7 @@ class CaseStatementBinder : public StatementBinder
 {
 public:
     CaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundCaseStatement* caseStatement_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundCaseStatement* caseStatement_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
     void EndVisit(Cm::Ast::CaseStatementNode& caseStatementNode) override;
 private:
     Cm::BoundTree::BoundCaseStatement* caseStatement;
@@ -148,7 +148,7 @@ class DefaultStatementBinder : public StatementBinder
 {
 public:
     DefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundDefaultStatement* defaultStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundDefaultStatement* defaultStatement_);
     void EndVisit(Cm::Ast::DefaultStatementNode& defaultStatementNode) override;
 private:
     Cm::BoundTree::BoundDefaultStatement* defaultStatement;
@@ -158,7 +158,7 @@ class BreakStatementBinder : public StatementBinder
 {
 public:
     BreakStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void Visit(Cm::Ast::BreakStatementNode& breakStatementNode) override;
 };
 
@@ -166,7 +166,7 @@ class ContinueStatementBinder : public StatementBinder
 {
 public:
     ContinueStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void Visit(Cm::Ast::ContinueStatementNode& continueStatementNode) override;
 };
 
@@ -174,7 +174,7 @@ class GotoCaseStatementBinder : public StatementBinder
 {
 public:
     GotoCaseStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_, Cm::BoundTree::BoundSwitchStatement* switchStatement_);
     void EndVisit(Cm::Ast::GotoCaseStatementNode& gotoCaseStatementNode) override;
 private:
     Cm::BoundTree::BoundSwitchStatement* switchStatement;
@@ -184,7 +184,7 @@ class GotoDefaultStatementBinder : public StatementBinder
 {
 public:
     GotoDefaultStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_, 
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void Visit(Cm::Ast::GotoDefaultStatementNode& gotoDefaultStatementNode) override;
 };
 
@@ -192,7 +192,7 @@ class DestroyStatementBinder : public StatementBinder
 {
 public:
     DestroyStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void EndVisit(Cm::Ast::DestroyStatementNode& destroyStatementNode) override;
 };
 
@@ -200,7 +200,7 @@ class DeleteStatementBinder : public StatementBinder
 {
 public:
     DeleteStatementBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void EndVisit(Cm::Ast::DeleteStatementNode& deleteStatementNode) override;
     Cm::BoundTree::BoundStatement* GetFreeStatement() const { return freeStatement; }
 private:
@@ -254,7 +254,7 @@ class AssertBinder : public StatementBinder
 {
 public:
     AssertBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
 };
 
@@ -262,7 +262,7 @@ class UnitTestAssertBinder : public StatementBinder
 {
 public:
     UnitTestAssertBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     void Visit(Cm::Ast::AssertStatementNode& assertStatementNode) override;
 };
 

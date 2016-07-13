@@ -19,14 +19,18 @@
 
 namespace Cm { namespace Bind {
 
-enum class EvaluationFlags
+enum class EvaluationFlags : uint8_t
 {
     none = 0, dontThrow = 1
 };
 
+inline EvaluationFlags operator&(EvaluationFlags left, EvaluationFlags right)
+{
+    return EvaluationFlags(uint8_t(left) & uint8_t(right));
+}
+
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope,
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit);
-
 
 Cm::Sym::Value* Evaluate(Cm::Sym::ValueType targetType, bool cast, Cm::Ast::Node* value, Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* currentContainerScope, 
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes, Cm::Core::ClassTemplateRepository& classTemplateRepository, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, 

@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Ast {
 
-Visitor::Visitor(bool visitBodies_, bool visitExpressions_) : visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false)
+Visitor::Visitor(bool visitBodies_, bool visitExpressions_) : visitBodies(visitBodies_), visitExpressions(visitExpressions_), skipContent(false), skipArguments(false)
 {
 }
 
@@ -19,10 +19,10 @@ Visitor::~Visitor()
 {
 }
 
-void Visitor::PushSkipContent()
+void Visitor::PushSkipContent(bool skip)
 {
     skipContentStack.push(skipContent);
-    skipContent = true;
+    skipContent = skip;
 }
 
 void Visitor::PopSkipContent()
@@ -30,5 +30,30 @@ void Visitor::PopSkipContent()
     skipContent = skipContentStack.top();
     skipContentStack.pop();
 }
+
+void Visitor::PushVisitExpressions(bool visit)
+{
+    visitExpressionsStack.push(visitExpressions);
+    visitExpressions = visit;
+}
+
+void Visitor::PopVisitExpressions()
+{
+    visitExpressions = visitExpressionsStack.top();
+    visitExpressionsStack.pop();
+}
+
+void Visitor::PushSkipArguments(bool skip)
+{
+    skipArgumentsStack.push(skipArguments);
+    skipArguments = skip;
+}
+
+void Visitor::PopSkipArguments()
+{
+    skipArguments = skipArgumentsStack.top();
+    skipArgumentsStack.pop();
+}
+
 
 } } // namespace Cm::Ast

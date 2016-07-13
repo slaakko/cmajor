@@ -127,6 +127,10 @@ namespace Cm.Sym
         {
             return false;
         }
+        public nothrow virtual bool IsUnsignedType() const
+        {
+            return false;
+        }
         public nothrow virtual bool IsAbstract() const
         {
             return false;
@@ -140,6 +144,10 @@ namespace Cm.Sym
             return false;
         }
         public nothrow virtual bool IsFunctionType() const
+        {
+            return false;
+        }
+        public nothrow virtual bool IsPolymorphic() const
         {
             return false;
         }

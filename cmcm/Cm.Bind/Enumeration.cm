@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal void BindEnumType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumTypeNode* enumTypeNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.EnumTypeNode* enumTypeNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(enumTypeNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupEnumType);
         if (symbol != null)
@@ -22,7 +22,7 @@ namespace Cm.Bind
             {
                 Cm.Sym.EnumTypeSymbol* enumTypeSymbol = cast<Cm.Sym.EnumTypeSymbol*>(symbol);
                 if (enumTypeSymbol->IsBound()) return;
-                BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, enumTypeNode, enumTypeSymbol);
+                BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumTypeNode, enumTypeSymbol);
             }
             else
             {
@@ -36,7 +36,7 @@ namespace Cm.Bind
     }
     
     internal void BindEnumType(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumTypeNode* enumTypeNode, Cm.Sym.EnumTypeSymbol* enumTypeSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.EnumTypeNode* enumTypeNode, Cm.Sym.EnumTypeSymbol* enumTypeSymbol)
     {
         Cm.Ast.Specifiers specifiers = enumTypeNode->GetSpecifiers();
         #assert(enumTypeNode->Parent() != null);
@@ -102,7 +102,7 @@ namespace Cm.Bind
         if (underlyingTypeNode != null)
         {
             Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(underlyingTypeNode);
-            Cm.Sym.TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScopes, classTemplateRepository, underlyingTypeNode);
+            Cm.Sym.TypeSymbol* underlyingType = ResolveType(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, underlyingTypeNode);
             if (underlyingType->IsIntegerTypeSymbol())
             {
                 enumTypeSymbol->SetUnderlyingType(underlyingType);
@@ -125,7 +125,7 @@ namespace Cm.Bind
     }
     
     internal void BindEnumConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.EnumConstantNode* enumConstantNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.EnumConstantNode* enumConstantNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(enumConstantNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupEnumConstant);
         if (symbol != null)
@@ -148,9 +148,9 @@ namespace Cm.Bind
                 Cm.Sym.EnumTypeSymbol* enumType = cast<Cm.Sym.EnumTypeSymbol*>(containerScope->Container());
                 Cm.Sym.TypeSymbol* underlyingType = enumType->GetUnderlyingType();
                 Cm.Sym.SymbolType symbolType = underlyingType->GetSymbolType();
-                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+                Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
                 enumConstantSymbol->SetEvaluating();
-                Cm.Sym.Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+                Cm.Sym.Value* value = Evaluate(valueType, false, enumConstantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
                 enumConstantSymbol->ResetEvaluating();
                 enumConstantSymbol->SetValue(value);
                 enumConstantSymbol->SetBound();

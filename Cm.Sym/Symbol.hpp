@@ -37,7 +37,7 @@ enum class SymbolType : uint8_t
     classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
     memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
     conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,
-    interfaceTypeSymbol,
+    interfaceTypeSymbol, variableValueSymbol,
     maxSymbol
 };
 
@@ -162,14 +162,26 @@ public:
     virtual bool IsCharTypeSymbol() const { return false; }
     virtual bool IsWCharTypeSymbol() const { return false; }
     virtual bool IsUCharTypeSymbol() const { return false; }
+    virtual bool IsSByteTypeSymbol() const { return false; }
+    virtual bool IsByteTypeSymbol() const { return false; }
+    virtual bool IsShortTypeSymbol() const { return false; }
+    virtual bool IsUShortTypeSymbol() const { return false; }
+    virtual bool IsIntTypeSymbol() const { return false; }
+    virtual bool IsUIntTypeSymbol() const { return false; }
+    virtual bool IsLongTypeSymbol() const { return false; }
+    virtual bool IsULongTypeSymbol() const { return false; }
+    virtual bool IsFloatTypeSymbol() const { return false; }
+    virtual bool IsDoubleTypeSymbol() const { return false; }
     virtual bool IsEnumTypeSymbol() const { return false; }
     virtual bool IsVoidTypeSymbol() const { return false; }
     virtual bool IsIntegerTypeSymbol() const { return false; }
+    virtual bool IsCharacterTypeSymbol() const { return false; }
     virtual bool IsFloatingPointTypeSymbol() const { return false; }
     virtual bool IsDerivedTypeSymbol() const { return false; }
     virtual bool IsDelegateTypeSymbol() const { return false; }
     virtual bool IsClassDelegateTypeSymbol() const { return false; }
     virtual bool IsEnumConstantSymbol() const { return false; }
+    virtual bool IsVariableValueSymbol() const { return false; }
     virtual bool IsFunctionSymbol() const { return false; }
     virtual bool IsFunctionGroupSymbol() const { return false; }
     virtual bool IsFunctionGroupTypeSymbol() const { return false; }

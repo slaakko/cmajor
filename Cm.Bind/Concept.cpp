@@ -239,47 +239,64 @@ void ConstraintChecker::Visit(Cm::Ast::DisjunctiveConstraintNode& disjunctiveCon
 {
     std::unique_ptr<Cm::BoundTree::BoundConstraint> leftBoundConstraint;
     bool left = false;
+    std::unique_ptr<Cm::BoundTree::BoundConstraint> rightBoundConstraint;
+    bool right = false;
     try
     {
         disjunctiveConstraintNode.Left()->Accept(*this);
         left = constraintCheckStack.Pop();
         leftBoundConstraint.reset(boundConstraintStack.Pop());
-        if (left)
-        {
-            constraintCheckStack.Push(true);
-            boundConstraintStack.Push(leftBoundConstraint.release());
-            return;
-        }
     }
     catch (...)
     {
+        left = false;
         leftBoundConstraint.reset(new Cm::BoundTree::BoundAtomicConstraint(false));
     }
-    disjunctiveConstraintNode.Right()->Accept(*this);
-    bool right = constraintCheckStack.Pop();
-    std::unique_ptr<Cm::BoundTree::BoundConstraint> rightBoundConstraint(boundConstraintStack.Pop());
-    constraintCheckStack.Push(right);
+    try
+    {
+        disjunctiveConstraintNode.Right()->Accept(*this);
+        right = constraintCheckStack.Pop();
+        rightBoundConstraint.reset(boundConstraintStack.Pop());
+    }
+    catch (...)
+    {
+        right = false;
+        rightBoundConstraint.reset(new Cm::BoundTree::BoundAtomicConstraint(false));
+    }
+    constraintCheckStack.Push(left || right);
     boundConstraintStack.Push(new Cm::BoundTree::BoundDisjunctiveConstraint(leftBoundConstraint.release(), rightBoundConstraint.release()));
 }
 
 void ConstraintChecker::Visit(Cm::Ast::ConjunctiveConstraintNode& conjunctiveConstraintNode)
 {
-    conjunctiveConstraintNode.Left()->Accept(*this);
-    bool left = constraintCheckStack.Pop();
-    std::unique_ptr<Cm::BoundTree::BoundConstraint> leftBoundConstraint(boundConstraintStack.Pop());
-    if (!left)
+    std::unique_ptr<Cm::BoundTree::BoundConstraint> leftBoundConstraint;
+    bool left = false;
+    std::unique_ptr<Cm::BoundTree::BoundConstraint> rightBoundConstraint;
+    bool right = false;
+    try
     {
-        constraintCheckStack.Push(false);
-        boundConstraintStack.Push(leftBoundConstraint.release());
+        conjunctiveConstraintNode.Left()->Accept(*this);
+        left = constraintCheckStack.Pop();
+        leftBoundConstraint.reset(boundConstraintStack.Pop());
     }
-    else
+    catch (...)
+    {
+        left = false;
+        leftBoundConstraint.reset(new Cm::BoundTree::BoundAtomicConstraint(false));
+    }
+    try
     {
         conjunctiveConstraintNode.Right()->Accept(*this);
-        bool right = constraintCheckStack.Pop();
-        std::unique_ptr<Cm::BoundTree::BoundConstraint> rightBoundConstraint(boundConstraintStack.Pop());
-        constraintCheckStack.Push(right);
-        boundConstraintStack.Push(new Cm::BoundTree::BoundConjunctiveConstraint(leftBoundConstraint.release(), rightBoundConstraint.release()));
+        right = constraintCheckStack.Pop();
+        rightBoundConstraint.reset(boundConstraintStack.Pop());
     }
+    catch (...)
+    {
+        right = false;
+        rightBoundConstraint.reset(new Cm::BoundTree::BoundAtomicConstraint(false));
+    }
+    constraintCheckStack.Push(left &&right);
+    boundConstraintStack.Push(new Cm::BoundTree::BoundConjunctiveConstraint(leftBoundConstraint.release(), rightBoundConstraint.release()));
 }
 
 void ConstraintChecker::Visit(Cm::Ast::IdentifierNode& identifierNode)
@@ -483,6 +500,10 @@ void ConstraintChecker::Visit(Cm::Ast::PredicateConstraintNode& predicateConstra
     std::unique_ptr<Cm::Sym::Value> result(Evaluate(Cm::Sym::ValueType::boolValue, false, invokeExpr, boundCompileUnit->SymbolTable(), containerScope, boundCompileUnit->GetFileScopes(),
         boundCompileUnit->ClassTemplateRepository(), *boundCompileUnit));
     Cm::Sym::BoolValue* boolResult = static_cast<Cm::Sym::BoolValue*>(result.get());
+    if (!boolResult->Value())
+    {
+        throw Cm::Core::ConceptCheckException("predicate constraint not satisfied", predicateConstraintNode.GetSpan());
+    }
     constraintCheckStack.Push(boolResult->Value());
     boundConstraintStack.Push(new Cm::BoundTree::BoundAtomicConstraint(boolResult->Value()));
 }

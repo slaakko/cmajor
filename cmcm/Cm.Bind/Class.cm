@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal Cm.Sym.ClassTypeSymbol* BindClass(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository,Cm.Ast.ClassNode* classNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ClassNode* classNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(classNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupClassSymbols);
         if (symbol != null)
@@ -21,7 +21,7 @@ namespace Cm.Bind
             if (symbol is Cm.Sym.ClassTypeSymbol*)
             {
                 Cm.Sym.ClassTypeSymbol* classTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(symbol);
-                BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, classNode, classTypeSymbol);
+                BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, classNode, classTypeSymbol);
                 return classTypeSymbol;
             }
             else
@@ -36,7 +36,7 @@ namespace Cm.Bind
     }
     
     internal void BindClass(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ClassNode* classNode, Cm.Sym.ClassTypeSymbol* classTypeSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ClassNode* classNode, Cm.Sym.ClassTypeSymbol* classTypeSymbol)
     {
         if (classTypeSymbol->IsBound()) return;
         if (classNode->GetCompileUnit() != null)
@@ -110,7 +110,7 @@ namespace Cm.Bind
         }
         for (const UniquePtr<Cm.Ast.Node>& baseClassOrImplIntf : classNode->BaseClassOrImplIntfTypeExprs())
         {
-            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, baseClassOrImplIntf.GetPtr());
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, classTypeSymbol->GetContainerScope(), fileScopes, classTemplateRepository, boundCompileUnit, baseClassOrImplIntf.GetPtr());
             if (type != null)
             {
                 if (type is Cm.Sym.ClassTypeSymbol*)
@@ -133,7 +133,7 @@ namespace Cm.Bind
                             {
                                 Cm.Ast.ClassNode* baseClassNode = cast<Cm.Ast.ClassNode*>(node);
                                 Cm.Sym.ContainerScope* baseClassContainerScope = symbolTable.GetContainerScope(baseClassNode);
-                                BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, baseClassNode, baseClassType);
+                                BindClass(symbolTable, baseClassContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, baseClassNode, baseClassType);
                             }
                             else
                             {

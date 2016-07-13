@@ -50,7 +50,7 @@ void CompleteBindFunction(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerS
     functionSymbol->ComputeName();
     if (functionSymbol->HasConstraint())
     {
-        functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->Constraint()->ToString());
+        functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->GetConstraint()->ToString());
     }
     else if (functionNode->Constraint())
     {

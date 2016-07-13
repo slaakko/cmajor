@@ -149,13 +149,13 @@ bool BetterFunctionMatch::operator()(const FunctionMatch& left, const FunctionMa
     {
         if (left.constraint && right.constraint)
         {
-            bool leftImplyRight = left.boundConstraint->Imply(right.boundConstraint.get());
-            bool rightImplyLeft = right.boundConstraint->Imply(left.boundConstraint.get());
-            if (leftImplyRight && !rightImplyLeft)
+            bool leftSubsumeRight = left.boundConstraint->Subsume(right.boundConstraint.get());
+            bool rightSubsumeLeft = right.boundConstraint->Subsume(left.boundConstraint.get());
+            if (leftSubsumeRight && !rightSubsumeLeft)
             {
                 return true;
             }
-            else if (rightImplyLeft && !leftImplyRight)
+            else if (rightSubsumeLeft && !leftSubsumeRight)
             {
                 return false;
             }
@@ -792,15 +792,23 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                     {
                         Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
                         constraintNode = functionNode->Constraint();
+                        if (constraintNode)
+                        {
+                            if (!viableFunction->HasConstraint())
+                            {
+                                Cm::Ast::CloneContext cloneContext;
+                                viableFunction->SetConstraint(static_cast<Cm::Ast::WhereConstraintNode*>(constraintNode->Clone(cloneContext)));
+                            }
+                        }
                     }
                     else
                     {
                         throw std::runtime_error("not function node");
                     }
                 }
-                else
+                else if (viableFunction->HasConstraint())
                 {
-                    constraintNode = viableFunction->Constraint();
+                    constraintNode = viableFunction->GetConstraint();
                 }
             }
             if (candidateFound && constraintNode)
@@ -915,9 +923,13 @@ Cm::Sym::FunctionSymbol* ResolveOverload(Cm::Sym::ContainerScope* containerScope
                     }
                     else
                     {
-                        matchedFunctionNames.append(" or ");
+                        matchedFunctionNames.append(", or ");
                     }
                     matchedFunctionNames.append(match.function->FullName());
+                    if (match.function->HasConstraint())
+                    {
+                        matchedFunctionNames.append(1, ' ').append(match.function->GetConstraint()->ToString());
+                    }
                     references.push_back(match.function->GetSpan());
                 }
                 if (GetFlag(OverloadResolutionFlags::nothrow, flags))

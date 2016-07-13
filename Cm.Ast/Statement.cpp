@@ -1064,7 +1064,10 @@ void CompoundStatementNode::Print(CodeFormatter& formatter)
 void CompoundStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    statements.Accept(visitor);
+    if (!visitor.SkipContent())
+    {
+        statements.Accept(visitor);
+    }
     visitor.EndVisit(*this);
 }
 
@@ -1307,7 +1310,7 @@ void ConstructionStatementNode::Print(CodeFormatter& formatter)
 void ConstructionStatementNode::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
-    if (visitor.VisitExpressions())
+    if (visitor.VisitExpressions() && !visitor.SkipArguments())
     {
         arguments.Accept(visitor);
     }

@@ -79,6 +79,10 @@ namespace Cm.Sym
         {
             return "ch";
         }
+        public nothrow override bool IsCharacterTypeSymbol() const
+        {
+            return true;
+        }
     }
     
     public class WCharTypeSymbol : BasicTypeSymbol
@@ -104,6 +108,10 @@ namespace Cm.Sym
         {
             return "wc";
         }
+        public nothrow override bool IsCharacterTypeSymbol() const
+        {
+            return true;
+        }
     }
 
     public class UCharTypeSymbol : BasicTypeSymbol
@@ -128,6 +136,10 @@ namespace Cm.Sym
         public override string GetMangleId() const
         {
             return "uc";
+        }
+        public nothrow override bool IsCharacterTypeSymbol() const
+        {
+            return true;
         }
     }
 
@@ -187,6 +199,10 @@ namespace Cm.Sym
         {
             return true;
         }
+        public nothrow override bool IsUnsignedType() const
+        {
+            return true;
+        }
         public override string GetMangleId() const
         {
             return "by";
@@ -230,6 +246,10 @@ namespace Cm.Sym
             return SymbolType.ushortSymbol;
         }
         public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsUnsignedType() const
         {
             return true;
         }
@@ -279,6 +299,10 @@ namespace Cm.Sym
         {
             return true;
         }
+        public nothrow override bool IsUnsignedType() const
+        {
+            return true;
+        }
         public override string GetMangleId() const
         {
             return "ui";
@@ -322,6 +346,10 @@ namespace Cm.Sym
             return SymbolType.ulongSymbol;
         }
         public nothrow override bool IsIntegerTypeSymbol() const
+        {
+            return true;
+        }
+        public nothrow override bool IsUnsignedType() const
         {
             return true;
         }

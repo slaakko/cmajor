@@ -140,7 +140,7 @@ void BindConstant(Cm::Sym::SymbolTable& symbolTable, Cm::Sym::ContainerScope* co
         }
         constantSymbol->SetType(type);
         Cm::Sym::SymbolType symbolType = type->GetSymbolType();
-        Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType);
+        Cm::Sym::ValueType valueType = GetValueTypeFor(symbolType, false);
         constantSymbol->SetEvaluating();
         Cm::Sym::Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
         constantSymbol->ResetEvaluating();

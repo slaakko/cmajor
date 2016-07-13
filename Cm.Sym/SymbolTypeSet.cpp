@@ -74,7 +74,7 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     typeAndFunctionGroupSymbols.insert(SymbolType::typeParameterSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::functionGroupSymbol);
     symbolTypeSets[int(SymbolTypeSetId::lookupTypeAndFunctionGroupSymbols)] = std::move(typeAndFunctionGroupSymbols);
-    //  lookupClassEnumAndNamespaceSymbols:
+//  lookupClassEnumAndNamespaceSymbols:
     SymbolTypeSet dotSubjectSymbols;
     dotSubjectSymbols.insert(SymbolType::classSymbol);
     dotSubjectSymbols.insert(SymbolType::interfaceTypeSymbol);
@@ -319,6 +319,12 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     constantAndEnumConstantSymbols.insert(SymbolType::constantSymbol);
     constantAndEnumConstantSymbols.insert(SymbolType::enumConstantSymbol);
     symbolTypeSets[int(SymbolTypeSetId::lookupConstantAndEnumConstantSymbols)] = std::move(constantAndEnumConstantSymbols);
+//  lookupConstantEnumConstantAndVariableValueSymbols:
+    SymbolTypeSet constantEnumConstantAndVariableValueSymbols;
+    constantEnumConstantAndVariableValueSymbols.insert(SymbolType::constantSymbol);
+    constantEnumConstantAndVariableValueSymbols.insert(SymbolType::enumConstantSymbol);
+    constantEnumConstantAndVariableValueSymbols.insert(SymbolType::variableValueSymbol);
+    symbolTypeSets[int(SymbolTypeSetId::lookupConstantEnumConstantAndVariableValueSymbols)] = std::move(constantEnumConstantAndVariableValueSymbols);
 }
 
 SymbolTypeSet& SymbolTypeSetCollection::GetSymbolTypeSet(SymbolTypeSetId id)

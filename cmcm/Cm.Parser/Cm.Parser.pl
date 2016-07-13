@@ -66,6 +66,7 @@ namespace Cm.Parser
         ConjunctiveConstraintExpr(ParsingContext* ctx, var Span s): ConstraintNode*;
         PrimaryConstraintExpr(ParsingContext* ctx): ConstraintNode*;
         AtomicConstraintExpr(ParsingContext* ctx): ConstraintNode*;
+        PredicateConstraint(ParsingContext* ctx): ConstraintNode*;
         IsConstraint(ParsingContext* ctx, var UniquePtr<Node> typeExpr): ConstraintNode*;
         ConceptOrTypeName(ParsingContext* ctx): Node*;
         MultiParamConstraint(ParsingContext* ctx, var UniquePtr<MultiParamConstraintNode> constraint): ConstraintNode*;
@@ -110,6 +111,7 @@ namespace Cm.Parser
         NewExpr(ParsingContext* ctx): Node*;
         ArgumentList(ParsingContext* ctx, Node* node);
         ExpressionList(ParsingContext* ctx, Node* node);
+        InvokeExpr(ParsingContext* ctx, var UniquePtr<Node> expr, var Span s): Node*;
     }
     grammar FunctionGrammar
     {

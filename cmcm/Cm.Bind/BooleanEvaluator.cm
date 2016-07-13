@@ -15,11 +15,11 @@ using Span = System.Text.Parsing.Span;
 namespace Cm.Bind
 {
     internal bool IsAlwaysTrue(Cm.Ast.Node* value, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit)
     {
         try
         {
-            BooleanEvaluator evaluator(false, symbolTable, containerScope, fileScopes, classTemplateRepository);
+            BooleanEvaluator evaluator(false, symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
             return evaluator.DoEvaluate(value);
         }
         catch (const Exception& ex)
@@ -31,8 +31,10 @@ namespace Cm.Bind
     internal class BooleanEvaluator : Cm.Ast.Visitor
     {
         public nothrow BooleanEvaluator(bool cast__, Cm.Sym.SymbolTable& symbolTable_, Cm.Sym.ContainerScope* containerScope_, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes_,
-            Cm.Core.ClassTemplateRepository& classTemplateRepository_) : base(true, true), targetType(Cm.Sym.ValueType.boolValue), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_),
-            fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), interrupted(false), lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantAndEnumConstantSymbols)
+            Cm.Core.ClassTemplateRepository& classTemplateRepository_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : 
+            base(true, true), targetType(Cm.Sym.ValueType.boolValue), cast_(cast__), symbolTable(symbolTable_), containerScope(containerScope_),
+            fileScopes(fileScopes_), classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), interrupted(false), 
+            lookupId(Cm.Sym.SymbolTypeSetId.lookupConstantAndEnumConstantSymbols)
         {
         }
         public bool DoEvaluate(Cm.Ast.Node* value)
@@ -331,10 +333,10 @@ namespace Cm.Bind
         public override void Visit(Cm.Ast.CastNode& castNode)
         {
             Cm.Ast.Node* targetTypeExpr = castNode.TargetTypeExpr();
-            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, targetTypeExpr);
+            Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, targetTypeExpr);
             Cm.Sym.SymbolType symbolType = type->GetSymbolType();
-            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
-            bool value = IsAlwaysTrue(castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
+            bool value = IsAlwaysTrue(castNode.SourceExpr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
             if (value)
             {
                 evaluationStack.Push(UniquePtr<Cm.Sym.Value>(new Cm.Sym.BoolValue(true)));
@@ -388,7 +390,7 @@ namespace Cm.Bind
                     if (node is Cm.Ast.ConstantNode*)
                     {
                         Cm.Ast.ConstantNode* constantNode = cast<Cm.Ast.ConstantNode*>(node);
-                        BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode);
+                        BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode);
                     }
                     else
                     {
@@ -407,7 +409,7 @@ namespace Cm.Bind
                     {
                         Cm.Ast.EnumConstantNode* enumConstantNode = cast<Cm.Ast.EnumConstantNode*>(node);
                         Cm.Sym.ContainerScope* enumConstantContainerScope = symbolTable.GetContainerScope(enumConstantNode);
-                        BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, enumConstantNode);
+                        BindEnumConstant(symbolTable, enumConstantContainerScope, fileScopes, classTemplateRepository, boundCompileUnit, enumConstantNode);
                     }
                     else
                     {
@@ -427,6 +429,7 @@ namespace Cm.Bind
         private Cm.Sym.ContainerScope* containerScope;
         private const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes;
         private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private Stack<UniquePtr<Cm.Sym.Value>> evaluationStack;
         private bool interrupted;
         private Cm.Sym.SymbolTypeSetId lookupId;

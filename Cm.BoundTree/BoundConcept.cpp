@@ -21,22 +21,22 @@ BoundAtomicConstraint::BoundAtomicConstraint(bool satisfied_) : BoundConstraint(
 {
 }
 
-bool BoundAtomicConstraint::Imply(BoundConstraint* that) const
+bool BoundAtomicConstraint::Subsume(BoundConstraint* that) const
 {
     if (that->IsBinaryConstraint())
     {
         BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
         BoundConstraint* thatLeft = thatBinaryConstraint->Left();
         BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool implyLeft = Imply(thatLeft);
-        bool implyRight = Imply(thatRight);
+        bool subsumeLeft = Subsume(thatLeft);
+        bool subsumeRight = Subsume(thatRight);
         if (that->IsConjunctiveConstraint())
         {
-            return implyLeft && implyRight;
+            return subsumeLeft && subsumeRight;
         }
         else if (that->IsDisjunctiveConstraint())
         {
-            return implyLeft || implyRight;
+            return subsumeLeft || subsumeRight;
         }
         else // assert(false)
         {
@@ -48,19 +48,27 @@ bool BoundAtomicConstraint::Imply(BoundConstraint* that) const
         BoundAtomicConstraint* thatAtomic = static_cast<BoundAtomicConstraint*>(that);
         if (satisfied && !thatAtomic->Satisfied())
         {
+            return true;
+        }
+        else if (!satisfied && thatAtomic->Satisfied())
+        {
             return false;
         }
         else
         {
             if (concept && !thatAtomic->concept)
             {
-                return false;
+                return true;
             }
             else if (!concept && thatAtomic->concept)
             {
+                return false;
+            }
+            else if (!concept && !thatAtomic->concept)
+            {
                 return true;
             }
-            else if (concept && thatAtomic->concept)
+            else 
             {
                 if (concept == thatAtomic->concept)
                 {
@@ -80,7 +88,6 @@ bool BoundAtomicConstraint::Imply(BoundConstraint* that) const
                 }
                 return false;
             }
-            return true;
         }
     }
     else
@@ -110,7 +117,7 @@ BoundDisjunctiveConstraint::BoundDisjunctiveConstraint(const BoundDisjunctiveCon
 {
 }
 
-bool BoundDisjunctiveConstraint::Imply(BoundConstraint* that) const
+bool BoundDisjunctiveConstraint::Subsume(BoundConstraint* that) const
 {
     BoundConstraint* left = Left();
     BoundConstraint* right = Right();
@@ -119,19 +126,19 @@ bool BoundDisjunctiveConstraint::Imply(BoundConstraint* that) const
         BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
         BoundConstraint* thatLeft = thatBinaryConstraint->Left();
         BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool leftImplyThatLeft = left->Imply(thatLeft);
-        bool leftImplyThatRight = left->Imply(thatRight);
-        bool rightImplyThatLeft = right->Imply(thatLeft);
-        bool rightImplyThatRight = right->Imply(thatRight);
-        bool leftImplyThatLeftOrThatRight = leftImplyThatLeft || leftImplyThatRight;
-        bool rightImplyThatLeftOrThatRight = rightImplyThatLeft || rightImplyThatRight;
+        bool leftSubsumeThatLeft = left->Subsume(thatLeft);
+        bool leftSubsumeThatRight = left->Subsume(thatRight);
+        bool rightSubsumeThatLeft = right->Subsume(thatLeft);
+        bool rightSubsumeThatRight = right->Subsume(thatRight);
+        bool leftSubsumeThatLeftOrThatRight = leftSubsumeThatLeft || leftSubsumeThatRight;
+        bool rightSubsumeThatLeftOrThatRight = rightSubsumeThatLeft || rightSubsumeThatRight;
         if (that->IsConjunctiveConstraint())
         {
-            return leftImplyThatLeftOrThatRight && rightImplyThatLeftOrThatRight;
+            return leftSubsumeThatLeftOrThatRight && rightSubsumeThatLeftOrThatRight;
         }
         else if (that->IsDisjunctiveConstraint())
         {
-            return leftImplyThatLeftOrThatRight || rightImplyThatLeftOrThatRight;
+            return leftSubsumeThatLeftOrThatRight || rightSubsumeThatLeftOrThatRight;
         }
         else // assert(false)
         {
@@ -140,9 +147,9 @@ bool BoundDisjunctiveConstraint::Imply(BoundConstraint* that) const
     }
     else
     {
-        bool leftImplyThat = left->Imply(that);
-        bool rightImplyThat = right->Imply(that);
-        return leftImplyThat && rightImplyThat;
+        bool leftSubsumeThat = left->Subsume(that);
+        bool rightSubsumeThat = right->Subsume(that);
+        return leftSubsumeThat && rightSubsumeThat;
     }
 }
 
@@ -161,7 +168,7 @@ BoundConjunctiveConstraint::BoundConjunctiveConstraint(const BoundConjunctiveCon
 {
 }
 
-bool BoundConjunctiveConstraint::Imply(BoundConstraint* that) const
+bool BoundConjunctiveConstraint::Subsume(BoundConstraint* that) const
 {
     BoundConstraint* left = Left();
     BoundConstraint* right = Right();
@@ -170,19 +177,19 @@ bool BoundConjunctiveConstraint::Imply(BoundConstraint* that) const
         BoundBinaryConstraint* thatBinaryConstraint = static_cast<BoundBinaryConstraint*>(that);
         BoundConstraint* thatLeft = thatBinaryConstraint->Left();
         BoundConstraint* thatRight = thatBinaryConstraint->Right();
-        bool leftImplyThatLeft = left->Imply(thatLeft);
-        bool rightImplyThatLeft = right->Imply(thatLeft);
-        bool leftImplyThatRight = left->Imply(thatRight);
-        bool rightImplyThatRight = right->Imply(thatRight);
-        bool leftOrRightImplyThatLeft = leftImplyThatLeft || rightImplyThatLeft;
-        bool leftOrRightImplyThatRight = leftImplyThatRight || rightImplyThatRight;
+        bool leftSubsumeThatLeft = left->Subsume(thatLeft);
+        bool rightSubsumeThatLeft = right->Subsume(thatLeft);
+        bool leftSubsumeThatRight = left->Subsume(thatRight);
+        bool rightSubsumeThatRight = right->Subsume(thatRight);
+        bool leftOrRightSubsumeThatLeft = leftSubsumeThatLeft || rightSubsumeThatLeft;
+        bool leftOrRightSubsumeThatRight = leftSubsumeThatRight || rightSubsumeThatRight;
         if (that->IsConjunctiveConstraint())
         {
-            return leftOrRightImplyThatLeft && leftOrRightImplyThatRight;
+            return leftOrRightSubsumeThatLeft && leftOrRightSubsumeThatRight;
         }
         else if (that->IsDisjunctiveConstraint())
         {
-            return leftOrRightImplyThatLeft || leftOrRightImplyThatRight;
+            return leftOrRightSubsumeThatLeft || leftOrRightSubsumeThatRight;
         }
         else // assert(false)
         {
@@ -191,9 +198,9 @@ bool BoundConjunctiveConstraint::Imply(BoundConstraint* that) const
     }
     else
     {
-        bool leftImplyThat = left->Imply(that);
-        bool righImplyThat = right->Imply(that);
-        return leftImplyThat || righImplyThat;
+        bool leftSubsumeThat = left->Subsume(that);
+        bool righSubsumeThat = right->Subsume(that);
+        return leftSubsumeThat || righSubsumeThat;
     }
 }
 

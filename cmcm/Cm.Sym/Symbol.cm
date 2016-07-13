@@ -13,6 +13,13 @@ using Span = System.Text.Parsing.Span;
 
 namespace Cm.Sym
 {
+    public abstract class SymNode
+    {
+        public virtual ~SymNode()
+        {
+        }
+    }
+    
     public concept SymbolClass<T>
     {
         where Derived<T, Symbol>;
@@ -25,7 +32,7 @@ namespace Cm.Sym
         classSymbol, constantSymbol, declarationBlock, delegateSymbol, classDelegateSymbol, enumTypeSymbol, enumConstantSymbol, functionSymbol, functionGroupSymbol, localVariableSymbol, 
         memberVariableSymbol, namespaceSymbol, parameterSymbol, typeParameterSymbol, templateTypeSymbol, derivedTypeSymbol, typedefSymbol, boundTypeParameterSymbol, conceptSymbol, 
         conceptGroupSymbol, instantiatedConceptSymbol, functionGroupTypeSymbol, entrySymbol, returnValueSymbol,
-        interfaceTypeSymbol,
+        interfaceTypeSymbol, variableValueSymbol,
         maxSymbol
     }
     
@@ -50,7 +57,7 @@ namespace Cm.Sym
             case SymbolType.doubleSymbol: return "doubleSymbol";
             case SymbolType.nullptrSymbol: return "nullptrSymbol";
             case SymbolType.classSymbol: return "classSymbol";
-            case SymbolType.interfaceTypeSymbol: return "interfaceSymbol";
+            case SymbolType.interfaceTypeSymbol: return "interfaceTypeSymbol";
             case SymbolType.constantSymbol: return "constantSymbol";
             case SymbolType.declarationBlock: return "declarationBlock";
             case SymbolType.delegateSymbol: return "delegateSymbol";
@@ -74,6 +81,7 @@ namespace Cm.Sym
             case SymbolType.functionGroupTypeSymbol: return "functionGroupTypeSymbol";
             case SymbolType.entrySymbol: return "entrySymbol";
             case SymbolType.returnValueSymbol : return "returnValueSymbol";
+            case SymbolType.variableValueSymbol: return "variableValueSymbol";
         }
         return "";
     }
@@ -286,6 +294,10 @@ namespace Cm.Sym
         public virtual nothrow bool IsFloatingPointTypeSymbol() const 
         { 
             return false; 
+        }
+        public virtual nothrow bool IsCharacterTypeSymbol() const
+        {
+            return false;
         }
         public virtual nothrow bool IsNamespaceTypeSymbol() const
         {

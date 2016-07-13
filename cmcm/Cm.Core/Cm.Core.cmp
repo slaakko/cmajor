@@ -11,6 +11,7 @@ source <ClassDelegateTypeOpRepository.cm>;
 source <ClassTemplateRepository.cm>;
 source <CompileUnitMap.cm>;
 source <ConceptRepository.cm>;
+source <ConstExprFunctionRepository.cm>;
 source <DelegateTypeOpRepository.cm>;
 source <DerivedTypeOpRepository.cm>;
 source <EnumTypeOpRepository.cm>;

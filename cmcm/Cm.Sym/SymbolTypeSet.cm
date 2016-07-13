@@ -43,6 +43,7 @@ namespace Cm.Sym
         lookupEnumType,
         lookupEnumConstant,
         lookupConstantAndEnumConstantSymbols,
+        lookupConstantEnumConstantAndVariableValueSymbols,
         max 
     }
     
@@ -371,6 +372,12 @@ namespace Cm.Sym
             constantAndEnumConstantSymbols.Insert(SymbolType.constantSymbol);
             constantAndEnumConstantSymbols.Insert(SymbolType.enumConstantSymbol);
             symbolTypeSets.Add(Rvalue(constantAndEnumConstantSymbols));
+            //  lookupConstantEnumConstantAndVariableValueSymbols:
+            HashSet<SymbolType, SymbolTypeHash> constantEnumConstantAndVariableValueSymbols;
+            constantEnumConstantAndVariableValueSymbols.Insert(SymbolType.constantSymbol);
+            constantEnumConstantAndVariableValueSymbols.Insert(SymbolType.enumConstantSymbol);
+            constantEnumConstantAndVariableValueSymbols.Insert(SymbolType.variableValueSymbol);
+            symbolTypeSets.Add(Rvalue(constantEnumConstantAndVariableValueSymbols));
         }
         public nothrow const HashSet<SymbolType, SymbolTypeHash>& GetSymbolTypeSet(SymbolTypeSetId symbolTypeSetId) const
         {

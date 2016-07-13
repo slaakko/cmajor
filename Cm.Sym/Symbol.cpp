@@ -26,7 +26,7 @@ const char* symbolTypeStr[uint8_t(SymbolType::maxSymbol)] =
     "floatSymbol", "doubleSymbol", "nullptrSymbol",
     "classSymbol", "constantSymbol", "declarationBlock", "delegateSymbol", "classDelegateSymbol", "enumTypeSymbol", "enumConstantSymbol", "functionSymbol", "functionGroupSymbol", "localVariableSymbol", "memberVariableSymbol",
     "namespaceSymbol", "parameterSymbol", "typeParameterSymbol", "templateTypeSymbol", "derivedTypeSymbol", "typedefSymbol", "boundTypeParameterSymbol", "conceptSymbol", "conceptGroupSymbol", 
-    "instantiatedConceptSymbol", "functionGroupTypeSymbol", "entrySymbol", "returnValueSymbol", "interfaceSymbol"
+    "instantiatedConceptSymbol", "functionGroupTypeSymbol", "entrySymbol", "returnValueSymbol", "interfaceSymbol", "variableValueSymbol"
 };
 
 std::string SymbolTypeStr(SymbolType st)

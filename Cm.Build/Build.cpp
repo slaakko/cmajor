@@ -36,6 +36,7 @@
 #include <Cm.Bind/Binder.hpp>
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/InlineFunctionRepository.hpp>
+#include <Cm.Bind/ConstExprFunctionRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
@@ -1007,6 +1008,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
     prebindCompileUnit.SetPrebindCompileUnit();
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
     prebindCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(prebindCompileUnit));
+    prebindCompileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
     prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
@@ -1129,6 +1131,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
             changed = true;
             boundCompileUnit->SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(*boundCompileUnit));
             boundCompileUnit->SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(*boundCompileUnit));
+            boundCompileUnit->SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(*boundCompileUnit));
             boundCompileUnit->SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(*boundCompileUnit));
             boundCompileUnit->SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(*boundCompileUnit));
             boundCompileUnit->SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(*boundCompileUnit));
@@ -1139,6 +1142,7 @@ bool Compile(Cm::Ast::Project* project, Cm::Sym::SymbolTable& symbolTable, Cm::A
                 boundCompileUnit->ClassTemplateRepository().AutoBindTemplates();
             }
             Bind(boundCompileUnit->SyntaxUnit(), *boundCompileUnit);
+            boundCompileUnit->Release();
             if (boundCompileUnit->HasGotos())
             {
                 AnalyzeControlFlow(*boundCompileUnit);
@@ -1822,6 +1826,7 @@ void BuildProgram(Cm::Ast::Project* project, const std::pair<uint64_t, uint64_t>
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
         compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
+        compileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(compileUnit));
         compileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(compileUnit));
         compileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(compileUnit));
         compileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(compileUnit));
@@ -1879,6 +1884,7 @@ void BuildProgram(Cm::Ast::Project* project, const std::pair<uint64_t, uint64_t>
         compileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(compileUnit));
         compileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(compileUnit));
         compileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(compileUnit));
+        compileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(compileUnit));
         compileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(compileUnit));
         compileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(compileUnit));
         compileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(compileUnit));

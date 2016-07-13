@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal void BindConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Ast.ConstantNode* constantNode)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ConstantNode* constantNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(constantNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupConstant);
         if (symbol != null)
@@ -21,7 +21,7 @@ namespace Cm.Bind
             if (symbol is Cm.Sym.ConstantSymbol*)
             {
                 Cm.Sym.ConstantSymbol* constantSymbol = cast<Cm.Sym.ConstantSymbol*>(symbol);
-                BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode, constantSymbol);
+                BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode, constantSymbol);
             }
             else
             {
@@ -35,7 +35,7 @@ namespace Cm.Bind
     }
     
     internal void BindConstant(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.ConstantNode* constantNode, Cm.Sym.ConstantSymbol* constantSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.ConstantNode* constantNode, Cm.Sym.ConstantSymbol* constantSymbol)
     {
         if (constantSymbol->Evaluating())
         {
@@ -108,7 +108,7 @@ namespace Cm.Bind
             constantSymbol->SetBound();
             return;
         }
-        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, constantNode->TypeExpr());
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, constantNode->TypeExpr());
         if ((type is Cm.Sym.BoolTypeSymbol*) || (type is Cm.Sym.CharTypeSymbol*) || (type is Cm.Sym.EnumTypeSymbol*) || type->IsIntegerTypeSymbol() || type->IsFloatingPointTypeSymbol())
         {
             if (type is Cm.Sym.EnumTypeSymbol*)
@@ -121,21 +121,21 @@ namespace Cm.Bind
                     {
                         Cm.Ast.EnumTypeNode* enumTypeNode = cast<Cm.Ast.EnumTypeNode*>(node);
                         Cm.Sym.ContainerScope* scope = symbolTable.GetContainerScope(enumTypeNode);
-                        BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, enumTypeNode);
+                        BindEnumType(symbolTable, scope, fileScopes, classTemplateRepository, boundCompileUnit, enumTypeNode);
                     }
                 }
                 type = enumTypeSymbol->GetUnderlyingType();
             }
-            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, type);
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, type);
             if (type->Access() < constantSymbol->Access())
             {
                 throw Cm.Core.Error("type of a constant must be at least as accessible as the constant itself", type->GetSpan(), constantSymbol->GetSpan());
             }
             constantSymbol->SetType(type);
             Cm.Sym.SymbolType symbolType = type->GetSymbolType();
-            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType);
+            Cm.Sym.ValueType valueType = Cm.Sym.GetValueTypeFor(symbolType, false);
             constantSymbol->SetEvaluating();
-            Cm.Sym.Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository);
+            Cm.Sym.Value* value = Evaluate(valueType, false, constantNode->Value(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit);
             constantSymbol->ResetEvaluating();
             constantSymbol->SetValue(value);
             constantSymbol->SetBound();

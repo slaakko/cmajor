@@ -25,10 +25,10 @@ ValueType valueTypes[uint8_t(Cm::Sym::SymbolType::maxSymbol)] =
     ValueType::none, ValueType::none, ValueType::none
 };
 
-ValueType GetValueTypeFor(SymbolType symbolType)
+ValueType GetValueTypeFor(SymbolType symbolType, bool dontThrow)
 {
     ValueType valueType = valueTypes[uint8_t(symbolType)];
-    if (valueType == ValueType::none)
+    if (valueType == ValueType::none && !dontThrow)
     {
         throw std::runtime_error("invalid basic value type for symbol type");
     }
@@ -37,23 +37,24 @@ ValueType GetValueTypeFor(SymbolType symbolType)
 
 ValueType commonType[uint8_t(Cm::Sym::ValueType::max)][uint8_t(Cm::Sym::ValueType::max)] = 
 {
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::wcharValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::ucharValue, ValueType::ucharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::none, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::nullValue, ValueType::none },
-    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::stringValue }
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::boolValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::charValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::wcharValue, ValueType::wcharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::ucharValue, ValueType::ucharValue, ValueType::ucharValue, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::sbyteValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::byteValue, ValueType::shortValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::shortValue, ValueType::shortValue, ValueType::shortValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::ushortValue, ValueType::intValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::intValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::uintValue, ValueType::longValue, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::longValue, ValueType::none, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::none, ValueType::ulongValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::floatValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::doubleValue, ValueType::none, ValueType::none, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::nullValue, ValueType::none, ValueType::charPtrValue },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::stringValue, ValueType::none },
+    { ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::none, ValueType::charPtrValue , ValueType::none, ValueType::charPtrValue }
 };
 
 ValueType GetCommonType(ValueType left, ValueType right)
@@ -63,7 +64,7 @@ ValueType GetCommonType(ValueType left, ValueType right)
 
 const char* valueTypeStr[uint8_t(ValueType::max)] =
 {
-    "", "bool", "char", "wchar", "uchar", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "@nullptrtype", "string"
+    "", "bool", "char", "wchar", "uchar", "sbyte", "byte", "short", "ushort", "int", "uint", "long", "ulong", "float", "double", "@nullptrtype", "string", "char*"
 };
 
 std::string ValueTypeStr(ValueType valueType)
@@ -91,6 +92,7 @@ TypeSymbol* GetTypeSymbol(ValueType valueType, SymbolTable& symbolTable)
         case ValueType::doubleValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::doubleId));
         case ValueType::nullValue: return symbolTable.GetTypeRepository().GetTypeNothrow(GetBasicTypeId(Cm::Sym::ShortBasicTypeId::nullPtrId));
         case ValueType::stringValue: return symbolTable.GetTypeRepository().MakeConstCharPtrType(Span());
+        case ValueType::charPtrValue: return symbolTable.GetTypeRepository().MakeConstCharPtrType(Span());
     }
     return nullptr;
 }
@@ -245,6 +247,21 @@ Value* BoolValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+void BoolValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a Boolean", span);
+}
+
+void BoolValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a Boolean", span);
+}
+
+Value* BoolValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a Boolean", span);
 }
 
 Ir::Intf::Object* BoolValue::CreateIrObject() const
@@ -417,6 +434,21 @@ Value* CharValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* CharValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a char", span);
+}
+
+void CharValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a char", span);
+}
+
+void CharValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a char", span);
 }
 
 Ir::Intf::Object* CharValue::CreateIrObject() const
@@ -596,6 +628,21 @@ Value* WCharValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* WCharValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a wchar", span);
+}
+
+void WCharValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a wchar", span);
+}
+
+void WCharValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a wchar", span);
 }
 
 Ir::Intf::Object* WCharValue::CreateIrObject() const
@@ -784,6 +831,21 @@ Value* UCharValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Value* UCharValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a uchar", span);
+}
+
+void UCharValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a uchar", span);
+}
+
+void UCharValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a uchar", span);
+}
+
 Ir::Intf::Object* UCharValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateUI32Constant(value);
@@ -935,6 +997,11 @@ Value* SByteValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Value* SByteValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference an sbyte", span);
+}
+
 Ir::Intf::Object* SByteValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateI8Constant(value);
@@ -1063,6 +1130,11 @@ Value* ByteValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* ByteValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a byte", span);
 }
 
 Ir::Intf::Object* ByteValue::CreateIrObject() const
@@ -1223,6 +1295,11 @@ Value* ShortValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Value* ShortValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a short", span);
+}
+
 Ir::Intf::Object* ShortValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateI16Constant(value);
@@ -1365,6 +1442,11 @@ Value* UShortValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* UShortValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a ushort", span);
 }
 
 Ir::Intf::Object* UShortValue::CreateIrObject() const
@@ -1532,6 +1614,11 @@ Value* IntValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Value* IntValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference an int", span);
+}
+
 Ir::Intf::Object* IntValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateI32Constant(value);
@@ -1688,6 +1775,11 @@ Value* UIntValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* UIntValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a uint", span);
 }
 
 Ir::Intf::Object* UIntValue::CreateIrObject() const
@@ -1862,6 +1954,11 @@ Value* LongValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+Value* LongValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a long", span);
+}
+
 Ir::Intf::Object* LongValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateI64Constant(value);
@@ -2032,6 +2129,11 @@ Value* ULongValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+Value* ULongValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a ulong", span);
 }
 
 Ir::Intf::Object* ULongValue::CreateIrObject() const
@@ -2211,6 +2313,21 @@ Value* FloatValue::As(ValueType targetType, bool cast, const Span& span) const
             throw Exception("invalid conversion", span);
         }
     }
+}
+
+void FloatValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a float", span);
+}
+
+void FloatValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a float", span);
+}
+
+Value* FloatValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a float", span);
 }
 
 Ir::Intf::Object* FloatValue::CreateIrObject() const
@@ -2399,6 +2516,21 @@ Value* DoubleValue::As(ValueType targetType, bool cast, const Span& span) const
     }
 }
 
+void DoubleValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment a double", span);
+}
+
+void DoubleValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement a double", span);
+}
+
+Value* DoubleValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a double", span);
+}
+
 Ir::Intf::Object* DoubleValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateDoubleConstant(value);
@@ -2449,7 +2581,26 @@ void NullValue::Write(Writer& writer)
 
 Value* NullValue::As(ValueType targetType, bool cast, const Span& span) const
 {
+    if (targetType == ValueType::charPtrValue)
+    {
+        return new CharPtrValue(nullptr);
+    }
     throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
+}
+
+void NullValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment null value", span);
+}
+
+void NullValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement null value", span);
+}
+
+Value* NullValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a null value", span);
 }
 
 Ir::Intf::Object* NullValue::CreateIrObject() const
@@ -2474,7 +2625,6 @@ StringValue::StringValue(const std::string& value_) : value(value_)
 {
 }
 
-
 Value* StringValue::Clone() const 
 {
     return new StringValue(value);
@@ -2495,9 +2645,86 @@ Value* StringValue::As(ValueType targetType, bool cast, const Span& span) const
     throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
 }
 
+void StringValue::Inc(const Span& span)
+{
+    throw Exception("cannot increment string value", span);
+}
+
+void StringValue::Dec(const Span& span)
+{
+    throw Exception("cannot decrement string value", span);
+}
+
+Value* StringValue::Deref(const Span& span) const
+{
+    throw Exception("cannot dereference a string value", span);
+}
+
 Ir::Intf::Object* StringValue::CreateIrObject() const
 {
     return Cm::IrIntf::CreateStringConstant(value);
+}
+
+CharPtrValue::CharPtrValue() : value(nullptr)
+{
+}
+
+CharPtrValue::CharPtrValue(const char* value_) : value(value_)
+{
+}
+
+Value* CharPtrValue::Clone() const
+{
+    return new CharPtrValue(value);
+}
+
+void CharPtrValue::Read(Reader& reader)
+{
+    throw std::runtime_error("reading char* not supported");
+}
+
+void CharPtrValue::Write(Writer& writer)
+{
+    throw std::runtime_error("writing char* not supported");
+}
+
+Value* CharPtrValue::As(ValueType targetType, bool cast, const Span& span) const
+{
+    if (targetType != ValueType::charPtrValue)
+    {
+        throw Exception("cannot convert " + ValueTypeStr(GetValueType()) + " to " + ValueTypeStr(targetType), span);
+    }
+    return new CharPtrValue(value);
+}
+
+Value* CharPtrValue::Deref(const Span& span) const
+{
+    if (value)
+    {
+        return new CharValue(*value);
+    }
+    throw Exception("tried to dereference a null char*", span);
+}
+
+Ir::Intf::Object* CharPtrValue::CreateIrObject() const
+{
+    throw std::runtime_error("create ir object for char* not supported");
+}
+
+void EvaluationStack::Push(Cm::Sym::Value* value)
+{
+    stack.push(std::unique_ptr<Cm::Sym::Value>(value));
+}
+
+Cm::Sym::Value* EvaluationStack::Pop()
+{
+    if (stack.empty())
+    {
+        throw std::runtime_error("evaluation stack is empty");
+    }
+    std::unique_ptr<Cm::Sym::Value> value = std::move(stack.top());
+    stack.pop();
+    return value.release();
 }
 
 } } // namespace Cm::Sym

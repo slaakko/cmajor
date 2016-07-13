@@ -11,6 +11,7 @@
 #include <Cm.Build/Build.hpp>
 #include <Cm.Bind/ClassTemplateRepository.hpp>
 #include <Cm.Bind/InlineFunctionRepository.hpp>
+#include <Cm.Bind/ConstExprFunctionRepository.hpp>
 #include <Cm.Bind/SynthesizedClassFun.hpp>
 #include <Cm.Bind/DelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
@@ -275,6 +276,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     prebindCompileUnit.SetPrebindCompileUnit();
     prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
     prebindCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(prebindCompileUnit));
+    prebindCompileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(prebindCompileUnit));
     prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
     prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
     prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
@@ -295,6 +297,7 @@ std::string Compile(Cm::Ast::CompileUnitNode* testUnit, Cm::Ast::Project* projec
     compileUnitMap.MapCompileUnit(testUnit, &boundCompileUnit);
     boundCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(boundCompileUnit));
     boundCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(boundCompileUnit));
+    boundCompileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(boundCompileUnit));
     boundCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(boundCompileUnit));
     boundCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(boundCompileUnit));
     boundCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(boundCompileUnit));

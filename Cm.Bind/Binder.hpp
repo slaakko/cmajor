@@ -93,6 +93,7 @@ public:
     void SetCurrentFunction(Cm::BoundTree::BoundFunction* function);
     Cm::BoundTree::BoundFunction* ReleaseCurrentFunction();
     void SetCurrentParent(Cm::BoundTree::BoundParentStatement* parent);
+    Cm::BoundTree::BoundParentStatement* CurrentParent() const { return currentParent.get(); }
 private:
     Cm::BoundTree::BoundCompileUnit& boundCompileUnit;
     Cm::Sym::ContainerScope* currentContainerScope;

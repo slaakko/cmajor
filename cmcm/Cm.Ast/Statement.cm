@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -896,6 +896,14 @@ namespace Cm.Ast
             }
             visitor.EndVisit(*this);
         }
+        public nothrow inline StatementNode* Init() const
+        {
+            return init.GetPtr();
+        }
+        public nothrow inline Node* Increment() const 
+        {
+            return increment.GetPtr();
+        }
         private UniquePtr<StatementNode> init;
         private UniquePtr<Node> condition;
         private UniquePtr<Node> increment;
@@ -1031,7 +1039,10 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.BeginVisit(*this);
-            statements.Accept(visitor);
+            if (!visitor.SkipContent())
+            {
+                statements.Accept(visitor);
+            }
             visitor.EndVisit(*this);
         }
         public void AddStatement(StatementNode* statement)
@@ -1272,6 +1283,14 @@ namespace Cm.Ast
             }
             visitor.EndVisit(*this);
         }
+        public nothrow inline Node* TargetExpr() const
+        {
+            return targetExpr.GetPtr();
+        }
+        public nothrow inline Node* SourceExpr() const
+        {
+            return sourceExpr.GetPtr();
+        }
         private UniquePtr<Node> targetExpr;
         private UniquePtr<Node> sourceExpr;
     }
@@ -1305,6 +1324,10 @@ namespace Cm.Ast
             argument->SetParent(this);
             arguments.Add(argument);
         }
+        public nothrow inline NodeList<Node>& Arguments() const
+        {
+            return arguments;
+        }
         public override void Read(Reader& reader)
         {
             base->Read(reader);
@@ -1325,7 +1348,7 @@ namespace Cm.Ast
         public override void Accept(Visitor& visitor)
         {
             visitor.BeginVisit(*this);
-            if (visitor.VisitExpressions())
+            if (visitor.VisitExpressions() && !visitor.SkipArguments())
             {
                 arguments.Accept(visitor);
             }

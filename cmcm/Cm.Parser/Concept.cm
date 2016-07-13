@@ -1568,6 +1568,11 @@ namespace Cm.Parser
                 a0ActionParser->SetAction(ParsingAction(A0Action));
                 ActionParser* a1ActionParser = GetAction("A1");
                 a1ActionParser->SetAction(ParsingAction(A1Action));
+                ActionParser* a2ActionParser = GetAction("A2");
+                a2ActionParser->SetAction(ParsingAction(A2Action));
+                NonterminalParser* predicateConstraintNonterminalParser = GetNonterminal("PredicateConstraint");
+                predicateConstraintNonterminalParser->SetPreCall(PreCall(PrePredicateConstraint));
+                predicateConstraintNonterminalParser->SetPostCall(PostCall(PostPredicateConstraint));
                 NonterminalParser* isConstraintNonterminalParser = GetNonterminal("IsConstraint");
                 isConstraintNonterminalParser->SetPreCall(PreCall(PreIsConstraint));
                 isConstraintNonterminalParser->SetPostCall(PostCall(PostIsConstraint));
@@ -1577,11 +1582,27 @@ namespace Cm.Parser
             }
             public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
-                context.value = context.fromIsConstraint;
+                context.value = context.fromPredicateConstraint;
             }
             public throw void A1Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
             {
+                context.value = context.fromIsConstraint;
+            }
+            public throw void A2Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
                 context.value = context.fromMultiParamConstraint;
+            }
+            public throw void PrePredicateConstraint(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostPredicateConstraint(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromPredicateConstraint_value = stack.Pop();
+                    context.fromPredicateConstraint = *cast<ValueObject<ConstraintNode*>*>(fromPredicateConstraint_value.GetPtr());
+                }
             }
             public throw void PreIsConstraint(Stack<UniquePtr<Object>>& stack)
             {
@@ -1611,8 +1632,65 @@ namespace Cm.Parser
             {
                 public ParsingContext* ctx;
                 public ConstraintNode* value;
+                public ConstraintNode* fromPredicateConstraint;
                 public ConstraintNode* fromIsConstraint;
                 public ConstraintNode* fromMultiParamConstraint;
+            }
+            private Stack<Context> contextStack;
+            private Context context;
+        }
+        private class PredicateConstraintRule: System.Text.Parsing.Rule
+        {
+            public PredicateConstraintRule(const string& name_, Scope* enclosingScope_, Parser* definition_):
+                base(name_, enclosingScope_, definition_), contextStack(), context()
+            {
+                AddInheritedAttribute(AttrOrVariable("ParsingContext*", "ctx"));
+                SetValueTypeName("ConstraintNode*");
+            }
+            public override void Enter(Stack<UniquePtr<Object>>& stack)
+            {
+                contextStack.Push(Rvalue(context));
+                context = Context();
+                UniquePtr<Object> ctx_value = stack.Pop();
+                context.ctx = *cast<ValueObject<ParsingContext*>*>(ctx_value.GetPtr());
+            }
+            public override void Leave(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    stack.Push(UniquePtr<Object>(new ValueObject<ConstraintNode*>(context.value)));
+                }
+                context = contextStack.Pop();
+            }
+            public override void Link()
+            {
+                ActionParser* a0ActionParser = GetAction("A0");
+                a0ActionParser->SetAction(ParsingAction(A0Action));
+                NonterminalParser* invokeExprNonterminalParser = GetNonterminal("InvokeExpr");
+                invokeExprNonterminalParser->SetPreCall(PreCall(PreInvokeExpr));
+                invokeExprNonterminalParser->SetPostCall(PostCall(PostInvokeExpr));
+            }
+            public throw void A0Action(const char* matchBegin, const char* matchEnd, const Span& span, const string& fileName, bool& pass)
+            {
+                context.value = new PredicateConstraintNode(context.fromInvokeExpr->GetSpan(), context.fromInvokeExpr);
+            }
+            public throw void PreInvokeExpr(Stack<UniquePtr<Object>>& stack)
+            {
+                stack.Push(UniquePtr<Object>(new ValueObject<ParsingContext*>(context.ctx)));
+            }
+            public throw void PostInvokeExpr(Stack<UniquePtr<Object>>& stack, bool matched)
+            {
+                if (matched)
+                {
+                    UniquePtr<Object> fromInvokeExpr_value = stack.Pop();
+                    context.fromInvokeExpr = *cast<ValueObject<Node*>*>(fromInvokeExpr_value.GetPtr());
+                }
+            }
+            private class Context
+            {
+                public ParsingContext* ctx;
+                public ConstraintNode* value;
+                public Node* fromInvokeExpr;
             }
             private Stack<Context> contextStack;
             private Context context;
@@ -1844,16 +1922,16 @@ namespace Cm.Parser
                 grammar0 = System.Text.Parsing.stdlib.Create(parsingDomain);
             }
             AddGrammarReference(grammar0);
-            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
+            Grammar* grammar1 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
             if (grammar1 == null)
             {
-                grammar1 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
+                grammar1 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar1);
-            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.ExpressionGrammar");
+            Grammar* grammar2 = parsingDomain->GetGrammar("Cm.Parser.FunctionGrammar");
             if (grammar2 == null)
             {
-                grammar2 = Cm.Parser.ExpressionGrammar.Create(parsingDomain);
+                grammar2 = Cm.Parser.FunctionGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar2);
             Grammar* grammar3 = parsingDomain->GetGrammar("Cm.Parser.IdentifierGrammar");
@@ -1862,35 +1940,36 @@ namespace Cm.Parser
                 grammar3 = Cm.Parser.IdentifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar3);
-            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
+            Grammar* grammar4 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
             if (grammar4 == null)
             {
-                grammar4 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
+                grammar4 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar4);
-            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
+            Grammar* grammar5 = parsingDomain->GetGrammar("Cm.Parser.ParameterGrammar");
             if (grammar5 == null)
             {
-                grammar5 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
+                grammar5 = Cm.Parser.ParameterGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar5);
-            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.TypeExprGrammar");
+            Grammar* grammar6 = parsingDomain->GetGrammar("Cm.Parser.SpecifierGrammar");
             if (grammar6 == null)
             {
-                grammar6 = Cm.Parser.TypeExprGrammar.Create(parsingDomain);
+                grammar6 = Cm.Parser.SpecifierGrammar.Create(parsingDomain);
             }
             AddGrammarReference(grammar6);
         }
         public override void CreateRules()
         {
-            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
-            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
             AddRuleLink(new RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
             AddRuleLink(new RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
             AddRuleLink(new RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+            AddRuleLink(new RuleLink("InvokeExpr", this, "ExpressionGrammar.InvokeExpr"));
+            AddRuleLink(new RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+            AddRuleLink(new RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+            AddRuleLink(new RuleLink("FunctionGroupId", this, "FunctionGrammar.FunctionGroupId"));
+            AddRuleLink(new RuleLink("spaces_and_comments", this, "System.Text.Parsing.stdlib.spaces_and_comments"));
+            AddRuleLink(new RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
             AddRule(new ConceptRule("Concept", GetScope(),
                 new SequenceParser(
                     new ActionParser("A0",
@@ -2122,10 +2201,16 @@ namespace Cm.Parser
                         new NonterminalParser("AtomicConstraintExpr", "AtomicConstraintExpr", 1)))));
             AddRule(new AtomicConstraintExprRule("AtomicConstraintExpr", GetScope(),
                 new AlternativeParser(
-                    new ActionParser("A0",
-                        new NonterminalParser("IsConstraint", "IsConstraint", 1)),
-                    new ActionParser("A1",
+                    new AlternativeParser(
+                        new ActionParser("A0",
+                            new NonterminalParser("PredicateConstraint", "PredicateConstraint", 1)),
+                        new ActionParser("A1",
+                            new NonterminalParser("IsConstraint", "IsConstraint", 1))),
+                    new ActionParser("A2",
                         new NonterminalParser("MultiParamConstraint", "MultiParamConstraint", 1)))));
+            AddRule(new PredicateConstraintRule("PredicateConstraint", GetScope(),
+                new ActionParser("A0",
+                    new NonterminalParser("InvokeExpr", "InvokeExpr", 1))));
             AddRule(new IsConstraintRule("IsConstraint", GetScope(),
                 new ActionParser("A0",
                     new SequenceParser(

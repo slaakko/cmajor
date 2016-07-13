@@ -14,9 +14,9 @@ namespace Cm.Bind
 {
     public class Prebinder : Cm.Ast.Visitor
     {
-        public nothrow Prebinder(Cm.Sym.SymbolTable& symbolTable_, Cm.Core.ClassTemplateRepository& classTemplateRepository_) : 
-            base(false, false), symbolTable(symbolTable_), classTemplateRepository(classTemplateRepository_), containerScope(null), parameterIndex(0), currentClass(null), currentFunction(null), 
-            currentDelegate(null), currentClassDelegate(null), dontCompleteFunctions(false)
+        public nothrow Prebinder(Cm.Sym.SymbolTable& symbolTable_, Cm.Core.ClassTemplateRepository& classTemplateRepository_, Cm.BoundTree.BoundCompileUnit& boundCompileUnit_) : 
+            base(false, false), symbolTable(symbolTable_), classTemplateRepository(classTemplateRepository_), boundCompileUnit(boundCompileUnit_), 
+            containerScope(null), parameterIndex(0), currentClass(null), currentFunction(null), currentDelegate(null), currentClassDelegate(null), dontCompleteFunctions(false)
         {
         }
         public void BeginCompileUnit()
@@ -60,7 +60,7 @@ namespace Cm.Bind
         }
         public override void BeginVisit(Cm.Ast.ClassNode& classNode)
         {
-            Cm.Sym.ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, &classNode);
+            Cm.Sym.ClassTypeSymbol* classTypeSymbol = BindClass(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &classNode);
             if (classNode.TemplateParameters().Count() > 0)
             {
                 classTypeSymbol->SetUsingNodes(usingNodes);
@@ -97,7 +97,7 @@ namespace Cm.Bind
         {
             if (!dontCompleteFunctions)
             {
-                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &constructorNode, currentFunction, currentClass);
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &constructorNode, currentFunction, currentClass);
             }
             EndContainerScope();
         }
@@ -115,7 +115,7 @@ namespace Cm.Bind
         {
             if (!dontCompleteFunctions)
             {
-                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &destructorNode, currentFunction, currentClass);
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &destructorNode, currentFunction, currentClass);
             }
             EndContainerScope();
         }
@@ -136,7 +136,7 @@ namespace Cm.Bind
         {
             if (!dontCompleteFunctions)
             {
-                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &memberFunctionNode, currentFunction, currentClass);
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &memberFunctionNode, currentFunction, currentClass);
             }
             EndContainerScope();
         }
@@ -154,7 +154,7 @@ namespace Cm.Bind
         {
             if (!dontCompleteFunctions)
             {
-                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &conversionFunctionNode, currentFunction, currentClass);
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &conversionFunctionNode, currentFunction, currentClass);
             }
             EndContainerScope();
         }
@@ -172,17 +172,17 @@ namespace Cm.Bind
         {
             if (!dontCompleteFunctions)
             {
-                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &staticConstructorNode, currentFunction, currentClass);
+                CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &staticConstructorNode, currentFunction, currentClass);
             }
             EndContainerScope();
         }
         public override void Visit(Cm.Ast.MemberVariableNode& memberVariableNode)
         {
-            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, &memberVariableNode);
+            BindMemberVariable(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &memberVariableNode);
         }
         public override void BeginVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
         {
-            BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, &enumTypeNode);
+            BindEnumType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &enumTypeNode);
             BeginContainerScope(symbolTable.GetContainerScope(&enumTypeNode));
         }
         public override void EndVisit(Cm.Ast.EnumTypeNode& enumTypeNode)
@@ -191,19 +191,19 @@ namespace Cm.Bind
         }
         public override void Visit(Cm.Ast.EnumConstantNode& enumConstantNode)
         {
-            BindEnumConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, &enumConstantNode);
+            BindEnumConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &enumConstantNode);
         }
         public override void Visit(Cm.Ast.TypedefNode& typedefNode)
         {
-            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, &typedefNode);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &typedefNode);
         }
         public override void Visit(Cm.Ast.TypedefStatementNode& typedefStatementNode)
         {
-            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, &typedefStatementNode);
+            BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &typedefStatementNode);
         }
         public override void Visit(Cm.Ast.ConstantNode& constantNode)
         {
-            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, &constantNode);
+            BindConstant(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &constantNode);
         }
         public override void Visit(Cm.Ast.ParameterNode& parameterNode)
         {
@@ -211,7 +211,7 @@ namespace Cm.Bind
             {
                 return;
             }
-            BindParameter(symbolTable, containerScope, fileScopes, classTemplateRepository, &parameterNode, parameterIndex);
+            BindParameter(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &parameterNode, parameterIndex);
             ++parameterIndex;
         }
         public override void BeginVisit(Cm.Ast.FunctionNode& functionNode)
@@ -223,6 +223,10 @@ namespace Cm.Bind
                 Cm.Sym.FunctionSymbol* templateFunction = BindFunction(symbolTable, containerScope, fileScopes, &functionNode, null);
                 templateFunction->SetUsingNodes(usingNodes);
                 usingNodesSet = true;
+                if ((functionNode.GetSpecifiers() & Cm.Ast.Specifiers.constexpr_) != Cm.Ast.Specifiers.none)
+                {
+                    templateFunction->SetConstExpr();
+                }
             }
             else
             {
@@ -251,31 +255,31 @@ namespace Cm.Bind
             {
                 if (!dontCompleteFunctions)
                 {
-                    CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, &functionNode, currentFunction, null);
+                    CompleteBindFunction(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &functionNode, currentFunction, null);
                 }
                 EndContainerScope();
             }
         }
         public override void BeginVisit(Cm.Ast.DelegateNode& delegateNode)
         {
-            currentDelegate = BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, &delegateNode);
+            currentDelegate = BindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &delegateNode);
             BeginContainerScope(symbolTable.GetContainerScope(&delegateNode));
             parameterIndex = 0;
         }
         public override void EndVisit(Cm.Ast.DelegateNode& delegateNode)
         {
-            CompleteBindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, currentDelegate, &delegateNode);
+            CompleteBindDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, currentDelegate, &delegateNode);
             EndContainerScope();
         }
         public override void BeginVisit(Cm.Ast.ClassDelegateNode& classDelegateNode)
         {
-            currentClassDelegate = BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, &classDelegateNode);
+            currentClassDelegate = BindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, &classDelegateNode);
             BeginContainerScope(symbolTable.GetContainerScope(&classDelegateNode));
             parameterIndex = 0;
         }
         public override void EndVisit(Cm.Ast.ClassDelegateNode& classDelegateNode)
         {
-            CompleteBindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, currentClassDelegate, &classDelegateNode);
+            CompleteBindClassDelegate(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, currentClassDelegate, &classDelegateNode);
             EndContainerScope();
         }
         public void BeginContainerScope(Cm.Sym.ContainerScope* scope)
@@ -298,6 +302,7 @@ namespace Cm.Bind
         private Cm.Sym.SymbolTable& symbolTable;
         private List<UniquePtr<Cm.Sym.FileScope>> fileScopes;
         private Cm.Core.ClassTemplateRepository& classTemplateRepository;
+        private Cm.BoundTree.BoundCompileUnit& boundCompileUnit;
         private UniquePtr<Cm.Sym.FileScope> fileScope;
         private Cm.Sym.ContainerScope* containerScope;
         private Stack<Cm.Sym.ContainerScope*> containerScopeStack;

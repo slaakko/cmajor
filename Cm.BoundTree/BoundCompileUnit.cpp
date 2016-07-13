@@ -81,6 +81,11 @@ BoundCompileUnit::BoundCompileUnit(Cm::Ast::CompileUnitNode* syntaxUnit_, const 
     }
 }
 
+void BoundCompileUnit::Release()
+{
+    constExprFunctionRepository->Release();
+}
+
 void BoundCompileUnit::SetPaths(const std::string& basePath)
 {
     if (Cm::IrIntf::GetBackEnd() == Cm::IrIntf::BackEnd::llvm)
@@ -291,6 +296,11 @@ void BoundCompileUnit::SetClassTemplateRepository(Cm::Core::ClassTemplateReposit
 void BoundCompileUnit::SetInlineFunctionRepository(Cm::Core::InlineFunctionRepository* inlineFunctionRepository_)
 {
     inlineFunctionRepository.reset(inlineFunctionRepository_);
+}
+
+void BoundCompileUnit::SetConstExprFunctionRepository(Cm::Core::ConstExprFunctionRepository* constExprFunctionRepository_)
+{
+    constExprFunctionRepository.reset(constExprFunctionRepository_);
 }
 
 void BoundCompileUnit::SetDelegateTypeOpRepository(Cm::Core::DelegateTypeOpRepository* delegateTypeOpRepository_)

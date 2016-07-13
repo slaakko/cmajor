@@ -47,8 +47,10 @@ public:
     virtual bool IsDerivedTypeSymbol() const { return false; }
     virtual TypeSymbol* GetBaseType() const { return const_cast<TypeSymbol*>(this); }
     virtual bool IsSignedType() const { return false; }
+    virtual bool IsUnsignedType() const { return false; }
     virtual bool IsPointerType() const { return false; }
     virtual bool IsFunctionType() const { return false; }
+    virtual bool IsPolymorphic() const { return false; }
     virtual int GetPointerCount() const { return 0; }
     virtual int GetPointerCountAfterArray() const { return 0; }
     virtual bool IsPointerToClassType() const { return false; }

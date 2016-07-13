@@ -141,6 +141,10 @@ namespace Cm.Sym
         {
             SetFlag(ClassTypeSymbolFlags.virtual_);
         }
+        public nothrow override bool IsPolymorphic() const
+        {
+            return IsVirtual();
+        }
         public nothrow override bool IsAbstract() const
         {
             return GetFlag(ClassTypeSymbolFlags.abstract_);
@@ -606,7 +610,7 @@ namespace Cm.Sym
         public nothrow bool HasBaseClass(ClassTypeSymbol* cls, int& distance) const
         {
             if (baseClass == null) return false;
-            distance = distance + 1;
+            ++distance;
             if (baseClass == cls) return true;
             return baseClass->HasBaseClass(cls, distance);
         }
@@ -927,7 +931,6 @@ namespace Cm.Sym
         private List<FunctionSymbol*> vtbl;
         private HashSet<FunctionSymbol*> conversions;
         private Cm.Ast.CompileUnitNode* compileUnit;
-        
     }
     
     public nothrow bool Overrides(FunctionSymbol* f, FunctionSymbol* g)
@@ -950,7 +953,8 @@ namespace Cm.Sym
     
     public bool Implements(FunctionSymbol* memFun, FunctionSymbol* intfMemFun)
     {
-        if (memFun->GetReturnType() == null) return false;
+        if (memFun->GroupName() != intfMemFun->GroupName()) return false;
+        if (memFun->GetReturnType() == null || intfMemFun->GetReturnType() == null) return false;
         if (!TypesEqual(memFun->GetReturnType(), intfMemFun->GetReturnType())) return false;
         int n = memFun->Parameters().Count();
         if (n != intfMemFun->Parameters().Count()) return false;
@@ -967,6 +971,10 @@ namespace Cm.Sym
                 if (!TypesEqual(memFunParamType, intfMemFunParamType)) return false;
             }
         }
+        if (memFun->CanThrow() && !intfMemFun->CanThrow() || !memFun->CanThrow() && intfMemFun->CanThrow()) 
+        {
+            throw Error("implementing function has conflicting nothrow specification compared to interface function", memFun->GetSpan(), intfMemFun->GetSpan());
+        }    
         return true;
     }
 }

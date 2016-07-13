@@ -13,7 +13,7 @@ using System.Collections;
 namespace Cm.Bind
 {
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Ast.TypedefNode* typedefNode)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.TypedefNode* typedefNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(typedefNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupTypedef);
         if (symbol == null)
@@ -29,7 +29,7 @@ namespace Cm.Bind
             if (symbol is Cm.Sym.TypedefSymbol*)
             {
                 Cm.Sym.TypedefSymbol* typedefSymbol = cast<Cm.Sym.TypedefSymbol*>(symbol);
-                BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode, typedefSymbol);
+                BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode, typedefSymbol);
             }
             else
             {
@@ -43,7 +43,7 @@ namespace Cm.Bind
     }
     
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Ast.TypedefStatementNode* typedefStatementNode)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.TypedefStatementNode* typedefStatementNode)
     {
         Cm.Sym.Symbol* symbol = containerScope->Lookup(typedefStatementNode->Id()->Str(), Cm.Sym.SymbolTypeSetId.lookupTypedef);
         if (symbol == null)
@@ -59,7 +59,7 @@ namespace Cm.Bind
             if (symbol is Cm.Sym.TypedefSymbol*)
             {
                 Cm.Sym.TypedefSymbol* typedefSymbol = cast<Cm.Sym.TypedefSymbol*>(symbol);
-                BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode, typedefSymbol);
+                BindTypedef(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode, typedefSymbol);
             }
             else
             {
@@ -73,7 +73,7 @@ namespace Cm.Bind
     }
     
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Ast.TypedefNode* typedefNode, Cm.Sym.TypedefSymbol* typedefSymbol)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.TypedefNode* typedefNode, Cm.Sym.TypedefSymbol* typedefSymbol)
     {
         if (typedefSymbol->Evaluating())
         {
@@ -144,14 +144,14 @@ namespace Cm.Bind
             return;
         }
         typedefSymbol->SetEvaluating();
-        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefNode->TypeExpr());
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefNode->TypeExpr());
         typedefSymbol->ResetEvaluating();
         typedefSymbol->SetType(type);
         typedefSymbol->SetBound();
     }
 
     internal void BindTypedef(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, Cm.Core.ClassTemplateRepository& classTemplateRepository,
-        Cm.Ast.TypedefStatementNode* typedefStatementNode, Cm.Sym.TypedefSymbol* typedefSymbol)
+        Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.TypedefStatementNode* typedefStatementNode, Cm.Sym.TypedefSymbol* typedefSymbol)
     {
         if (typedefSymbol->Evaluating())
         {
@@ -163,7 +163,7 @@ namespace Cm.Bind
         }
         SetAccess(typedefSymbol, Cm.Ast.Specifiers.public_, false);
         typedefSymbol->SetEvaluating();
-        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, typedefStatementNode->TypeExpr());
+        Cm.Sym.TypeSymbol* type = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, typedefStatementNode->TypeExpr());
         typedefSymbol->ResetEvaluating();
         typedefSymbol->SetType(type);
         typedefSymbol->SetBound();

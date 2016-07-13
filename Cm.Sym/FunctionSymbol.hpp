@@ -13,6 +13,7 @@
 #include <Cm.Sym/ParameterSymbol.hpp>
 #include <Cm.Sym/EntrySymbol.hpp>
 #include <Cm.Sym/ReturnValueSymbol.hpp>
+#include <Cm.Sym/Meta.hpp>
 #include <Cm.Ast/Function.hpp>
 #include <Cm.Ast/CompileUnit.hpp>
 #include <Cm.Ast/Concept.hpp>
@@ -88,7 +89,8 @@ enum class FunctionSymbolFlags: uint32_t
     memberOfClassTemplate = 1 << 16,
     arrayConstructor = 1 << 17,
     arrayAssignment = 1 << 18,
-    new_ = 1 << 19
+    new_ = 1 << 19,
+    intrinsic = 1 << 20
 };
 
 std::string FunctionSymbolFlagString(FunctionSymbolFlags flags);
@@ -113,14 +115,9 @@ class TypeParameterSymbol;
 struct PersistentFunctionData
 {
     PersistentFunctionData();
-    uint64_t bodyPos;
-    uint64_t bodySize;
-    std::unique_ptr<Cm::Ast::Node> returnTypeExprNode;
-    std::unique_ptr<Cm::Ast::FunctionGroupIdNode> groupId;
-    std::unique_ptr<Cm::Ast::WhereConstraintNode> constraint;
-    Cm::Ast::Specifiers specifiers;
     std::string cmlFilePath;
     Cm::Ast::NodeList usingNodes;
+    std::unique_ptr<Cm::Ast::WhereConstraintNode> constraint;
     std::unique_ptr<FileScope> functionFileScope;
     uint64_t functionPos;
     uint64_t functionSize;
@@ -155,6 +152,9 @@ public:
     bool IsFunctionTemplate() const { return !typeParameters.empty(); }
     void SetUsingNodes(const std::vector<Cm::Ast::Node*>& usingNodes_);
     const Cm::Ast::NodeList& GetUsingNodes() const;
+    bool HasConstraint() const { return persistentFunctionData && persistentFunctionData->constraint != nullptr; }
+    Cm::Ast::WhereConstraintNode* GetConstraint() const { return persistentFunctionData->constraint.get(); }
+    void SetConstraint(Cm::Ast::WhereConstraintNode* constraint);
     virtual ConversionType GetConversionType() const { return IsExplicit() ? Cm::Sym::ConversionType::explicit_ : Cm::Sym::ConversionType::implicit; }
     virtual ConversionRank GetConversionRank() const { return (IsConvertingConstructor() || IsConversionFunction()) ? Cm::Sym::ConversionRank::conversion : Cm::Sym::ConversionRank::exactMatch; }
     virtual int GetConversionDistance() const { return (IsConvertingConstructor() || IsConversionFunction()) ? 100 : 0; }
@@ -199,6 +199,10 @@ public:
     void SetArrayAssignment() { SetFlag(FunctionSymbolFlags::arrayAssignment); }
     bool IsNew() const { return GetFlag(FunctionSymbolFlags::new_); }
     void SetNew() { SetFlag(FunctionSymbolFlags::new_); }
+    bool IsIntrinsic() const { return GetFlag(FunctionSymbolFlags::intrinsic); }
+    void SetIntrinsic() { SetFlag(FunctionSymbolFlags::intrinsic); }
+    void SetIntrinsic(IntrinsicFunction* intrinsic_) { intrinsic.reset(intrinsic_); }
+    IntrinsicFunction* GetIntrinsic() const { return intrinsic.get(); }
     bool IsConstructor() const;
     bool IsDefaultConstructor() const;
     bool IsCopyConstructor() const;
@@ -216,13 +220,6 @@ public:
     void SetType(TypeSymbol* type_, int index) override;
     void SetReturnType(TypeSymbol* returnType_);
     TypeSymbol* GetReturnType() const { return returnType; }
-    Cm::Ast::Node* ReturnTypeExprNode() const { return persistentFunctionData->returnTypeExprNode.get(); }
-    Cm::Ast::FunctionGroupIdNode* GroupId() const { return persistentFunctionData->groupId.get(); }
-    bool HasConstraint() const { return persistentFunctionData && persistentFunctionData->constraint != nullptr; }
-    Cm::Ast::WhereConstraintNode* Constraint() const { return persistentFunctionData->constraint.get(); }
-    uint64_t BodyPos() const { return persistentFunctionData->bodyPos; }
-    uint64_t BodySize() const { return persistentFunctionData->bodySize; }
-    Cm::Ast::Specifiers GetSpecifiers() const { return persistentFunctionData->specifiers; }
     std::string CmlFilePath() const { return persistentFunctionData->cmlFilePath; }
     bool ReturnsClassOrInterfaceObjectByValue() const;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
@@ -285,6 +282,7 @@ private:
     FunctionSymbol* functionTemplate;
     std::unordered_set<FunctionSymbol*> overrideSet;
     std::string constraintDocId;
+    std::unique_ptr<IntrinsicFunction> intrinsic;
     bool GetFlag(FunctionSymbolFlags flag) const
     {
         return (flags & flag) != FunctionSymbolFlags::none;

@@ -1,4 +1,4 @@
-/*========================================================================
+﻿/*========================================================================
     Copyright (c) 2012-2016 Seppo Laakko
     http://sourceforge.net/projects/cmajor/
 
@@ -18,6 +18,7 @@ namespace Cm.Parser
         using IdentifierGrammar.QualifiedId;
         using ParameterGrammar.ParameterList;
         using ExpressionGrammar.Expression;
+        using ExpressionGrammar.InvokeExpr;
         using TypeExprGrammar.TypeExpr;
         using FunctionGrammar.FunctionGroupId;
         using stdlib.spaces_and_comments;
@@ -135,8 +136,13 @@ namespace Cm.Parser
             ;
             
         AtomicConstraintExpr(ParsingContext* ctx) : ConstraintNode*
-            ::= IsConstraint(ctx){ value = IsConstraint; }
+            ::= PredicateConstraint(ctx){ value = PredicateConstraint; }
+            |   IsConstraint(ctx){ value = IsConstraint; }
             |   MultiParamConstraint(ctx){ value = MultiParamConstraint; }
+            ;
+            
+        PredicateConstraint(ParsingContext* ctx) : ConstraintNode*
+            ::= InvokeExpr(ctx){ value = new PredicateConstraintNode(InvokeExpr->GetSpan(), InvokeExpr); }
             ;
             
         IsConstraint(ParsingContext* ctx, var UniquePtr<Node> typeExpr) : ConstraintNode*

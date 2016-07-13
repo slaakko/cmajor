@@ -21,6 +21,7 @@ source <ClassObjectLayout.cm>;
 source <ClassTemplateRepository.cm>;
 source <Concept.cm>;
 source <Constant.cm>;
+source <ConstExprFunctionRepository.cm>;
 source <ControlFlowAnalyzer.cm>;
 source <Delegate.cm>;
 source <DelegateTypeOpRepository.cm>;

@@ -62,8 +62,9 @@ namespace Cm.Bind
                 }
                 Cm.Sym.ClassTypeSymbol* subjectClassTypeSymbol = cast<Cm.Sym.ClassTypeSymbol*>(subjectTypeSymbol);
                 Cm.Core.ConceptCheckError exception;
+                UniquePtr<Cm.BoundTree.BoundConstraint> boundConstraint;
                 bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, templateTypeSymbol->GetFileScope(), templateTypeSymbol->Constraint(), subjectClassTypeSymbol->TypeParameters(), 
-                    templateTypeSymbol->TypeArguments(), exception);
+                    templateTypeSymbol->TypeArguments(), exception, boundConstraint);
                 if (!constraintSatisfied)
                 {
                     throw Cm.Core.Error("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
@@ -100,7 +101,7 @@ namespace Cm.Bind
                 boundCompileUnit.SymbolTable().BeginContainer(memberFunctionSymbol);
                 functionNode->Body()->Accept(declarationVisitor);
                 boundCompileUnit.SymbolTable().EndContainer();
-                Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+                Prebinder prebinder(boundCompileUnit.SymbolTable(), *this, boundCompileUnit);
                 prebinder.SetDontCompleteFunctions();
                 prebinder.SetCurrentClass(templateTypeSymbol);
                 prebinder.BeginCompileUnit();
@@ -194,7 +195,7 @@ namespace Cm.Bind
                     {
                         throw Cm.Core.Error("too few template arguments", templateTypeSymbol->GetSpan());
                     }
-                    typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.FileScopes(), *this, defaultTemplateArgumentNode);
+                    typeArgument = ResolveType(boundCompileUnit.SymbolTable(), templateTypeSymbol->GetContainerScope(), boundCompileUnit.FileScopes(), *this, boundCompileUnit, defaultTemplateArgumentNode);
                     templateTypeSymbol->AddTypeArgument(typeArgument);
                 }
                 boundTypeParam->SetType(typeArgument);
@@ -214,7 +215,7 @@ namespace Cm.Bind
             Cm.Sym.DeclarationVisitor declarationVisitor(boundCompileUnit.SymbolTable());
             declarationVisitor.SetTemplateType(classInstanceNode, templateTypeSymbol);
             globalNs->Accept(declarationVisitor);
-            Prebinder prebinder(boundCompileUnit.SymbolTable(), *this);
+            Prebinder prebinder(boundCompileUnit.SymbolTable(), *this, boundCompileUnit);
             prebinder.BeginCompileUnit();
             globalNs->Accept(prebinder);
             prebinder.EndCompileUnit();
@@ -230,8 +231,9 @@ namespace Cm.Bind
                 else
                 {
                     Cm.Core.ConceptCheckError exception;
+                    UniquePtr<Cm.BoundTree.BoundConstraint> boundConstraint;
                     bool constraintSatisfied = CheckConstraint(containerScope, boundCompileUnit, fileScope, classNode->Constraint(), subjectClassTypeSymbol->TypeParameters(), templateTypeSymbol->TypeArguments(),
-                        exception);
+                        exception, boundConstraint);
                     if (!constraintSatisfied)
                     {
                         throw Cm.Core.Error("cannot instantiate class '" + templateTypeSymbol->FullName() + "' because:\n" + exception.Message(), exception.Defined(), exception.References());
@@ -334,7 +336,8 @@ namespace Cm.Bind
                     {
                         throw Cm.Core.Error("too few template arguments", span);
                     }
-                    Cm.Sym.TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgumentScope, boundCompileUnit.FileScopes(), *this, defaultTemplateArgumentNode);
+                    Cm.Sym.TypeSymbol* typeArgument = ResolveType(boundCompileUnit.SymbolTable(), &resolveDefaultTemplateArgumentScope, boundCompileUnit.FileScopes(), *this, boundCompileUnit,
+                        defaultTemplateArgumentNode);
                     typeArguments.Add(typeArgument);
                 }
             }
@@ -379,7 +382,7 @@ namespace Cm.Bind
         {
             Cm.Ast.Node* stringNode = new Cm.Ast.TemplateIdNode(Span(), new Cm.Ast.IdentifierNode(Span(), "System.string"));
             boundCompileUnit.Own(stringNode);
-            Cm.Sym.TypeSymbol* stringTypeSymbol = ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.FileScopes(), *this, stringNode);
+            Cm.Sym.TypeSymbol* stringTypeSymbol = ResolveType(boundCompileUnit.SymbolTable(), boundCompileUnit.SymbolTable().GlobalScope(), boundCompileUnit.FileScopes(), *this, boundCompileUnit, stringNode);
             if (stringTypeSymbol is Cm.Sym.TemplateTypeSymbol*)
             {
                 Cm.Sym.TemplateTypeSymbol* stringTemplate = cast<Cm.Sym.TemplateTypeSymbol*>(stringTypeSymbol);

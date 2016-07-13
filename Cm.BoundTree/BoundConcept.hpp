@@ -20,7 +20,7 @@ class BoundConstraint : public BoundNode
 {
 public:
     BoundConstraint();
-    virtual bool Imply(BoundConstraint* that) const = 0;
+    virtual bool Subsume(BoundConstraint* that) const = 0;
     virtual bool IsAtomicConstraint() const { return false; }
     virtual bool IsBinaryConstraint() const { return false; }
     virtual bool IsConjunctiveConstraint() const { return false; }
@@ -33,7 +33,7 @@ class BoundAtomicConstraint : public BoundConstraint
 public:
     BoundAtomicConstraint(bool satisfied_);
     bool IsAtomicConstraint() const override { return true; }
-    bool Imply(BoundConstraint* that) const override;
+    bool Subsume(BoundConstraint* that) const override;
     void Accept(Visitor& visitor) override;
     bool Satisfied() const { return satisfied; }
     BoundConstraint* Clone() const override { return new BoundAtomicConstraint(*this); }
@@ -61,7 +61,7 @@ class BoundDisjunctiveConstraint : public BoundBinaryConstraint
 public:
     BoundDisjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_);
     BoundDisjunctiveConstraint(const BoundDisjunctiveConstraint& that);
-    bool Imply(BoundConstraint* that) const override;
+    bool Subsume(BoundConstraint* that) const override;
     bool IsDisjunctiveConstraint() const override { return true; }
     void Accept(Visitor& visitor) override;
     BoundConstraint* Clone() const override { return new BoundDisjunctiveConstraint(*this); }
@@ -72,7 +72,7 @@ class BoundConjunctiveConstraint : public BoundBinaryConstraint
 public:
     BoundConjunctiveConstraint(BoundConstraint* left_, BoundConstraint* right_);
     BoundConjunctiveConstraint(const BoundConjunctiveConstraint& that);
-    bool Imply(BoundConstraint* that) const override;
+    bool Subsume(BoundConstraint* that) const override;
     bool IsConjunctiveConstraint() const override { return true; }
     void Accept(Visitor& visitor) override;
     BoundConstraint* Clone() const override { return new BoundConjunctiveConstraint(*this); }

@@ -26,7 +26,8 @@ namespace Cm.Bind
     }
     
     internal void CompleteBindFunction(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Ast.FunctionNode* functionNode, Cm.Sym.FunctionSymbol* functionSymbol, Cm.Sym.ClassTypeSymbol* currentClass)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Ast.FunctionNode* functionNode, Cm.Sym.FunctionSymbol* functionSymbol, 
+        Cm.Sym.ClassTypeSymbol* currentClass)
     {
         if (currentClass != null && currentClass->IsClassTemplateSymbol())
         {
@@ -41,7 +42,7 @@ namespace Cm.Bind
         functionSymbol->ComputeName();
         if (functionSymbol->HasConstraint())
         {
-            functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->Constraint()->ToString());
+            functionSymbol->SetName(functionSymbol->Name() + " " + functionSymbol->GetConstraint()->ToString());
         }
         else if (functionNode->Constraint() != null)
         {
@@ -287,7 +288,7 @@ namespace Cm.Bind
         }
         if (functionNode->ReturnTypeExpr() != null)
         {
-            Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, functionNode->ReturnTypeExpr());
+            Cm.Sym.TypeSymbol* returnType = ResolveType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, functionNode->ReturnTypeExpr());
             functionSymbol->SetReturnType(returnType);
             if (functionSymbol->ReturnValue() != null)
             {
@@ -474,19 +475,19 @@ namespace Cm.Bind
     }
     
     internal void CheckFunctionReturnPaths(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes, 
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.FunctionSymbol* functionSymbol, Cm.Ast.FunctionNode* functionNode)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FunctionSymbol* functionSymbol, Cm.Ast.FunctionNode* functionNode)
     {
         if (functionSymbol->GetReturnType() == null || (functionSymbol->GetReturnType() is Cm.Sym.VoidTypeSymbol*) || !functionNode->HasBody()) return;
         Cm.Ast.CompoundStatementNode* body = functionNode->Body();
         for (const UniquePtr<Cm.Ast.StatementNode>& statement : body->Statements())
         {
-            if (IsFunctionTerminatingStatement(statement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, false)) return;
+            if (IsFunctionTerminatingStatement(statement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, false)) return;
         }
         throw Cm.Core.Error("not all control paths terminate in return statement or throw statement", functionNode->GetSpan());
     }
     
     internal bool IsFunctionTerminatingStatement(Cm.Ast.StatementNode* statement, Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, bool inForEverLoop)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, bool inForEverLoop)
     {
         switch (statement->GetNodeType())
         {
@@ -495,7 +496,7 @@ namespace Cm.Bind
                 Cm.Ast.CompoundStatementNode* compoundStatement = cast<Cm.Ast.CompoundStatementNode*>(statement);
                 for (const UniquePtr<Cm.Ast.StatementNode>& stat : compoundStatement->Statements())
                 {
-                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop)) return true;
                 }
                 break;
             }
@@ -504,9 +505,9 @@ namespace Cm.Bind
                 Cm.Ast.ConditionalStatementNode* conditionalStatement = cast<Cm.Ast.ConditionalStatementNode*>(statement);
                 if (inForEverLoop || conditionalStatement->HasElseStatement())
                 {
-                    if (IsFunctionTerminatingStatement(conditionalStatement->ThenS(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop) &&
+                    if (IsFunctionTerminatingStatement(conditionalStatement->ThenS(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop) &&
                         (inForEverLoop || (conditionalStatement->HasElseStatement() && IsFunctionTerminatingStatement(conditionalStatement->ElseS(), symbolTable, containerScope, fileScopes, 
-                        classTemplateRepository, inForEverLoop))))
+                        classTemplateRepository, boundCompileUnit, inForEverLoop))))
                     {
                         return true;
                     }
@@ -520,12 +521,12 @@ namespace Cm.Bind
                 {
                     for (const UniquePtr<Cm.Ast.CaseStatementNode>& caseStatement : switchStatement->CaseStatements())
                     {
-                        if (!IsFunctionTerminatingStatement(caseStatement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop))
+                        if (!IsFunctionTerminatingStatement(caseStatement.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop))
                         {
                             return false;
                         }
                     }
-                    if (IsFunctionTerminatingStatement(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop))
+                    if (IsFunctionTerminatingStatement(switchStatement->DefaultStatement(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop))
                     {
                         return true;
                     }
@@ -537,7 +538,7 @@ namespace Cm.Bind
                 Cm.Ast.CaseStatementNode* caseStatement = cast<Cm.Ast.CaseStatementNode*>(statement);
                 for (const UniquePtr<Cm.Ast.StatementNode>& stat : caseStatement->Statements())
                 {
-                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop)) return true;
                 }
                 break;
             }
@@ -546,34 +547,34 @@ namespace Cm.Bind
                 Cm.Ast.DefaultStatementNode* defaultStatement = cast<Cm.Ast.DefaultStatementNode*>(statement);
                 for (const UniquePtr<Cm.Ast.StatementNode>& stat : defaultStatement->Statements())
                 {
-                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, inForEverLoop)) return true;
+                    if (IsFunctionTerminatingStatement(stat.GetPtr(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, inForEverLoop)) return true;
                 }
                 break;
             }
             case Cm.Ast.NodeType.whileStatementNode:
             {
                 Cm.Ast.WhileStatementNode* whileStatement = cast<Cm.Ast.WhileStatementNode*>(statement);
-                if (IsAlwaysTrue(whileStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                if (IsAlwaysTrue(whileStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit))
                 {
-                    if (IsFunctionTerminatingStatement(whileStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                    if (IsFunctionTerminatingStatement(whileStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, true)) return true;
                 }
                 break;
             }
             case Cm.Ast.NodeType.doStatementNode:
             {
                 Cm.Ast.DoStatementNode* doStatement = cast<Cm.Ast.DoStatementNode*>(statement);
-                if (IsAlwaysTrue(doStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                if (IsAlwaysTrue(doStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit))
                 {
-                    if (IsFunctionTerminatingStatement(doStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                    if (IsFunctionTerminatingStatement(doStatement->Statement(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, true)) return true;
                 }
                 break;
             }
             case Cm.Ast.NodeType.forStatementNode:
             {
                 Cm.Ast.ForStatementNode* forStatement = cast<Cm.Ast.ForStatementNode*>(statement);
-                if (forStatement->Condition() == null || IsAlwaysTrue(forStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository))
+                if (forStatement->Condition() == null || IsAlwaysTrue(forStatement->Condition(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit))
                 {
-                    if (IsFunctionTerminatingStatement(forStatement->Action(), symbolTable, containerScope, fileScopes, classTemplateRepository, true)) return true;
+                    if (IsFunctionTerminatingStatement(forStatement->Action(), symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, true)) return true;
                 }
                 break;
             }
@@ -590,13 +591,13 @@ namespace Cm.Bind
     }
     
     internal void CheckFunctionAccessLevels(Cm.Sym.SymbolTable& symbolTable, Cm.Sym.ContainerScope* containerScope, const List<UniquePtr<Cm.Sym.FileScope>>& fileScopes,
-        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.Sym.FunctionSymbol* functionSymbol)
+        Cm.Core.ClassTemplateRepository& classTemplateRepository, Cm.BoundTree.BoundCompileUnit& boundCompileUnit, Cm.Sym.FunctionSymbol* functionSymbol)
     {
         if (functionSymbol->IsMemberOfTemplateType() || functionSymbol->IsFunctionTemplateSpecialization()) return;
         Cm.Sym.TypeSymbol* returnType = functionSymbol->GetReturnType();
         if (returnType != null)
         {
-            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, returnType);
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, returnType);
             if (returnType->Access() < functionSymbol->EffectiveAccess())
             {
                 throw Cm.Core.Error("return type of a function must be at least as accessible as the function itself", returnType->GetSpan(), functionSymbol->GetSpan());
@@ -612,7 +613,7 @@ namespace Cm.Bind
         {
             Cm.Sym.ParameterSymbol* param = functionSymbol->Parameters()[i];
             Cm.Sym.TypeSymbol* parameterType = param->GetType();
-            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, parameterType);
+            BindType(symbolTable, containerScope, fileScopes, classTemplateRepository, boundCompileUnit, parameterType);
             if (parameterType->Access() < functionSymbol->EffectiveAccess())
             {
                 throw Cm.Core.Error("parameter type of a function must be at least as accessible as the function itself", parameterType->GetSpan(), functionSymbol->GetSpan());

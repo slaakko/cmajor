@@ -26,6 +26,7 @@
 namespace Cm { namespace Bind {
 
 struct FunctionMatch;
+class Binder;
 
 void PrepareArguments(Cm::Sym::ContainerScope* containerScope, Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::BoundTree::BoundFunction* currentFunction, 
     Cm::Sym::TypeSymbol* returnType, const std::vector<Cm::Sym::ParameterSymbol*>& parameters, Cm::BoundTree::BoundExpressionList& arguments, bool firstArgByRef, 
@@ -50,7 +51,7 @@ class ExpressionBinder : public Cm::Ast::Visitor
 {
 public:
     ExpressionBinder(Cm::BoundTree::BoundCompileUnit& boundCompileUnit_, Cm::Sym::ContainerScope* containerScope_, const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& fileScopes_,
-        Cm::BoundTree::BoundFunction* currentFunction_);
+        Cm::BoundTree::BoundFunction* currentFunction_, Binder* binder_);
     Cm::BoundTree::BoundCompileUnit& BoundCompileUnit() { return boundCompileUnit; }
     Cm::Sym::ContainerScope* ContainerScope() const { return containerScope; }
     const std::vector<std::unique_ptr<Cm::Sym::FileScope>>& FileScopes() const { return fileScopes; }
@@ -150,6 +151,7 @@ private:
     int expressionCount;
     std::stack<int> expressionCountStack;
     Cm::BoundTree::BoundFunction* currentFunction;
+    Binder* binder;
     Cm::Sym::SymbolTypeSetId lookupId;
     Cm::Sym::LookupIdStack lookupIdStack;
     bool unaryMinus;
@@ -192,6 +194,7 @@ private:
     void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes);
     void BindConstruct(Cm::Ast::Node* node, Cm::Ast::Node* typeExpr, Cm::Ast::NodeList& argumentNodes, Cm::BoundTree::BoundExpression* allocationArg);
     void BindArrow(Cm::Ast::Node* node, const std::string& memberId);
+    bool EvaluateConstExprFun(Cm::Sym::FunctionSymbol* constExprFun, Cm::Ast::Node* node);
 };
 
 Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUnit& boundCompileUnit, Cm::Sym::FunctionSymbol* fun, const Cm::Parsing::Span& span);

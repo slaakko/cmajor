@@ -35,7 +35,7 @@ ModuleFileVersionMismatch::ModuleFileVersionMismatch(const std::string& libaryFi
 {
 }
 
-const char moduleFileId[4] = { 'M', 'C', '1', '4' };
+const char moduleFileId[4] = { 'M', 'C', '1', '5' };
 
 Module::Module(const std::string& filePath_) : filePath(filePath_)
 {
