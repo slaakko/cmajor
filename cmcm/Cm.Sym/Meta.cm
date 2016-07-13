@@ -1,0 +1,998 @@
+﻿/*========================================================================
+    Copyright (c) 2012-2016 Seppo Laakko
+    http://sourceforge.net/projects/cmajor/
+
+    Distributed under the GNU General Public License, version 3 (GPLv3).
+    (See accompanying LICENSE.txt or http://www.gnu.org/licenses/gpl.html)
+
+========================================================================*/
+
+using System;
+using System.Collections;
+using Span = System.Text.Parsing.Span;
+
+namespace Cm.Sym
+{
+    public abstract class IntrinsicFunction
+    {
+        public virtual ~IntrinsicFunction()
+        {
+        }
+        public abstract nothrow int Arity() const;
+        public abstract nothrow const char* GroupName() const;
+        public abstract nothrow int NumberOfTypeParameters() const;
+        public abstract void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments);
+        public void Evaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            if (stack.Count() != Arity())
+            {
+                throw Error("wrong number of parameters for intrinsic " + string(GroupName()));
+            }
+            if (templateArguments.Count() != NumberOfTypeParameters())
+            {
+                throw Error("wrong number of template arguments for intrinsic " + string(GroupName()));
+            }
+            DoEvaluate(stack, templateArguments);
+        }
+    }
+    
+    public abstract class TypePredicate : IntrinsicFunction
+    {
+        public override nothrow int Arity() const 
+        {
+            return 0;
+        }
+        public override nothrow int NumberOfTypeParameters() const
+        {
+            return 1;
+        }
+    }
+    
+    public class IsLvalueReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsLvalueReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            stack.Push(UniquePtr<Value>(new BoolValue(type->IsReferenceType())));
+        }
+    }
+
+    public class IsNonLvalueReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonLvalueReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            stack.Push(UniquePtr<Value>(new BoolValue(!type->IsReferenceType())));
+        }
+    }
+
+    public class IsRvalueReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsRvalueReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            stack.Push(UniquePtr<Value>(new BoolValue(type->IsRvalueRefType())));
+        }
+    }
+
+    public class IsNonRvalueReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonRvalueReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            stack.Push(UniquePtr<Value>(new BoolValue(!type->IsRvalueRefType())));
+        }
+    }
+     
+    public class IsReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsReferenceType() || type->IsRvalueRefType();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonReferenceTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonReferenceType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsReferenceType() || type->IsRvalueRefType();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsConstTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsConstType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsConstType();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonConstTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonConstType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsConstType();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsPointerTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsPointerType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsPointerType();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonPointerTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonPointerType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsPointerType();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsIntegerTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsIntegerType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsIntegerTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonIntegerTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonIntegerType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsIntegerTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsFloatingPointTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsFloatingPointType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsFloatingPointTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonFloatingPointTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonFloatingPointType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsFloatingPointTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsSignedTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsSignedType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsSignedType();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonSignedTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonSignedType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsSignedType();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsUnsignedTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsUnsignedType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsUnsignedType();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonUnsignedTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonUnsignedType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsUnsignedType();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsBasicTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsBasicType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.BasicTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonBasicTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonBasicType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.BasicTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsCharacterTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsCharacterType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsCharacterTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonCharacterTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonCharacterType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsCharacterTypeSymbol();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsClassTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsClassType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ClassTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonClassTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonClassType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ClassTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsPolymorphicTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsPolymorphicType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsPolymorphic();
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonPolymorphicTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonPolymorphicType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type->IsPolymorphic();
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    public class IsDelegateTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsDelegateType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.DelegateTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonDelegateTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonDelegateType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.DelegateTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsClassDelegateTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsClassDelegateType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ClassDelegateTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonClassDelegateTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonClassDelegateType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ClassDelegateTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsEnumTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsEnumType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.EnumTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonEnumTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonEnumType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.EnumTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+
+    public class IsBoolTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsBoolType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.BoolTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonBoolTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonBoolType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.BoolTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+                
+    public class IsCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.CharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.CharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsWCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsWCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.WCharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonWCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonWCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.WCharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsUCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsUCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UCharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonUCharTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonUCharType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UCharTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsSByteTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsSByteType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.SByteTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonSByteTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonSByteType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.SByteTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsByteTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsByteType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ByteTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonByteTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonByteType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ByteTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsShortTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsShortType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ShortTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonShortTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonShortType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ShortTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsUShortTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsUShortType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UShortTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonUShortTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonUShortType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UShortTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsIntTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsIntType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.IntTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonIntTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonIntType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.IntTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsUIntTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsUIntType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UIntTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonUIntTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonUIntType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.UIntTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsLongTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsLongType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.LongTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonLongTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonLongType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.LongTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsULongTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsULongType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ULongTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonULongTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonULongType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.ULongTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsFloatTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsFloatType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.FloatTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonFloatTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonFloatType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.FloatTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsDoubleTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsDoubleType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.DoubleTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonDoubleTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonDoubleType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.DoubleTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public class IsVoidTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsVoidType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.VoidTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(value)));
+        }
+    }
+
+    public class IsNonVoidTypePredicate : TypePredicate
+    {
+        public override nothrow const char* GroupName() const 
+        { 
+            return "IsNonVoidType"; 
+        }
+        public override void DoEvaluate(Stack<UniquePtr<Value>>& stack, const List<TypeSymbol*>& templateArguments)
+        {
+            TypeSymbol* type = templateArguments.Front();
+            bool value = type is Cm.Sym.VoidTypeSymbol*;
+            stack.Push(UniquePtr<Value>(new BoolValue(!value)));
+        }
+    }
+    
+    public FunctionSymbol* CreateIntrinsic(IntrinsicFunction* intrinsic)
+    {
+        FunctionSymbol* fun = new FunctionSymbol(Span(), intrinsic->GroupName());
+        fun->SetGroupName(intrinsic->GroupName());
+        fun->SetIntrinsic();
+        fun->SetIntrinsic(intrinsic);
+        int n = intrinsic->NumberOfTypeParameters();
+        for (int i = 0; i < n; ++i)
+        {
+            string p = "T" + ToString(i);
+            fun->AddSymbol(new TypeParameterSymbol(Span(), p));
+        }
+        fun->ComputeName();
+        return fun;
+    }
+    
+    public void MetaInit(SymbolTable& symbolTable)
+    {
+        symbolTable.BeginNamespaceScope("System.Meta", Span());
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsLvalueReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonLvalueReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsRvalueReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonRvalueReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonReferenceTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsConstTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonConstTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsIntegerTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonIntegerTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsFloatingPointTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonFloatingPointTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsSignedTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonSignedTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsUnsignedTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonUnsignedTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsBasicTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonBasicTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsCharacterTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonCharacterTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsPointerTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonPointerTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsClassTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonClassTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsPolymorphicTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonPolymorphicTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsDelegateTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonDelegateTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsClassDelegateTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonClassDelegateTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsEnumTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonEnumTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsBoolTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonBoolTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsWCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonWCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsUCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonUCharTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsSByteTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonSByteTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsByteTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonByteTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsShortTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonShortTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsUShortTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonUShortTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsIntTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonIntTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsUIntTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonUIntTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsLongTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonLongTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsULongTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonULongTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsFloatTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonFloatTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsDoubleTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonDoubleTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsVoidTypePredicate()));
+        symbolTable.Container()->AddSymbol(CreateIntrinsic(new IsNonVoidTypePredicate()));
+        symbolTable.EndNamespaceScope();
+    }
+}
