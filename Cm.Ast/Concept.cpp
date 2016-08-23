@@ -390,7 +390,7 @@ std::string MultiParamConstraintNode::DocId() const
 
 void MultiParamConstraintNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
 }
 
 TypenameConstraintNode::TypenameConstraintNode(const Span& span_) : ConstraintNode(span_)
@@ -949,6 +949,20 @@ std::string ConceptNode::Name() const
 void ConceptNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+CCConstraintNode::CCConstraintNode(const Span& span_) : ConstraintNode(span_)
+{
+}
+
+CCConstraintNode::CCConstraintNode(const Span& span_, Node* node_) : ConstraintNode(span_), node(node_)
+{
+    node->SetParent(this);
+}
+
+void CCConstraintNode::Accept(Visitor& visitor)
+{
+    node->Accept(visitor);
 }
 
 } } // namespace Cm::Ast

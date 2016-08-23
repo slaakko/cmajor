@@ -26,6 +26,7 @@ public:
     void AddConcept(ConceptSymbol* concept);
     ConceptSymbol* GetConcept(int arity) const;
     void Dump(CodeFormatter& formatter) override;
+    void CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols);
 private:
     ContainerScope* containerScope;
     typedef std::unordered_map<int, ConceptSymbol*> ArityConceptMap;

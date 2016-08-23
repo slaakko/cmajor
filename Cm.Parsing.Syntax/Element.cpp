@@ -35,8 +35,10 @@ ElementGrammar::ElementGrammar(Cm::Parsing::ParsingDomain* parsingDomain_): Cm::
 {
     SetOwner(0);
     keywords0.push_back("anychar");
+    keywords0.push_back("cc");
     keywords0.push_back("digit");
     keywords0.push_back("empty");
+    keywords0.push_back("end");
     keywords0.push_back("grammar");
     keywords0.push_back("hexdigit");
     keywords0.push_back("keyword");
@@ -69,7 +71,7 @@ void ElementGrammar::Parse(const char* start, const char* end, int fileIndex, co
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -616,27 +618,27 @@ private:
 void ElementGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(pd);
+        grammar0 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Cpp.DeclaratorGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Cpp::DeclaratorGrammar::Create(pd);
+        grammar1 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void ElementGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Declarator", this, "Cm.Parsing.Cpp.DeclaratorGrammar.Declarator"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("TypeId", this, "Cm.Parsing.Cpp.DeclaratorGrammar.TypeId"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Declarator", this, "Cm.Parsing.Cpp.DeclaratorGrammar.Declarator"));
     AddRule(new RuleLinkRule("RuleLink", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::ActionParser("A0",

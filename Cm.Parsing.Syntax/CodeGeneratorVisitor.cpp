@@ -159,7 +159,7 @@ void CodeGeneratorVisitor::BeginVisit(Grammar& grammar)
             cppFormatter.WriteLine("xmlLog->WriteEndRule(\"parse\");");
             cppFormatter.DecIndent();
             cppFormatter.WriteLine("}");
-            cppFormatter.WriteLine("if (!match.Hit() || stop.Start() != int(end - start))");
+            cppFormatter.WriteLine("if (!match.Hit() || !CC() && stop.Start() != int(end - start))");
             cppFormatter.WriteLine("{");
             cppFormatter.IncIndent();
             cppFormatter.WriteLine("if (StartRule())");
@@ -469,6 +469,15 @@ void CodeGeneratorVisitor::EndVisit(Grammar& grammar)
     {
         cppFormatter.WriteLine("SetSkipRuleName(\"" + grammar.SkipRuleName() + "\");");
     }
+    if (!grammar.CCRuleName().empty())
+    {
+        std::string ccSkip = ", false";
+        if (grammar.CCSkip())
+        {
+            ccSkip = ", true";
+        }
+        cppFormatter.WriteLine("SetCCRuleData(\"" + grammar.CCRuleName() + "\", '" + CharStr(grammar.CCStart()) + "', '" + CharStr(grammar.CCEnd()) + "'" + ccSkip + ");");
+    }
     cppFormatter.DecIndent();
     cppFormatter.WriteLine("}");
     cppFormatter.WriteLine();
@@ -661,6 +670,19 @@ void CodeGeneratorVisitor::BeginVisit(ExpectationParser& parser)
 }
 
 void CodeGeneratorVisitor::EndVisit(ExpectationParser& parser)
+{
+    cppFormatter.Write(")");
+    cppFormatter.DecIndent();
+}
+
+void CodeGeneratorVisitor::BeginVisit(CCOptParser& parser)
+{
+    cppFormatter.Write("new Cm::Parsing::CCOptParser(");
+    cppFormatter.IncIndent();
+    cppFormatter.NewLine();
+}
+
+void CodeGeneratorVisitor::EndVisit(CCOptParser& parser)
 {
     cppFormatter.Write(")");
     cppFormatter.DecIndent();

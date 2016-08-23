@@ -51,7 +51,7 @@ Cm::Ast::Specifiers SpecifierGrammar::Parse(const char* start, const char* end, 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {

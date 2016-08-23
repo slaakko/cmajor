@@ -19,6 +19,7 @@ public:
     NamespaceSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::namespaceSymbol; }
     std::string TypeString() const override { return "namespace"; };
+    char CCTag() const override { return 'N'; }
     bool IsNamespaceSymbol() const override { return true; }
     bool IsGlobalNamespace() const { return Name().empty(); }
     bool IsExportSymbol() const override { return true; }

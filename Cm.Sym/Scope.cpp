@@ -12,6 +12,7 @@
 #include <Cm.Sym/NamespaceSymbol.hpp>
 #include <Cm.Sym/FunctionGroupSymbol.hpp>
 #include <Cm.Sym/TemplateTypeSymbol.hpp>
+#include <Cm.Sym/ConceptGroupSymbol.hpp>
 #include <Cm.Sym/GlobalFlags.hpp>
 #include <Cm.Ast/Identifier.hpp>
 #include <Cm.Util/TextUtils.hpp>
@@ -35,10 +36,17 @@ ContainerScope::ContainerScope(ContainerScope&& that) : symbolMap(std::move(that
     that.container = nullptr;
 }
 
+bool ccOverrideSymbols = false;
+
+void SetCCOverrideSymbols(bool ccOverrideSymbols_)
+{
+    ccOverrideSymbols = ccOverrideSymbols_;
+}
+
 void ContainerScope::Install(Symbol* symbol)
 {
     SymbolMapIt i = symbolMap.find(symbol->Name());
-    if (i != symbolMap.end() && !symbol->IsTemplateTypeSymbol())
+    if (i != symbolMap.end() && !symbol->IsTemplateTypeSymbol() && !ccOverrideSymbols)
     {
         Symbol* prev = i->second;
         if (prev != symbol)
@@ -301,6 +309,46 @@ NamespaceSymbol* ContainerScope::CreateNamespace(const std::string& qualifiedNsN
     return parentNs;
 }
 
+void ContainerScope::CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId, bool includeConceptSymbols)
+{
+    SymbolMapIt e = symbolMap.cend();
+    for (SymbolMapIt i = symbolMap.cbegin(); i != e; ++i)
+    {
+        Symbol* symbol = i->second;
+        if (!symbol->IsCCSymbol()) continue;
+        if (symbol->IsConceptGroupSymbol())
+        {
+            if (!includeConceptSymbols) continue;
+            ConceptGroupSymbol* conceptGroupSymbol = static_cast<ConceptGroupSymbol*>(symbol);
+            conceptGroupSymbol->CollectSymbolsForCC(ccSymbols);
+        }
+        else
+        {
+            SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
+            if (symbol->IsFunctionGroupSymbol() && symbolTypeSet.find(symbol->GetSymbolType()) != symbolTypeSet.end())
+            {
+                FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
+                functionGroupSymbol->CollectSymbolsForCC(ccSymbols);
+            }
+            else
+            {
+                if (symbolTypeSet.find(symbol->GetSymbolType()) != symbolTypeSet.end())
+                {
+                    ccSymbols.insert(symbol);
+                }
+            }
+        }
+    }
+    if (base && ((lookup & ScopeLookup::base) != ScopeLookup::none))
+    {
+        base->CollectSymbolsForCC(ccSymbols, lookup, symbolTypeSetId, includeConceptSymbols);
+    }
+    if (parent && ((lookup & ScopeLookup::parent) != ScopeLookup::none))
+    {
+        parent->CollectSymbolsForCC(ccSymbols, lookup, symbolTypeSetId, includeConceptSymbols);
+    }
+}
+
 FileScope::FileScope()
 {
 }
@@ -440,6 +488,32 @@ void FileScope::CollectViableFunctions(const std::string& groupName, int arity, 
         {
             processedScopes.insert(containerScope);
             containerScope->CollectViableFunctions(Cm::Sym::ScopeLookup::this_, groupName, arity, viableFunctions);
+        }
+    }
+}
+
+void FileScope::CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols, SymbolTypeSetId symbolTypeSetId, bool includeConceptSymbols)
+{
+    for (ContainerScope* containerScope : containerScopes)
+    {
+        containerScope->CollectSymbolsForCC(ccSymbols, ScopeLookup::this_, symbolTypeSetId, includeConceptSymbols);
+    }
+    AliasSymbolMapIt e = aliasSymbolMap.cend();
+    for (AliasSymbolMapIt i = aliasSymbolMap.cbegin(); i != e; ++i)
+    {
+        Symbol* symbol = i->second;
+        SymbolTypeSet& symbolTypeSet = GetSymbolTypeSetCollection()->GetSymbolTypeSet(symbolTypeSetId);
+        if (symbol->IsFunctionGroupSymbol() && symbolTypeSet.find(symbol->GetSymbolType()) != symbolTypeSet.end())
+        {
+            FunctionGroupSymbol* functionGroupSymbol = static_cast<FunctionGroupSymbol*>(symbol);
+            functionGroupSymbol->CollectSymbolsForCC(ccSymbols);
+        }
+        else
+        {
+            if (symbolTypeSet.find(symbol->GetSymbolType()) != symbolTypeSet.end())
+            {
+                ccSymbols.insert(symbol);
+            }
         }
     }
 }

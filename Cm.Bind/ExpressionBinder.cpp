@@ -1265,7 +1265,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
         }
         Cm::Sym::ContainerScope* containerScope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base, lookupId);
+        Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberStr(), Cm::Sym::ScopeLookup::this_and_base, lookupId);
         if (symbol)
         {
             BindSymbol(&dotNode, symbol);
@@ -1287,7 +1287,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         else
         {
-            throw Cm::Core::Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+            throw Cm::Core::Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
         }
     }
     else
@@ -1305,7 +1305,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
         {
             Cm::Sym::ClassTypeSymbol* classType = static_cast<Cm::Sym::ClassTypeSymbol*>(type);
             Cm::Sym::ContainerScope* containerScope = classType->GetContainerScope();
-            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_and_base, Cm::Sym::SymbolTypeSetId::lookupFunctionGroupAndMemberVariable);
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberStr(), Cm::Sym::ScopeLookup::this_and_base, Cm::Sym::SymbolTypeSetId::lookupFunctionGroupAndMemberVariable);
             if (symbol)
             {
                 Cm::BoundTree::BoundExpression* classObject = expression.release();
@@ -1367,14 +1367,14 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
             else
             {
-                throw Cm::Core::Exception("class '" + classType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+                throw Cm::Core::Exception("class '" + classType->FullName() + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
             }
         }
         else if (type->IsInterfaceTypeSymbol())
         {
             Cm::Sym::InterfaceTypeSymbol* interfaceType = static_cast<Cm::Sym::InterfaceTypeSymbol*>(type);
             Cm::Sym::ContainerScope* containerScope = interfaceType->GetContainerScope();
-            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberId()->Str(), Cm::Sym::ScopeLookup::this_, Cm::Sym::SymbolTypeSetId::lookupFunctionGroup);
+            Cm::Sym::Symbol* symbol = containerScope->Lookup(dotNode.MemberStr(), Cm::Sym::ScopeLookup::this_, Cm::Sym::SymbolTypeSetId::lookupFunctionGroup);
             if (symbol)
             {
                 Cm::BoundTree::BoundExpression* interfaceObject = expression.release();
@@ -1394,7 +1394,7 @@ void ExpressionBinder::EndVisit(Cm::Ast::DotNode& dotNode)
             }
             else
             {
-                throw Cm::Core::Exception("interface '" + interfaceType->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+                throw Cm::Core::Exception("interface '" + interfaceType->FullName() + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
             }
         }
         else
@@ -1517,7 +1517,7 @@ void ExpressionBinder::Visit(Cm::Ast::ArrowNode& arrowNode)
     lookupId = Cm::Sym::SymbolTypeSetId::lookupVariableAndParameter;
     arrowNode.Subject()->Accept(*this);
     lookupId = lookupIdStack.Pop();
-    BindArrow(&arrowNode, arrowNode.MemberId()->Str());
+    BindArrow(&arrowNode, arrowNode.MemberStr());
 }
 
 void ExpressionBinder::BeginVisit(Cm::Ast::InvokeNode& invokeNode)
@@ -2022,10 +2022,6 @@ Cm::Sym::FunctionSymbol* ExpressionBinder::BindInvokeFun(Cm::Ast::Node* node, st
     bool& firstArgByRef, bool& generateVirtualCall, Cm::Sym::FunctionGroupSymbol* functionGroupSymbol, const std::vector<Cm::Sym::TypeSymbol*>& boundTemplateArguments, FunctionMatch& bestMatch, 
     std::vector<Cm::Core::Argument>& resolutionArguments, std::unique_ptr<Cm::Core::Exception>& exception, Cm::Sym::ContainerScope* qualifiedScope)
 {
-    if (functionGroupSymbol->Name() == "x")
-    {
-        int x = 0;
-    }
     Cm::Sym::FunctionLookupSet functionLookups;
     bool first = true;
     bool firstArgIsPointerOrReference = false;
@@ -3029,6 +3025,7 @@ Cm::BoundTree::TraceCallInfo* CreateTraceCallInfo(Cm::BoundTree::BoundCompileUni
     if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::no_call_stacks)) return nullptr;
     if (Cm::Core::GetGlobalSettings()->Config() == "release" && !fun->CanThrow()) return nullptr;
     if (fun->FullName() == "main()" && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::unit_test)) return nullptr;
+    if (fun->IsInline() && Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::optimize)) return nullptr;
     std::string funFullName = fun->FullName();
     Cm::Sym::TypeSymbol* constCharPtrType = boundCompileUnit.SymbolTable().GetTypeRepository().MakeConstCharPtrType(span);
     int funId = boundCompileUnit.StringRepository().InstallString(funFullName);

@@ -63,6 +63,41 @@ public:
     virtual void Enter(ObjectStack& stack) {}
     virtual void Leave(ObjectStack& stack, bool matched) {}
     virtual void Accept(Visitor& visitor);
+    void IncCCCount() { ++ccCount; }
+    void DecCCCount() { --ccCount; }
+    int CCCount() const { return ccCount; }
+    bool IsCCRule() const
+    {
+        return ccRule;
+    }
+    void SetCCRule()
+    {
+        ccRule = true;
+    }
+    char CCStart() const
+    {
+        return ccStart;
+    }
+    char CCEnd() const
+    {
+        return ccEnd;
+    }
+    void SetCCStart(char ccStart_)
+    {
+        ccStart = ccStart_;
+    }
+    void SetCCEnd(char ccEnd_)
+    {
+        ccEnd = ccEnd_;
+    }
+    bool CCSkip() const
+    {
+        return ccSkip;
+    }
+    void SetCCSkip()
+    {
+        ccSkip = true;
+    }
 private:
     Grammar* grammar;
     Parser* definition;
@@ -71,6 +106,11 @@ private:
     std::string valueTypeName;
     ActionVec actions;
     NonterminalVec nonterminals;
+    bool ccRule;
+    int ccCount;
+    char ccStart;
+    char ccEnd;
+    bool ccSkip;
 };
 
 class RuleLink: public ParsingObject

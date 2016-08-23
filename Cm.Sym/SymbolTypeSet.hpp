@@ -19,6 +19,7 @@ enum class SymbolTypeSetId : uint8_t
 {
     lookupAllSymbols,
     lookupTypeSymbols,
+    lookupTypeAndNamespaceSymbols,
     lookupTypeAndFunctionGroupSymbols,
     lookupDotSubjectSymbols,
     lookupContainerSymbols,

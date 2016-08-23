@@ -42,6 +42,7 @@
 #include <Cm.Bind/ClassDelegateTypeOpRepository.hpp>
 #include <Cm.Bind/ControlFlowAnalyzer.hpp>
 #include <Cm.Bind/ArrayTypeOpRepository.hpp>
+#include <Cm.Bind/CodeCompletion.hpp>
 #include <Cm.BoundTree/Factory.hpp>
 #include <Cm.Opt/TypePropagationGraph.hpp>
 #include <Cm.Opt/ClassId.hpp>
@@ -2286,6 +2287,214 @@ void BuildSolution(const std::string& solutionFilePath, bool rebuild, const std:
             std::cout << "Solution '" << solution->Name() + "' (" << Cm::Util::GetFullPath(solution->FilePath()) << ") built successfully" << std::endl;
         }
     }
+}
+
+void CodeCompletion(const std::string& projectFilePath, const std::string& ccFileName, const std::unordered_set<std::string>& defines, CompileUnitParserRepository& compileUnitParserRepository)
+{
+    if (!boost::filesystem::exists(projectFilePath))
+    {
+        throw std::runtime_error("project file '" + projectFilePath + "' not found");
+    }
+    if (!projectGrammar)
+    {
+        projectGrammar = Cm::Parser::ProjectGrammar::Create();
+    }
+    Cm::Util::MappedInputFile projectFile(projectFilePath);
+    std::unique_ptr<Cm::Ast::Project> project(projectGrammar->Parse(projectFile.Begin(), projectFile.End(), 0, projectFilePath, Cm::Core::GetGlobalSettings()->Config(),
+        Cm::IrIntf::GetBackEndStr(), GetOs(), GetBits(), GetLlvmVersion()));
+    project->ResolveDeclarations();
+    std::unordered_set<std::string> allDefines = defines;
+    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+    {
+        ReadIdeDefines(allDefines, project.get());
+    }
+    AddPlatformConfigAndBitsDefines(allDefines);
+    Cm::Sym::Define(allDefines);
+    Cm::Sym::FunctionTable functionTable;
+    Cm::Sym::FunctionTable::SetInstance(&functionTable);
+    Cm::Sym::SymbolTypeSetCollection symbolTypeSetCollection;
+    Cm::Sym::SetSymbolTypeSetCollection(&symbolTypeSetCollection);
+    Cm::Parser::FileRegistry::Init();
+    int numSourceFiles = int(project->SourceFilePaths().size());
+    Cm::Parser::CompileUnitGrammar* compileUnitGrammar = compileUnitParserRepository.GetCompileUnitGrammar(0);
+    std::string cfn = Cm::Util::Path::MakeCanonical(ccFileName);
+    std::string ccFilePath;
+    for (const std::string& sourceFilePath : project->SourceFilePaths())
+    {
+        if (Cm::Util::LastComponentsEqual(cfn, sourceFilePath, '/'))
+        {
+            ccFilePath = sourceFilePath;
+        }
+    }
+    if (ccFilePath.empty())
+    {
+        throw std::runtime_error("cc file '" + ccFileName + "' not found");
+    }
+    std::string tempCCFilePath = Cm::Util::Path::ChangeExtension(ccFilePath, ".cc");
+    if (!Cm::Util::FileExists(tempCCFilePath))
+    {
+        throw std::runtime_error("temporary cc file '" + tempCCFilePath + "' not found");
+    }
+    Cm::Util::MappedInputFile tempCCFile(tempCCFilePath);
+    Cm::Parser::FileRegistry* fileRegistry = Cm::Parser::FileRegistry::Instance();
+    int sourceFileIndex = fileRegistry->RegisterParsedFile(tempCCFilePath);
+    Cm::Parser::ParsingContext ctx;
+    Cm::Parsing::SetCC(true);
+    std::unique_ptr<Cm::Ast::CompileUnitNode> ccUnit(compileUnitGrammar->Parse(tempCCFile.Begin(), tempCCFile.End(), sourceFileIndex, tempCCFilePath, &ctx));
+    Cm::Parsing::SetCC(false);
+    std::string ccLibraryFilePath = Cm::Util::Path::ChangeExtension(ccFilePath, ".cm.cml");
+    bool buildCCLibraryFile = false;
+    if (Cm::Util::FileExists(ccLibraryFilePath))
+    {
+        boost::filesystem::path cclfp = ccLibraryFilePath;
+        for (const std::string& sourceFilePath : project->SourceFilePaths())
+        {
+            if (sourceFilePath != ccFilePath)
+            {
+                boost::filesystem::path sfp = sourceFilePath;
+                if (boost::filesystem::last_write_time(sfp) > boost::filesystem::last_write_time(cclfp))
+                {
+                    buildCCLibraryFile = true;
+                    break;
+                }
+            }
+        }
+    }
+    else
+    {
+        buildCCLibraryFile = true;
+    }
+    Cm::Ast::SyntaxTree syntaxTree;
+    if (buildCCLibraryFile)
+    {
+        std::vector<std::string> sourceFilePaths;
+        for (const std::string& sourceFilePath : project->SourceFilePaths())
+        {
+            if (sourceFilePath != ccFilePath)
+            {
+                sourceFilePaths.push_back(sourceFilePath);
+            }
+        }
+        int numSourceFiles = int(sourceFilePaths.size());
+        if (numSourceFiles <= 1)
+        {
+            syntaxTree = ParseSources(*Cm::Parser::FileRegistry::Instance(), sourceFilePaths, compileUnitParserRepository);
+        }
+        else
+        {
+            syntaxTree = ParseSourcesConcurrently(*Cm::Parser::FileRegistry::Instance(), sourceFilePaths, compileUnitParserRepository);
+        }
+    }
+    std::vector<std::string> assemblyFilePaths;
+    std::vector<std::string> afps;
+    assemblyFilePaths.push_back(project->AssemblyFilePath());
+    std::vector<std::string> cLibs;
+    cLibs.insert(cLibs.end(), project->CLibraryFilePaths().begin(), project->CLibraryFilePaths().end());
+    Cm::Core::GlobalConceptData globalConceptData;
+    Cm::Core::SetGlobalConceptData(&globalConceptData);
+    Cm::Sym::SymbolTable symbolTable;
+    std::vector<std::string> libraryDirs;
+    GetLibraryDirectories(libraryDirs);
+    Cm::Core::InitSymbolTable(symbolTable, globalConceptData);
+    Cm::Sym::ExceptionTable exceptionTable;
+    Cm::Sym::SetExceptionTable(&exceptionTable);
+    Cm::Sym::MutexTable mutexTable;
+    Cm::Sym::SetMutexTable(&mutexTable);
+    Cm::Sym::ClassCounter classCounter;
+    Cm::Sym::SetClassCounter(&classCounter);
+    std::vector<std::string> nativeObjectFilePaths;
+    std::vector<std::string> debugInfoFilePaths;
+    std::vector<std::string> bcuPaths;
+    std::vector<std::string> allReferenceFilePaths;
+    std::vector<std::string> allDebugInfoFilePaths;
+    std::vector<std::string> allNativeObjectFilePaths;
+    std::vector<std::string> allBcuPaths;
+    std::vector<uint64_t> classHierarchyTable;
+    std::vector<std::string> allLibrarySearchPaths;
+    std::vector<std::string> referenceFilePaths = project->ReferenceFilePaths();
+    std::unordered_set<std::string> importedModules;
+    if (project->Name() != "system" && project->Name() != "support" && project->Name() != "os")
+    {
+        referenceFilePaths.push_back("system.cml");
+    }
+    for (const std::string& referenceFilePath : referenceFilePaths)
+    {
+        std::string libraryReferencePath = ResolveLibraryReference(project->OutputBasePath(), Cm::Core::GetGlobalSettings()->Config(), libraryDirs, referenceFilePath);
+        if (importedModules.find(libraryReferencePath) == importedModules.end())
+        {
+            importedModules.insert(libraryReferencePath);
+            Cm::Sym::Module module(libraryReferencePath);
+            module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable, allLibrarySearchPaths);
+        }
+    }
+    std::string ext;
+    Cm::IrIntf::BackEnd backend = Cm::IrIntf::GetBackEnd();
+    if (backend == Cm::IrIntf::BackEnd::llvm)
+    {
+        ext = ".ll";
+    }
+    else if (backend == Cm::IrIntf::BackEnd::c)
+    {
+        ext = ".c";
+    }
+    boost::filesystem::path outputBase(project->OutputBasePath());
+    std::string prebindCompileUnitIrFilePath = Cm::Util::GetFullPath((outputBase / boost::filesystem::path("__prebind__" + ext)).generic_string());
+    Cm::BoundTree::BoundCompileUnit prebindCompileUnit(ccUnit.get(), prebindCompileUnitIrFilePath, symbolTable);
+    prebindCompileUnit.SetPrebindCompileUnit();
+    prebindCompileUnit.SetClassTemplateRepository(new Cm::Bind::ClassTemplateRepository(prebindCompileUnit));
+    prebindCompileUnit.SetInlineFunctionRepository(new Cm::Bind::InlineFunctionRepository(prebindCompileUnit));
+    prebindCompileUnit.SetConstExprFunctionRepository(new Cm::Bind::ConstExprFunctionRepository(prebindCompileUnit));
+    prebindCompileUnit.SetSynthesizedClassFunRepository(new Cm::Bind::SynthesizedClassFunRepository(prebindCompileUnit));
+    prebindCompileUnit.SetDelegateTypeOpRepository(new Cm::Bind::DelegateTypeOpRepository(prebindCompileUnit));
+    prebindCompileUnit.SetClassDelegateTypeOpRepository(new Cm::Bind::ClassDelegateTypeOpRepository(prebindCompileUnit));
+    prebindCompileUnit.SetArrayTypeOpRepository(new Cm::Bind::ArrayTypeOpRepository(prebindCompileUnit));
+    std::vector<std::unique_ptr<Cm::Sym::FileScope>> ccFileScopes;
+    if (buildCCLibraryFile)
+    {
+        for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
+            compileUnit->Accept(declarationVisitor);
+        }
+        Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
+        declarationVisitor.SetCC();
+        ccUnit->Accept(declarationVisitor);
+        std::vector<std::unique_ptr<Cm::Sym::FileScope>> fileScopes;
+        for (const std::unique_ptr<Cm::Ast::CompileUnitNode>& compileUnit : syntaxTree.CompileUnits())
+        {
+            Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository(), prebindCompileUnit);
+            compileUnit->Accept(prebinder);
+            fileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
+        }
+        Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository(), prebindCompileUnit);
+        ccUnit->Accept(prebinder);
+        ccFileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
+        Cm::Sym::Module projectModule(ccLibraryFilePath);
+        projectModule.SetName(project->Name());
+        projectModule.SetSourceFilePaths(project->SourceFilePaths());
+        projectModule.SetReferenceFilePaths(allReferenceFilePaths);
+        projectModule.SetCLibraryFilePaths(project->CLibraryFilePaths());
+        projectModule.SetLibrarySearchPaths(project->LibrarySearchPaths());
+        projectModule.SetDebugInfoFilePaths(debugInfoFilePaths);
+        projectModule.SetNativeObjectFilePaths(nativeObjectFilePaths);
+        projectModule.SetBcuPaths(bcuPaths);
+        projectModule.Export(symbolTable);
+    }
+    else
+    {
+        Cm::Sym::Module module(ccLibraryFilePath);
+        module.Import(symbolTable, importedModules, assemblyFilePaths, cLibs, allReferenceFilePaths, allDebugInfoFilePaths, allNativeObjectFilePaths, allBcuPaths, classHierarchyTable, allLibrarySearchPaths);
+        Cm::Sym::DeclarationVisitor declarationVisitor(symbolTable);
+        declarationVisitor.SetCC();
+        Cm::Sym::SetCCOverrideSymbols(true);
+        ccUnit->Accept(declarationVisitor);
+        Cm::Sym::SetCCOverrideSymbols(false);
+        Cm::Bind::Prebinder prebinder(symbolTable, prebindCompileUnit.ClassTemplateRepository(), prebindCompileUnit);
+        ccUnit->Accept(prebinder);
+        ccFileScopes.push_back(std::unique_ptr<Cm::Sym::FileScope>(prebinder.ReleaseFileScope()));
+    }
+    std::string ccResultFilePath = Cm::Util::Path::Combine(Cm::Util::Path::GetDirectoryName(Cm::Util::Path::MakeCanonical(project->FilePath())), "cc.result");
+    Cm::Bind::DoCodeCompletion(*ccUnit, symbolTable, ccFileScopes.front().get(), ccResultFilePath, prebindCompileUnit);
 }
 
 } } // namespace Bm::Build

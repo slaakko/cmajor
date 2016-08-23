@@ -196,6 +196,10 @@ void ContainerSymbol::Collect(SymbolCollector& collector)
     Symbol::Collect(collector);
     for (Symbol* symbol : symbols)
     {
+        if (symbol->Name() == "Meta")
+        {
+            int x = 0;
+        }
         symbol->Collect(collector);
     }
     collector.EndContainer();

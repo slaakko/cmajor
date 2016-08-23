@@ -26,6 +26,13 @@ bool ConstantSymbol::IsExportSymbol() const
     return Symbol::IsExportSymbol();
 }
 
+std::string ConstantSymbol::FullCCName(SymbolTable& symbolTable)
+{
+    std::string fullCCName;
+    fullCCName.append(type->FullName()).append(1, ' ').append(FullName());
+    return fullCCName;
+}
+
 void ConstantSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);

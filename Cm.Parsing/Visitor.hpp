@@ -30,6 +30,7 @@ class PositiveParser;
 class KleeneStarParser;
 class ActionParser;
 class ExpectationParser;
+class CCOptParser;
 class TokenParser;
 class SequenceParser;
 class AlternativeParser;
@@ -66,6 +67,8 @@ public:
     virtual void EndVisit(ActionParser& parser) {}
     virtual void BeginVisit(ExpectationParser& parser) {}
     virtual void EndVisit(ExpectationParser& parser) {}
+    virtual void BeginVisit(CCOptParser& parser) {}
+    virtual void EndVisit(CCOptParser& parser) {}
     virtual void BeginVisit(TokenParser& parser) {}
     virtual void EndVisit(TokenParser& parser) {}
     virtual void BeginVisit(SequenceParser& parser) {}

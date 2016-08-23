@@ -26,12 +26,14 @@ OptionalParser::OptionalParser(Parser* child_): UnaryParser("optional", child_, 
 Match OptionalParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
     Match match = Child()->Parse(scanner, stack);
     if (match.Hit())
     {
         return match;
     }
     scanner.SetSpan(save);
+    scanner.SetSynchronizing(synchronizing);
     return Match::Empty();
 }
 
@@ -54,6 +56,7 @@ Match PositiveParser::Parse(Scanner& scanner, ObjectStack& stack)
         for (;;)
         {
             Span save = scanner.GetSpan();
+            bool synchronizing = scanner.Synchronizing();
             scanner.Skip();
             Match next = Child()->Parse(scanner, stack);
             if (next.Hit())
@@ -63,6 +66,7 @@ Match PositiveParser::Parse(Scanner& scanner, ObjectStack& stack)
             else
             {
                 scanner.SetSpan(save);
+                scanner.SetSynchronizing(synchronizing);
                 break;
             }
         }
@@ -88,6 +92,7 @@ Match KleeneStarParser::Parse(Scanner& scanner, ObjectStack& stack)
     for (;;)
     {
         Span save = scanner.GetSpan();
+        bool synchronizing = scanner.Synchronizing();
         if (first)
         {
             first = false;
@@ -104,6 +109,7 @@ Match KleeneStarParser::Parse(Scanner& scanner, ObjectStack& stack)
         else
         {
             scanner.SetSpan(save);
+            scanner.SetSynchronizing(synchronizing);
             break;
         }
     }
@@ -133,7 +139,7 @@ Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
     {
         throw ExpectationFailure(Child()->Info() + ex.Info(), ex.FileName(), ex.GetSpan(), ex.Start(), ex.End());
     }
-    if (match.Hit())
+    if (match.Hit() || CC())
     {
         return match;
     }
@@ -144,6 +150,35 @@ Match ExpectationParser::Parse(Scanner& scanner, ObjectStack& stack)
 }
 
 void ExpectationParser::Accept(Visitor& visitor)
+{
+    visitor.BeginVisit(*this);
+    Child()->Accept(visitor);
+    visitor.EndVisit(*this);
+}
+
+CCOptParser::CCOptParser(Parser* child_) : UnaryParser("ccopt", child_, child_->Info())
+{
+}
+
+Match CCOptParser::Parse(Scanner& scanner, ObjectStack& stack)
+{
+    Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
+    Match match = Child()->Parse(scanner, stack);
+    if (match.Hit())
+    {
+        return match;
+    }
+    if (CC())
+    {
+        scanner.SetSpan(save);
+        scanner.SetSynchronizing(synchronizing);
+        return Match::Empty();
+    }
+    return Match::Nothing();
+}
+
+void CCOptParser::Accept(Visitor& visitor)
 {
     visitor.BeginVisit(*this);
     Child()->Accept(visitor);
@@ -211,12 +246,14 @@ AlternativeParser::AlternativeParser(Parser* left_, Parser* right_): BinaryParse
 Match AlternativeParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
     Match leftMatch = Left()->Parse(scanner, stack);
     if (leftMatch.Hit())
     {
         return leftMatch;
     }
     scanner.SetSpan(save);
+    scanner.SetSynchronizing(synchronizing);
     return Right()->Parse(scanner, stack);
 }
 
@@ -236,16 +273,20 @@ DifferenceParser::DifferenceParser(Parser* left_, Parser* right_): BinaryParser(
 Match DifferenceParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
     Match leftMatch = Left()->Parse(scanner, stack);
     if (leftMatch.Hit())
     {
         Span tmp = scanner.GetSpan();
+        bool tmpSynchronizing = scanner.Synchronizing();
         scanner.SetSpan(save);
+        scanner.SetSynchronizing(synchronizing);
         save = tmp;
         Match rightMatch = Right()->Parse(scanner, stack);
         if (!rightMatch.Hit() || rightMatch.Length() < leftMatch.Length())
         {
             scanner.SetSpan(save);
+            scanner.SetSynchronizing(tmpSynchronizing);
             return leftMatch;
         }
     }
@@ -268,9 +309,12 @@ ExclusiveOrParser::ExclusiveOrParser(Parser* left_, Parser* right_): BinaryParse
 Match ExclusiveOrParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
     Match leftMatch = Left()->Parse(scanner, stack);
     Span temp = scanner.GetSpan();
+    bool tempSynchronizing = scanner.Synchronizing();
     scanner.SetSpan(save);
+    scanner.SetSynchronizing(synchronizing);
     save = temp;
     Match rightMatch = Right()->Parse(scanner, stack);
     bool match = leftMatch.Hit() ? !rightMatch.Hit() : rightMatch.Hit();
@@ -279,6 +323,7 @@ Match ExclusiveOrParser::Parse(Scanner& scanner, ObjectStack& stack)
         if (leftMatch.Hit())
         {
             scanner.SetSpan(save);
+            scanner.SetSynchronizing(tempSynchronizing);
         }
         return leftMatch.Hit() ? leftMatch : rightMatch;
     }
@@ -301,10 +346,12 @@ IntersectionParser::IntersectionParser(Parser* left_, Parser* right_): BinaryPar
 Match IntersectionParser::Parse(Scanner& scanner, ObjectStack& stack)
 {
     Span save = scanner.GetSpan();
+    bool synchronizing = scanner.Synchronizing();
     Match leftMatch = Left()->Parse(scanner, stack);
     if (leftMatch.Hit())
     {
         scanner.SetSpan(save);
+        scanner.SetSynchronizing(synchronizing);
         Match rightMatch = Right()->Parse(scanner, stack);
         if (leftMatch.Length() == rightMatch.Length())
         {

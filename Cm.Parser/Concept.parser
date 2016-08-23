@@ -9,6 +9,7 @@
 
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Concept.hpp>
+[cpp]#include <Cm.Ast/Expression.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
 [cpp]#include <Cm.Parser/Parameter.hpp>
@@ -152,6 +153,8 @@ namespace Cm.Parser
             ::= PredicateConstraint(ctx){ value = PredicateConstraint; }
             |   IsConstraint(ctx){ value = IsConstraint; }
             |   MultiParamConstraint(ctx){ value = MultiParamConstraint; }
+            |   '`'{ value = new Cm::Ast::CCConstraintNode(span, new Cm::Ast::CCNode(span)); }
+            |   (TypeExpr(ctx) empty{ pass = ctx->CCNodeParsed(); }){ value = new Cm::Ast::CCConstraintNode(span, TypeExpr); }
             ;
 
         PredicateConstraint(ParsingContext* ctx): Cm::Ast::ConstraintNode*
@@ -164,6 +167,7 @@ namespace Cm.Parser
 
         ConceptOrTypeName(ParsingContext* ctx): Cm::Ast::Node*
             ::= TypeExpr(ctx){ value = TypeExpr; }
+            |   '`'{ value = new Cm::Ast::CCNode(span); }
             ;
 
         MultiParamConstraint(ParsingContext* ctx, var std::unique_ptr<MultiParamConstraintNode> constraint): Cm::Ast::ConstraintNode*

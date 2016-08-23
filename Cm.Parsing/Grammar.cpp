@@ -20,16 +20,24 @@
 namespace Cm { namespace Parsing {
 
 Grammar::Grammar(const std::string& name_, Scope* enclosingScope_): ParsingObject(name_, enclosingScope_), parsingDomain(new ParsingDomain()), ns(nullptr),
-    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), ccStart(), ccEnd(), ccSkip(false), log(0), maxLogLineLength(256)
 {
     RegisterParsingDomain(parsingDomain);
     SetScope(new Scope(Name(), EnclosingScope()));
 }
 
 Grammar::Grammar(const std::string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_): ParsingObject(name_, enclosingScope_), parsingDomain(parsingDomain_), ns(nullptr), 
-    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), log(0), maxLogLineLength(256)
+    linking(false), linked(false), contentParser(nullptr), startRule(nullptr), skipRule(nullptr), ccStart(), ccEnd(), ccSkip(false), log(0), maxLogLineLength(256)
 {
     SetScope(new Scope(Name(), EnclosingScope()));
+}
+
+void Grammar::SetCCRuleData(const std::string& ccRuleName_, char ccStart_, char ccEnd_, bool ccSkip_)
+{
+    ccRuleName = ccRuleName_;
+    ccStart = ccStart_;
+    ccEnd = ccEnd_;
+    ccSkip = ccSkip_;
 }
 
 void Grammar::AddRule(Rule* rule)
@@ -115,7 +123,7 @@ void Grammar::Parse(const char* start, const char* end, int fileIndex, const std
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (startRule)
         {

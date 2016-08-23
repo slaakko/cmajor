@@ -44,7 +44,7 @@ enum class NodeType: uint8_t
     functionGroupIdNode, templateParameterNode, functionNode, 
     classNode, memberInitializerNode, baseInitializerNode, thisInitializerNode, staticConstructorNode, constructorNode, destructorNode, memberFunctionNode, conversionFunctionNode, memberVariableNode,
     aliasNode, namespaceImportNode, namespaceNode, compileUnitNode, intrinsicConstraintNode, exitTryNode, beginCatchStatementNode, 
-    interfaceNode, predicateConstraintNode,
+    interfaceNode, predicateConstraintNode, ccNode, ccConstraintNode,
     maxNode
 };
 
@@ -109,6 +109,7 @@ public:
     virtual bool IsThisNode() const { return false; }
     virtual bool IsUnsignedTypeNode() const { return false; }
     virtual bool IsIdentifierNode() const { return false; }
+    virtual bool IsCCNode() const { return false; }
     virtual bool IsDerivedTypeExprNode() const { return false; }
     virtual bool IsAxiomNode() const { return false; }
     virtual Rank GetRank() const { return Rank::primary; }

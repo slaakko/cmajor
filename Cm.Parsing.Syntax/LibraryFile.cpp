@@ -54,7 +54,7 @@ void LibraryFileGrammar::Parse(const char* start, const char* end, int fileIndex
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -439,10 +439,10 @@ void LibraryFileGrammar::GetReferencedGrammars()
 
 void LibraryFileGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRule(new LibraryFileRule("LibraryFile", GetScope(),
         new Cm::Parsing::NonterminalParser("NamespaceContent", "NamespaceContent", 1)));

@@ -288,8 +288,14 @@ namespace Cm.Parser
             (   Primary(ctx){ s = span; expr.reset(Primary); }
                 (   "++"{ s.SetEnd(span.End()); expr.reset(new PostfixIncNode(s, expr.release())); }
                 |   "--"{ s.SetEnd(span.End()); expr.reset(new PostfixDecNode(s, expr.release())); }
-                |   '.' Identifier:dotMemberId!{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); }
-                |   "->" Identifier:arrowMemberId!{ s.SetEnd(span.End()); expr.reset(new ArrowNode(s, expr.release(), arrowMemberId)); }
+                |   '.' 
+                    (   Identifier:dotMemberId{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), dotMemberId)); } 
+                    |   '`'{ s.SetEnd(span.End()); expr.reset(new DotNode(s, expr.release(), new CCNode(span))); ctx->SetCCNodeParsed(); }
+                    )
+                |   "->" 
+                    (   Identifier:arrowMemberId{ s.SetEnd(span.End()); expr.reset(new ArrowNode(s, expr.release(), arrowMemberId)); }
+                    |   '`'{ s.SetEnd(span.End()); expr.reset(new ArrowNode(s, expr.release(), new CCNode(span))); ctx->SetCCNodeParsed(); }
+                    )
                 |   '('{ expr.reset(new InvokeNode(s, expr.release())); } ArgumentList(ctx, expr.get()) ')'!{ expr->GetSpan().SetEnd(span.End()); }
                 |   '['{ ctx->PushParsingLvalue(false); ctx->PushParsingSimpleStatement(false); } Expression(ctx):index! ']'!
                     { ctx->PopParsingSimpleStatement(); ctx->PopParsingLvalue(); s.SetEnd(span.End()); expr.reset(new IndexNode(s, expr.release(), index)); }
@@ -313,6 +319,7 @@ namespace Cm.Parser
             |   keyword("this"){ value = new ThisNode(span); }
             |   keyword("base"){ value = new BaseNode(span); }
             |   (keyword("typename") '(' Expression(ctx):subject ')'){ value = new TypeNameNode(span, subject); }
+            |   '`'{ value = new CCNode(span); }
             ;
 
         SizeOfExpr(ParsingContext* ctx): Cm::Ast::Node*

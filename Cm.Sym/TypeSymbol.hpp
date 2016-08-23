@@ -36,7 +36,8 @@ class TypeSymbol : public ContainerSymbol
 public:
     TypeSymbol(const Span& span_, const std::string& name_);
     TypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
-    std::string TypeString() const override { return "type"; };
+    std::string TypeString() const override { return "type"; }
+    char CCTag() const override { return 'T'; }
     bool IsTypeSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

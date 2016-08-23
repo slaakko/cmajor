@@ -18,8 +18,13 @@ namespace Cm { namespace Sym {
 
 DeclarationVisitor::DeclarationVisitor(SymbolTable& symbolTable_) : 
     Cm::Ast::Visitor(true, false), symbolTable(symbolTable_), parameterIndex(0), templateClassNode(nullptr), templateType(nullptr), markFunctionSymbolAsTemplateSpecialization(false), 
-    cidMap(nullptr), iidMap(nullptr)
+    cidMap(nullptr), iidMap(nullptr), cc(false)
 {
+}
+
+void DeclarationVisitor::SetCC()
+{
+    cc = true;
 }
 
 void DeclarationVisitor::SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_)
@@ -340,5 +345,19 @@ void DeclarationVisitor::Visit(Cm::Ast::ConceptNode& conceptNode)
     symbolTable.BeginConceptScope(&conceptNode);
     symbolTable.EndConceptScope();
 }
+
+void DeclarationVisitor::Visit(Cm::Ast::TryStatementNode& tryStatementNode)
+{
+    if (!cc) return;
+    tryStatementNode.TryBlock()->Accept(*this);
+    tryStatementNode.Handlers().Accept(*this);
+}
+
+void DeclarationVisitor::Visit(Cm::Ast::CatchNode& catchNode)
+{
+    if (!cc) return;
+    catchNode.CatchBlock()->Accept(*this);
+}
+
 
 } } // namespace Cm::Sym

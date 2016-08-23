@@ -50,7 +50,7 @@ Cm::Ast::ProgramVersion LlvmVersionParser::Parse(const char* start, const char* 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -184,9 +184,9 @@ void LlvmVersionParser::GetReferencedGrammars()
 void LlvmVersionParser::CreateRules()
 {
     AddRuleLink(new Cm::Parsing::RuleLink("newline", this, "Cm.Parsing.stdlib.newline"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Revision", this, "VersionNumberParser.Revision"));
     AddRuleLink(new Cm::Parsing::RuleLink("Major", this, "VersionNumberParser.Major"));
     AddRuleLink(new Cm::Parsing::RuleLink("Minor", this, "VersionNumberParser.Minor"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Revision", this, "VersionNumberParser.Revision"));
     AddRuleLink(new Cm::Parsing::RuleLink("Build", this, "VersionNumberParser.Build"));
     AddRule(new LlvmVersionRule("LlvmVersion", GetScope(),
         new Cm::Parsing::ActionParser("A0",
@@ -266,7 +266,7 @@ Cm::Ast::ProgramVersion VersionNumberParser::Parse(const char* start, const char
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {

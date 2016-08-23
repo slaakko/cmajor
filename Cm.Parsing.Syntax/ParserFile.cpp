@@ -57,7 +57,7 @@ ParserFileContent* ParserFileGrammar::Parse(const char* start, const char* end, 
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -545,12 +545,12 @@ void ParserFileGrammar::GetReferencedGrammars()
 
 void ParserFileGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("NamespaceAliasDefinition", this, "Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("newline", this, "Cm.Parsing.stdlib.newline"));
-    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("Grammar", this, "GrammarGrammar.Grammar"));
+    AddRuleLink(new Cm::Parsing::RuleLink("qualified_id", this, "Cm.Parsing.stdlib.qualified_id"));
     AddRuleLink(new Cm::Parsing::RuleLink("UsingDeclaration", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDeclaration"));
+    AddRuleLink(new Cm::Parsing::RuleLink("NamespaceAliasDefinition", this, "Cm.Parsing.Cpp.DeclarationGrammar.NamespaceAliasDefinition"));
     AddRuleLink(new Cm::Parsing::RuleLink("UsingDirective", this, "Cm.Parsing.Cpp.DeclarationGrammar.UsingDirective"));
     AddRule(new ParserFileRule("ParserFile", GetScope(),
         new Cm::Parsing::SequenceParser(

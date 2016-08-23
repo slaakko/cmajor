@@ -24,6 +24,7 @@ public:
     TemplateTypeSymbol(const Span& span_, const std::string& name_, TypeSymbol* subjectType_, const std::vector<TypeSymbol*>& typeArguments_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::templateTypeSymbol; }
     bool IsTemplateTypeSymbol() const override { return true; }
+    bool IsCCSymbol() const override { return false; }
     std::string TypeString() const override { return "template type"; };
     std::string GetMangleId() const override;
     bool IsExportSymbol() const override;

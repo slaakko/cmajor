@@ -50,7 +50,7 @@ Project* ProjectFileGrammar::Parse(const char* start, const char* end, int fileI
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {

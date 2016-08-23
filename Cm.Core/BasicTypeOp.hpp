@@ -35,6 +35,7 @@ public:
     Ir::Intf::Object* GetDefaultIrValue() const { return type->GetDefaultIrValue(); }
     virtual bool IsPrimitiveArrayTypeDefaultConstructor() const { return false; }
     virtual bool IsPrimitiveArrayTypeCopyConstructorOrCopyAssignment() const { return false; }
+    bool IsCCSymbol() const override { return false; }
 private:
     Cm::Sym::TypeSymbol* type;
 };

@@ -18,6 +18,7 @@ class DeclarationVisitor : public Cm::Ast::Visitor
 {
 public:
     DeclarationVisitor(SymbolTable& symbolTable_);
+    void SetCC();
     void SetCidMap(std::unordered_map<std::string, uint64_t>* cidMap_);
     void SetIidMap(std::unordered_map<std::string, uint64_t>* iidMap_);
     void SetTemplateType(Cm::Ast::ClassNode* templateClassNode_, Cm::Sym::TemplateTypeSymbol* templateType_);
@@ -61,7 +62,10 @@ public:
     void Visit(Cm::Ast::ParameterNode& parameterNode) override;
     void Visit(Cm::Ast::MemberVariableNode& memberVariableNode) override;
     void Visit(Cm::Ast::ConceptNode& conceptNode) override;
+    void Visit(Cm::Ast::TryStatementNode& tryStatementNode) override;
+    void Visit(Cm::Ast::CatchNode& catchNode) override;
 private:
+    bool cc;
     SymbolTable& symbolTable;
     int parameterIndex;
     Cm::Ast::ClassNode* templateClassNode;

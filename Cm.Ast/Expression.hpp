@@ -295,7 +295,7 @@ class DotNode : public UnaryNode
 {
 public:
     DotNode(const Span& span_);
-    DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_);
+    DotNode(const Span& span_, Node* subject_, Node* memberId_);
     NodeType GetNodeType() const override { return NodeType::dotNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     Rank GetRank() const override { return Rank::postfix; }
@@ -304,17 +304,17 @@ public:
     std::string ToString() const override;
     std::string DocId() const override;
     Node* Subject() const { return Child(); }
-    IdentifierNode* MemberId() const { return memberId.get(); }
+    const std::string& MemberStr() const;
     void Accept(Visitor& visitor) override;
 private:
-    std::unique_ptr<IdentifierNode> memberId;
+    std::unique_ptr<Node> memberId;
 };
 
 class ArrowNode : public UnaryNode
 {
 public:
     ArrowNode(const Span& span_);
-    ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId_);
+    ArrowNode(const Span& span_, Node* subject_, Node* memberId_);
     NodeType GetNodeType() const override { return NodeType::arrowNode; }
     Node* Clone(CloneContext& cloneContext) const override;
     void Read(Reader& reader) override;
@@ -322,10 +322,10 @@ public:
     Rank GetRank() const override { return Rank::postfix; }
     std::string ToString() const override;
     Node* Subject() const { return Child(); }
-    IdentifierNode* MemberId() const { return memberId.get(); }
+    const std::string& MemberStr() const;
     void Accept(Visitor& visitor) override;
 private:
-    std::unique_ptr<IdentifierNode> memberId;
+    std::unique_ptr<Node> memberId;
 };
 
 class PostfixIncNode : public UnaryNode
@@ -588,6 +588,20 @@ public:
     Node* Clone(CloneContext& cloneContext) const override;
     std::string ToString() const override { return "base";  }
     void Accept(Visitor& visitor) override;
+};
+
+class CCNode : public Node
+{
+public:
+    CCNode(const Span& span_);
+    NodeType GetNodeType() const override { return NodeType::ccNode; }
+    Node* Clone(CloneContext& cloneContext) const override;
+    std::string ToString() const override { return "`"; }
+    void Accept(Visitor& visitor) override;
+    bool IsCCNode() const override { return true; }
+    const std::string& Grave() const { return grave; }
+private:
+    std::string grave;
 };
 
 } } // namespace Cm::Ast

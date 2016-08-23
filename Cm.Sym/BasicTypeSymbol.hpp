@@ -193,6 +193,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::nullptrSymbol; }
     std::string GetMangleId() const override { return "np"; }
     bool IsNullPtrType() const override { return true; }
+    bool IsCCSymbol() const override { return false; }
 };
 
 } } // namespace Cm::Sym

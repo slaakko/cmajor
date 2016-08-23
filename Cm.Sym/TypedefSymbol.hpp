@@ -21,6 +21,7 @@ public:
     TypedefSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::typedefSymbol; }
     std::string TypeString() const override { return "typedef"; };
+    char CCTag() const override { return 'T'; }
     bool IsTypedefSymbol() const override { return true; }
     bool IsExportSymbol() const override;
     void Write(Writer& writer) override;

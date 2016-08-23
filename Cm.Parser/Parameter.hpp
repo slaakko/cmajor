@@ -1,5 +1,5 @@
-#ifndef Parameter_hpp_11627
-#define Parameter_hpp_11627
+#ifndef Parameter_hpp_20065
+#define Parameter_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Parameter_hpp_11627
+#endif // Parameter_hpp_20065

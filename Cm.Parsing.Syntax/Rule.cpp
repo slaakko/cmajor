@@ -53,7 +53,7 @@ Cm::Parsing::Rule* RuleGrammar::Parse(const char* start, const char* end, int fi
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -270,26 +270,26 @@ void RuleGrammar::GetReferencedGrammars()
         grammar0 = Cm::Parsing::Syntax::ElementGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = Cm::Parsing::Syntax::CompositeGrammar::Create(pd);
+        grammar1 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.Syntax.CompositeGrammar");
     if (!grammar2)
     {
-        grammar2 = Cm::Parsing::stdlib::Create(pd);
+        grammar2 = Cm::Parsing::Syntax::CompositeGrammar::Create(pd);
     }
     AddGrammarReference(grammar2);
 }
 
 void RuleGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "ElementGrammar.Identifier"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Signature", this, "ElementGrammar.Signature"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Alternative", this, "CompositeGrammar.Alternative"));
     AddRule(new RuleRule("Rule", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(

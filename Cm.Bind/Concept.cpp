@@ -164,18 +164,18 @@ void ConstraintChecker::Visit(Cm::Ast::ConceptNode& conceptNode)
     {
         constraint->Accept(*this);
         bool satisfied = constraintCheckStack.Pop();
-        std::unique_ptr<Cm::BoundTree::BoundConstraint> constraint(boundConstraintStack.Pop());
+        std::unique_ptr<Cm::BoundTree::BoundConstraint> boundConstraint(boundConstraintStack.Pop());
         if (!satisfied)
         {
             constraintCheckStack.Push(false);
-            boundConstraintStack.Push(constraint.release());
+            boundConstraintStack.Push(boundConstraint.release());
             return;
         }
     }
     constraintCheckStack.Push(true);
-    Cm::BoundTree::BoundAtomicConstraint* constraint = new Cm::BoundTree::BoundAtomicConstraint(true);
-    constraint->SetConcept(concept);
-    boundConstraintStack.Push(constraint);
+    Cm::BoundTree::BoundAtomicConstraint* boundConstraint = new Cm::BoundTree::BoundAtomicConstraint(true);
+    boundConstraint->SetConcept(concept);
+    boundConstraintStack.Push(boundConstraint);
 }
 
 void ConstraintChecker::Visit(Cm::Ast::ConceptIdNode& conceptIdNode)
@@ -375,7 +375,7 @@ void ConstraintChecker::EndVisit(Cm::Ast::DotNode& dotNode)
         NamespaceTypeSymbol* nsTypeSymbol = static_cast<NamespaceTypeSymbol*>(type);
         typeContainerScope = nsTypeSymbol->Ns()->GetContainerScope();
     }
-    const std::string& memberName = dotNode.MemberId()->Str();
+    const std::string& memberName = dotNode.MemberStr();
     Cm::Sym::Symbol* symbol = typeContainerScope->Lookup(memberName, Cm::Sym::ScopeLookup::this_and_base, lookupId);
     if (symbol)
     {

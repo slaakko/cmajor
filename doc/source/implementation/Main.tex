@@ -35,7 +35,7 @@ to make the description of implementation hopefully more understandable.
 
 \section{Cmajor Programming Language and Cmajor Compilers}
 
-Cmajor is a hybrid programming language that combines $\textrm{C}^\#$ like syntax with C++ like semantics.
+Cmajor is a hybrid programming language that combines $\textrm{C}^\#$-like syntax with C++-like semantics.
 The original Cmajor compiler is written in C++.
 Now there is also a Cmajor compiler written in Cmajor that was created by manually converting
 the C++ version to Cmajor. However it still lacks some features that are present in the C++ version, so the
@@ -1136,55 +1136,53 @@ A &\rightarrow \beta R\\
 R &\rightarrow \alpha R \,|\, \epsilon
 \end{align*}
 
-
 \section{Extending the Grammar Notation}
 
-We have found it useful to extend the context-free grammar notation with regular-expression like operations.
-\footnote{$\alpha$ and $\beta$ denote strings of grammar symbols, and $X$ and $Y$ single grammar symbols.}
-\footnote{Since asterisk, plus, question mark, parentheses and square brackets belong to regular expression syntax,
-they must now be quoted when they appear as terminals in productions of extended notation.}
-In the following definitions the expression in the middle is in the extended form, and the productions on the right
-express the same language using conventional context-free grammar notation.
+The context-free grammar notation can be extended with regular-expression like operations to form the so called
+\emph{parsing expression grammar}, or \emph{PEG}, notation (\cite{PEG}).
+Ambiguities that can arise in CFG are avoided in PEG by prioritising the alternatives using \emph{ordered choice} operation.
+In ordered choice alternatives are tried in order and the first matching alternative is chosen regardless of the possibly matching alternatives
+that come after it. PEG notation supports the following operations (among others):
 
 \begin{enumerate}
-\item X or Y:
+\item Ordered choice of alternatives X and Y:
 \begin{align*}
-P &\rightarrow \alpha\, (X\,|\,Y)\, \beta & P &\rightarrow \alpha R \beta\\
-  &                             & R & \rightarrow \, X \, | \, Y
+P &\rightarrow X\, | \,Y
 \end{align*}
-\item Closure of $X$, $X$ occurs zero or more times:
+
+\item Closure of $X$, $X$ occurs zero or more times\footnote{$X^* = \{\epsilon, X, XX, XXX, \ldots \}$}:
 \begin{align*}
-P &\rightarrow \alpha X^* \beta & P &\rightarrow \alpha R \beta\\
-  &                             & R & \rightarrow RR\, | \, X \, | \, \epsilon
+P &\rightarrow X^*
 \end{align*}
-\item Positive $X$, $X$ occurs one or more times:
+
+\item Positive $X$, $X$ occurs one or more times\footnote{$X^+ = \{X, XX, XXX, \ldots \}$}:
 \begin{align*}
-P &\rightarrow \alpha X^+ \beta & P &\rightarrow \alpha R \beta\\
-  &                             & R & \rightarrow RR\, | \, X
+P &\rightarrow X^+
 \end{align*}
-\item Optional $X$, $X$ occurs zero or one times:
+
+\item Optional $X$, $X$ occurs zero or one times\footnote{$X? = \{\epsilon, X\}$}:
 \begin{align*}
-P &\rightarrow \alpha X? \beta & P &\rightarrow \alpha R \beta\\
-  &                            & R & \rightarrow X \,|\, \epsilon
+P &\rightarrow X?
 \end{align*}
+
 \item Class [abc], one of the characters in the class occurs:
 \begin{align*}
-P & \rightarrow \alpha \, [abc] \, \beta & P &\rightarrow \alpha R \beta\\
-  &                            & R & \rightarrow a \,|\, b \, | \, c
+P & \rightarrow \, [abc] \,
 \end{align*}
+
 \end{enumerate}
 
 In the definitions above, $X$ denotes a single grammar symbol, i.e. either terminal or nonterminal,
 but we may extend the notation further by substituting $X$ with arbitrary expressions containing
 grammar symbols and other expressions, much the same way we can use regular expressions.
-We can now replace left recursion with iteration using the extended notation.
+We can now replace left recursion with iteration using the PEG notation.
 The left-recursive productions
 $$A \rightarrow A\alpha \,|\, \beta$$
 become an iterative production:
 $$A \rightarrow \beta (\alpha)^*$$
 meaning $\beta$ followed by zero or more $\alpha$'s.
 
-We can rewrite the grammar \ref{g:infix} without left recursion using the extended notation as follows:
+We can rewrite the grammar \ref{g:infix} without left recursion using the PEG notation as follows:
 
 \begin{grmr}\label{g:expr}
 \begin{align*}
@@ -1197,7 +1195,7 @@ factor &\rightarrow [0-9] \> |\> '('\> expr \> ')'
 \section{Parsing in Cmajor}
 
 The parsers in Cmajor are written using the Cmajor Parser Generator, or \verb|cmpg|, notation,
-that is much like the extended grammar notation of the previous section.
+that is much like the PEG grammar notation of the previous section.
 The \verb|cmpg| reads grammar definitions in \emph{.parser} files, validates them,
 and generates C++ classes that represent the grammars. To become familiar with the grammar definition syntax,
 we write the grammar \ref{g:expr} using the \verb|cmpg| notation.
@@ -2277,7 +2275,7 @@ is called regardless whether the parsing succeeds or fails.
 \emph{parsingTemplateId}.
 
 Template identifier consists of a qualified identifier, $foo$, $bar.bazz$, etc.,
-followed a list of one or more \emph{type expressions} between
+followed by a list of one or more \emph{type expressions} between
 angle brackets. Thus the \emph{TypeExpr} rule
 is called recursively by this rule.
 
@@ -3357,7 +3355,7 @@ If $s$ if a function symbol, open a function group using the group name of $s$ a
 Otherwise, if $s$ is a concept symbol, open a concept group using the group name of $s$ and add $s$ to the opened concept group using algorithm
 \ref{addtoconceptgroup}.
 \item
-Othwerwise, add $s$ as a child symbol of $c$ and set the parent property of $s$ to $c$.
+Otherwise, add $s$ as a child symbol of $c$ and set the parent property of $s$ to $c$.
 \end{enumerate}
 \end{algo}
 
@@ -6600,7 +6598,7 @@ Now if they are both function templates:
 \item
 We prefer a function template that has a constraint over a nonconstrained function template.
 \item
-If both are constrained function templates, we use the $imply$ relation to select the function template that has more strict constraint.
+If both are constrained function templates, we use the $subsume$ relation to select the function template that has more strict constraint.
 \end{itemize}
 \end{itemize}
 
@@ -6669,7 +6667,7 @@ Otherwise, return \textbf{false}.
 \section{Binding Types to Type Parameters}
 
 The next algorithms are used for deducing template arguments and binding them to template parameters.
-They are quite complicated as descibed using semiformal (bad) english. They can be used only directionally.
+They are quite complicated as described using semiformal (bad) english. They can be used only directionally.
 
 \begin{algo}\label{deducetemplatearguments} Deduce Template Arguments.
 Inputs: a container scope, list of template parameters, list of parameters, list of bound template arguments,
@@ -10929,7 +10927,7 @@ void RegVar::InitFrom(Emitter& emitter, Type* type, Global* global)
 // ...
 \end{lstlisting}
 
-\section{Types}
+\section{IR Types}
 
 Every intermediate object has a type.
 In addition each type symbol derived from the \verb|TypeSymbol| class (see section \ref{typesymbolhierarchy}) contains an \emph{irType},
@@ -10976,7 +10974,7 @@ Represents an rvalue reference type. Contains a referred-to type.
 Represents a function type. Contains a return type and parameter types.
 \end{description}
 
-\section{Instructions}
+\section{IR Instructions}
 
 The compiler implements a subset of all possible LLVM instructions.
 The instructions implemented are:
@@ -11078,21 +11076,490 @@ Represents \verb|inttoptr| instruction that converts an integer value to a point
 Represents \verb|bitcast| instruction that changes the type of a value without converting the bits of a value.
 \end{description}
 
-\section{Emitter}
+\clearpage
+\section{GenData and GenResult Structures}
 
-The emitter class stores LLVM instructions of a function, processes them and writes them in text to an .ll file when requested.
-The processing consists of removing unused labels and unnecessary jumps, for example.
+The emitter has two primary data structures that assist in generation of intermediate code,
+the \emph{GenData} structure and the \emph{GenResult} structure.
 
-\section{Implementation of Basic Type Operations}
+\subsection{GenData}
+
+The GenData structure contains the following fields:
+
+\begin{description}
+\item[LabelObject* label]
+represents a label of the first instruction generated using this GenData structure.
+\item[vector$<$Object*$>$ objects]
+represents a vector of IR objects.
+If the GenData is not used for invoking a function or basic type operation,
+the the vector contains only one IR object that is the main IR object.
+Otherwise, if the GenData is used for invoking a function or a basic type operation,
+the first IR object represents a return value object of a function call,
+or the receiver of a constructor or destructor call, while other IR objects
+represent the arguments of the function call.
+\item[vector$<$LabelObject*$>$ nextTargets] represent labels
+that become equal to the label of the first instruction that follows the intermediate code
+generated using this GenData structure.
+\item[vector$<$LabelObject*$>$ trueTargets] represents labels that become equal to the label
+of the first instruction of a \emph{true} path of a conditional branch instruction.
+\item[vector$<$LabelObject*$>$ falseTargets] represents labels that become equal to the label
+of the first instruction of a \emph{false} path of a conditional branch instruction.
+\end{description}
+
+\subsubsection{Operations for GenData}
+
+\begin{itemize}
+
+\item
+Retrieve objects
+
+\begin{enumerate}
+\item
+MainObject() function returns the first IR object of \emph{objects}.
+\item
+Args() function creates a vector of IR objects, copies objects 1, \ldots, $n - 1$ to it,
+and returns it.
+\end{enumerate}
+
+\item
+Add target label
+
+There are three label addition operations:
+\begin{enumerate}
+\item
+AddNextTarget
+adds the given label to the \emph{nextTargets} labels.
+\item
+AddTrueTarget
+adds the given label to the \emph{trueTargets} labels.
+\item
+AddFalseTarget
+adds the given label to the \emph{falseTargets} labels.
+\end{enumerate}
+
+\item
+MergeData
+
+Merges a child GenData to a GenData:
+
+\begin{enumerate}
+\item
+If there are objects in the child GenData, add the first object of the child GenData to the end
+of objects of this GenData.
+\item
+Merge \emph{nextTargets} of the child GenData to the \emph{nextTargets} of this GenData.
+\item
+Merge \emph{trueTargets} of the child GenData to the \emph{trueTargets} of this GenData.
+\item
+Merge \emph{falseTargets} of the child GenData to the \emph{falseTargets} of this GenData.
+\end{enumerate}
+
+\item
+Backpatching
+
+When we generate a forward jump, we do not yet know the target label of the instruction we want to jump to.
+Therefore we create a new label X and generate a jump to that label X.
+Later when the target label of the jump is known (let's call it label Y), we can \emph{backpatch} jump to label X
+by setting the name of label X in the jump instruction equal to the the name of label Y.
+There are three backpatch operations:
+\begin{enumerate}
+\item
+BackpatchNextTargets sets the name of each label in the \emph{nextTargets} labels equal to the name of the given label.
+\item
+BackpatchTrueTargets sets the name of each label in the \emph{trueTargets} labels equal to the name of the given label.
+\item
+BackpatchFalseTargets sets the name of each label in the \emph{falseTargets} labels equal to the name of the given label.
+\end{enumerate}
+
+\end{itemize}
+
+\subsection{GenResult}
+
+The GenResult structure contains the following fields:
+
+\begin{description}
+\item[shared\_ptr$<$GenData$>$ genData] represents a shared pointer to primary GenData structure.
+\item[vector$<$shared\_ptr$<$GenData$>$$>$ children] represents vector of shared pointers to child GenData structures.
+\end{description}
+
+\subsubsection{Operations for GenResult}
+
+\begin{itemize}
+
+\item
+Retrieve objects
+
+\begin{enumerate}
+\item
+MainObject() function calls the MainObject() function of the primary GenData structure.
+\item
+Args() function calls the Args() function of the primary GenData structure.
+\end{enumerate}
+
+\item
+Add target label
+
+There are three label addition operations:
+\begin{enumerate}
+\item
+AddNextTarget
+calls the AddNextTarget operation of the primary GenData structure with the given label.
+\item
+AddTrueTarget
+calls the AddTrueTarget operation of the primary GenData structure with the given label.
+\item
+AddFalseTarget
+calls the AddFalseTarget operation of the primary GenData structure with the given label.
+\end{enumerate}
+
+\item
+Merge
+
+Merges a child GenResult to a GenResult by calling the MergeData operation of the primary GenData structure
+with the primary GenData structure of a child GenResult.
+Additionally adds the primary GenData structure of the child GenResult to the child GenData structures (\emph{children}).
+
+\item
+Backpatching
+
+There are three backpatch operations:
+\begin{enumerate}
+\item
+BackpatchNextTargets calls the BackpatchNextTargets operation of the primary GenData with the given label.
+\item
+BackpatchTrueTargets calls the BackpatchTrueTargets operation of the primary GenData with the given label.
+\item
+BackpatchFalseTargets calls the BackpatchFalseTargets operation of the primary GenData with the given label.
+\end{enumerate}
+\end{itemize}
+
+\section{Function Emitter}
+
+The function emitter is a bound tree node visitor.
+It visits bound statements and expressions contained by a bound function and generates intermediate code for them.
+The function emitter has a stack of shared pointers to \emph{GenResult} structures.
+Each \emph{Visit} operation starts by creating a new GenResult object.
+Then Visit adds intermediate objects to this GenResult for example by calling \emph{Merge} operations with the child GenResults popped from the GenResult stack,
+adds jump target labels to the GenResult by calling \emph{AddNextTarget}, \emph{AddTrueTarget}, and \emph{AddFalseTarget},
+and backpatches the jumps by calling \emph{BackpatchNextTargets}, \emph{BackpatchTrueTargets} and \emph{BackpatchFalseTargets}.
+All this while Visit emits intermediate instructions that are saved to a \emph{IR function} object.
+At the end of the Visit operation the GenResult structure filled with information is pushed to the GenResult stack to be used by parent visitations.
+
+When the intermediate instructions for a bound function have been emitted and saved to an IR function object, the IR function object is cleaned.
+The cleaning removes unused labels, i.e. labels that are not jumped to, and removes unnecessary branch instructions.
+After cleaning the IR function is written in text format to an .ll file for compilation by the LLVM compiler LLC.
+
+\subsection{Generation of Jumping Boolean Code}\label{jumpingboolcode}
+
+The \bf{if}, \bf{while}, \bf{do} and \bf{for} statements have a Boolean expression, \emph{condition},
+based on which the execution branches to a \emph{true} path or a \emph{false} path.
+The function emitter emits so called \emph{jumping Boolean code} for those expressions.
+For generating jumping Boolean code, the function emitter has a \emph{GenResult} structure
+whose first object is the Boolean result of the evaluated condition.
+It creates two labels, \emph{trueLabel} and \emph{falseLabel}, and adds the \emph{trueLabel} to the \emph{trueTargets} of the GenResult and
+the \emph{falseLabel} to the \emph{falseTargets} of the GenResult. It then emits a conditional branch, a \bf{br} instruction,
+that jumps to \emph{trueLabel} if the main object of the GenResult is \bf{true} and to \emph{falseLabel} otherwise.
+Later, when the true targets of those jumps are found out, the \emph{trueTargets} and \emph{falseTargets} are backpatched with appropriate labels.
+
+\subsection{Visiting Primitive Bound Nodes}
+
+As an example of primitive bound node visitation we take visitation of
+bound literal, bound constant, bound enumeration constant
+and bound local variable nodes.
+
+\subsubsection{Visiting Bound Literal Node}
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Create an IR object for the value of the bound literal and set it as the main object of the created GenResult.
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound Constant Node}
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Create an IR object for the value of the bound constant and set ity as the main object of the created GenResult.
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound Enumeration Constant Node}
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Create an IR object for the value of the bound enumeration constant and set it as the main object of the created GenResult.
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound Local Variable Node}
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Create an IR object for the value of the bound local variable and set it as the main object of the created GenResult.
+If the local variable is of reference to a basic type the IR object is a RefVar, otherwise it is a StackVar.
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsection{Visiting Bound Expression Nodes}
+
+As an example of bound expression node visitation we take visitation of bound unary operation, bound binary operation, and bound function call nodes.
+
+\subsubsection{Visiting Bound Unary Operation Node}
+
+Prior to this visitation, the operand of the bound unary operation has been visited,
+so the top of the GenResult stack is the GenResult for the operand.
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Set the main object of the created GenResult to a RegVar of the return type of the bound unary operation.
+\item
+Pop a GenResult for the operand from the GenResult stack and merge it to the created GenResult.
+\item
+If the bound unary operation function is a basic type operation, generate the operation inline (\ref{genbasictypeoperations}) using created GenResult,
+otherwise generate a call to the bound unary operation function using created GenResult (\ref{gennonpolymorphicfuncall}).
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound Binary Operation Node}
+
+Prior to this visitation, the left and right operands of the bound binary operation have been visited,
+so the top two items in the the GenResult stack are the GenResult for the left and right operands.
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Set the main object of the created GenResult to a RegVar of the return type of the bound binary operation.
+\item
+Pop a GenResult for the right operand from the GenResult stack.
+\item
+Pop a GenResult for the left operand from the GenResult stack.
+\item
+Merge the GenResults for the left and right operands to the created GenResult.
+\item
+If the bound binary operation function is a basic type operation, generate the operation inline (\ref{genbasictypeoperations}) using created GenResult,
+otherwise generate a call to the bound binary operation function using created GenResult (\ref{gennonpolymorphicfuncall}).
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound Function Call Node}
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Set the main object of the created GenResult to a RegVar of the return type of the called function.
+\item
+For each argument of the function call:
+\begin{enumerate}
+\item
+Call \emph{Accept} member function of the argument with this bound node visitor.
+This visits of the argument and results a GenResult for the argument in the top of the GenResult stack.
+\item
+Pop the GenResult for the argument from the GenResult stack and merge it to  the created GenResult.
+\end{enumerate}
+\item
+Generate a call to the function using the created GenResult (\ref{gennonpolymorphicfuncall} or \ref{genpolymorphicfuncall}).
+\item
+If generation of jumping Boolean code is requested, it is generated (\ref{jumpingboolcode}).
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsection{Visiting Bound Statement Nodes}
+
+As an example of bound statement node visitation we take visitation of bound conditional statement (\bf{if} statement),
+bound \bf{while} statement and bound \bf{for} statement nodes.
+
+\subsubsection{Visiting Bound Conditional Statement Node}
+
+Prior to this visitation, the Boolean expression node that represents the condition has been visited,
+so the top of GenResult stack is the GenResult for the condition.
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Pop the GenResult for the condition from the GenResult stack and assign it to variable \emph{conditionResult}.
+\item
+Visit the statement that represents the true path of the conditional statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the statement for the true path from the GenResult stack and assign it to variable \emph{thenResult}.
+\item
+Backpatch the \emph{trueTargets} of the \emph{conditionResult} with the label of the \emph{thenResult}.
+\item
+Backpatch accumulated \emph{nextTargets} with the label of the \emph{thenResult}.
+\item
+Create a new label, generate a jump to this label and add it to the \emph{nextTargets} of the created GenResult.
+\item
+Merge \emph{thenResult} to the created GenResult.
+\item
+If the conditional statement has an else path (false path):
+\begin{enumerate}
+\item
+Visit the statement that represents the false path of the conditional statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the statement for the false path from the GenResult stack and assign it to variable \emph{elseResult}.
+\item
+Backpatch the \emph{falseTargets} of the \emph{conditionResult} with the label of the \emph{elseResult}.
+\item
+Backpatch accumulated \emph{nextTargets} with the label of the \emph{elseResult}.
+\item
+Merge \emph{elseResult} to the created GenResult.
+\end{enumerate}
+\item
+Otherwise merge the \emph{falseTargets} of the \emph{conditionResult} to the \emph{nextTargets} of the created GenResult.
+\item
+Merge the \emph{conditionResult} to the created GenResult and set it as the first child of the created GenResult.
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound While Statement Node}
+
+Prior to this visitation, the Boolean expression node that represents the condition of the while statement has been visited,
+so the top of GenResult stack is the GenResult for the condition.
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Pop the GenResult for the condition from the GenResult stack and assign it to variable \emph{conditionResult}.
+\item
+Visit the statement of the \bf{while} statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the statement from the GenResult stack and assign it to variable \emph{statementResult}.
+\item
+Emit an unconditional brach to the label of the \emph{conditionResult}.
+\item
+Backpatch the \emph{trueTargets} of the \emph{conditionResult} with the label of the \emph{statementResult}.
+\item
+Backpatch the \emph{nextTargets} of the \emph{statementResult} with the label of the \emph{conditionResult}.
+\item
+Backpatch accumulated \emph{nextTargets} with the label of the \emph{statementResult}.
+\item
+Merge the \emph{falseTargets} of the \emph{conditionResult} to the \emph{nextTargets} of the created GenResult.
+\item
+Merge the \emph{conditionResult} to the created GenResult and set it as the first child of the created GenResult.
+\item
+Merge the \emph{statementResult} to the created GenResult.
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsubsection{Visiting Bound For Statement Node}
+
+\begin{enumerate}
+\item
+Create a new GenResult.
+\item
+Visit the initialization statement of the \bf{for} statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the initialization statement from the GenResult stack and assign it to variable \emph{initResult}.
+\item
+Visit the condition of the \bf{for} statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the condition from the GenResult stack and assign it to variable \emph{conditionResult}.
+\item
+Backpatch the \emph{nextTargets} of the \emph{initResult} with the label of the \emph{conditionResult}.
+\item
+Backpatch accumulated \emph{nextTargets} with the label of the \emph{initResult}.
+\item
+Visit the action statement of the \bf{for} statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenResult for the action statement from the GenResult stack and assign it to variable \emph{actionResult}.
+\item
+Backpatch the \emph{trueTargets} of the \emph{conditionResult} with the label of the \emph{actionResult}.
+\item
+Backpatch accumulated \emph{nextTargets} with the label of the \emph{actionResult}.
+\item
+Merge the \emph{falseTargets} of the \emph{conditionResult} to the \emph{nextTargets} of the created GenResult.
+\item
+Visit the loop expression (for example variable increment) of the \bf{for} statement by calling its \emph{Accept} member function with this bound node visitor.
+\item
+Pop the GenRsult for the loop expression from the GenResult stack and assign it to variable \emph{loopResult}.
+\item
+Backpatch the \emph{nextTargets} of the \emph{actionResult} with the label of the \emph{loopResult}.
+\item
+Backpatch the \emph{nextTargets} of the \emph{loopResult} with the label of the \emph{conditionResult}.
+\item
+Emit an unconditional branch, a \bf{br} instruction, to the label of the \emph{conditionResult}.
+\item
+Merge the \emph{initResult}, \emph{conditionResult}, \emph{actionResult} and \emph{loopResult} to the created GenResult.
+\item
+Push the GenResult to the GenResult stack.
+\end{enumerate}
+
+\subsection{Generating Calls to Nonpolymorphic Functions}\label{gennonpolymorphicfuncall}
+
+When generating code for a nonpolymorphic function call we have a function symbol to call,
+and a GenResult that contains the IR objects for the return value and arguments of the function call.
+If the function symbol is a constructor or destructor symbol, we generate a temporary GenResult that
+has the first IR object with void type and generate the call using this temporary GenResult.
+We create an IR function using the function symbol, and generate a \bf{call} instruction that calls that IR function using the first IR object of the GenResult as
+the return value object and rest IR objects of the GenResult as argument objects of the function call.
+
+\subsection{Generating Calls to Polymorphic Functions}\label{genpolymorphicfuncall}
+
+When generating code for a polymorphic function call we have a member function symbol to call,
+and a GenResult that contains the IR objects for the return value and arguments of the function calll.
+If the member function symbol is a destructor symbol, we generate a temporary GenResult that has the first IR object with void type and generate the call using this
+temporary GenResult.
+
+The first object of the GenResult represents the return value of the function call.
+The second object of the GenResult represents a pointer to the class object, the \emph{this} pointer.
+Other objects of the GenResult represent the arguments of the function call.
+
+\begin{enumerate}
+\item
+First we obtain the \emph{vtable pointer} by using the this-pointer.
+If the class containing the member function to call contains the vtable pointer,
+we load the the vtable pointer by subscripting the this-pointer with the index of vtable pointer.
+Otherwise we first cast the this-pointer to the base class that contains the vtable pointer and then load the vtable pointer by subscripting the casted
+this-pointer with the index of the vtable pointer.
+\item
+Then we obtain a generic pointer to the member function to call by subscripting the vtable pointer with the vtable index of the member function to call.
+\item
+Then we create an IR function pointer type from the member function symbol to call.
+\item
+Then we cast the generic member function pointer to the IR function pointer type.
+\item
+Finally we emit a \bf{call} instruction with IR function pointer type, return value object, this-pointer object and arguments of the function call.
+\end{enumerate}
+
+\clearpage
+\subsection{Generating Code for Basic Type Operations}\label{genbasictypeoperations}
 
 Section \ref{basictypeoperations} shows the basic type symbols and the function symbols that represent operations for each basic type.
-Instructions for the operations for basic types are generated inline by calling the \verb|Generate| member function of the operation.
+Instructions for the operations for basic types are generated inline by calling the overridden \verb|Generate| member function of the operation.
 The following listing sketches the implementation of some of the constructors:
 
 \begin{flushleft}
 \lstset{language=C++}
 \begin{lstlisting}[frame=trBL]
-class BasicTypeOp
+class BasicTypeOp : public FunctionSymbol
 {
 public:
     BasicTypeOp(TypeSymbol* type_) : type(type_) {}
@@ -11160,13 +11627,17 @@ public:
 \end{flushleft}
 
 \clearpage
-\begin{thebibliography}{4}
+\begin{thebibliography}{5}
 
 \bibitem{COMPILERS} \textsc{Aho, A. V., M. S. Lam, R. Sethi, and J. D. Ullman}:
 Compilers: Principles, Techniques, \& Tools. Second Edition. Addison-Wesley, 2007.
 
 \bibitem{AUTOMATA} \textsc{Hopcroft, J. E., R. Motwani, and J. D. Ullman}:
 Introduction to Automata Theory, Languages, and Computation. Second Edition. Addison-Wesley, 2001.
+
+\bibitem{PEG} \textsc{Ford, B.}:
+Parsing Expression Grammars, A Recognition-Based Syntactic Foundation,
+\textit{\url{http://www.brynosaurus.com/pub/lang/peg.pdf}}
 
 \bibitem{SPIRIT} \textsc{Joel de Guzman}:
 Spirit Parsing Libraries,

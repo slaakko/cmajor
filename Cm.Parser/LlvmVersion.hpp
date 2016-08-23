@@ -1,5 +1,5 @@
-#ifndef LlvmVersion_hpp_12757
-#define LlvmVersion_hpp_12757
+#ifndef LlvmVersion_hpp_20065
+#define LlvmVersion_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -39,4 +39,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // LlvmVersion_hpp_12757
+#endif // LlvmVersion_hpp_20065

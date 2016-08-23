@@ -47,7 +47,34 @@ SymbolTypeSetCollection::SymbolTypeSetCollection()
     typeSymbols.insert(SymbolType::boundTypeParameterSymbol);
     typeSymbols.insert(SymbolType::typeParameterSymbol);
     symbolTypeSets[int(SymbolTypeSetId::lookupTypeSymbols)] = std::move(typeSymbols);
-//  lookupTypeAndFunctionGroupSymbols:
+    //  lookupTypeAndNamespaceSymbols:
+    SymbolTypeSet typeAndNamespaceSymbols;
+    typeAndNamespaceSymbols.insert(SymbolType::boolSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::charSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::voidSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::sbyteSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::byteSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::shortSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::ushortSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::intSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::uintSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::longSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::ulongSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::floatSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::doubleSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::classSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::interfaceTypeSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::delegateSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::classDelegateSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::enumTypeSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::templateTypeSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::derivedTypeSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::typedefSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::boundTypeParameterSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::typeParameterSymbol);
+    typeAndNamespaceSymbols.insert(SymbolType::namespaceSymbol);
+    symbolTypeSets[int(SymbolTypeSetId::lookupTypeAndNamespaceSymbols)] = std::move(typeAndNamespaceSymbols);
+    //  lookupTypeAndFunctionGroupSymbols:
     SymbolTypeSet typeAndFunctionGroupSymbols;
     typeAndFunctionGroupSymbols.insert(SymbolType::boolSymbol);
     typeAndFunctionGroupSymbols.insert(SymbolType::charSymbol);

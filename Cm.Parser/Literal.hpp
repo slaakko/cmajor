@@ -1,5 +1,5 @@
-#ifndef Literal_hpp_8245
-#define Literal_hpp_8245
+#ifndef Literal_hpp_20065
+#define Literal_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -28,4 +28,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Literal_hpp_8245
+#endif // Literal_hpp_20065

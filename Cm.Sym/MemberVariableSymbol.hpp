@@ -22,6 +22,7 @@ public:
     MemberVariableSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::memberVariableSymbol; }
     std::string TypeString() const override { return "member variable"; };
+    bool IsCCSymbol() const override;
     bool IsMemberVariableSymbol() const override { return true; }
     bool IsExportSymbol() const override;
     int LayoutIndex() const { return layoutIndex; }

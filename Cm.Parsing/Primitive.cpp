@@ -10,11 +10,12 @@
 #include <Cm.Parsing/Primitive.hpp>
 #include <Cm.Parsing/Scanner.hpp>
 #include <Cm.Parsing/Visitor.hpp>
+#include <Cm.Parsing/Rule.hpp>
 #include <cctype>
 
 namespace Cm { namespace Parsing {
 
-CharParser::CharParser(char c_): Parser("char", "\"" + std::string(1, c_) + "\""), c(c_) 
+CharParser::CharParser(char c_): Parser("char", "\"" + std::string(1, c_) + "\""), c(c_), ccRule(nullptr)
 {
 }
 
@@ -24,8 +25,31 @@ Match CharParser::Parse(Scanner& scanner, ObjectStack& stack)
     {
         if (scanner.GetChar() == c)
         {
-            ++scanner;
-            return Match::One();
+            if (scanner.Synchronizing() && ccRule && ccRule->CCSkip() && c == ccRule->CCEnd() && ccRule->CCCount() > 0)
+            {
+                ccRule->DecCCCount();
+                if (ccRule->CCCount() == 0)
+                {
+                    ++scanner;
+                }
+                return Match::One();
+            }
+            else
+            {
+                ++scanner;
+                if (ccRule)
+                {
+                    if (c == ccRule->CCStart() && !scanner.Synchronizing())
+                    {
+                        ccRule->IncCCCount();
+                    }
+                    else if (c == ccRule->CCEnd())
+                    {
+                        ccRule->DecCCCount();
+                    }
+                }
+                return Match::One();
+            }
         }
     }
     return Match::Nothing();

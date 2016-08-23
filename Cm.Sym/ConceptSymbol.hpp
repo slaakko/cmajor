@@ -23,6 +23,8 @@ public:
     const std::string& GroupName() const { return groupName; }
     void SetGroupName(const std::string& groupName_) { groupName = groupName_; }
     std::string TypeString() const override { return "concept"; };
+    char CCTag() const override { return 'O'; }
+    std::string CCName() const override { return groupName; }
     bool IsExportSymbol() const override;
     const std::vector<TypeParameterSymbol*>& TypeParameters() const { return typeParameters; }
     void Write(Writer& writer) override;

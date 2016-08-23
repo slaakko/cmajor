@@ -1,5 +1,5 @@
-#ifndef Json_hpp_11627
-#define Json_hpp_11627
+#ifndef Json_hpp_20065
+#define Json_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,4 +26,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Json_hpp_11627
+#endif // Json_hpp_20065

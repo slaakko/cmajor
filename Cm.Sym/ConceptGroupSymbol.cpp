@@ -20,6 +20,15 @@ void ConceptGroupSymbol::Dump(CodeFormatter& formatter)
 {
 }
 
+void ConceptGroupSymbol::CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols)
+{
+    ArityConceptMapIt e = arityConceptMap.cend();
+    for (ArityConceptMapIt i = arityConceptMap.cbegin(); i != e; ++i)
+    {
+        ccSymbols.insert(i->second);
+    }
+}
+
 void ConceptGroupSymbol::AddConcept(ConceptSymbol* concept)
 {
     if (concept->GroupName() != Name())

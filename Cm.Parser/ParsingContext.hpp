@@ -38,6 +38,8 @@ public:
     void PushParsingIsOrAs(bool enable); 
     void PopParsingIsOrAs();
     bool ParsingIsOrAs() const { return parsingIsOrAs;  }
+    bool CCNodeParsed() const { return ccNodeParsed; }
+    void SetCCNodeParsed() { ccNodeParsed = true; }
 private:
     bool parsingTypeExpr;
     std::stack<bool> parsingTypeExprStack;
@@ -53,6 +55,7 @@ private:
     std::stack<bool> parsingArgumentsStack;
     bool parsingIsOrAs;
     std::stack<bool> parsingIsOrAsStack;
+    bool ccNodeParsed;
 };
 
 } } // namespace Cm::Parser

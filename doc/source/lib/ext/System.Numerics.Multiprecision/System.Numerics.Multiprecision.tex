@@ -64,7 +64,8 @@ The library is implemented using GNU Multiple Precision Arithmetic Library
 \\
 \hline
 \hyperlink{System.Numerics.Multiprecision}{System.Numerics.Multiprecision}
-& Contains arbitrary precision signed integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+& Contains arbitrary precision integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, arbitrary precision rational type \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} and 
+arbitrary precision floating point type \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
 
 \\
 \end{supertabular}
@@ -292,7 +293,8 @@ That's all.
 
 \hypertarget{System.Numerics.Multiprecision}{\chapter{System.Numerics.Multiprecision Namespace}}
 \begin{flushleft}
-Contains arbitrary precision signed integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}.
+Contains arbitrary precision integer type \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}, arbitrary precision rational type \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} and 
+arbitrary precision floating point type \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
 
 \end{flushleft}
 \clearpage
@@ -303,13 +305,1171 @@ Contains arbitrary precision signed integer type \hyperlink{System.Numerics.Mult
 & \textbf{Description}
 \\
 \hline
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}
+& An arbitrary precision floating point type.
+
+\\
 \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt}
 & An arbitrary precision signed integer type.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}
+& An arbitrary precision rational nunber type.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision}{Precision}
+& Represents a precision of given number of digits.
 
 \\
 \end{supertabular}
 
 \end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat}{\section{BigFloat Class}}\begin{flushleft}
+An arbitrary precision floating point type.
+
+\end{flushleft}
+
+\subsection*{Syntax}\texttt{public class BigFloat;}
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat}{BigFloat()}
+& Default constructor. Creates an instance of arbitrary precision floating point type and initializes it to zero.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{BigFloat(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator=(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.RR.System.Numerics.Multiprecision.BigFloat}{BigFloat(System.\-Numerics.\-Multiprecision.\-BigFloat\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.RR.System.Numerics.Multiprecision.BigFloat}{operator=(System.\-Numerics.\-Multiprecision.\-BigFloat\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigInt}{BigFloat(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Constructor. Creates an instance of arbitrary precision floating point type and initializes it from the given arbitrary precision integer type.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigRational}{BigFloat(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Constructor. Creates an instance of arbitrary precision floating point type and initializes it from the given arbitrary precision rational type.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.Precision}{BigFloat(const System.\-Numerics.\-Multiprecision.\-Precision\&\-)}
+& Constructor. Constructs an arbitrary precision floating point value with given precision.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.String.char}{BigFloat(const System.\-String$<$\-char$>$\-\&\-)}
+& Constructor. Constructs an arbitrary precision floating point value from given decimal digits.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.String.char.int}{BigFloat(const System.\-String$<$\-char$>$\-\&\-, int)}
+& Constructor. Constructs an arbitrary precision floating point value from given digits that are in given base.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.double}{BigFloat(double)}
+& Constructor. Constructs an arbitrary precision floating point value from given double precision value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.int}{BigFloat(int)}
+& Constructor. Constructs an arbitrary precision floating point value from given integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.uint}{BigFloat(uint)}
+& Constructor. Constructs an arbitrary precision floating point value from given unsigned integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.Handle.C.P.System.Numerics.Multiprecision.BigFloat}{Handle() const}
+& Returns a handle to the GNU MP library arbitrary precision floating point number representation.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.ToDouble.C.P.System.Numerics.Multiprecision.BigFloat}{ToDouble() const}
+& Converts the arbitrary precision floating point number to a double precision value by truncating it.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat}{ToString() const}
+& Returns the value of the \textbf{BigFloat}
+ as a string.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat.int}{ToString(int) const}
+& Returns the value of the \textbf{BigFloat}
+ as a string using given base.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat.int.uint}{ToString(int, uint) const}
+& Returns the value of the \textbf{BigFloat}
+ as a string using given base and given number of digits.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigInt}{operator=(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Assigns the value of the \textbf{BigFloat}
+ from the given arbitrary precision integer.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigRational}{operator=(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Assigns the value of the \textbf{BigFloat}
+ from the given arbitrary precision rational.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.double}{operator=(double)}
+& Assigns the value of the \textbf{BigFloat}
+ from the given double precision value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.int}{operator=(int)}
+& Assigns the value of the \textbf{BigFloat}
+ from the given integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.uint}{operator=(uint)}
+& Assigns the value of the \textbf{BigFloat}
+ from the given unsigned integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigFloat.destructor.P.System.Numerics.Multiprecision.BigFloat}{$\sim$BigFloat()}
+& Frees memory occupied by the \textbf{BigFloat}
+ instance.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{BigFloat() Member Function}}
+\begin{flushleft}
+Default constructor. Creates an instance of arbitrary precision floating point type and initializes it to zero.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigFloat();}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{BigFloat(const System.Numerics.Multiprecision.BigFloat\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.Numerics.Multiprecision.BigFloat\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} to copy from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator=(const System.Numerics.Multiprecision.BigFloat\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.BigFloat\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.RR.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{BigFloat(System.Numerics.Multiprecision.BigFloat\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(System.Numerics.Multiprecision.BigFloat\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.RR.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator=(System.Numerics.Multiprecision.BigFloat\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Numerics.Multiprecision.BigFloat\&\& \_\_parameter0);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{2.61335cm}!{\raggedright}p{7.25332cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+\_\_parameter0
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{BigFloat(const System.Numerics.Multiprecision.BigInt\&) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision floating point type and initializes it from the given arbitrary precision integer type.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.Numerics.Multiprecision.BigInt\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& An arbitrary precision integer type value to construct from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{BigFloat(const System.Numerics.Multiprecision.BigRational\&) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision floating point type and initializes it from the given arbitrary precision rational type.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.Numerics.Multiprecision.BigRational\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& An arbitrary precision rational type value to construct from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.Precision}{\subsubsection*{BigFloat(const System.Numerics.Multiprecision.Precision\&) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value with given precision.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.Numerics.Multiprecision.Precision\& prec);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+prec
+& \hyperlink{System.Numerics.Multiprecision.Precision}{const System.\-Numerics.\-Multiprecision.\-Precision\&\-}
+& Precision.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.String.char}{\subsubsection*{BigFloat(const System.String$<$char$>$\&) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value from given decimal digits.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.String$<$char$>$\& str);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String$<$\-char$>$\-\&\-
+& Digit string.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.C.R.System.String.char.int}{\subsubsection*{BigFloat(const System.String$<$char$>$\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value from given digits that are in given base.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigFloat(const System.String$<$char$>$\& str, int base\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String$<$\-char$>$\-\&\-
+& Digit string.
+
+\\
+base\_
+& int
+& Base of digits.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.double}{\subsubsection*{BigFloat(double) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value from given double precision value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigFloat(double that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& double
+& A double precision value to initialize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.int}{\subsubsection*{BigFloat(int) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value from given integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigFloat(int that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& int
+& An integer value to initialize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.constructor.P.System.Numerics.Multiprecision.BigFloat.uint}{\subsubsection*{BigFloat(uint) Member Function}}
+\begin{flushleft}
+Constructor. Constructs an arbitrary precision floating point value from given unsigned integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigFloat(uint that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& uint
+& An unsigned integer value to initialize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.Handle.C.P.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Handle() const Member Function}}
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision floating point number representation.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void* Handle() const;}
+
+\subsubsection*{Returns}void*
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision floating point number representation.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.ToDouble.C.P.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{ToDouble() const Member Function}}
+\begin{flushleft}
+Converts the arbitrary precision floating point number to a double precision value by truncating it.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public double ToDouble() const;}
+
+\subsubsection*{Returns}double
+\begin{flushleft}
+Returns the arbitrary precision floating point number converted to a double precision value by truncating it.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{ToString() const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString() const;}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat.int}{\subsubsection*{ToString(int) const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string using given base.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString(int base\_) const;}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+base\_
+& int
+& Base.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string using given base.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.ToString.C.P.System.Numerics.Multiprecision.BigFloat.int.uint}{\subsubsection*{ToString(int, uint) const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string using given base and given number of digits.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString(int base\_, uint numDigits) const;}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+base\_
+& int
+& Base.
+
+\\
+numDigits
+& uint
+& Number of digits.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} as a string using given base and given number of digits.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{operator=(const System.Numerics.Multiprecision.BigInt\&) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} from the given arbitrary precision integer.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.BigInt\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& An arbitrary precision integer to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator=(const System.Numerics.Multiprecision.BigRational\&) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} from the given arbitrary precision rational.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.BigRational\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& An arbitrary precision rational to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.double}{\subsubsection*{operator=(double) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} from the given double precision value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void operator=(double that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& double
+& A double precision value to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.int}{\subsubsection*{operator=(int) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} from the given integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void operator=(int that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& int
+& An integer value to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.operator.assign.P.System.Numerics.Multiprecision.BigFloat.uint}{\subsubsection*{operator=(uint) Member Function}}
+\begin{flushleft}
+Assigns the value of the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} from the given unsigned integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void operator=(uint that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& uint
+& An unsigned integer value to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigFloat.destructor.P.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{$\sim$BigFloat() Member Function}}
+\begin{flushleft}
+Frees memory occupied by the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} instance.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$BigFloat();}
+
+\subsection{Nonmember Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigFloat}{Abs(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the absolute value of the given \textbf{BigFloat}
+ value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Ceil.C.R.System.Numerics.Multiprecision.BigFloat}{Ceil(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the \textbf{BigFloat}
+ rounded up to the next arbitrary precision integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Floor.C.R.System.Numerics.Multiprecision.BigFloat}{Floor(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the \textbf{BigFloat}
+ rounded down to the previous arbitrary precision integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Sqrt.C.R.System.Numerics.Multiprecision.BigFloat}{Sqrt(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the square root of the given \textbf{BigFloat}
+ number.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Trunc.C.R.System.Numerics.Multiprecision.BigFloat}{Trunc(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the \textbf{BigFloat}
+ truncated towards zero.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator*(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the product of given \textbf{BigFloat}
+ value multiplied by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator+(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the sum of given \textbf{BigFloat}
+ value added to another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigFloat}{operator-(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the negation of \textbf{BigFloat}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator-(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the difference of given \textbf{BigFloat}
+ value subtracted from another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator/(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns the quotient when given \textbf{BigFloat}
+ is divided by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator$<$\-(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns true if the first \textbf{BigFloat}
+ is less than the second \textbf{BigFloat}
+, false otherwise.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{operator==(const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-, const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-)}
+& Returns true if the first \textbf{BigFloat}
+ is equal to the second \textbf{BigFloat}
+, false otherwise.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Abs(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the absolute value of the given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat Abs(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Arbitrary precision floating point number.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the absolute value of the given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Ceil.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Ceil(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} rounded up to the next arbitrary precision integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat Ceil(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Floor.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Floor(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} rounded down to the previous arbitrary precision integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat Floor(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} rounded down to the previous arbitrary precision integer value.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Sqrt.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Sqrt(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the square root of the given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} number.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat Sqrt(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the square root of the given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} number.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Trunc.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{Trunc(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} truncated towards zero.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat Trunc(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} truncated towards zero.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator*(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value multiplied by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat operator*(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value multiplied by another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator+(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value added to another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat operator+(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value added to another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat operator-(const System.Numerics.Multiprecision.BigFloat\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& A value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value subtracted from another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat operator-(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} value subtracted from another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator/(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is divided by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigFloat operator/(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigFloat}{System.\-Numerics.\-Multiprecision.\-BigFloat}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is divided by another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator$<$(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is less than the second \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator$<$(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is less than the second \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigFloat.C.R.System.Numerics.Multiprecision.BigFloat}{\subsubsection*{operator==(const System.Numerics.Multiprecision.BigFloat\&, const System.Numerics.Multiprecision.BigFloat\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator==(const System.Numerics.Multiprecision.BigFloat\& left, const System.Numerics.Multiprecision.BigFloat\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigFloat}{const System.\-Numerics.\-Multiprecision.\-BigFloat\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigFloat}{BigFloat}, false otherwise.
+
+\end{flushleft}
+\clearpage
 \clearpage
 
 \hypertarget{System.Numerics.Multiprecision.BigInt}{\section{BigInt Class}}\begin{flushleft}
@@ -345,17 +1505,12 @@ An arbitrary precision signed integer type.
 & Move assignment.
 
 \\
-\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String}{BigInt(const System.\-String\&\-)}
-& Creates an instance of arbitrary precision signed integer and initializes it from provided decimal digit string.
-Digit string may be prefixed by a sign character.
-Throws \textbf{System.ConversionException} if a character other than sign or 0-9 is encountered in digit string.
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.char}{BigInt(const System.\-String$<$\-char$>$\-\&\-)}
+& Constructor. Constructs an arbitrary precision floating point value from given decimal digits.
 
 \\
-\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int}{BigInt(const System.\-String\&\-, int)}
-& Creates an instance of arbitrary precision signed integer and initializes it from provided digit string.
-Digit string may be prefixed by a sign character.
-Digits must be in given base.
-Throws \textbf{System.ConversionException} if a character other than sign or valid digit character is encountered.
+\hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.char.int}{BigInt(const System.\-String$<$\-char$>$\-\&\-, int)}
+& Constructor. Constructs an arbitrary precision floating point value from given digits of given base.
 
 \\
 \hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.int}{BigInt(int)}
@@ -504,15 +1659,13 @@ that
 \end{flushleft}
 \clearpage
 
-\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String}{\subsubsection*{BigInt(const System.String\&) Member Function}}
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.char}{\subsubsection*{BigInt(const System.String$<$char$>$\&) Member Function}}
 \begin{flushleft}
-Creates an instance of arbitrary precision signed integer and initializes it from provided decimal digit string.
-Digit string may be prefixed by a sign character.
-Throws \textbf{System.ConversionException} if a character other than sign or 0-9 is encountered in digit string.
+Constructor. Constructs an arbitrary precision floating point value from given decimal digits.
 
 \end{flushleft}
-\subsubsection*{Syntax}\texttt{public BigInt(const System.String\& str);}
-
+\subsubsection*{Syntax}
+\texttt{public BigInt(const System.String$<$char$>$\& str);}
 \subsubsection*{Parameters}
 \begin{flushleft}
 \begin{supertabular}[l]{lll}
@@ -522,8 +1675,8 @@ Throws \textbf{System.ConversionException} if a character other than sign or 0-9
 \\
 \hline
 str
-& const System.\-String\&\-
-& A string of decimal digits.
+& const System.\-String$<$\-char$>$\-\&\-
+& Decimal digit string.
 
 \\
 \end{supertabular}
@@ -531,41 +1684,32 @@ str
 \end{flushleft}
 \clearpage
 
-\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int}{\subsubsection*{BigInt(const System.String\&, int) Member Function}}
+\hypertarget{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.char.int}{\subsubsection*{BigInt(const System.String$<$char$>$\&, int) Member Function}}
 \begin{flushleft}
-Creates an instance of arbitrary precision signed integer and initializes it from provided digit string.
-Digit string may be prefixed by a sign character.
-Digits must be in given base.
-Throws \textbf{System.ConversionException} if a character other than sign or valid digit character is encountered.
+Constructor. Constructs an arbitrary precision floating point value from given digits of given base.
 
 \end{flushleft}
 \subsubsection*{Syntax}
-\texttt{public BigInt(const System.String\& str, int base\_);}
+\texttt{public BigInt(const System.String$<$char$>$\& str, int base\_);}
 \subsubsection*{Parameters}
 \begin{flushleft}
-\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{4.63128cm}!{\raggedright}p{5.23538cm}}
+\begin{supertabular}[l]{lll}
 \textbf{Name}
 & \textbf{Type}
 & \textbf{Description}
 \\
 \hline
 str
-& const System.\-String\&\-
-& A string of digits of base \hyperlink{System.Numerics.Multiprecision.BigInt.constructor.P.System.Numerics.Multiprecision.BigInt.C.R.System.String.int.base\_}{base\_\-}.
+& const System.\-String$<$\-char$>$\-\&\-
+& Digit string.
 
 \\
 base\_
 & int
-& Base of digits. Base may vary from 2 to 62.
+& Base of digits.
 
 \\
 \end{supertabular}
-
-\end{flushleft}
-\subsubsection*{Remarks}
-\begin{flushleft}
-For bases up to 36, case is ignored; upper-case and lower-case letters have the same value. 
-For bases 37 to 62, upper-case letter represent the usual 10..35 while lower-case letter represent 36..61.
 
 \end{flushleft}
 \clearpage
@@ -639,9 +1783,9 @@ Returns a handle to the GNU MP library arbitrary precision integer representatio
 Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of decimal digits prefixed by minus sign if the value is negative.
 
 \end{flushleft}
-\subsubsection*{Syntax}\texttt{public System.String ToString() const;}
-
-\subsubsection*{Returns}System.\-String
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString() const;}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
 \begin{flushleft}
 Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of decimal digits prefixed by minus sign if the value is negative.
 
@@ -654,7 +1798,7 @@ Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigIn
 
 \end{flushleft}
 \subsubsection*{Syntax}
-\texttt{public System.String ToString(int base\_) const;}
+\texttt{public System.String$<$char$>$ ToString(int base\_) const;}
 \subsubsection*{Parameters}
 \begin{flushleft}
 \begin{supertabular}[l]{lll}
@@ -671,7 +1815,7 @@ base\_
 \end{supertabular}
 
 \end{flushleft}
-\subsubsection*{Returns}System.\-String
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
 \begin{flushleft}
 Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} as a string of digits in given base prefixed by minus sign if the value is negative.
 
@@ -1454,6 +2598,992 @@ x
 Returns bitwise complement of \hyperlink{System.Numerics.Multiprecision.BigInt}{BigInt} value.
 
 \end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational}{\section{BigRational Class}}\begin{flushleft}
+An arbitrary precision rational nunber type.
+
+\end{flushleft}
+
+\subsection*{Syntax}\texttt{public class BigRational;}
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational}{BigRational()}
+& Default constructor. Creates an instance of arbitrary precision rational number and initializes it to zero.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{BigRational(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Copy constructor. 
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.operator.assign.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator=(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.RR.System.Numerics.Multiprecision.BigRational}{BigRational(System.\-Numerics.\-Multiprecision.\-BigRational\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.operator.assign.P.System.Numerics.Multiprecision.BigRational.RR.System.Numerics.Multiprecision.BigRational}{operator=(System.\-Numerics.\-Multiprecision.\-BigRational\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigInt}{BigRational(const System.\-Numerics.\-Multiprecision.\-BigInt\&\-)}
+& Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given arbitrary precision integer type.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.String.char}{BigRational(const System.\-String$<$\-char$>$\-\&\-)}
+& Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given string.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.String.char.int}{BigRational(const System.\-String$<$\-char$>$\-\&\-, int)}
+& Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given string of given base.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.int}{BigRational(int)}
+& Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.uint}{BigRational(uint)}
+& Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given unsigned integer value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.Denominator.C.P.System.Numerics.Multiprecision.BigRational}{Denominator() const}
+& Returns the denominator of the arbitrary precision ration number.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.Handle.C.P.System.Numerics.Multiprecision.BigRational}{Handle() const}
+& Returns a handle to the GNU MP library arbitrary precision rational representation.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.Numerator.C.P.System.Numerics.Multiprecision.BigRational}{Numerator() const}
+& Returns the numerator of the arbitrary precision ration number.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.ToString.C.P.System.Numerics.Multiprecision.BigRational}{ToString() const}
+& Returns the value of the \textbf{BigRational}
+ as a string.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.ToString.C.P.System.Numerics.Multiprecision.BigRational.int}{ToString(int) const}
+& Returns the value of the \textbf{BigRational}
+ as a string of given base.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.BigRational.destructor.P.System.Numerics.Multiprecision.BigRational}{$\sim$BigRational()}
+& Frees memory occupied by the \textbf{BigRational}
+ instance.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{BigRational() Member Function}}
+\begin{flushleft}
+Default constructor. Creates an instance of arbitrary precision rational number and initializes it to zero.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigRational();}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{BigRational(const System.Numerics.Multiprecision.BigRational\&) Member Function}}\begin{flushleft}
+Copy constructor. 
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigRational(const System.Numerics.Multiprecision.BigRational\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} to copy from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.operator.assign.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator=(const System.Numerics.Multiprecision.BigRational\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.BigRational\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.RR.System.Numerics.Multiprecision.BigRational}{\subsubsection*{BigRational(System.Numerics.Multiprecision.BigRational\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigRational(System.Numerics.Multiprecision.BigRational\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.operator.assign.P.System.Numerics.Multiprecision.BigRational.RR.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator=(System.Numerics.Multiprecision.BigRational\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Numerics.Multiprecision.BigRational\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational\&\-\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigInt}{\subsubsection*{BigRational(const System.Numerics.Multiprecision.BigInt\&) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given arbitrary precision integer type.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigRational(const System.Numerics.Multiprecision.BigInt\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.BigInt}{const System.\-Numerics.\-Multiprecision.\-BigInt\&\-}
+& An arbitrary precision integer type value to initialize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.String.char}{\subsubsection*{BigRational(const System.String$<$char$>$\&) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given string.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigRational(const System.String$<$char$>$\& str);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String$<$\-char$>$\-\&\-
+& A string to initialize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.C.R.System.String.char.int}{\subsubsection*{BigRational(const System.String$<$char$>$\&, int) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given string of given base.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public BigRational(const System.String$<$char$>$\& str, int base\_);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+str
+& const System.\-String$<$\-char$>$\-\&\-
+& A string to initialize from.
+
+\\
+base\_
+& int
+& Base of string.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.int}{\subsubsection*{BigRational(int) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigRational(int that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& int
+& An integer value to initalize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.constructor.P.System.Numerics.Multiprecision.BigRational.uint}{\subsubsection*{BigRational(uint) Member Function}}
+\begin{flushleft}
+Constructor. Creates an instance of arbitrary precision rational type and initializes it from the given unsigned integer value.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public BigRational(uint that);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& uint
+& An unsigned integer value to initalize from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.Denominator.C.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{Denominator() const Member Function}}
+\begin{flushleft}
+Returns the denominator of the arbitrary precision ration number.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt Denominator() const;}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the denominator of the arbitrary precision ration number.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.Handle.C.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{Handle() const Member Function}}
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision rational representation.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public void* Handle() const;}
+
+\subsubsection*{Returns}void*
+\begin{flushleft}
+Returns a handle to the GNU MP library arbitrary precision rational representation.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.Numerator.C.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{Numerator() const Member Function}}
+\begin{flushleft}
+Returns the numerator of the arbitrary precision ration number.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigInt Numerator() const;}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigInt}{System.\-Numerics.\-Multiprecision.\-BigInt}
+\begin{flushleft}
+Returns the numerator of the arbitrary precision ration number.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.ToString.C.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{ToString() const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} as a string.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString() const;}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} as a string.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.ToString.C.P.System.Numerics.Multiprecision.BigRational.int}{\subsubsection*{ToString(int) const Member Function}}
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} as a string of given base.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.String$<$char$>$ ToString(int base\_) const;}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+base\_
+& int
+& Base.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-String$<$\-char$>$\-
+\begin{flushleft}
+Returns the value of the \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} as a string of given base.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.BigRational.destructor.P.System.Numerics.Multiprecision.BigRational}{\subsubsection*{$\sim$BigRational() Member Function}}
+\begin{flushleft}
+Frees memory occupied by the \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} instance.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public $\sim$BigRational();}
+
+\subsection{Nonmember Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigRational}{Abs(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the absolute value of the given \textbf{BigRational}
+ value.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator*(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the product of given \textbf{BigRational}
+ value multiplied by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator+(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the sum of given \textbf{BigRational}
+ value added to another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigRational}{operator-(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the negation of \textbf{BigRational}
+.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator-(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the difference of given \textbf{BigRational}
+ value subtracted from another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator/(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns the quotient when given \textbf{BigRational}
+ is divided by another.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator$<$\-(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns true if the first \textbf{BigRational}
+ is less than the second \textbf{BigRational}
+, false otherwise.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigRational}{operator$<$\-$<$\-(System.\-IO.\-OutputStream\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Puts the value of the given \textbf{BigRational}
+ to the given output stream as string.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{operator==(const System.\-Numerics.\-Multiprecision.\-BigRational\&\-, const System.\-Numerics.\-Multiprecision.\-BigRational\&\-)}
+& Returns true if the first \textbf{BigRational}
+ is equal to the second \textbf{BigRational}
+, false otherwise.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Abs.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{Abs(const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the absolute value of the given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational Abs(const System.Numerics.Multiprecision.BigRational\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.10422cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the absolute value of the given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.times.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator*(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value multiplied by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational operator*(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the product of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value multiplied by another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.plus.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator+(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value added to another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational operator+(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the sum of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value added to another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational operator-(const System.Numerics.Multiprecision.BigRational\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.10422cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+x
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the negation of \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.minus.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator-(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value subtracted from another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational operator-(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the difference of given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value subtracted from another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.divides.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator/(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is divided by another.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.Numerics.Multiprecision.BigRational operator/(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{2.65538cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Divisor.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Dividend.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}
+\hyperlink{System.Numerics.Multiprecision.BigRational}{System.\-Numerics.\-Multiprecision.\-BigRational}
+\begin{flushleft}
+Returns the quotient when given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is divided by another.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.less.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator$<$(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is less than the second \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator$<$(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is less than the second \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.shiftLeft.R.System.IO.OutputStream.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator$<$$<$(System.IO.OutputStream\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Puts the value of the given \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} to the given output stream as string.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public System.IO.OutputStream\& operator$<$$<$(System.IO.OutputStream\& s, const System.Numerics.Multiprecision.BigRational\& x);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+s
+& System.\-IO.\-OutputStream\&\-
+& An output stream.
+
+\\
+x
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& A \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} value.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}System.\-IO.\-OutputStream\&\-
+\begin{flushleft}
+Returns a reference to the output stream.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.operator.equal.C.R.System.Numerics.Multiprecision.BigRational.C.R.System.Numerics.Multiprecision.BigRational}{\subsubsection*{operator==(const System.Numerics.Multiprecision.BigRational\&, const System.Numerics.Multiprecision.BigRational\&) Function}}
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}, false otherwise.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public bool operator==(const System.Numerics.Multiprecision.BigRational\& left, const System.Numerics.Multiprecision.BigRational\& right);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{3.66839cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+left
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Left operand.
+
+\\
+right
+& \hyperlink{System.Numerics.Multiprecision.BigRational}{const System.\-Numerics.\-Multiprecision.\-BigRational\&\-}
+& Right operand.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\subsubsection*{Returns}bool
+\begin{flushleft}
+Returns true if the first \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational} is equal to the second \hyperlink{System.Numerics.Multiprecision.BigRational}{BigRational}, false otherwise.
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision}{\section{Precision Class}}
+\begin{flushleft}
+Represents a precision of given number of digits.
+
+\end{flushleft}
+\subsection*{Syntax}\texttt{public class Precision;}
+
+\subsection{Member Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{7.575cm}!{\raggedright}p{7.575cm}}
+\textbf{Member Function}
+& \textbf{Description}
+\\
+\hline
+\hyperlink{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision}{Precision()}
+& Default constructor. Initializes the precision with zero digits.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.C.R.System.Numerics.Multiprecision.Precision}{Precision(const System.\-Numerics.\-Multiprecision.\-Precision\&\-)}
+& Copy constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.operator.assign.P.System.Numerics.Multiprecision.Precision.C.R.System.Numerics.Multiprecision.Precision}{operator=(const System.\-Numerics.\-Multiprecision.\-Precision\&\-)}
+& Copy assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.RR.System.Numerics.Multiprecision.Precision}{Precision(System.\-Numerics.\-Multiprecision.\-Precision\&\-\&\-)}
+& Move constructor.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.operator.assign.P.System.Numerics.Multiprecision.Precision.RR.System.Numerics.Multiprecision.Precision}{operator=(System.\-Numerics.\-Multiprecision.\-Precision\&\-\&\-)}
+& Move assignment.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.uint}{Precision(uint)}
+& Constructor. Initializes the precision with given number of digits.
+
+\\
+\hyperlink{System.Numerics.Multiprecision.Precision.operator\_uint.C.P.System.Numerics.Multiprecision.Precision}{operator\_\-uint() const}
+& Returns the number of digits of this precision.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision}{\subsubsection*{Precision() Member Function}}
+\begin{flushleft}
+Default constructor. Initializes the precision with zero digits.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public Precision();}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.C.R.System.Numerics.Multiprecision.Precision}{\subsubsection*{Precision(const System.Numerics.Multiprecision.Precision\&) Member Function}}\begin{flushleft}
+Copy constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public Precision(const System.Numerics.Multiprecision.Precision\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.55908cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.Precision}{const System.\-Numerics.\-Multiprecision.\-Precision\&\-}
+& Argument to copy.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.operator.assign.P.System.Numerics.Multiprecision.Precision.C.R.System.Numerics.Multiprecision.Precision}{\subsubsection*{operator=(const System.Numerics.Multiprecision.Precision\&) Member Function}}\begin{flushleft}
+Copy assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(const System.Numerics.Multiprecision.Precision\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.89046cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.Precision}{const System.\-Numerics.\-Multiprecision.\-Precision\&\-}
+& Argument to assign.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.RR.System.Numerics.Multiprecision.Precision}{\subsubsection*{Precision(System.Numerics.Multiprecision.Precision\&\&) Member Function}}\begin{flushleft}
+Move constructor.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public Precision(System.Numerics.Multiprecision.Precision\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.Precision}{System.\-Numerics.\-Multiprecision.\-Precision\&\-\&\-}
+& Argument to move from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.operator.assign.P.System.Numerics.Multiprecision.Precision.RR.System.Numerics.Multiprecision.Precision}{\subsubsection*{operator=(System.Numerics.Multiprecision.Precision\&\&) Member Function}}\begin{flushleft}
+Move assignment.
+
+\end{flushleft}
+\subsubsection*{Syntax}
+\texttt{public void operator=(System.Numerics.Multiprecision.Precision\&\& that);}
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{!{\raggedright}p{1.30721cm}!{\raggedright}p{8.55945cm}!{\raggedright}p{4.93333cm}}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+that
+& \hyperlink{System.Numerics.Multiprecision.Precision}{System.\-Numerics.\-Multiprecision.\-Precision\&\-\&\-}
+& Argument to assign from.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.constructor.P.System.Numerics.Multiprecision.Precision.uint}{\subsubsection*{Precision(uint) Member Function}}
+\begin{flushleft}
+Constructor. Initializes the precision with given number of digits.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public Precision(uint prec\_);}
+
+\subsubsection*{Parameters}
+\begin{flushleft}
+\begin{supertabular}[l]{lll}
+\textbf{Name}
+& \textbf{Type}
+& \textbf{Description}
+\\
+\hline
+prec\_
+& uint
+& Number of digits.
+
+\\
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
+
+\hypertarget{System.Numerics.Multiprecision.Precision.operator\_uint.C.P.System.Numerics.Multiprecision.Precision}{\subsubsection*{operator\_uint() const Member Function}}
+\begin{flushleft}
+Returns the number of digits of this precision.
+
+\end{flushleft}
+\subsubsection*{Syntax}\texttt{public uint operator\_uint() const;}
+
+\subsubsection*{Returns}uint
+\begin{flushleft}
+Returns the number of digits of this precision.
+
+\end{flushleft}
+\clearpage
+\subchapter{Functions}
+\begin{flushleft}
+\begin{supertabular}[l]{ll}
+\textbf{Function}
+& \textbf{Description}
+\\
+\hline
+\end{supertabular}
+
+\end{flushleft}
+\clearpage
 \clearpage
 \end{document}
 

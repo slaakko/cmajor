@@ -58,7 +58,7 @@ Cm::Ast::InterfaceNode* InterfaceGrammar::Parse(const char* start, const char* e
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -444,28 +444,28 @@ private:
 void InterfaceGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar0 = Cm::Parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::KeywordGrammar::Create(pd);
+        grammar1 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
-    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
+    Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar2)
     {
-        grammar2 = Cm::Parser::SpecifierGrammar::Create(pd);
+        grammar2 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ParameterGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.SpecifierGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::ParameterGrammar::Create(pd);
+        grammar3 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
     Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
@@ -474,22 +474,22 @@ void InterfaceGrammar::GetReferencedGrammars()
         grammar4 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
-    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar5 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar5)
     {
-        grammar5 = Cm::Parsing::stdlib::Create(pd);
+        grammar5 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar5);
 }
 
 void InterfaceGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
-    AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRule(new InterfaceRule("Interface", GetScope(),
         new Cm::Parsing::SequenceParser(

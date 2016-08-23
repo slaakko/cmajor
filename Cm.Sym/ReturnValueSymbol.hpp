@@ -22,6 +22,7 @@ public:
     std::string TypeString() const override { return "return value"; };
     bool IsExportSymbol() const override { return true; }
     bool IsReturnValueSymbol() const override { return true; }
+    bool IsCCSymbol() const override { return false; }
 };
 
 } } // namespace Cm::Sym

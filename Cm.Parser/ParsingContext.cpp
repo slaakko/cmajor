@@ -11,7 +11,7 @@
 
 namespace Cm { namespace Parser {
 
-ParsingContext::ParsingContext(): parsingTypeExpr(false), parsingConcept(false), parsingTemplateId(false), parsingSimpleStatement(false), parsingLvalue(false), parsingArguments(false)
+ParsingContext::ParsingContext(): parsingTypeExpr(false), parsingConcept(false), parsingTemplateId(false), parsingSimpleStatement(false), parsingLvalue(false), parsingArguments(false), ccNodeParsed(false)
 {
 }
 

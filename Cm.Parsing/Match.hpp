@@ -34,14 +34,6 @@ public:
     {
         return Match(false, -1);
     }
-    static Match Synchronize()
-    {
-        return Match(false, -2);
-    }
-    bool IsSyncMatch() const
-    {
-        return !hit && length == -2;
-    }
 private:
     bool hit;
     int length;

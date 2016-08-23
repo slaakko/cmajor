@@ -522,7 +522,7 @@ DotNode::DotNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
-DotNode::DotNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
+DotNode::DotNode(const Span& span_, Node* subject_, Node* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
     memberId->SetParent(this);
 }
@@ -535,7 +535,7 @@ Node* DotNode::Clone(CloneContext& cloneContext) const
 void DotNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
-    memberId.reset(reader.ReadIdentifierNode());
+    memberId.reset(reader.ReadNode());
     memberId->SetParent(this);
 }
 
@@ -573,11 +573,29 @@ void DotNode::Accept(Visitor& visitor)
     visitor.EndVisit(*this);
 }
 
+const std::string& DotNode::MemberStr() const
+{
+    if (memberId->IsIdentifierNode())
+    {
+        IdentifierNode* idNode = static_cast<IdentifierNode*>(memberId.get());
+        return idNode->Str();
+    }
+    else if (memberId->IsCCNode())
+    {
+        CCNode* ccNode = static_cast<CCNode*>(memberId.get());
+        return ccNode->Grave();
+    }
+    else
+    {
+        throw std::runtime_error("identifier node or cc node expected");
+    }
+}
+
 ArrowNode::ArrowNode(const Span& span_) : UnaryNode(span_)
 {
 }
 
-ArrowNode::ArrowNode(const Span& span_, Node* subject_, IdentifierNode* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
+ArrowNode::ArrowNode(const Span& span_, Node* subject_, Node* memberId_) : UnaryNode(span_, subject_), memberId(memberId_)
 {
     memberId->SetParent(this);
 }
@@ -590,7 +608,7 @@ Node* ArrowNode::Clone(CloneContext& cloneContext) const
 void ArrowNode::Read(Reader& reader)
 {
     UnaryNode::Read(reader);
-    memberId.reset(reader.ReadIdentifierNode());
+    memberId.reset(reader.ReadNode());
     memberId->SetParent(this);
 }
 
@@ -619,6 +637,24 @@ std::string ArrowNode::ToString() const
 void ArrowNode::Accept(Visitor& visitor)
 {
     visitor.Visit(*this);
+}
+
+const std::string& ArrowNode::MemberStr() const
+{
+    if (memberId->IsIdentifierNode())
+    {
+        IdentifierNode* idNode = static_cast<IdentifierNode*>(memberId.get());
+        return idNode->Str();
+    }
+    else if (memberId->IsCCNode())
+    {
+        CCNode* ccNode = static_cast<CCNode*>(memberId.get());
+        return ccNode->Grave();
+    }
+    else
+    {
+        throw std::runtime_error("identifier node or cc node expected");
+    }
 }
 
 PostfixIncNode::PostfixIncNode(const Span& span_) : UnaryNode(span_)
@@ -1140,7 +1176,21 @@ Node* BaseNode::Clone(CloneContext& cloneContext) const
 
 void BaseNode::Accept(Visitor& visitor)
 {
-    return visitor.Visit(*this);
+    visitor.Visit(*this);
+}
+
+CCNode::CCNode(const Span& span_) : Node(span_), grave("`")
+{
+}
+
+Node* CCNode::Clone(CloneContext& cloneContext) const
+{
+    return new CCNode(GetSpan());
+}
+
+void CCNode::Accept(Visitor& visitor)
+{
+    visitor.Visit(*this);
 }
 
 } } // namespace Cm::Ast

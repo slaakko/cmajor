@@ -284,7 +284,10 @@ ConditionalStatementNode::ConditionalStatementNode(const Span& span_, Node* cond
     StatementNode(span_), condition(condition_), thenS(thenS_), elseS(elseS_)
 {
     condition->SetParent(this);
-    thenS->SetParent(this);
+    if (thenS)
+    {
+        thenS->SetParent(this);
+    }
     if (elseS)
     {
         elseS->SetParent(this);
@@ -370,7 +373,10 @@ void ConditionalStatementNode::Accept(Visitor& visitor)
     }
     if (!visitor.SkipContent())
     {
-        thenS->Accept(visitor);
+        if (thenS)
+        {
+            thenS->Accept(visitor);
+        }
         if (elseS)
         {
             elseS->Accept(visitor);
@@ -681,7 +687,10 @@ WhileStatementNode::WhileStatementNode(const Span& span_) : StatementNode(span_)
 WhileStatementNode::WhileStatementNode(const Span& span_, Node* condition_, StatementNode* statement_) : StatementNode(span_), condition(condition_), statement(statement_)
 {
     condition->SetParent(this);
-    statement->SetParent(this);
+    if (statement)
+    {
+        statement->SetParent(this);
+    }
 }
 
 Node* WhileStatementNode::Clone(CloneContext& cloneContext) const
@@ -732,7 +741,10 @@ void WhileStatementNode::Accept(Visitor& visitor)
     }
     if (!visitor.SkipContent())
     {
-        statement->Accept(visitor);
+        if (statement)
+        {
+            statement->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -817,7 +829,10 @@ ForStatementNode::ForStatementNode(const Span& span_, StatementNode* init_, Node
     {
         increment->SetParent(this);
     }
-    action->SetParent(this);
+    if (action)
+    {
+        action->SetParent(this);
+    }
 }
 
 Node* ForStatementNode::Clone(CloneContext& cloneContext) const
@@ -926,7 +941,10 @@ void ForStatementNode::Accept(Visitor& visitor)
     }
     if (!visitor.SkipContent())
     {
-        action->Accept(visitor);
+        if (action)
+        {
+            action->Accept(visitor);
+        }
     }
     visitor.EndVisit(*this);
 }
@@ -941,7 +959,10 @@ RangeForStatementNode::RangeForStatementNode(const Span& span_, Node* varTypeExp
     varTypeExpr->SetParent(this);
     varId->SetParent(this);
     container->SetParent(this);
-    action->SetParent(this);
+    if (action)
+    {
+        action->SetParent(this);
+    }
 }
 
 Node* RangeForStatementNode::Clone(CloneContext& cloneContext) const

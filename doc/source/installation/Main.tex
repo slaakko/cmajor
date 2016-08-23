@@ -7,7 +7,7 @@
 
 \begin{document}
 
-\title{Getting Started Guide for Cmajor 1.4.0}
+\title{Getting Started Guide for Cmajor 1.5.0}
 \author{Seppo Laakko}
 \maketitle
 
@@ -17,7 +17,7 @@
 
 Note:
 You must uninstall any previous Cmajor version before installing
-this version (1.4.0).
+this version (1.5.0).
 
 It is also recommended that you delete the
 \verb|%APPDATA%\Cmajor| directory before installing
@@ -32,7 +32,7 @@ Download and install MinGW-w64 GCC:\\
 Installation settings for my system (64-bit Windows):
 \begin{itemize}
 \item
-Version 5.2.0
+Version 5.4.0
 \item
 Architecture: x86\_64
 \item
@@ -40,13 +40,13 @@ Threads: \textbf{posix}
 \item
 Exception: sjlj
 \item
-Build revision: 1
+Build revision: 0
 \end{itemize}
 
 Installation settings for 32-bit Windows:
 \begin{itemize}
 \item
-Version 5.2.0
+Version 5.4.0
 \item
 Architecture: i686
 \item
@@ -54,10 +54,13 @@ Threads: \textbf{posix}
 \item
 Exception: sjlj
 \item
-Build revision: 1
+Build revision: 0
 \end{itemize}
 
 Note: Threads setting must be ``posix''.
+
+Note: As of this writing GCC version 6.1.0 is not able to compile all Cmajor example programs.
+      GCC version 5.4.0 is the latest tested version.
 
 After installation insert the bin-directory to the \textbf{PATH} environment variable.
 In my system this is\\
@@ -65,8 +68,8 @@ In my system this is\\
 
 \item
 Download and install Visual C++ Redistributable for Visual Studio 2015:\\
-64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.4.0/vcredist_x64.exe/download}\\
-32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.4.0/vcredist_x86.exe/download}
+64-bit: \url{http://sourceforge.net/projects/cmajor/files/1.5.0/vcredist_x64.exe/download}\\
+32-bit: \url{http://sourceforge.net/projects/cmajor/files/1.5.0/vcredist_x86.exe/download}
 \end{itemize}
 
 \subsection{Cmajor Installation}
@@ -74,8 +77,8 @@ Download and install Visual C++ Redistributable for Visual Studio 2015:\\
 \begin{itemize}
 
 \item
-Download and run \textbf{cmajor-1.4.0-win-x86-setup.exe} (for 32-bit Windows) or
-\textbf{cmajor-1.4.0-win-x64-setup.exe} (for 64-bit Windows).
+Download and run \textbf{cmajor-1.5.0-win-x86-setup.exe} (for 32-bit Windows) or
+\textbf{cmajor-1.5.0-win-x64-setup.exe} (for 64-bit Windows).
 
 \item
 Cmajor is installed by default to \verb|C:\Program Files\Cmajor| directory (under 32-bit Windows) or
@@ -262,7 +265,7 @@ contains instructions how to obtain and build them.
 \begin{itemize}
 
 \item
-Download and extract \textbf{cmajor-1.4.0.tar.gz} or \textbf{cmajor-1.4.0.tar.bz2}
+Download and extract \textbf{cmajor-1.5.0.tar.gz} or \textbf{cmajor-1.5.0.tar.bz2}
 to some directory here called \verb|<cmajor>|.
 
 \item

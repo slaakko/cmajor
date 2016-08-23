@@ -269,6 +269,7 @@ bool FunctionSymbol::IsConversionFunction() const
 
 bool FunctionSymbol::IsExportSymbol() const 
 {
+    if (IsIntrinsic()) return false;
     if (IsFunctionTemplateSpecialization()) return false;
     if (Parent()->IsClassTemplateSymbol()) return false;
     if (Parent()->IsTemplateTypeSymbol()) return false;
@@ -465,10 +466,6 @@ void FunctionSymbol::Read(Reader& reader)
     ContainerSymbol::Read(reader);
     flags = FunctionSymbolFlags(reader.GetBinaryReader().ReadUInt());
     groupName = reader.GetBinaryReader().ReadString();
-    if (groupName == "MinValue")
-    {
-        int x = 0;
-    }
     vtblIndex = reader.GetBinaryReader().ReadShort();
     itblIndex = reader.GetBinaryReader().ReadShort();
     bool justSymbol = JustSymbol();
@@ -689,55 +686,92 @@ std::string FunctionSymbol::Syntax() const
     {
         syntax.append(returnType->FullName()).append(" ");
     }
-    int startParamIndex = 0;
-    if (IsMemberFunctionSymbol())
+    if (IsIntrinsic())
     {
-        if (!IsStatic())
+        syntax.append(groupName);
+        if (typeParameters.size() > 0)
         {
-            startParamIndex = 1;
+            syntax.append(1, '<');
+            bool first = true;
+            for (TypeParameterSymbol* typeParam : typeParameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    syntax.append(", ");
+                }
+                syntax.append(typeParam->Name());
+            }
+            syntax.append(1, '>');
         }
-        Symbol* parent = Parent();
-        ClassTypeSymbol* classType = nullptr;
-        if (parent->IsClassTypeSymbol())
+        syntax.append("(");
+        int n = int(Parameters().size());
+        for (int i = 0; i < n; ++i)
         {
-            classType = static_cast<ClassTypeSymbol*>(parent);
+            if (i > 0)
+            {
+                syntax.append(", ");
+            }
+            ParameterSymbol* param = Parameters()[i];
+            syntax.append(param->GetType()->FullName()).append(" ").append(param->Name());
         }
-        else
+        syntax.append(")");
+    }
+    else
+    {
+        int startParamIndex = 0;
+        if (IsMemberFunctionSymbol())
         {
-            throw std::runtime_error("not class type");
-        }
-        if (IsConstructor())
-        {
-            syntax.append(classType->Name());
-        }
-        else if (IsDestructor())
-        {
-            syntax.append("~").append(classType->Name());
+            if (!IsStatic())
+            {
+                startParamIndex = 1;
+            }
+            Symbol* parent = Parent();
+            ClassTypeSymbol* classType = nullptr;
+            if (parent->IsClassTypeSymbol())
+            {
+                classType = static_cast<ClassTypeSymbol*>(parent);
+            }
+            else
+            {
+                throw std::runtime_error("not class type");
+            }
+            if (IsConstructor())
+            {
+                syntax.append(classType->Name());
+            }
+            else if (IsDestructor())
+            {
+                syntax.append("~").append(classType->Name());
+            }
+            else
+            {
+                syntax.append(groupName);
+            }
         }
         else
         {
             syntax.append(groupName);
         }
-    }
-    else
-    {
-        syntax.append(groupName);
-    }
-    syntax.append("(");
-    int n = int(Parameters().size());
-    for (int i = startParamIndex; i < n; ++i)
-    {
-        if (i > startParamIndex)
+        syntax.append("(");
+        int n = int(Parameters().size());
+        for (int i = startParamIndex; i < n; ++i)
         {
-            syntax.append(", ");
+            if (i > startParamIndex)
+            {
+                syntax.append(", ");
+            }
+            ParameterSymbol* param = Parameters()[i];
+            syntax.append(param->GetType()->FullName()).append(" ").append(param->Name());
         }
-        ParameterSymbol* param = Parameters()[i];
-        syntax.append(param->GetType()->FullName()).append(" ").append(param->Name());
-    }
-    syntax.append(")");
-    if (IsConst())
-    {
-        syntax.append(" const");
+        syntax.append(")");
+        if (IsConst())
+        {
+            syntax.append(" const");
+        }
     }
     syntax.append(";");
     return syntax;
@@ -746,61 +780,298 @@ std::string FunctionSymbol::Syntax() const
 std::string FunctionSymbol::ParsingName() const
 {
     std::string parsingName;
-    int startParamIndex = 0;
-    if (IsMemberFunctionSymbol())
+    if (IsIntrinsic())
     {
-        if (!IsStatic())
+        parsingName.append(groupName);
+        if (typeParameters.size() > 0)
         {
-            startParamIndex = 1;
+            parsingName.append(1, '<');
+            bool first = true;
+            for (TypeParameterSymbol* typeParam : typeParameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    parsingName.append(", ");
+                }
+                parsingName.append(typeParam->Name());
+            }
+            parsingName.append(1, '>');
         }
-        Symbol* parent = Parent();
-        TypeSymbol* parentType = nullptr;
-        if (parent->IsClassTypeSymbol())
+        parsingName.append("(");
+        int n = int(Parameters().size());
+        for (int i = 0; i < n; ++i)
         {
-            parentType = static_cast<TypeSymbol*>(parent);
+            if (i > 0)
+            {
+                parsingName.append(", ");
+            }
+            ParameterSymbol* param = Parameters()[i];
+            parsingName.append(param->GetType()->FullName());
         }
-        else if (parent->IsInterfaceTypeSymbol())
+        parsingName.append(")");
+    }
+    else
+    {
+        int startParamIndex = 0;
+        if (IsMemberFunctionSymbol())
         {
-            parentType = static_cast<TypeSymbol*>(parent);
-        }
-        else
-        {
-            throw std::runtime_error("not class or interface type");
-        }
-        if (IsConstructor())
-        {
-            parsingName.append(parentType->Name());
-        }
-        else if (IsDestructor())
-        {
-            parsingName.append("~").append(parentType->Name());
+            if (!IsStatic())
+            {
+                startParamIndex = 1;
+            }
+            Symbol* parent = Parent();
+            TypeSymbol* parentType = nullptr;
+            if (parent->IsClassTypeSymbol())
+            {
+                parentType = static_cast<TypeSymbol*>(parent);
+            }
+            else if (parent->IsInterfaceTypeSymbol())
+            {
+                parentType = static_cast<TypeSymbol*>(parent);
+            }
+            else
+            {
+                throw std::runtime_error("not class or interface type");
+            }
+            if (IsConstructor())
+            {
+                parsingName.append(parentType->Name());
+            }
+            else if (IsDestructor())
+            {
+                parsingName.append("~").append(parentType->Name());
+            }
+            else
+            {
+                parsingName.append(groupName);
+            }
         }
         else
         {
             parsingName.append(groupName);
         }
+        parsingName.append("(");
+        int n = int(Parameters().size());
+        for (int i = startParamIndex; i < n; ++i)
+        {
+            if (i > startParamIndex)
+            {
+                parsingName.append(", ");
+            }
+            ParameterSymbol* param = Parameters()[i];
+            parsingName.append(param->GetType()->FullName());
+        }
+        parsingName.append(")");
+        if (IsConst())
+        {
+            parsingName.append(" const");
+        }
+    }
+    return parsingName;
+}
+
+std::string FunctionSymbol::CCName() const
+{
+    if (IsFunctionTemplate())
+    {
+        return groupName;
     }
     else
     {
-        parsingName.append(groupName);
-    }
-    parsingName.append("(");
-    int n = int(Parameters().size());
-    for (int i = startParamIndex; i < n; ++i)
-    {
-        if (i > startParamIndex)
+        std::string ccName;
+        int startParamIndex = 0;
+        if (IsMemberFunctionSymbol())
         {
-            parsingName.append(", ");
+            if (!IsStatic())
+            {
+                startParamIndex = 1;
+            }
+            Symbol* parent = Parent();
+            TypeSymbol* parentType = nullptr;
+            if (parent->IsClassTypeSymbol())
+            {
+                parentType = static_cast<TypeSymbol*>(parent);
+            }
+            else if (parent->IsInterfaceTypeSymbol())
+            {
+                parentType = static_cast<TypeSymbol*>(parent);
+            }
+            else
+            {
+                throw std::runtime_error("not class or interface type");
+            }
+            if (IsConstructor())
+            {
+                ccName.append(parentType->Name());
+            }
+            else if (IsDestructor())
+            {
+                ccName.append("~").append(parentType->Name());
+            }
+            else
+            {
+                ccName.append(groupName);
+            }
         }
-        ParameterSymbol* param = Parameters()[i];
-        parsingName.append(param->GetType()->FullName());
+        else
+        {
+            ccName.append(groupName);
+        }
+        return ccName;
     }
-    parsingName.append(")");
-    if (IsConst())
+}
+
+std::string FunctionSymbol::FullCCName(SymbolTable& symbolTable) 
+{
+    std::string fullCCName;
+    std::string parentFullName;
+    Symbol* p = Parent();   // Parent(): derived type returns base type's parent if it has not parent of its own
+    if (p)
     {
-        parsingName.append(" const");
+        parentFullName = p->FullName();
     }
-    return parsingName;
+    if (!parentFullName.empty())
+    {
+        parentFullName.append(1, '.');
+    }
+    if (IsFunctionTemplate())
+    {
+        if (IsIntrinsic())
+        {
+            fullCCName.append(returnType->FullName()).append(1, ' ').append(parentFullName).append(groupName);
+            int m = int(typeParameters.size());
+            if (m > 0)
+            {
+                fullCCName.append(1, '<');
+                for (int i = 0; i < m; ++i)
+                {
+                    if (i > 0)
+                    {
+                        fullCCName.append(", ");
+                    }
+                    fullCCName.append(typeParameters[i]->Name());
+                }
+                fullCCName.append(1, '>');
+            }
+            fullCCName.append(1, '(');
+            int n = int(parameters.size());
+            for (int i = 0; i < n; ++i)
+            {
+                if (i > 0)
+                {
+                    fullCCName.append(", ");
+                }
+                ParameterSymbol* parameter = parameters[i];
+                fullCCName.append(parameter->GetType()->FullName()).append(1, ' ').append(parameter->Name());
+            }
+            fullCCName.append(1, ')');
+        }
+        else
+        {
+            Cm::Ast::Node* node = symbolTable.GetNode(this, false);
+            if (!node)
+            {
+                ReadFunctionNode(symbolTable, GetSpan().FileIndex());
+                node = symbolTable.GetNode(this);
+            }
+            if (node->IsFunctionNode())
+            {
+                Cm::Ast::FunctionNode* functionNode = static_cast<Cm::Ast::FunctionNode*>(node);
+                fullCCName.append(functionNode->ReturnTypeExpr()->ToString()).append(1, ' ');
+                fullCCName.append(parentFullName).append(groupName);
+                int m = functionNode->TemplateParameters().Count();
+                if (m > 0)
+                {
+                    fullCCName.append(1, '<');
+                    for (int i = 0; i < m; ++i)
+                    {
+                        if (i > 0)
+                        {
+                            fullCCName.append(", ");
+                        }
+                        fullCCName.append(functionNode->TemplateParameters()[i]->ToString());
+                    }
+                    fullCCName.append(1, '>');
+                }
+                fullCCName.append(1, '(');
+                int n = functionNode->Parameters().Count();
+                for (int i = 0; i < n; ++i)
+                {
+                    if (i > 0)
+                    {
+                        fullCCName.append(", ");
+                    }
+                    Cm::Ast::ParameterNode* parameter = functionNode->Parameters()[i];
+                    fullCCName.append(parameter->ToString());
+                }
+                fullCCName.append(1, ')');
+                if (functionNode->Constraint())
+                {
+                    fullCCName.append(1, ' ').append(functionNode->Constraint()->ToString());
+                }
+            }
+            else
+            {
+                throw std::runtime_error("function node expected");
+            }
+        }
+    }
+    else
+    {
+        std::string returnTypeName;
+        if (returnType)
+        {
+            returnTypeName.append(returnType->FullName()).append(1, ' ');
+        }
+        std::string commonName = groupName;
+        if (IsConstructor())
+        {
+            commonName = Class()->Name();
+        }
+        fullCCName.append(returnTypeName).append(parentFullName).append(commonName).append(1, '(');
+        int startParamIndex = 0;
+        if (IsMemberFunctionSymbol())
+        {
+            if (!IsStatic())
+            {
+                startParamIndex = 1;
+            }
+        }
+        bool first = true;
+        int n = int(parameters.size());
+        for (int i = startParamIndex; i < n; ++i)
+        { 
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                fullCCName.append(", ");
+            }
+            ParameterSymbol* parameter = parameters[i];
+            fullCCName.append(parameter->GetType()->FullName()).append(1, ' ').append(parameter->Name());
+        }
+        fullCCName.append(1, ')');
+        if (IsConst())
+        {
+            fullCCName.append(" const");
+        }
+    }
+    return fullCCName;
+}
+
+bool FunctionSymbol::IsCCSymbol() const 
+{
+    if (IsDestructor() || IsStaticConstructor())
+    {
+        return false;
+    }
+    return true;
 }
 
 TypeSymbol* FunctionSymbol::GetTargetType() const

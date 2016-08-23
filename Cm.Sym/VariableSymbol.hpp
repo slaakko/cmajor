@@ -17,6 +17,9 @@ class VariableSymbol : public Symbol
 {
 public:
     VariableSymbol(const Span& span_, const std::string& name_);
+    bool IsVariableSymbol() const override { return true; }
+    char CCTag() const override { return 'V'; }
+    std::string FullCCName(SymbolTable& symbolTable) override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     TypeSymbol* GetType() const override { return type; }

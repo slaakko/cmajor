@@ -103,6 +103,7 @@ public:
     ClassTypeSymbol(const Span& span_, const std::string& name_, const TypeId& id_);
     SymbolType GetSymbolType() const override { return SymbolType::classSymbol; }
     std::string TypeString() const override { return "class"; };
+    std::string FullCCName(SymbolTable& symbolTable) override;
     std::string GetMangleId() const override;
     bool IsExportSymbol() const override;
     void Write(Writer& writer) override;

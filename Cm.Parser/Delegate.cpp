@@ -57,7 +57,7 @@ Cm::Ast::Node* DelegateGrammar::Parse(const char* start, const char* end, int fi
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -283,10 +283,10 @@ void DelegateGrammar::GetReferencedGrammars()
         grammar0 = Cm::Parser::SpecifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
@@ -301,20 +301,20 @@ void DelegateGrammar::GetReferencedGrammars()
         grammar3 = Cm::Parser::ParameterGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
 
 void DelegateGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("Specifiers", this, "SpecifierGrammar.Specifiers"));
     AddRuleLink(new Cm::Parsing::RuleLink("ParameterList", this, "ParameterGrammar.ParameterList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new DelegateRule("Delegate", GetScope(),
         new Cm::Parsing::SequenceParser(

@@ -66,10 +66,6 @@ Match NonterminalParser::Parse(Scanner& scanner, ObjectStack& stack)
         {
             (*postCall)(stack, match.Hit());
         }
-        if (match.IsSyncMatch())
-        {
-            return Match::Empty();
-        }
         return match;
     }
     return Match::Nothing();

@@ -23,6 +23,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::functionGroupSymbol; }
     bool IsFunctionGroupSymbol() const override { return true; }
     std::string TypeString() const override { return "function group"; };
+    bool IsCCSymbol() const override;
     void AddFunction(FunctionSymbol* function);
     void CollectViableFunctions(int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
     SymbolAccess DeclaredAccess() const override { return SymbolAccess::public_; }
@@ -31,6 +32,7 @@ public:
     void Dump(CodeFormatter& formatter) override;
     const std::vector<TypeSymbol*>& BoundTemplateArguments() const { return boundTemplateArguments; }
     void SetBoundTemplateArguments(const std::vector<TypeSymbol*>& boundTemplateArguments_);
+    void CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols);
 private:
     typedef std::unordered_map<int, std::vector<FunctionSymbol*>> ArityFunctionListMap;
     typedef ArityFunctionListMap::iterator ArityFunctionListMapIt;

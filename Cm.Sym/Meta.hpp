@@ -18,6 +18,7 @@ class IntrinsicFunction
 {
 public:
     virtual ~IntrinsicFunction();
+    virtual bool IsTypePredicate() const { return false; }
     virtual int Arity() const = 0;
     virtual const char* GroupName() const = 0;
     virtual int NumberOfTypeParameters() const = 0;

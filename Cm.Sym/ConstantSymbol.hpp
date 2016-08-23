@@ -21,6 +21,8 @@ public:
     ConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::constantSymbol; }
     std::string TypeString() const override { return "constant"; };
+    char CCTag() const override { return 'C'; }
+    std::string FullCCName(SymbolTable& symbolTable) override;
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;
     void SetType(TypeSymbol* type_) { type = type_; }

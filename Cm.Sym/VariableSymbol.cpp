@@ -18,6 +18,17 @@ VariableSymbol::VariableSymbol(const Span& span_, const std::string& name_) : Sy
 {
 }
 
+std::string VariableSymbol::FullCCName(SymbolTable& symbolTable)
+{
+    if (type)
+    {
+        std::string fullCCName = type->FullName();
+        fullCCName.append(1, ' ').append(Name());
+        return fullCCName;
+    }
+    return "";
+}
+
 void VariableSymbol::Write(Writer& writer)
 {
     Symbol::Write(writer);

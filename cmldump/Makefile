@@ -16,7 +16,7 @@ endif
 
 ../bin/$(exename): $(OBJECTS) $(LIBRARIES)
 	$(CXX) $(CXXFLAGS) -o ../bin/$(exename) -pthread $(OBJECTS) \
--lcmsym -lcmcore -lcmirintf -lcmparser -lcmast -lllvmir -lcir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
+-lcmsym -lcmcore -lcmsym -lcmirintf -lcmparser -lcmast -lllvmir -lcir -ldwarf -lirintf -lcmser -lcmparsing -lcmparsingcppobjectmodel -lcmutil \
 -lboost_filesystem -lboost_iostreams -lboost_system
 
 install:

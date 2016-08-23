@@ -41,6 +41,7 @@ public:
     SymbolType GetSymbolType() const override { return SymbolType::boundTypeParameterSymbol; }
     bool IsBoundTypeParameterSymbol() const override { return true; }
     std::string TypeString() const override { return "bound type parameter"; };
+    bool IsCCSymbol() const override { return false; }
     bool IsExportSymbol() const override { return false; }
     TypeSymbol* GetType() const override { return type; }
     void SetType(TypeSymbol* type_) { type = type_; }

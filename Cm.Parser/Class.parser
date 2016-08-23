@@ -10,7 +10,7 @@
 [hpp]#include <Cm.Parser/ParsingContext.hpp>
 [hpp]#include <Cm.Ast/Class.hpp>
 [hpp]#include <Cm.Ast/CompileUnit.hpp>
-[cpp]#include <Cm.Ast/Identifier.hpp>
+[cpp]#include <Cm.Ast/Expression.hpp>
 [cpp]#include <Cm.Parser/Specifier.hpp>
 [cpp]#include <Cm.Parser/Identifier.hpp>
 [cpp]#include <Cm.Parser/Template.hpp>
@@ -49,11 +49,12 @@ namespace Cm.Parser
         using FunctionGrammar.FunctionGroupId;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
+        cc Class(start='{', end='}');
 
         Class(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit): Cm::Ast::ClassNode*
             ::= (Specifiers keyword("class") Identifier){ value = new ClassNode(span, Specifiers, Identifier); value->SetCompileUnit(compileUnit); } 
                 TemplateParameterList(ctx, value)? InheritanceAndImplIntfs(ctx, value)? 
-                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? '{'! ClassContent(ctx, value, compileUnit)! '}'!
+                (WhereConstraint(ctx){ value->SetConstraint(WhereConstraint); value->GetSpan().SetEnd(span.End()); })? ('{'! ClassContent(ctx, value, compileUnit)! '}'!)$
             ;
 
         InheritanceAndImplIntfs(ParsingContext* ctx, Cm::Ast::ClassNode* cls)
@@ -84,6 +85,8 @@ namespace Cm.Parser
             |   Delegate(ctx){ value = Delegate; }
             |   ClassDelegate(ctx){ value = ClassDelegate; }
             |   Typedef(ctx){ value = Typedef; }
+            |   (Specifiers:s1 '`' Identifier:i1$ ';'$){ value = new Cm::Ast::CCNode(span); }
+            |   (Specifiers:s2 TypeExpr(ctx) empty{ pass = ctx->CCNodeParsed(); }){ value = TypeExpr; }
             ;
 
         InitializerList(ParsingContext* ctx, Node* owner)

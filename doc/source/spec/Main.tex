@@ -3,7 +3,7 @@
 
 \begin{document}
 
-\title{Cmajor Programming Language Specification\\Version 3.5.1}
+\title{Cmajor Programming Language Specification\\Version 3.6}
 \author{Seppo Laakko}
 \date{\today}
 \maketitle
@@ -14,7 +14,7 @@
 \section{Grammar Notation}
 
 The lexical and syntactical structure of Cmajor programs is presented in this text
-using grammars that are in extended Backus-Naur form.
+using grammars that are in parsing expression grammar (\cite{PEG}) form.
 A grammar consists of
 
 \begin{enumerate}
@@ -79,17 +79,17 @@ keyword \rightarrow \> \textrm{'see table \ref{tab:keywords}'}
 \\
 \bf{abstract} & \bf{and} & \bf{as} & \bf{axiom} & \bf{base} & \bf{bool}\\
 \bf{break} & \bf{byte} & \bf{case} & \bf{cast} & \bf{catch} & \bf{cdecl}\\
-\bf{char} & \bf{class} & \bf{concept} & \bf{const} & \bf{construct} & \bf{continue}\\
-\bf{default} & \bf{delegate} & \bf{delete} & \bf{destroy} & \bf{do} & \bf{double}\\
-\bf{else} & \bf{enum} & \bf{explicit} & \bf{extern} & \bf{false} & \bf{float}\\
-\bf{for} & \bf{goto} & \bf{if} & \bf{inline} & \bf{int}& \bf{interface}\\
-\bf{internal} & \bf{is} & \bf{long} & \bf{namespace} & \bf{new} & \bf{not}\\
-\bf{nothrow} & \bf{null} & \bf{operator} & \bf{or} & \bf{override} & \bf{private}\\
-\bf{protected} & \bf{public} & \bf{return} & \bf{sbyte} & \bf{short} & \bf{sizeof}\\
-\bf{static} & \bf{suppress} & \bf{switch} & \bf{this} & \bf{throw} & \bf{true}\\
-\bf{try} & \bf{typedef} & \bf{typename} & \bf{uchar} & \bf{uint} & \bf{ulong}\\
-\bf{unit\_test} & \bf{ushort} & \bf{using} & \bf{virtual} & \bf{void} & \bf{wchar}\\
-\bf{where} & \bf{while}
+\bf{char} & \bf{class} & \bf{concept} & \bf{const} & \bf{constexpr} & \bf{construct}\\
+\bf{continue} & \bf{default} & \bf{delegate} & \bf{delete} & \bf{destroy} & \bf{do}\\
+\bf{double} & \bf{else} & \bf{enum} & \bf{explicit} & \bf{extern} & \bf{false}\\
+\bf{float} & \bf{for} & \bf{goto} & \bf{if} & \bf{inline} & \bf{int}\\
+\bf{interface} & \bf{internal} & \bf{is} & \bf{long} & \bf{namespace} & \bf{new}\\
+\bf{not} & \bf{nothrow} & \bf{null} & \bf{operator} & \bf{or} & \bf{override}\\
+\bf{private} & \bf{protected} & \bf{public} & \bf{return} & \bf{sbyte} & \bf{short}\\
+\bf{sizeof} & \bf{static} & \bf{suppress} & \bf{switch} & \bf{this} & \bf{throw}\\
+\bf{true} & \bf{try} & \bf{typedef} & \bf{typename} & \bf{uchar} & \bf{uint}\\
+\bf{ulong} & \bf{unit\_test} & \bf{ushort} & \bf{using} & \bf{virtual} & \bf{void}\\
+\bf{wchar} & \bf{where} & \bf{while}
 \end{tabular}
 \end{table}
 
@@ -1115,7 +1115,8 @@ function\textrm{-}definition &\rightarrow & &function\textrm{-}specifiers \> \hy
 & & &template\textrm{-}parameter\textrm{-}list? \> parameters \> \hyperref[wherecontraint]{where\textrm{-}constraint}?\\
 & & &function\textrm{-}body\\
 function\textrm{-}specifiers &\rightarrow & &(\hyperref[accessspecifier]{access\textrm{-}specifier} \> | \> \textbf{inline} \> | \>
-\textbf{cdecl} \> | \> \textbf{nothrow} \> | \> \textbf{throw} \> | \> \textbf{unit\_test})^*\\
+\textbf{cdecl} \> | \> \textbf{nothrow} \> | \> \textbf{throw} \> | \> \textbf{unit\_test} \>\\
+& & &| \> \textbf{constexpr})^*\\
 function\textrm{-}name &\rightarrow & &\hyperref[identifier]{identifier} \> | \> operator\textrm{-}function\textrm{-}name\\
 operator\textrm{-}function\textrm{-}name &\rightarrow & &\textbf{operator}\\
 & & &( \texttt{<<} \> | \> \texttt{>>} \> | \> \texttt{==} \> | \> \texttt{<} \> | \> \texttt{=} \> | \>
@@ -1155,6 +1156,13 @@ and does not deliberately throw any exception from catch blocks. \footnote{seman
 \subsubsection{Unit Test Specifier}
 
 \bf{unit\_test} specifier has a meaning in programs intended as input to the \bf{cmunit} program.
+
+\subsubsection{Constexpr Specifier}\label{constexprfun}
+
+\bf{constexpr} specifier states that the compiler must evaluate the function at compile time when function arguments are expressions that consist of
+literals, constants or enumeration constants. A \bf{constexpr} function cannot contain \bf{switch}, \bf{case}, \bf{default},
+\bf{goto case}, \bf{goto default}, \bf{goto}, \bf{assert}, \bf{throw}, or \bf{try} statements.
+When function arguments cannot be evaluated at compile time, the function behaves just like an ordinary function.
 
 \subsection{Function Templates}
 
@@ -1836,11 +1844,23 @@ primary\textrm{-}constraint\textrm{-}expr \rightarrow \> \hyperref[atomicconstra
 
 \subsubsection{Atomic Constraints}\label{atomicconstraint}
 
-An atomic constraint can be either an is-constraint or a multiparameter constraint.
+An atomic constraint can be either a predicate-constraint, an is-constraint or a multiparameter constraint.
 
 \begin{align*}
-atomic\textrm{-}constraint \rightarrow \> \hyperref[isconstraint]{is\textrm{-}constraint} \> | \>
+atomic\textrm{-}constraint \rightarrow \> \hyperref[predicateconstraint]{predicate\textrm{-}constraint} \>
+| \> \hyperref[isconstraint]{is\textrm{-}constraint} \> | \>
 \hyperref[multiparamconstraint]{multiparam\textrm{-}constraint}
+\end{align*}
+
+\subsubsection{Predicate-constraint}\label{predicateconstraint}
+
+A predicate-constraint sets a requirement that the given Boolean-valued compile-time predicate returns \textbf{true}.
+The compile-time predicate can be either a Boolean-valued \hyperref[constexprfun]{constexpr} function or an intrinsic type predicate from \emph{System.Meta} namespace.
+
+\begin{align*}
+predicate\textrm{-}constraint &\rightarrow \> invoke\textrm{-}expr\\
+invoke\textrm{-}expr &\rightarrow \> ( \hyperref[templateid]{template\textrm{-}id} \> | \> \hyperref[identifier]{identifier} ) \>
+( \texttt{.} \hyperref[identifier]{identifier} )^* \> \texttt{(} \> \hyperref[argumentlist]{argument\textrm{-}list} \> \texttt{)}
 \end{align*}
 
 \subsubsection{Is-Constraint}\label{isconstraint}
@@ -2069,6 +2089,10 @@ Compilers: Principles, Techniques, \& Tools. Second Edition. Addison-Wesley, 200
 
 \bibitem{ANNCPPREFMAN} \textsc{Ellis, M. A., and B. Stroustrup}:
 The Annotated C++ Reference Manual. Addison-Wesley, 1990.
+
+\bibitem{PEG} \textsc{Ford, B.}:
+Parsing Expression Grammars: A Recognition-Based Syntactic Foundation.
+\textit{\url{http://pdos.csail.mit.edu/~baford/packrat/popl04/peg-popl04.pdf}}
 
 \bibitem{GIBBS} \textsc{Gibbs, M., and B. Stroustrup}:
 Fast dynamic casting, 2005,

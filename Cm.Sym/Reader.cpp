@@ -145,10 +145,6 @@ Symbol* Reader::ReadSymbol()
     {
         Span span = ReadSpan();
         std::string name = binaryReader.ReadString();
-        if (name == "MinValue(byte)")
-        {
-            int x = 0;
-        }
         Symbol* symbol = SymbolFactory::Instance().CreateSymbol(symbolType, span, name);
         if (markSymbolsBound)
         {

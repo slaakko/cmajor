@@ -43,6 +43,8 @@ class NamespaceSymbol;
 class ClassTypeSymbol;
 class FunctionSymbol;
 
+void SetCCOverrideSymbols(bool ccOverrideSymbols_);
+
 class Scope
 {
 public:
@@ -68,6 +70,7 @@ public:
     Symbol* Lookup(const std::string& name, ScopeLookup lookup) const override;
     Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const override;
     void CollectViableFunctions(ScopeLookup lookup, const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions);
+    void CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId, bool includeConceptSymbols);
     ContainerSymbol* Container() { return container; }
     void SetContainer(ContainerSymbol* container_) { container = container_; }
     NamespaceSymbol* Ns() const;
@@ -100,6 +103,7 @@ public:
     Symbol* Lookup(const std::string& name, ScopeLookup lookup, SymbolTypeSetId symbolTypeSetId) const override;
     FileScope* Clone() const;
     void CollectViableFunctions(const std::string& groupName, int arity, std::unordered_set<FunctionSymbol*>& viableFunctions, std::unordered_set<ContainerScope*>& processedScopes);
+    void CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols, SymbolTypeSetId symbolTypeSetId, bool includeConceptSymbols);
 private:
     std::vector<ContainerScope*> containerScopes;
     typedef std::unordered_map<std::string, Symbol*> AliasSymbolMap;

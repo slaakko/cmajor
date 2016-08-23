@@ -183,6 +183,8 @@ class ConvertibleConceptNode;
 class ExplicitlyConvertibleConceptNode;
 class CommonConceptNode;
 
+class CCNode;
+
 class Visitor
 {
 public:
@@ -424,6 +426,8 @@ public:
     virtual void Visit(ConvertibleConceptNode& convertibleConceptNode) {}
     virtual void Visit(ExplicitlyConvertibleConceptNode& explicitlyConvertibleConceptNode) {}
     virtual void Visit(CommonConceptNode& commonConceptNode) {}
+
+    virtual void Visit(CCNode& ccNode) {}
 
     bool VisitBodies() const { return visitBodies; }
     bool VisitExpressions() const { return visitExpressions; }

@@ -52,7 +52,7 @@ Cm::Ast::IdentifierNode* IdentifierGrammar::Parse(const char* start, const char*
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -178,16 +178,16 @@ private:
 void IdentifierGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parsing.stdlib");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parsing::stdlib::Create(pd);
+        grammar0 = Cm::Parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parsing.stdlib");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::KeywordGrammar::Create(pd);
+        grammar1 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar1);
 }

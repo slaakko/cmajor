@@ -32,7 +32,12 @@ Rule::Rule(const std::string& name_, Scope* enclosingScope_, Parser* definition_
     localVariables(),
     valueTypeName(),
     actions(),
-    nonterminals()
+    nonterminals(),
+    ccCount(0), 
+    ccRule(false), 
+    ccStart(),
+    ccEnd(),
+    ccSkip(false)
 {
     Own(definition);
     SetScope(new Scope(Name(), EnclosingScope()));
@@ -46,7 +51,12 @@ Rule::Rule(const std::string& name_, Scope* enclosingScope_):
     localVariables(),
     valueTypeName(),
     actions(),
-    nonterminals()
+    nonterminals(),
+    ccCount(0),
+    ccRule(false),
+    ccStart(),
+    ccEnd(),
+    ccSkip(false)
 {
     SetScope(new Scope(Name(), EnclosingScope()));
 }
@@ -178,6 +188,10 @@ void Rule::ExpandCode()
 
 Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
 {
+    if (CC() && ccRule)
+    {
+        scanner.PushCCRule(this);
+    }
     bool writeToLog = !scanner.Skipping() && scanner.Log();
     if (writeToLog)
     {
@@ -204,6 +218,17 @@ Match Rule::Parse(Scanner& scanner, ObjectStack& stack)
         }
         scanner.Log()->DecIndent();
         scanner.Log()->WriteEndRule(Name());
+    }
+    if (CC())
+    {
+        if (scanner.Synchronizing() && ccRule && ccCount == 0)
+        {
+            scanner.SetSynchronizing(false);
+        }
+        if (ccRule)
+        {
+            scanner.PopCCRule();
+        }
     }
     return match;
 }

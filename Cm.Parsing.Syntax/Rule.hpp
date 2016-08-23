@@ -1,5 +1,5 @@
-#ifndef Rule_hpp_26873
-#define Rule_hpp_26873
+#ifndef Rule_hpp_8022
+#define Rule_hpp_8022
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -24,4 +24,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Rule_hpp_26873
+#endif // Rule_hpp_8022

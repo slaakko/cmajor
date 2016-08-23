@@ -45,6 +45,7 @@ void BuildSymbolTable(Cm::Sym::SymbolTable& symbolTable, bool rebuild, Cm::Core:
     const std::vector<std::string>& libraryDirs, std::vector<std::string>& assemblyFilePaths, std::vector<std::string>& cLibs, std::vector<std::string>& allReferenceFilePaths,
     std::vector<std::string>& allDebugInfoFilePaths, std::vector<std::string>& allNativeObjectFilePaths, std::vector<std::string>& allBcuPaths, std::vector<uint64_t>& classHierarchyTable,
     std::vector<std::string>& allLibrarySearchPaths);
+void CodeCompletion(const std::string& projectFilePath, const std::string& ccFileName, const std::unordered_set<std::string>& defines, CompileUnitParserRepository& compileUnitParserRepository);
 
 } } // namespace Bm::Build
 

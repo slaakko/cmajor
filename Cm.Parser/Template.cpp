@@ -55,7 +55,7 @@ Cm::Ast::Node* TemplateGrammar::Parse(const char* start, const char* end, int fi
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -314,25 +314,25 @@ private:
 void TemplateGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar0 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar1 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
 }
 
 void TemplateGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "IdentifierGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRule(new TemplateIdRule("TemplateId", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",

@@ -16237,7 +16237,7 @@ library System
             }
             remarks
             {
-                The values are converted to rvalues using System.Rvalue.T.T.rr function and exchanged by moving them.
+                The values are converted to rvalues using System.Rvalue.T.RR.T function and exchanged by moving them.
             }
             parameter System.Swap.T.R.T.R.T.where.T.is.MoveConstructible.and.T.is.MoveAssignable.and.T.is.Destructible.left
             {
@@ -18902,11 +18902,13 @@ library System
             {
                 description
                 {
+                    Constructor. Constructs a bit set containing given bits.
                 }
                 parameter System.Collections.BitSet.constructor.P.System.Collections.BitSet.C.R.System.String.char.bits_
                 {
                     description
                     {
+                        Bit string.
                     }
                 }
             }
@@ -27491,17 +27493,20 @@ library System
         {
             description
             {
+                Returns a hash code for the given uchar value.
             }
             parameter System.Collections.GetHashCode.uchar.x
             {
                 description
                 {
+                    A uchar value.
                 }
             }
             returns System.Collections.GetHashCode.uchar.returnValue
             {
                 description
                 {
+                    Returns a hash code for the given uchar value.
                 }
             }
         }
@@ -27551,17 +27556,20 @@ library System
         {
             description
             {
+                Returns a hash code for the given wchar value.
             }
             parameter System.Collections.GetHashCode.wchar.x
             {
                 description
                 {
+                    A wchar value.
                 }
             }
             returns System.Collections.GetHashCode.wchar.returnValue
             {
                 description
                 {
+                    Returns a hash code for the given wchar value.
                 }
             }
         }
@@ -28216,12 +28224,14 @@ library System
         {
             description
             {
+                Implementation detail.
             }
         }
         concept System.Concepts.ConversionFromSByte.T
         {
             description
             {
+                Implementation detail.
             }
         }
         concept System.Concepts.CopyAssignable.T.U
@@ -34128,6 +34138,885 @@ library System
                 {
                     Open the file with write only access.
                     Truncates the file if it exists.
+                }
+            }
+        }
+    }
+    namespace System.Meta
+    {
+        description
+        {
+            Contains instrinsic type predicate functions.
+        }
+        function System.Meta.IsBasicType.T0
+        {
+            description
+            {
+                Returns true if T0 is a basic type, false otherwise.
+            }
+            remarks
+            {
+                Basic types are: bool, char, wchar, uchar, void, sbyte, byte, short, ushort, int, uint, long, ulong, float and double.
+            }
+            returns System.Meta.IsBasicType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a basic type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsBoolType.T0
+        {
+            description
+            {
+                Returns true if T0 is bool, false otherwise.
+            }
+            returns System.Meta.IsBoolType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is bool, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsByteType.T0
+        {
+            description
+            {
+                Returns true if T0 is byte, false otherwise.
+            }
+            returns System.Meta.IsByteType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is byte, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is char, false otherwise.
+            }
+            returns System.Meta.IsCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is char, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsCharacterType.T0
+        {
+            description
+            {
+                Returns true if T0 is char, wchar or uchar, false otherwise.
+            }
+            returns System.Meta.IsCharacterType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is char, wchar or uchar, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsClassDelegateType.T0
+        {
+            description
+            {
+                Returns true if T0 is a class delegate type, false otherwise.
+            }
+            returns System.Meta.IsClassDelegateType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a class delegate type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsClassType.T0
+        {
+            description
+            {
+                Returns true if T0 is a class type, false otherwise.
+            }
+            returns System.Meta.IsClassType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a class type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsConstType.T0
+        {
+            description
+            {
+                Returns true if T0 is a const type, false otherwise.
+            }
+            returns System.Meta.IsConstType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a const type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsDelegateType.T0
+        {
+            description
+            {
+                Returns true if T0 is a delegate type, false otherwise.
+            }
+            returns System.Meta.IsDelegateType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a delegate type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsDoubleType.T0
+        {
+            description
+            {
+                Returns true if T0 is double, false otherwise.
+            }
+            returns System.Meta.IsDoubleType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is double, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsEnumType.T0
+        {
+            description
+            {
+                Returns true if T0 is enumerated type, false otherwise.
+            }
+            returns System.Meta.IsEnumType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is enumerated type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsFloatType.T0
+        {
+            description
+            {
+                Returns true if T0 is float, false otherwise.
+            }
+            returns System.Meta.IsFloatType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is float, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsFloatingPointType.T0
+        {
+            description
+            {
+                Returns true if T0 is float or double, false otherwise.
+            }
+            returns System.Meta.IsFloatingPointType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is float or double, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsIntType.T0
+        {
+            description
+            {
+                Returns true if T0 is int, false otherwise.
+            }
+            returns System.Meta.IsIntType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is int, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsIntegerType.T0
+        {
+            description
+            {
+                Returns true if T0 is sbyte, byte, short ushort, int, uint, long, or ulong, false otherwise.
+            }
+            returns System.Meta.IsIntegerType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is sbyte, byte, short ushort, int, uint, long, or ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsLongType.T0
+        {
+            description
+            {
+                Returns true if T0 is long, false otherwise.
+            }
+            returns System.Meta.IsLongType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is long, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsLvalueReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is an lvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsLvalueReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is an lvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonBasicType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a basic type, false otherwise.
+            }
+            returns System.Meta.IsNonBasicType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not a basic type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonBoolType.T0
+        {
+            description
+            {
+                Returns true if T0 is not bool, false otherwise.
+            }
+            returns System.Meta.IsNonBoolType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not bool, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonByteType.T0
+        {
+            description
+            {
+                Returns true if T0 is not byte, false otherwise.
+            }
+            returns System.Meta.IsNonByteType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not byte, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is not char, false otherwise.
+            }
+            returns System.Meta.IsNonCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not char, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonCharacterType.T0
+        {
+            description
+            {
+                Returns true if T0 is not char, wchar or uchar, false otherwise.
+            }
+            returns System.Meta.IsNonCharacterType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not char, wchar or uchar, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonClassDelegateType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a class delegate type, false otherwise.
+            }
+            returns System.Meta.IsNonClassDelegateType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not a class delegate type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonClassType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a class type, false otherwise.
+            }
+            returns System.Meta.IsNonClassType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not a class type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonConstType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a const type, false otherwise.
+            }
+            returns System.Meta.IsNonConstType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not a const type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonDelegateType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a delegate type, false otherwise.
+            }
+            returns System.Meta.IsNonDelegateType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not a delegate type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonDoubleType.T0
+        {
+            description
+            {
+                Returns true if T0 is not double, false otherwise.
+            }
+            returns System.Meta.IsNonDoubleType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not double, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonEnumType.T0
+        {
+            description
+            {
+                Returns true if T0 is not an enumerated type, false otherwise.
+            }
+            returns System.Meta.IsNonEnumType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not an enumerated type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonFloatType.T0
+        {
+            description
+            {
+                Returns true if T0 is not float, false otherwise.
+            }
+            returns System.Meta.IsNonFloatType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not float, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonFloatingPointType.T0
+        {
+            description
+            {
+                Returns true if T0 is not float or double, false otherwise.
+            }
+            returns System.Meta.IsNonFloatingPointType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not float or double, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonIntType.T0
+        {
+            description
+            {
+                Returns true if T0 is not int, false otherwise.
+            }
+            returns System.Meta.IsNonIntType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not int, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonIntegerType.T0
+        {
+            description
+            {
+                Returns true if T0 is not sbyte, byte, short, ushort, int, uint, long, ulong, false otherwise.
+            }
+            returns System.Meta.IsNonIntegerType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not sbyte, byte, short, ushort, int, uint, long, ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonLongType.T0
+        {
+            description
+            {
+                Returns true if T0 is not long, false otherwise.
+            }
+            returns System.Meta.IsNonLongType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not long, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonLvalueReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is not an lvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsNonLvalueReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not an lvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonPointerType.T0
+        {
+            description
+            {
+                Returns true if T0 is not a pointer type, false otherwise.
+            }
+            returns System.Meta.IsNonPointerType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not an lvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonPolymorphic.T0
+        {
+            description
+            {
+                Returns true if T0 is not polymorphic type, false otherwise.
+            }
+            returns System.Meta.IsNonPolymorphic.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not polymorphic type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is not an lvalue or rvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsNonReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not an lvalue or rvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonRvalueReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is not an rvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsNonRvalueReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not an rvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonSByteType.T0
+        {
+            description
+            {
+                Returns true if T0 is not sbyte, false otherwise.
+            }
+            returns System.Meta.IsNonSByteType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not sbyte, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonShortType.T0
+        {
+            description
+            {
+                Returns true if T0 is not short, false otherwise.
+            }
+            returns System.Meta.IsNonShortType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not short, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonSignedType.T0
+        {
+            description
+            {
+                Returns true if T0 is not sbyte, short, int, long, false otherwise.
+            }
+            returns System.Meta.IsNonSignedType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not sbyte, short, int, long, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonUCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is not uchar, false otherwise.
+            }
+            returns System.Meta.IsNonUCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not uchar, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonUIntType.T0
+        {
+            description
+            {
+                Returns true if T0 is not uint, false otherwise.
+            }
+            returns System.Meta.IsNonUIntType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not uint, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonULongType.T0
+        {
+            description
+            {
+                Returns true if T0 is not ulong, false otherwise.
+            }
+            returns System.Meta.IsNonULongType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonUShortType.T0
+        {
+            description
+            {
+                Returns true if T0 is not ushort, false otherwise.
+            }
+            returns System.Meta.IsNonUShortType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not ushort, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonUnsignedType.T0
+        {
+            description
+            {
+                Returns true if T0 is not byte, ushort, uint, ulong, false otherwise.
+            }
+            returns System.Meta.IsNonUnsignedType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not byte, ushort, uint, ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonVoidType.T0
+        {
+            description
+            {
+                Returns true if T0 is not void, false otherwise.
+            }
+            returns System.Meta.IsNonVoidType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not void, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsNonWCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is not wchar, false otherwise.
+            }
+            returns System.Meta.IsNonWCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is not wchar, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsPointerType.T0
+        {
+            description
+            {
+                Returns true if T0 is a pointer type, false otherwise.
+            }
+            returns System.Meta.IsPointerType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a pointer type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsPolymorphic.T0
+        {
+            description
+            {
+                Returns true if T0 is a polymorphic type, false otherwise.
+            }
+            returns System.Meta.IsPolymorphic.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is a polymorphic type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is an lvalue or rvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is an lvalue or rvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsRvalueReferenceType.T0
+        {
+            description
+            {
+                Returns true if T0 is an rvalue reference type, false otherwise.
+            }
+            returns System.Meta.IsRvalueReferenceType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is an rvalue reference type, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsSByteType.T0
+        {
+            description
+            {
+                Returns true if T0 is sbyte, false otherwise.
+            }
+            returns System.Meta.IsSByteType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is sbyte, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsShortType.T0
+        {
+            description
+            {
+                Returns true if T0 is short, false otherwise.
+            }
+            returns System.Meta.IsShortType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is short, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsSignedType.T0
+        {
+            description
+            {
+                Returns true if T0 is sbyte, short, int, long, false otherwise.
+            }
+            returns System.Meta.IsSignedType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is sbyte, short, int, long, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsUCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is uchar, false otherwise.
+            }
+            returns System.Meta.IsUCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is uchar, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsUIntType.T0
+        {
+            description
+            {
+                Returns true if T0 is uint, false otherwise.
+            }
+            returns System.Meta.IsUIntType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is uint, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsULongType.T0
+        {
+            description
+            {
+                Returns true if T0 is ulong, false otherwise.
+            }
+            returns System.Meta.IsULongType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsUShortType.T0
+        {
+            description
+            {
+                Returns true if T0 is ushort, false otherwise.
+            }
+            returns System.Meta.IsUShortType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is ushort, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsUnsignedType.T0
+        {
+            description
+            {
+                Returns true if T0 is byte, ushort, uint, ulong, false otherwise.
+            }
+            returns System.Meta.IsUnsignedType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is byte, ushort, uint, ulong, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsVoidType.T0
+        {
+            description
+            {
+                Returns true if T0 is void, false otherwise.
+            }
+            returns System.Meta.IsVoidType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is void, false otherwise.
+                }
+            }
+        }
+        function System.Meta.IsWCharType.T0
+        {
+            description
+            {
+                Returns true if T0 is wchar, false otherwise.
+            }
+            returns System.Meta.IsWCharType.T0.returnValue
+            {
+                description
+                {
+                    Returns true if T0 is wchar, false otherwise.
                 }
             }
         }

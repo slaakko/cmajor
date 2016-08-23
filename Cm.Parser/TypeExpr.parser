@@ -40,7 +40,10 @@
 
         PostfixTypeExpr(ParsingContext* ctx, Cm::Ast::DerivedTypeExprNode* node, var Span s)
             ::= PrimaryTypeExpr(ctx, node){ s = span; }
-            (   '.' Identifier:dotMemberId!{ s.SetEnd(span.End()); node->SetBaseTypeExpr(new DotNode(s, node->ReleaseBaseTypeExprNode(), dotMemberId)); }
+            (   '.' 
+                (   Identifier:dotMemberId{ s.SetEnd(span.End()); node->SetBaseTypeExpr(new DotNode(s, node->ReleaseBaseTypeExprNode(), dotMemberId)); }
+                |   '`'{ s.SetEnd(span.End()); node->SetBaseTypeExpr(new DotNode(s, node->ReleaseBaseTypeExprNode(), new CCNode(span))); ctx->SetCCNodeParsed(); }
+                )
             |   "&&"{ node->AddRvalueRef(); }
             |    '&'{ node->AddReference(); }
             |    '*'{ node->AddPointer(); }

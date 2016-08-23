@@ -29,6 +29,7 @@ namespace Cm.Parser
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
         start CompoundStatement;
+        cc CompoundStatement(start='{', end='}', skip);
  
         Statement(ParsingContext* ctx): Cm::Ast::StatementNode*
             ::= LabeledStatement(ctx){ value = LabeledStatement; }
@@ -62,7 +63,7 @@ namespace Cm.Parser
             ;
 
         SimpleStatement(ParsingContext* ctx, var std::unique_ptr<Node> expr): Cm::Ast::StatementNode*
-            ::= (empty{ ctx->PushParsingSimpleStatement(true); } (Expression(ctx){ expr.reset(Expression); })? ';')
+            ::= (empty{ ctx->PushParsingSimpleStatement(true); } (Expression(ctx){ expr.reset(Expression); } ';'$ | ';'))
             { 
                 ctx->PopParsingSimpleStatement(); value = new SimpleStatementNode(span, expr.release()); 
             } 
@@ -89,11 +90,11 @@ namespace Cm.Parser
             ;
 
         ReturnStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("return") Expression(ctx)? ';'!){ value = new ReturnStatementNode(span, Expression); }
+            ::= (keyword("return") Expression(ctx)? ';'!$){ value = new ReturnStatementNode(span, Expression); }
             ;
 
         ConditionalStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("if") '('! Expression(ctx)! ')'! Statement(ctx):thenS! (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatementNode(span, Expression, thenS, elseS); }
+            ::= (keyword("if") '('! Expression(ctx)! ')'!$ Statement(ctx):thenS!$ (keyword("else") Statement(ctx):elseS)?){ value = new ConditionalStatementNode(span, Expression, thenS, elseS); }
             ;
 
         SwitchStatement(ParsingContext* ctx): Cm::Ast::SwitchStatementNode*
@@ -132,22 +133,22 @@ namespace Cm.Parser
             ;
 
         WhileStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("while") '('! Expression(ctx)! ')'! Statement(ctx)!){ value = new WhileStatementNode(span, Expression, Statement); }
+            ::= (keyword("while") '('! Expression(ctx)! ')'!$ Statement(ctx)!$){ value = new WhileStatementNode(span, Expression, Statement); }
             ;
 
         DoStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("do") Statement(ctx)! keyword("while")! '('! Expression(ctx)! ')'! ';'!){ value = new DoStatementNode(span, Statement, Expression); }
+            ::= (keyword("do") Statement(ctx)! keyword("while")! '('! Expression(ctx)! ')'!$ ';'!$){ value = new DoStatementNode(span, Statement, Expression); }
             ;
 
         RangeForStatement(ParsingContext* ctx, var std::unique_ptr<Node> varType, var std::unique_ptr<IdentifierNode> varId): Cm::Ast::StatementNode*
-            ::= (keyword("for") '(' TypeExpr(ctx){ varType.reset(TypeExpr); } Identifier{ varId.reset(Identifier); } ':' Expression(ctx)! ')'! Statement(ctx)!)
+            ::= (keyword("for") '(' TypeExpr(ctx){ varType.reset(TypeExpr); } Identifier{ varId.reset(Identifier); } ':' Expression(ctx)! ')'!$ Statement(ctx)!$)
                 { 
                     value = new RangeForStatementNode(span, varType.release(), varId.release(), Expression, Statement); 
                 }
             ;
 
         ForStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("for") '('! ForInitStatement(ctx)! Expression(ctx):condition? ';'! Expression(ctx):increment? ')'! Statement(ctx)!)
+            ::= (keyword("for") '('! ForInitStatement(ctx)! Expression(ctx):condition? ';'!$ Expression(ctx):increment? ')'!$ Statement(ctx)!$)
                 {
                     value = new ForStatementNode(span, ForInitStatement, condition, increment, Statement);
                 }
@@ -181,15 +182,15 @@ namespace Cm.Parser
             ;
 
         AssignmentStatement(ParsingContext* ctx, var std::unique_ptr<Node> targetExpr): Cm::Ast::StatementNode*
-            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!)
+            ::= empty{ ctx->PushParsingLvalue(true); } (Expression(ctx):target{ ctx->PopParsingLvalue(); targetExpr.reset(target); } / { ctx->PopParsingLvalue(); } '=' Expression(ctx):source! ';'!$)
                 {
                     value = new AssignmentStatementNode(span, targetExpr.release(), source);
                 }
             ;
 
         ConstructionStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (TypeExpr(ctx) Identifier!){ value = new ConstructionStatementNode(span, TypeExpr, Identifier); } 
-                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? ';'!{ value->GetSpan().SetEnd(span.End()); }
+            ::= (TypeExpr(ctx) Identifier!$){ value = new ConstructionStatementNode(span, TypeExpr, Identifier); } 
+                ('(' ArgumentList(ctx, value) ')'! | '=' Expression(ctx)!{ value->AddArgument(Expression); })? (';'!$){ value->GetSpan().SetEnd(span.End()); }
             ;
 
         DeleteStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
@@ -201,11 +202,11 @@ namespace Cm.Parser
             ;
 
         ThrowStatement(ParsingContext* ctx): Cm::Ast::StatementNode*
-            ::= (keyword("throw") Expression(ctx)! ';'!){ value = new ThrowStatementNode(span, Expression); }
+            ::= (keyword("throw") Expression(ctx)! ';'!$){ value = new ThrowStatementNode(span, Expression); }
             ;
 
         TryStatement(ParsingContext* ctx): Cm::Ast::TryStatementNode*
-            ::= (keyword("try") CompoundStatement(ctx)!){ value = new TryStatementNode(span, CompoundStatement); } Handlers(ctx, value)!{ value->GetSpan().SetEnd(span.End()); }
+            ::= (keyword("try") CompoundStatement(ctx)!){ value = new TryStatementNode(span, CompoundStatement); } (Handlers(ctx, value)!$){ value->GetSpan().SetEnd(span.End()); }
             ;
 
         Handlers(ParsingContext* ctx, Cm::Ast::TryStatementNode* tryS)

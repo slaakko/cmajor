@@ -312,7 +312,7 @@ void TypeResolver::EndVisit(Cm::Ast::DotNode& dotNode)
             NamespaceTypeSymbol* nsTypeSymbol = static_cast<NamespaceTypeSymbol*>(typeSymbol);
             containerScope = nsTypeSymbol->Ns()->GetContainerScope();
         }
-        const std::string& memberName = dotNode.MemberId()->Str();
+        const std::string& memberName = dotNode.MemberStr();
         Cm::Sym::Symbol* symbol = containerScope->Lookup(memberName, Cm::Sym::ScopeLookup::this_and_base, lookupId);
         if (symbol)
         {

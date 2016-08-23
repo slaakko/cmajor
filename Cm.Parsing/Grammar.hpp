@@ -31,6 +31,7 @@ public:
     Grammar(const std::string& name_, Scope* enclosingScope_, ParsingDomain* parsingDomain_);
     void SetStartRuleName(const std::string& startRuleName_) { startRuleName = startRuleName_; }
     void SetSkipRuleName(const std::string& skipRuleName_) { skipRuleName = skipRuleName_; }
+    void SetCCRuleData(const std::string& ccRuleName_, char ccStart_, char ccEnd_, bool ccSkip_); 
     void AddRule(Rule* rule);
     Rule* GetRule(const std::string& ruleName) const;
     virtual void GetReferencedGrammars() {}
@@ -56,11 +57,19 @@ public:
     void AddRuleLink(RuleLink* ruleLink);
     void ResolveStartRule();
     void ResolveSkipRule();
+    const std::string& CCRuleName() const { return ccRuleName; }
+    char CCStart() const { return ccStart; }
+    char CCEnd() const { return ccEnd; }
+    bool CCSkip() const { return ccSkip; }
 private:
     ParsingDomain* parsingDomain;
     Namespace* ns;
     std::string startRuleName;
     std::string skipRuleName;
+    std::string ccRuleName;
+    char ccStart;
+    char ccEnd;
+    bool ccSkip;
     RuleVec rules;
     bool linking;
     bool linked;

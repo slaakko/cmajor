@@ -58,6 +58,49 @@ ClassTypeSymbol::ClassTypeSymbol(const Span& span_, const std::string& name_, co
 {
 }
 
+std::string ClassTypeSymbol::FullCCName(SymbolTable& symbolTable)
+{
+    std::string fullCCName;
+    if (IsClassTemplateSymbol())
+    {
+        Cm::Ast::Node* node = symbolTable.GetNode(this, false);
+        if (!node)
+        {
+            ReadClassNode(symbolTable, GetSpan().FileIndex());
+            node = symbolTable.GetNode(this);
+        }
+        if (!node->IsClassNode())
+        {
+            throw std::runtime_error("class node expected");
+        }
+        Cm::Ast::ClassNode* classNode = static_cast<Cm::Ast::ClassNode*>(node);
+        fullCCName.append(FullName());
+        int n = classNode->TemplateParameters().Count();
+        if (n > 0)
+        {
+            fullCCName.append(1, '<');
+            for (int i = 0; i < n; ++i)
+            {
+                if (i > 0)
+                {
+                    fullCCName.append(", ");
+                }
+                fullCCName.append(classNode->TemplateParameters()[i]->ToString());
+            }
+            fullCCName.append(1, '>');
+        }
+        if (classNode->Constraint())
+        {
+            fullCCName.append(1, ' ').append(classNode->Constraint()->ToString());
+        }
+    }
+    else
+    {
+        fullCCName.append(FullName());
+    }
+    return fullCCName;
+}
+
 std::string ClassTypeSymbol::GetMangleId() const
 {
     return MakeAssemblyName(FullName());

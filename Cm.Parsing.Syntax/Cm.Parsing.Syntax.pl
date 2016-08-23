@@ -48,6 +48,7 @@ namespace Cm.Parsing.Syntax
         GrammarContent(Cm::Parsing::Grammar* grammar);
         StartClause(Cm::Parsing::Grammar* grammar);
         SkipClause(Cm::Parsing::Grammar* grammar);
+        CCClause(Cm::Parsing::Grammar* grammar, var bool doSkip);
     }
     grammar RuleGrammar
     {
@@ -65,6 +66,7 @@ namespace Cm.Parsing.Syntax
         Token(Cm::Parsing::Scope* enclosingScope): Cm::Parsing::Parser*;
         Expectation(Cm::Parsing::Parser* child): Cm::Parsing::Parser*;
         Action(Cm::Parsing::Parser* child): Cm::Parsing::Parser*;
+        CCOpt(Cm::Parsing::Parser* child): Cm::Parsing::Parser*;
     }
     grammar PrimitiveGrammar
     {

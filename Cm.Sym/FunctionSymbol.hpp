@@ -133,6 +133,10 @@ public:
     const std::string& GroupName() const { return groupName; }
     void SetGroupName(const std::string& groupName_) { groupName = groupName_; }
     std::string TypeString() const override { return "function"; };
+    char CCTag() const override { return 'F'; }
+    std::string CCName() const override;
+    std::string FullCCName(SymbolTable& symbolTable) override;
+    bool IsCCSymbol() const override;
     bool IsFunctionSymbol() const override { return true; }
     virtual bool IsBasicTypeOp() const { return false; }
     virtual bool IsBasicTypeCopyMoveOrAssignmentOp() const { return false; }

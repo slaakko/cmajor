@@ -17,6 +17,7 @@
 #include <Cm.Parsing/Keyword.hpp>
 #include <Cm.Parsing/ParsingDomain.hpp>
 #include <Cm.Parsing/Namespace.hpp>
+#include <Cm.Parsing/Primitive.hpp>
 
 namespace Cm { namespace Parsing {
 
@@ -77,6 +78,19 @@ void LinkerVisitor::BeginVisit(Rule& rule)
     {
         currentRule = &rule;
         actionNumber = 0;
+        if (!currentGrammar->CCRuleName().empty())
+        {
+            if (rule.Name() == currentGrammar->CCRuleName())
+            {
+                rule.SetCCRule();
+                rule.SetCCStart(currentGrammar->CCStart());
+                rule.SetCCEnd(currentGrammar->CCEnd());
+                if (currentGrammar->CCSkip())
+                {
+                    rule.SetCCSkip();
+                }
+            }
+        }
     }
 }
 
@@ -146,6 +160,15 @@ void LinkerVisitor::Visit(KeywordListParser& parser)
     if (currentGrammar)
     {
         parser.SetSelectorRule(currentGrammar->GetRule(parser.SelectorRuleName()));
+    }
+}
+
+
+void LinkerVisitor::Visit(CharParser& parser)
+{
+    if (currentRule && currentRule->IsCCRule() && (currentRule->CCStart() == parser.GetChar() || currentRule->CCEnd() == parser.GetChar()))
+    {
+        parser.SetCCRule(currentRule);
     }
 }
 

@@ -18,6 +18,8 @@
  [cpp]#include <Cm.Parser/Interface.hpp>
  [cpp]#include <Cm.Parser/Delegate.hpp>
  [cpp]#include <Cm.Parser/Concept.hpp>
+ [cpp]#include <Cm.Parser/Specifier.hpp>
+ [cpp]#include <Cm.Parser/TypeExpr.hpp>
  [cpp]#include <Cm.Ast/Namespace.hpp>
  [cpp]#include <Cm.Ast/Identifier.hpp>
  [cpp]#include <Cm.Ast/Function.hpp>
@@ -27,13 +29,16 @@
  [cpp]#include <Cm.Ast/Class.hpp>
  [cpp]#include <Cm.Ast/Delegate.hpp>
  [cpp]#include <Cm.Ast/Concept.hpp>
-
+ [cpp]#include <Cm.Ast/Expression.hpp>
+ 
 namespace Cm.Parser
 {
     using namespace Cm::Ast;
 
     grammar CompileUnitGrammar
     {
+        using SpecifierGrammar.Specifiers;
+        using TypeExprGrammar.TypeExpr;
         using IdentifierGrammar.Identifier;
         using IdentifierGrammar.QualifiedId;
         using FunctionGrammar.Function;
@@ -47,6 +52,7 @@ namespace Cm.Parser
         using ConceptGrammar.Concept;
         using stdlib.spaces_and_comments;
         skip spaces_and_comments;
+        cc Namespace(start='{', end='}');
 
         CompileUnit(ParsingContext* ctx): Cm::Ast::CompileUnitNode*
             ::= empty{ value = new CompileUnitNode(span, fileName); }
@@ -90,6 +96,8 @@ namespace Cm.Parser
             |   DelegateDefinition(ctx){ value = DelegateDefinition; }
             |   ClassDelegateDefinition(ctx){ value = ClassDelegateDefinition; }
             |   ConceptDefinition(ctx){ value = ConceptDefinition; }
+            |   (Specifiers:s1 '`'){ value = new Cm::Ast::CCNode(span); }
+            |   (Specifiers:s2 TypeExpr(ctx) empty{ pass = ctx->CCNodeParsed(); }){ value = TypeExpr; }
             ;
 
         NamespaceDefinition(ParsingContext* ctx, Cm::Ast::CompileUnitNode* compileUnit, Cm::Ast::NamespaceNode* ns): Cm::Ast::NamespaceNode*

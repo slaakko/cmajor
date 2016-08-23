@@ -1,5 +1,5 @@
-#ifndef Interface_hpp_26941
-#define Interface_hpp_26941
+#ifndef Interface_hpp_20065
+#define Interface_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -30,4 +30,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // Interface_hpp_26941
+#endif // Interface_hpp_20065

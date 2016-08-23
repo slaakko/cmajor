@@ -382,6 +382,32 @@ This is an experimental configuration.
 
 The same whole-program analysis and optimizations it makes possible as in the \textbf{full $|$ LLVM} configuration are performed.
 
+\section{Code Completion}
+
+Code completion in the editor is activated by pressing CTRL-K.
+It shows a list of possible symbol names along with their type tags in the current parsing context.
+Typing letters filters the symbol name list.
+You can scroll the names using the arrow and page up and page down keys.
+ENTER selects a symbol name. ESC or CTRL-K hides the code completion list.
+After selecting a symbol name from the list a yellow code completion item window is shown.
+You can scroll through the possible code completion items using the arrow keys.
+Pressing ENTER, ESC, CTRL-K or semicolon hides the code completion item window.
+The following table shows the possible symbol type tags:
+
+\begin{flushleft}
+\begin{tabular}{lp{5cm}p{5cm}}
+\textbf{Tag}& \textbf{Symbol}\\
+\hline
+F&Function\\
+C&Constant\\
+E&Enumeration Constant\\
+V&Variable\\
+T&Type\\
+N&Namespace\\
+O&Concept\\
+\end{tabular}
+\end{flushleft}
+
 \section{Interoperability with C and C++}
 
 To call a C function \textbf{foo(int)} from a Cmajor program, you must declare it in some Cmajor source file as

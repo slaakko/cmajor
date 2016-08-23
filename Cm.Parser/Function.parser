@@ -36,7 +36,7 @@ namespace Cm.Parser
 
         Function(ParsingContext* ctx, var std::unique_ptr<FunctionNode> fun, var Span s): Cm::Ast::FunctionNode*
             ::= (Specifiers TypeExpr(ctx) FunctionGroupId(ctx){ fun.reset(new FunctionNode(span, Specifiers, TypeExpr, FunctionGroupId)); } 
-                TemplateParameterList(ctx, fun.get())? ParameterList(ctx, fun.get()) (WhereConstraint(ctx){ fun->SetConstraint(WhereConstraint); })?){ s = span; } (CompoundStatement(ctx) | ';')
+                TemplateParameterList(ctx, fun.get())? ParameterList(ctx, fun.get()) (WhereConstraint(ctx){ fun->SetConstraint(WhereConstraint); })?){ s = span; } (CompoundStatement(ctx) | ';'$)
             {
                 fun->SetBody(CompoundStatement);
                 fun->GetSpan().SetEnd(s.End());

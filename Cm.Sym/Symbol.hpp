@@ -126,6 +126,7 @@ public:
     const std::string& Name() const { return name; }
     void SetName(const std::string& name_) { name = name_; }
     virtual std::string FullName() const;
+    virtual std::string FullCCName(SymbolTable& symbolTable) { return FullName(); }
     const Span& GetSpan() const { return span; }
     void SetSpan(const Span& span_) { span = span_; }
     SymbolAccess Access() const { return SymbolAccess(flags & SymbolFlags::access); }
@@ -147,9 +148,13 @@ public:
     bool IsProject() const { return GetFlag(SymbolFlags::project); }
     void SetProject() { SetFlag(SymbolFlags::project); }
     virtual std::string TypeString() const { return "symbol"; };
+    virtual char CCTag() const { return 'S'; }
+    virtual std::string CCName() const { return name; }
+    virtual bool IsCCSymbol() const { return true; }
     virtual void SetType(TypeSymbol* typeSymbol, int index);
     virtual ContainerScope* GetContainerScope() const { return nullptr; }
     virtual bool IsExportSymbol() const;
+    virtual bool IsVariableSymbol() const { return false; }
     virtual bool IsNamespaceSymbol() const { return false; }
     virtual bool IsContainerSymbol() const { return false; }
     virtual bool IsTypeSymbol() const { return false; }

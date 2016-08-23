@@ -126,6 +126,7 @@ Match KeywordListParser::Parse(Scanner& scanner, ObjectStack& stack)
     if (selectorRule)
     {
         Span save = scanner.GetSpan();
+        bool synchronizing = scanner.Synchronizing();
         Match match = selectorRule->Parse(scanner, stack);
         if (match.Hit())
         {
@@ -137,6 +138,7 @@ Match KeywordListParser::Parse(Scanner& scanner, ObjectStack& stack)
                 return match;
             }
             scanner.SetSpan(save);
+            scanner.SetSynchronizing(synchronizing);
         }
     }
     return Match::Nothing();

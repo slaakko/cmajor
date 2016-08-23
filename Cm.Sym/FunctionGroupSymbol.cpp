@@ -16,6 +16,11 @@ FunctionGroupSymbol::FunctionGroupSymbol(const Span& span_, const std::string& n
 {
 }
 
+bool FunctionGroupSymbol::IsCCSymbol() const
+{
+    return !Cm::Util::StartsWith(Name(), "operator");
+}
+
 void FunctionGroupSymbol::AddFunction(FunctionSymbol* function)
 {
     if (function->IsReplica()) return;
@@ -59,6 +64,19 @@ void FunctionGroupSymbol::Dump(CodeFormatter& formatter)
 void FunctionGroupSymbol::SetBoundTemplateArguments(const std::vector<TypeSymbol*>& boundTemplateArguments_)
 {
     boundTemplateArguments = boundTemplateArguments_;
+}
+
+void FunctionGroupSymbol::CollectSymbolsForCC(std::unordered_set<Symbol*>& ccSymbols)
+{
+    ArityFunctionListMapIt e = arityFunctionListMap.end();
+    for (ArityFunctionListMapIt i = arityFunctionListMap.begin(); i != e; ++i)
+    {
+        for (FunctionSymbol* functionSymbol : i->second)
+        {
+            if (!functionSymbol->IsCCSymbol()) continue;
+            ccSymbols.insert(functionSymbol);
+        }
+    }
 }
 
 FunctionGroupTypeSymbol::FunctionGroupTypeSymbol(Cm::Sym::FunctionGroupSymbol* functionGroupSymbol_) : TypeSymbol(functionGroupSymbol_->GetSpan(), functionGroupSymbol_->Name()), 

@@ -16,6 +16,7 @@
 namespace Cm { namespace Parsing {
 
 class Visitor;
+class Rule;
 
 class CharParser : public Parser
 {
@@ -24,8 +25,13 @@ public:
     char GetChar() const { return c; }
     virtual Match Parse(Scanner& scanner, ObjectStack& stack);
     virtual void Accept(Visitor& visitor);
+    void SetCCRule(Rule* ccRule_)
+    {
+        ccRule = ccRule_;
+    }
 private:
     char c;
+    Rule* ccRule;
 };
 
 class StringParser : public Parser

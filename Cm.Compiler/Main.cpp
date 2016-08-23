@@ -242,9 +242,11 @@ int main(int argc, const char** argv)
     {
         std::vector<std::string> solutionOrProjectFilePaths;
         std::vector<std::string> compileFileNames;
+        std::string ccFileName;
         Cm::IrIntf::BackEnd backend = Cm::IrIntf::BackEnd::llvm;
         bool rebuild = false;
         bool prevWasCompile = false;
+        bool prevWasCC = false;
         bool prevWasDefine = false;
         bool prevWasTargetTriple = false;
         bool prevWasDatalayout = false;
@@ -374,6 +376,11 @@ int main(int argc, const char** argv)
                         {
                             prevWasCompile = true;
                         }
+                        else if (arg == "-cc")
+                        {
+                            Cm::Sym::SetGlobalFlag(Cm::Sym::GlobalFlags::quiet);
+                            prevWasCC = true;
+                        }
                         else if (arg == "-D")
                         {
                             prevWasDefine = true;
@@ -433,6 +440,11 @@ int main(int argc, const char** argv)
                         {
                             compileFileNames.push_back(arg);
                             prevWasCompile = false;
+                        }
+                        else if (prevWasCC)
+                        {
+                            ccFileName = arg;
+                            prevWasCC = false;
                         }
                         else if (prevWasDefine)
                         {
@@ -512,35 +524,59 @@ int main(int argc, const char** argv)
                     throw std::runtime_error("solution or project must be specified when compiling single files");
                 }
             }
-            Cm::Build::CompileUnitParserRepository compileUnitParsers;
-            int numCores = std::thread::hardware_concurrency();
-            if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
+            if (prevWasCC)
             {
+                throw std::runtime_error("cc file name expected");
+            }
+            else if (!ccFileName.empty())
+            {
+                if (solutionOrProjectFilePaths.size() != 1)
+                {
+                    throw std::runtime_error("one project file must be given for code completion");
+                }
+                const std::string& projectFilePath = solutionOrProjectFilePaths.front();
+                std::string ext = Cm::Util::Path::GetExtension(projectFilePath);
+                if (ext != ".cmp")
+                {
+                    throw std::runtime_error("'" + projectFilePath + "' is not a project file (for code completion)");
+                }
+                Cm::Build::CompileUnitParserRepository compileUnitParsers;
+                int numCores = std::thread::hardware_concurrency();
                 compileUnitParsers.Allocate(numCores);
+                Cm::Build::CodeCompletion(projectFilePath, ccFileName, defines, compileUnitParsers);
             }
-            for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
+            else
             {
-                std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
-                if (ext == ".cms")
+                Cm::Build::CompileUnitParserRepository compileUnitParsers;
+                int numCores = std::thread::hardware_concurrency();
+                if (!Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::clean))
                 {
-                    Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
+                    compileUnitParsers.Allocate(numCores);
                 }
-                else if (ext == ".cmp")
+                for (const std::string& solutionOrProjectFilePath : solutionOrProjectFilePaths)
                 {
-                    Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
+                    std::string ext = Cm::Util::Path::GetExtension(solutionOrProjectFilePath);
+                    if (ext == ".cms")
+                    {
+                        Cm::Build::BuildSolution(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
+                    }
+                    else if (ext == ".cmp")
+                    {
+                        Cm::Build::BuildProject(solutionOrProjectFilePath, rebuild, compileFileNames, defines, compileUnitParsers, stackSizeOpt);
+                    }
+                    else
+                    {
+                        throw std::runtime_error(solutionOrProjectFilePath + " is not Cmajor solution or project file");
+                    }
                 }
-                else
+                if (!Cm::Sym::CompileWarningCollection::Instance().Warnings().empty())
                 {
-                    throw std::runtime_error(solutionOrProjectFilePath + " is not Cmajor solution or project file");
-                }
-            }
-            if (!Cm::Sym::CompileWarningCollection::Instance().Warnings().empty())
-            {
-                if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
-                {
-                    Cm::Compiler::IdeErrorCollection errorCollection;
-                    errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
-                    std::cerr << errorCollection << std::endl;
+                    if (Cm::Sym::GetGlobalFlag(Cm::Sym::GlobalFlags::ide))
+                    {
+                        Cm::Compiler::IdeErrorCollection errorCollection;
+                        errorCollection.AddWarnings(Cm::Sym::CompileWarningCollection::Instance().Warnings());
+                        std::cerr << errorCollection << std::endl;
+                    }
                 }
             }
         }
@@ -650,5 +686,11 @@ int main(int argc, const char** argv)
         }
         return 1;
     }
+    /*
+    std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+    auto dur = end - start;
+    long long totalMs = std::chrono::duration_cast<std::chrono::milliseconds>(dur).count();
+    std::cout << totalMs << std::endl;
+    */
     return 0;
 }

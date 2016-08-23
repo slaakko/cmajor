@@ -30,6 +30,7 @@ public:
     virtual void Visit(NonterminalParser& parser);
     virtual void Visit(KeywordParser& parser);
     virtual void Visit(KeywordListParser& parser);
+    virtual void Visit(CharParser& parser);
 private:
     Grammar* currentGrammar;
     Rule* currentRule;

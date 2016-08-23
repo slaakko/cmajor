@@ -1,5 +1,5 @@
-#ifndef Element_hpp_26873
-#define Element_hpp_26873
+#ifndef Element_hpp_8022
+#define Element_hpp_8022
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -32,4 +32,4 @@ private:
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Element_hpp_26873
+#endif // Element_hpp_8022

@@ -56,6 +56,14 @@ public:
     virtual void Accept(Visitor& visitor);
 };
 
+class CCOptParser : public UnaryParser
+{
+public:
+    CCOptParser(Parser* child_);
+    virtual Match Parse(Scanner& scanner, ObjectStack& stack);
+    virtual void Accept(Visitor& visitor);
+};
+
 class TokenParser : public UnaryParser
 {
 public:

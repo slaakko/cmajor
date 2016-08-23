@@ -1,5 +1,5 @@
-#ifndef ToolError_hpp_1942
-#define ToolError_hpp_1942
+#ifndef ToolError_hpp_20065
+#define ToolError_hpp_20065
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -27,4 +27,4 @@ private:
 
 } } // namespace Cm.Parser
 
-#endif // ToolError_hpp_1942
+#endif // ToolError_hpp_20065

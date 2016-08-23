@@ -203,6 +203,7 @@ void InitFactory()
     Factory::Instance().Register(NodeType::conjunctiveConstraintNode, new Creator<ConjunctiveConstraintNode>());
     Factory::Instance().Register(NodeType::whereConstraintNode, new Creator<WhereConstraintNode>());
     Factory::Instance().Register(NodeType::predicateConstraintNode, new Creator<PredicateConstraintNode>());
+    Factory::Instance().Register(NodeType::ccNode, new Creator<CCNode>());
     Factory::Instance().Register(NodeType::isConstraintNode, new Creator<IsConstraintNode>());
     Factory::Instance().Register(NodeType::multiParamConstraintNode, new Creator<MultiParamConstraintNode>());
     Factory::Instance().Register(NodeType::typenameConstraintNode, new Creator<TypenameConstraintNode>());

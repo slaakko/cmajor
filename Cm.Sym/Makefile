@@ -4,7 +4,7 @@ OBJECTS = BasicTypeSymbol.o BoundCompileUnitSerialization.o ClassCounter.o Class
 Conditional.o ConstantSymbol.o ContainerSymbol.o ConversionTable.o DeclarationBlock.o DeclarationVisitor.o DelegateSymbol.o \
 DerivedTypeSymbol.o EntrySymbol.o EnumSymbol.o Exception.o ExceptionTable.o \
 Factory.o FunctionGroupSymbol.o FunctionSymbol.o FunctionTable.o GlobalFlags.o InitDone.o InterfaceTypeSymbol.o LocalVariableSymbol.o \
-MemberVariableSymbol.o Module.o MutexTable.o NameMangling.o NamespaceSymbol.o ParameterSymbol.o Reader.o ReturnValueSymbol.o Scope.o \
+MemberVariableSymbol.o Meta.o Module.o MutexTable.o NameMangling.o NamespaceSymbol.o ParameterSymbol.o Reader.o ReturnValueSymbol.o Scope.o \
 Symbol.o SymbolTable.o SymbolTypeSet.o TemplateTypeSymbol.o TypedefSymbol.o TypeId.o TypeParameterSymbol.o TypeRepository.o TypeSymbol.o \
 Value.o VariableSymbol.o Warning.o Writer.o
 

@@ -41,6 +41,7 @@ public:
     EnumConstantSymbol(const Span& span_, const std::string& name_);
     SymbolType GetSymbolType() const override { return SymbolType::enumConstantSymbol; }
     std::string TypeString() const override { return "enum constant"; };
+    char CCTag() const override { return 'E'; }
     bool IsEnumConstantSymbol() const override { return true; }
     void Write(Writer& writer) override;
     void Read(Reader& reader) override;

@@ -56,7 +56,7 @@ Cm::Ast::CompoundStatementNode* StatementGrammar::Parse(const char* start, const
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -3757,16 +3757,16 @@ private:
 void StatementGrammar::GetReferencedGrammars()
 {
     Cm::Parsing::ParsingDomain* pd = GetParsingDomain();
-    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
+    Cm::Parsing::Grammar* grammar0 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
     if (!grammar0)
     {
-        grammar0 = Cm::Parser::ExpressionGrammar::Create(pd);
+        grammar0 = Cm::Parser::TypeExprGrammar::Create(pd);
     }
     AddGrammarReference(grammar0);
-    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
+    Cm::Parsing::Grammar* grammar1 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
     if (!grammar1)
     {
-        grammar1 = Cm::Parser::IdentifierGrammar::Create(pd);
+        grammar1 = Cm::Parser::KeywordGrammar::Create(pd);
     }
     AddGrammarReference(grammar1);
     Cm::Parsing::Grammar* grammar2 = pd->GetGrammar("Cm.Parsing.stdlib");
@@ -3775,29 +3775,29 @@ void StatementGrammar::GetReferencedGrammars()
         grammar2 = Cm::Parsing::stdlib::Create(pd);
     }
     AddGrammarReference(grammar2);
-    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.KeywordGrammar");
+    Cm::Parsing::Grammar* grammar3 = pd->GetGrammar("Cm.Parser.ExpressionGrammar");
     if (!grammar3)
     {
-        grammar3 = Cm::Parser::KeywordGrammar::Create(pd);
+        grammar3 = Cm::Parser::ExpressionGrammar::Create(pd);
     }
     AddGrammarReference(grammar3);
-    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.TypeExprGrammar");
+    Cm::Parsing::Grammar* grammar4 = pd->GetGrammar("Cm.Parser.IdentifierGrammar");
     if (!grammar4)
     {
-        grammar4 = Cm::Parser::TypeExprGrammar::Create(pd);
+        grammar4 = Cm::Parser::IdentifierGrammar::Create(pd);
     }
     AddGrammarReference(grammar4);
 }
 
 void StatementGrammar::CreateRules()
 {
-    AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
+    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
     AddRuleLink(new Cm::Parsing::RuleLink("identifier", this, "Cm.Parsing.stdlib.identifier"));
     AddRuleLink(new Cm::Parsing::RuleLink("Keyword", this, "KeywordGrammar.Keyword"));
+    AddRuleLink(new Cm::Parsing::RuleLink("ArgumentList", this, "ExpressionGrammar.ArgumentList"));
     AddRuleLink(new Cm::Parsing::RuleLink("Expression", this, "ExpressionGrammar.Expression"));
-    AddRuleLink(new Cm::Parsing::RuleLink("TypeExpr", this, "TypeExprGrammar.TypeExpr"));
-    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRuleLink(new Cm::Parsing::RuleLink("Identifier", this, "IdentifierGrammar.Identifier"));
+    AddRuleLink(new Cm::Parsing::RuleLink("spaces_and_comments", this, "Cm.Parsing.stdlib.spaces_and_comments"));
     AddRule(new StatementRule("Statement", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -3857,13 +3857,15 @@ void StatementGrammar::CreateRules()
     AddRule(new SimpleStatementRule("SimpleStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
-                new Cm::Parsing::SequenceParser(
-                    new Cm::Parsing::ActionParser("A1",
-                        new Cm::Parsing::EmptyParser()),
-                    new Cm::Parsing::OptionalParser(
+                new Cm::Parsing::ActionParser("A1",
+                    new Cm::Parsing::EmptyParser()),
+                new Cm::Parsing::AlternativeParser(
+                    new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::ActionParser("A2",
-                            new Cm::Parsing::NonterminalParser("Expression", "Expression", 1)))),
-                new Cm::Parsing::CharParser(';')))));
+                            new Cm::Parsing::NonterminalParser("Expression", "Expression", 1)),
+                        new Cm::Parsing::CCOptParser(
+                            new Cm::Parsing::CharParser(';'))),
+                    new Cm::Parsing::CharParser(';'))))));
     AddRule(new ControlStatementRule("ControlStatement", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -3910,8 +3912,9 @@ void StatementGrammar::CreateRules()
                     new Cm::Parsing::KeywordParser("return"),
                     new Cm::Parsing::OptionalParser(
                         new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(';'))))));
+                new Cm::Parsing::CCOptParser(
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(';')))))));
     AddRule(new ConditionalStatementRule("ConditionalStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -3924,10 +3927,12 @@ void StatementGrammar::CreateRules()
                                     new Cm::Parsing::CharParser('('))),
                             new Cm::Parsing::ExpectationParser(
                                 new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                        new Cm::Parsing::CCOptParser(
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::CharParser(')')))),
+                    new Cm::Parsing::CCOptParser(
                         new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::CharParser(')'))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::NonterminalParser("thenS", "Statement", 1))),
+                            new Cm::Parsing::NonterminalParser("thenS", "Statement", 1)))),
                 new Cm::Parsing::OptionalParser(
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::KeywordParser("else"),
@@ -4018,10 +4023,12 @@ void StatementGrammar::CreateRules()
                                 new Cm::Parsing::CharParser('('))),
                         new Cm::Parsing::ExpectationParser(
                             new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                    new Cm::Parsing::CCOptParser(
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser(')')))),
+                new Cm::Parsing::CCOptParser(
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')'))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))))));
+                        new Cm::Parsing::NonterminalParser("Statement", "Statement", 1)))))));
     AddRule(new DoStatementRule("DoStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -4039,10 +4046,12 @@ void StatementGrammar::CreateRules()
                                 new Cm::Parsing::CharParser('('))),
                         new Cm::Parsing::ExpectationParser(
                             new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                    new Cm::Parsing::CCOptParser(
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser(')')))),
+                new Cm::Parsing::CCOptParser(
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')'))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(';'))))));
+                        new Cm::Parsing::CharParser(';')))))));
     AddRule(new RangeForStatementRule("RangeForStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -4061,10 +4070,12 @@ void StatementGrammar::CreateRules()
                             new Cm::Parsing::CharParser(':')),
                         new Cm::Parsing::ExpectationParser(
                             new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
+                    new Cm::Parsing::CCOptParser(
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser(')')))),
+                new Cm::Parsing::CCOptParser(
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')'))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))))));
+                        new Cm::Parsing::NonterminalParser("Statement", "Statement", 1)))))));
     AddRule(new ForStatementRule("ForStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -4081,14 +4092,17 @@ void StatementGrammar::CreateRules()
                                         new Cm::Parsing::NonterminalParser("ForInitStatement", "ForInitStatement", 1))),
                                 new Cm::Parsing::OptionalParser(
                                     new Cm::Parsing::NonterminalParser("condition", "Expression", 1))),
-                            new Cm::Parsing::ExpectationParser(
-                                new Cm::Parsing::CharParser(';'))),
+                            new Cm::Parsing::CCOptParser(
+                                new Cm::Parsing::ExpectationParser(
+                                    new Cm::Parsing::CharParser(';')))),
                         new Cm::Parsing::OptionalParser(
                             new Cm::Parsing::NonterminalParser("increment", "Expression", 1))),
+                    new Cm::Parsing::CCOptParser(
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser(')')))),
+                new Cm::Parsing::CCOptParser(
                     new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(')'))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("Statement", "Statement", 1))))));
+                        new Cm::Parsing::NonterminalParser("Statement", "Statement", 1)))))));
     AddRule(new ForInitStatementRule("ForInitStatement", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(
@@ -4156,16 +4170,18 @@ void StatementGrammar::CreateRules()
                             new Cm::Parsing::CharParser('=')),
                         new Cm::Parsing::ExpectationParser(
                             new Cm::Parsing::NonterminalParser("source", "Expression", 1))),
-                    new Cm::Parsing::ExpectationParser(
-                        new Cm::Parsing::CharParser(';')))))));
+                    new Cm::Parsing::CCOptParser(
+                        new Cm::Parsing::ExpectationParser(
+                            new Cm::Parsing::CharParser(';'))))))));
     AddRule(new ConstructionStatementRule("ConstructionStatement", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::SequenceParser(
                 new Cm::Parsing::ActionParser("A0",
                     new Cm::Parsing::SequenceParser(
                         new Cm::Parsing::NonterminalParser("TypeExpr", "TypeExpr", 1),
-                        new Cm::Parsing::ExpectationParser(
-                            new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0)))),
+                        new Cm::Parsing::CCOptParser(
+                            new Cm::Parsing::ExpectationParser(
+                                new Cm::Parsing::NonterminalParser("Identifier", "Identifier", 0))))),
                 new Cm::Parsing::OptionalParser(
                     new Cm::Parsing::AlternativeParser(
                         new Cm::Parsing::SequenceParser(
@@ -4180,8 +4196,9 @@ void StatementGrammar::CreateRules()
                                 new Cm::Parsing::ExpectationParser(
                                     new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))))))),
             new Cm::Parsing::ActionParser("A2",
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(';'))))));
+                new Cm::Parsing::CCOptParser(
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(';')))))));
     AddRule(new DeleteStatementRule("DeleteStatement", GetScope(),
         new Cm::Parsing::ActionParser("A0",
             new Cm::Parsing::SequenceParser(
@@ -4207,8 +4224,9 @@ void StatementGrammar::CreateRules()
                     new Cm::Parsing::KeywordParser("throw"),
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("Expression", "Expression", 1))),
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::CharParser(';'))))));
+                new Cm::Parsing::CCOptParser(
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::CharParser(';')))))));
     AddRule(new TryStatementRule("TryStatement", GetScope(),
         new Cm::Parsing::SequenceParser(
             new Cm::Parsing::ActionParser("A0",
@@ -4217,8 +4235,9 @@ void StatementGrammar::CreateRules()
                     new Cm::Parsing::ExpectationParser(
                         new Cm::Parsing::NonterminalParser("CompoundStatement", "CompoundStatement", 1)))),
             new Cm::Parsing::ActionParser("A1",
-                new Cm::Parsing::ExpectationParser(
-                    new Cm::Parsing::NonterminalParser("Handlers", "Handlers", 2))))));
+                new Cm::Parsing::CCOptParser(
+                    new Cm::Parsing::ExpectationParser(
+                        new Cm::Parsing::NonterminalParser("Handlers", "Handlers", 2)))))));
     AddRule(new HandlersRule("Handlers", GetScope(),
         new Cm::Parsing::PositiveParser(
             new Cm::Parsing::ActionParser("A0",
@@ -4353,6 +4372,7 @@ void StatementGrammar::CreateRules()
                 new Cm::Parsing::NonterminalParser("Keyword", "Keyword", 0)))));
     SetStartRuleName("CompoundStatement");
     SetSkipRuleName("spaces_and_comments");
+    SetCCRuleData("CompoundStatement", '{', '}', true);
 }
 
 } } // namespace Cm.Parser

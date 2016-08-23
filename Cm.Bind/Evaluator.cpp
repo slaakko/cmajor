@@ -1697,7 +1697,7 @@ void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
         ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
         Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
         Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberStr(), lookupId);
         if (symbol)
         {
             qualifiedScopeStack.push(qualifiedScope);
@@ -1708,7 +1708,7 @@ void Evaluator::EndVisit(Cm::Ast::DotNode& dotNode)
         }
         else
         {
-            throw Cm::Core::Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberId()->Str() + "'", dotNode.GetSpan());
+            throw Cm::Core::Exception("symbol '" + containerSymbol->FullName() + "' does not have member '" + dotNode.MemberStr() + "'", dotNode.GetSpan());
         }
     }
     else
@@ -2559,7 +2559,7 @@ void BooleanEvaluator::EndVisit(Cm::Ast::DotNode& dotNode)
         ScopedValue* scopedValue = static_cast<ScopedValue*>(value.get());
         Cm::Sym::ContainerSymbol* containerSymbol = scopedValue->ContainerSymbol();
         Cm::Sym::ContainerScope* scope = containerSymbol->GetContainerScope();
-        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberId()->Str(), lookupId);
+        Cm::Sym::Symbol* symbol = scope->Lookup(dotNode.MemberStr(), lookupId);
         if (symbol)
         {
             EvaluateSymbol(symbol);

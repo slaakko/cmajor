@@ -38,6 +38,7 @@ namespace Cm.Parsing.Syntax
                     )
                     (Expectation(value){ value = Expectation; })?
                     (Action(value){ value = Action; })?
+                    (CCOpt(value){ value = CCOpt; })?
                     ;
 
         RuleCall: Cm::Parsing::Parser*
@@ -89,6 +90,10 @@ namespace Cm.Parsing.Syntax
                     {
                         value = new ActionParser("", action, failureAction, child);
                     }
+                    ;
+
+        CCOpt(Cm::Parsing::Parser* child): Cm::Parsing::Parser*
+                    ::= '$'{ value = new CCOptParser(child); }
                     ;
     }
 }

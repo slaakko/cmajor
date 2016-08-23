@@ -13,11 +13,16 @@
 #include <string>
 #include <stdint.h>
 #include <vector>
+#include <stack>
 
 namespace Cm { namespace Parsing {
 
+class Rule;
+
 void SetCountSourceLines(bool count);
 int GetParsedSourceLines();
+void SetCC(bool cc_);
+bool CC();
 
 class Span
 {
@@ -37,6 +42,11 @@ public:
     {
         ++start;
         ++end;
+    }
+    void operator--()
+    {
+        --start;
+        --end;
     }
     void SetEnd(int32_t end_) { end = end_; }
     bool IsNull() const { return fileIndex == 0 && lineNumber == 0 && start == 0 && end == 0; }
@@ -67,12 +77,16 @@ public:
     void Skip();
     const std::string& FileName() const { return fileName; }
     const Span& GetSpan() const { return span; }
-    void SetSpan(const Span& span_) { span = span_; }
+    void SetSpan(const Span& span_) { span = span_; synchronizing = false; }
     bool Skipping() const { return skipping; }
     XmlLog* Log() const { return log; }
     void SetLog(XmlLog* log_) { log = log_; }
     int LineEndIndex();
     std::string RestOfLine();
+    void SetSynchronizing(bool synchronizing_) { synchronizing = synchronizing_; }
+    bool Synchronizing() const { return synchronizing; }
+    void PushCCRule(Rule* ccRule_);
+    void PopCCRule();
 private:
     const char* start;
     const char* end;
@@ -83,6 +97,9 @@ private:
     Span span;
     XmlLog* log;
     bool atBeginningOfLine;
+    bool synchronizing;
+    Rule* ccRule;
+    std::stack<Rule*> ccRuleStack;
 };
 
 } } // namespace Cm::Parsing

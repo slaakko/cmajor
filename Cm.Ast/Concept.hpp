@@ -166,7 +166,7 @@ public:
     std::string DocId() const override;
     void Accept(Visitor& visitor) override;
     IdentifierNode* ConceptId() const { return conceptId.get(); }
-    const NodeList& TypeExprNodes() const { return typeExprNodes; }
+    NodeList& TypeExprNodes() { return typeExprNodes; }
 private:
     std::unique_ptr<IdentifierNode> conceptId;
     NodeList typeExprNodes;
@@ -363,6 +363,22 @@ private:
     std::unique_ptr<ConceptIdNode> refinement;
     ConstraintNodeList constraints;
     NodeList axioms;
+};
+
+class CCConstraintNode : public ConstraintNode
+{
+public:
+    CCConstraintNode(const Span& span_);
+    CCConstraintNode(const Span& span_, Node* node_);
+    NodeType GetNodeType() const override { return NodeType::ccConstraintNode; }
+    Node* Clone(CloneContext& cloneContext) const override { throw std::runtime_error("function not applicable"); }
+    void Read(Reader& reader) override { throw std::runtime_error("function not applicable"); }
+    void Write(Writer& writer) override { throw std::runtime_error("function not applicable"); }
+    std::string ToString() const override { return node->ToString(); }
+    std::string DocId() const override { throw std::runtime_error("function not applicable"); }
+    void Accept(Visitor& visitor) override;
+private:
+    std::unique_ptr<Node> node;
 };
 
 } } // namespace Cm::Ast

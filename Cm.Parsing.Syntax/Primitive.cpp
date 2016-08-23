@@ -51,7 +51,7 @@ Cm::Parsing::Parser* PrimitiveGrammar::Parse(const char* start, const char* end,
     {
         xmlLog->WriteEndRule("parse");
     }
-    if (!match.Hit() || stop.Start() != int(end - start))
+    if (!match.Hit() || !CC() && stop.Start() != int(end - start))
     {
         if (StartRule())
         {
@@ -1173,8 +1173,8 @@ void PrimitiveGrammar::CreateRules()
     AddRuleLink(new Cm::Parsing::RuleLink("char", this, "Cm.Parsing.stdlib.char"));
     AddRuleLink(new Cm::Parsing::RuleLink("string", this, "Cm.Parsing.stdlib.string"));
     AddRuleLink(new Cm::Parsing::RuleLink("escape", this, "Cm.Parsing.stdlib.escape"));
-    AddRuleLink(new Cm::Parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRuleLink(new Cm::Parsing::RuleLink("QualifiedId", this, "ElementGrammar.QualifiedId"));
+    AddRuleLink(new Cm::Parsing::RuleLink("StringArray", this, "ElementGrammar.StringArray"));
     AddRule(new PrimitiveRule("Primitive", GetScope(),
         new Cm::Parsing::AlternativeParser(
             new Cm::Parsing::AlternativeParser(

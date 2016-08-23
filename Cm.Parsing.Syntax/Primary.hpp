@@ -1,5 +1,5 @@
-#ifndef Primary_hpp_26873
-#define Primary_hpp_26873
+#ifndef Primary_hpp_22788
+#define Primary_hpp_22788
 
 #include <Cm.Parsing/Grammar.hpp>
 #include <Cm.Parsing/Keyword.hpp>
@@ -26,8 +26,9 @@ private:
     class TokenRule;
     class ExpectationRule;
     class ActionRule;
+    class CCOptRule;
 };
 
 } } } // namespace Cm.Parsing.Syntax
 
-#endif // Primary_hpp_26873
+#endif // Primary_hpp_22788
